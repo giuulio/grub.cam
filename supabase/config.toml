@@ -1,0 +1,8 @@
+project_id = "grub"
+
+[api]
+enabled = true
+schemas = ["public"]
+
+[db]
+major_version = 17

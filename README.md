@@ -1,32 +1,29 @@
-# React + TypeScript + Vite
+# Grub — Cambridge college menus, live
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Where can I eat in Cambridge right now, and what's on?**
 
-Currently, two official plugins are available:
+Grub lists the dining halls, cafés and bars of all 31 Cambridge colleges with opening hours, who can get in, how to pay, dietary provision, and — for the 21 colleges that publish one — this week's menu, dish by dish. Venues are ranked by what's open now, then what opens next; filter by meal, diet, access, bank card, venue type, or search for a dish.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Every fact links back to the College's own page and carries a provenance badge (official / reported / Google Maps / unconfirmed) so you can judge how much to trust it.
 
-## React Compiler
+## Run it
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run build:data   # validate data → public/data.json
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+See [AGENTS.md](AGENTS.md) for the data model, ingest pipeline, weekly refresh procedure and deployment notes.
+
+## Data
+
+- `data/` — hand-curated reference data (YAML), audited against official College pages on 7 Oct 2026.
+- `menus/` — weekly dish observations, fetched by `scripts/ingest` or transcribed from PDFs/image menus.
+- Menus are re-published from public College sources with attribution. If something is wrong, open an issue or a PR against the data file.
+
+## Roadmap
+
+- Supabase-backed ratings, reviews and "report an error"
+- Parsers for the remaining PDF/Sway/Canva menus
+- University cafés (West Hub etc.), distance sort, formal-hall menus

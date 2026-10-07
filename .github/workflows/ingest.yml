@@ -1,0 +1,40 @@
+name: Ingest menus
+
+# Fetches the scripted sources, commits menus/<week>/*.json, and (if secrets are set) seeds Supabase.
+# Manual-only until SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY secrets exist; then enable the cron.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '15 5 * * *'   # 05:15 UTC daily (06:15 BST) — daily sources
+  #   - cron: '0 7 * * 1'    # Monday 07:00 UTC — weekly sources
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ingest
+        continue-on-error: true # one broken college site must not block the others
+      - run: npm run ingest:manual
+      - run: npm run build:data
+      - name: Commit updated menus
+        run: |
+          git config user.name "grub-ingest[bot]"
+          git config user.email "grub-ingest@users.noreply.github.com"
+          git add menus
+          git diff --cached --quiet || git commit -m "Ingest menus $(date -u +%F)"
+          git push
+      - name: Seed Supabase
+        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run seed

@@ -18,9 +18,11 @@ export type {
   Venue,
   VenueType,
 } from '../../../scripts/schema.ts'
-export { DAYS } from '../../../scripts/schema.ts'
 
-import type { College, MenuFile, ServiceSlot, Venue } from '../../../scripts/schema.ts'
+import type { College, Day, MenuFile, ServiceSlot, Venue } from '../../../scripts/schema.ts'
+
+// Value duplicated from scripts/schema.ts so the browser bundle doesn't pull in zod.
+export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 export type SlotWithCollege = ServiceSlot & { college: string }
 
