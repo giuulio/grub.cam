@@ -1,9 +1,0 @@
-college: hughes-hall
-slots:
-  - { venue: fenners-dining-hall, meal: breakfast, days: mon-fri, start: "08:00", end: "10:00", note: "pre-order only via UPay, up to 24h ahead" }
-  - { venue: fenners-dining-hall, meal: snacks, days: mon-fri, start: "10:00", end: "12:00", note: "pastries and hot drinks" }
-  - { venue: fenners-dining-hall, meal: lunch, days: mon-fri, start: "11:45", end: "14:00" }
-  - { venue: fenners-dining-hall, meal: dinner, days: "mon,wed,thu", start: "17:30", end: "19:00" }
-  - { venue: fenners-dining-hall, meal: dinner, days: "tue,fri", start: "17:30", end: "18:30", note: "takeaway only (formal nights)" }
-  - { venue: fenners-dining-hall, meal: brunch, days: "sat,sun", start: "11:00", end: "13:00" }
-  # Garden Room Café, MCR Clubroom: times not published

@@ -2,14 +2,11 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 const SERVICES: Record<string, MenuDay['service']> = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', brunch: 'brunch' }
 
-export const corpus: Source = {
-  college: 'corpus-christi',
-  venue: 'cafeteria',
-  source_url: 'https://www.corpus.cam.ac.uk/foodmenu/',
+export const corpus: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     for (const date of ctx.dates) {

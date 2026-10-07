@@ -1,51 +1,46 @@
 # Grub (grub.cam) — agent notes
 
-Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + Tailwind 4; data in YAML/JSON validated by zod; Supabase (Postgres) as the serving DB with a static-JSON fallback.
+Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + Tailwind 4 SPA reading Supabase (Postgres). **The database is the system of record**: colleges, venues, hours and menus live there, not in the repo. The repo holds code, migrations, and how each college publishes its menus.
 
 ## Commands
 
 | Command | What |
 |---|---|
-| `npm run dev` | Vite dev server (reads `public/data.json`, or Supabase if `VITE_SUPABASE_*` set in `.env`) |
-| `npm run build:data` | Validate `data/` + `menus/` → `public/data.json`; prints counts and halls without hours |
-| `npm run ingest -- [--week 2026-W41] [--only jesus,homerton]` | Fetch scripted sources → `menus/<week>/<college>.json` |
-| `npm run ingest:manual` | Compile hand-transcribed `menus/<week>/<college>.txt` → `.json` |
-| `npm run seed` | Upsert everything into Supabase (needs `SUPABASE_SECRET_KEY` in `.env`) |
+| `npm run dev` | Vite dev server (needs `VITE_SUPABASE_*` in `.env`) |
+| `npm run ingest -- [--only jesus,homerton] [--dry]` | Fetch every scripted source from today until a week comes back empty → Supabase |
+| `npm run ingest:manual -- menu.txt [...] [--dry]` | Save hand-transcribed menus → Supabase (format at the top of `scripts/ingest/manual.ts`) |
 | `npm test` | Vitest (time logic, filters) |
 | `npm run typecheck` / `npm run lint` | `tsc -b` + scripts tsconfig / oxlint |
-| `npm run build` | build:data + typecheck + Vite build → `dist/` (static; deploy anywhere) |
+| `npm run build` | typecheck + Vite build → `dist/` |
+
+`--dry` fetches and validates without writing. If ingest gets "fetch failed" for Magdalene locally, run with `NODE_USE_SYSTEM_CA=0` (keychain cross-signed certs break that chain).
 
 ## Layout
 
-- `scripts/schema.ts` — zod schemas; the single source of truth for types (app imports from here).
-- `data/colleges/<slug>.yaml` — 31 colleges: venues, access, payment, dietary, menu source, formal, notes. Every fact has a `prov` (source_kind / observed_at / confidence).
-- `data/hours/<slug>.yaml` — structured service slots. `days` accepts `mon-fri`, `daily`, `sat,sun` — quote comma lists inside `{ }` flow maps (`days: "sat,sun"`); slots are `.strict()` so an unquoted one fails the build. Unknown hours ⇒ no slot (UI says "Hours not published", never "closed").
-- `menus/<ISO week>/<college>.json` — dish observations. `.txt` siblings are the hand-transcribed source for non-scripted colleges (format documented at top of `scripts/ingest/manual.ts`).
-- `scripts/ingest/sources/*.ts` — one adapter per machine-readable college (11): homerton, peterhouse, corpus, jesus, robinson, selwyn, st-johns, downing (Kafoodle API), darwin, wolfson, magdalene (tenkites JSON-LD).
-- `supabase/migrations/0001_init.sql` — tables + RLS (anon SELECT only). Menus: `menu_days` → `menu_items` (each dish as printed) → `dishes` (one per college + `dishKey()` from `scripts/lib/dishKey.ts`, so a dish is tracked across weeks); `dish_stats` view; `ingest_runs` (service role only).
-- `src/pages/*` — routes: `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `diet`, `guests`, `card`; ranked venue list via `applyFilters`), `/:slug` College (venue list, anchors `#venue-slug`), `/about`, `*` 404. Header/footer in `src/components/`; site constants in `src/lib/site.ts`. White on charcoal (`#1e1e1e`), minimal text; free-text data fields (`notice`, `access.text`, …) are research notes and aren't shown.
-- `src/lib/time/*` — Europe/London clock, Full Term dates, `openStatus()`; `src/lib/filters.ts` — ranking.
+- `scripts/ingest/sources.ts` — **how each college publishes its menu**: one entry per venue (`venues.id` = `<college>/<venue>`), channel (html/json/pdf/sway/canva/app/email/intranet/none), URL, cadence, notes, and an `adapter` for the 11 scripted ones (`scripts/ingest/sources/*.ts`). Adapters must take dates from the source, never from the requested week.
+- `scripts/schema.ts` — zod for `Dish` / `MenuDay`, checked before anything is saved; the app imports the types.
+- `supabase/migrations/` — tables + RLS (anon SELECT only). Menus: `menu_days` (one per venue/date/service, upserted) → `menu_items` (dishes as printed, replaced per day) → `dishes` (one per college + `dish_key(name)`, tracked across weeks); `dish_stats` view; `ingest_runs` (one row per source per run; service role only). Writes go through `save_menu()` (service role only).
+- `src/lib/data.tsx` — loads colleges/venues/slots and the next 7 days of menus. `src/lib/time/*` — Europe/London clock, Full Term dates, `openStatus()`; `src/lib/filters.ts` — ranking.
+- `src/pages/*` — `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `diet`, `guests`, `card`), `/:slug` college (anchors `#venue-slug`), `/about`, `*` 404. White on charcoal (`#1e1e1e`), minimal text; free-text DB fields (`notice`, `hours_text`, `access.text`, …) are research notes for editors and aren't shown.
 
-## Weekly menu refresh (until all sources are scripted)
+## Menus
 
-1. `npm run ingest` (scripted colleges).
-2. For each `.txt` college — Churchill, Newnham, Queens', St Edmund's, Fitzwilliam, Pembroke, St Catharine's, Trinity, Clare Hall (Sway), Lucy Cavendish (Canva) — open the source URL (PDFs: `curl -A "Mozilla/5.0" … | pdftotext -layout - -`; Sway/Canva: `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --dump-dom URL`), transcribe into `menus/<week>/<college>.txt`, run `npm run ingest:manual`.
-3. `npm run build:data` then `npm run seed`.
+No projected menus: only what a source has published is saved, and sources are re-checked often instead (GitHub Actions runs `npm run ingest` at 05:15, 11:15 and 17:15 UTC; needs repo secrets `VITE_SUPABASE_URL` and `SUPABASE_SECRET_KEY`). Days already saved are kept; a day the source still lists is replaced with the latest version.
 
-Gotchas: Robinson's `?date=` returns the following day (adapter requests date−1 and trusts the heading). Trinity's PDF needs a browser UA. Magdalene's menu list isn't in date order — pick by the "Com DD/MM/YY" label. Downing posts one combined daily menu (stored as both lunch and dinner with a note). St Catharine's counters: 1 meat/fish, 2 vegetarian, 3 plant-based (convention, not labelled).
+Hand-transcribed colleges (see `sources.ts`): open the URL (PDFs: `curl -A "Mozilla/5.0" … | pdftotext -layout - -`; Sway/Canva: `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --dump-dom URL`), write a `.txt` outside the repo, `npm run ingest:manual -- file.txt`. Members-only colleges need a collaborator.
+
+Reference data (hours, access, venues) is edited in the Supabase dashboard until there's an editor UI. Unknown hours ⇒ no slot (UI says "Hours not published", never "closed").
 
 ## Term dates
 
-Michaelmas 2026 Full Term 6 Oct–4 Dec; Lent 2027 19 Jan–19 Mar; Easter 2027 27 Apr–18 Jun (`src/lib/time/termDates.ts`). Update yearly from cam.ac.uk.
+Michaelmas 2026 Full Term 6 Oct–4 Dec; Lent 2027 19 Jan–19 Mar; Easter 2027 27 Apr–18 Jun (`src/lib/time/termDates.ts`; Downing's adapter maps "WEEK n" through it). Update yearly from cam.ac.uk.
 
 ## Supabase
 
-Project `grub` (ref `leghyhbkovkyipgoygko`, org grub.cam, London `eu-west-2`, free tier), linked via `supabase link`. Keys live in `.env` (see `.env.example`): `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` (browser), `SUPABASE_SECRET_KEY` + `SUPABASE_DB_PASSWORD` (scripts/CLI only). With the `VITE_` vars set, dev and build read Supabase; without them, `public/data.json`.
+Project `grub` (ref `leghyhbkovkyipgoygko`, London `eu-west-2`, free tier), linked via `supabase link`. Keys in `.env` (see `.env.example`): `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` (browser), `SUPABASE_SECRET_KEY` + `SUPABASE_DB_PASSWORD` (scripts/CLI only; `supabase projects api-keys --reveal` shows the secret key in full).
 
-- Schema change: add `supabase/migrations/NNNN_name.sql`, then `set -a && . ./.env && set +a && supabase db push`.
-- `npm run seed` is idempotent: upserts reference data and menu days, adds new dishes, replaces each day's items.
-- `supabase projects api-keys --reveal` is needed to get the secret key in full (without it the CLI masks it).
+Schema change: add `supabase/migrations/NNNN_name.sql`, then `set -a && . ./.env && set +a && supabase db push`.
 
 ## Deploy
 
-Static `dist/`. Cloudflare Pages: build `npm run build`, output `dist`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`; SPA fallback to `/index.html` (add `public/_redirects` with `/* /index.html 200`).
+Static `dist/`. Cloudflare Pages: build `npm run build`, output `dist`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`; SPA fallback via `public/_redirects`.

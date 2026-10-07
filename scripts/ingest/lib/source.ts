@@ -1,19 +1,31 @@
-import type { MenuDay, MenuFile } from '../../schema.ts'
+import type { MenuDay } from '../../schema.ts'
 
 export type SourceContext = {
-  /** ISO week being ingested, e.g. 2026-W41 */
+  /** ISO week being fetched, e.g. 2026-W41 */
   week: string
   /** Mon..Sun ISO dates of that week */
   dates: string[]
   today: string
 }
 
-export type Source = {
-  college: string
-  venue: string
-  source_url: string
-  /** Return menu days for the requested week (may include days outside it; they're filtered). */
+/** Scrapes one venue's menu. Dates must come from the source, never from the requested week. */
+export type Adapter = {
+  /** Return menu days for the requested week (days outside it are dropped). */
   fetch(ctx: SourceContext): Promise<{ days: MenuDay[]; note?: string }>
+}
+
+export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'
+
+/** How a college publishes a venue's menu. */
+export type MenuSource = {
+  /** venues.id in Supabase: "<college>/<venue>" */
+  venue: string
+  channel: Channel
+  url?: string
+  cadence?: string
+  notes?: string
+  /** Scripted sources only; the rest are transcribed (`npm run ingest:manual`) or need a collaborator. */
+  adapter?: Adapter
 }
 
 export function mergeDays(days: MenuDay[]): MenuDay[] {
@@ -25,18 +37,4 @@ export function mergeDays(days: MenuDay[]): MenuDay[] {
     else byKey.set(k, { ...d, items: [...d.items] })
   }
   return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date) || a.service.localeCompare(b.service))
-}
-
-export function toMenuFile(src: Source, ctx: SourceContext, days: MenuDay[], note?: string): MenuFile {
-  const inWeek = new Set(ctx.dates)
-  return {
-    college: src.college,
-    venue: src.venue,
-    week: ctx.week,
-    source_url: src.source_url,
-    fetched_at: new Date().toISOString(),
-    method: 'script',
-    note,
-    days: mergeDays(days.filter((d) => inWeek.has(d.date) && d.items.length)),
-  }
 }

@@ -3,7 +3,7 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays, fromISODate, isoWeek, WEEKDAYS } from '../lib/dates.ts'
 import { fetchJson } from '../lib/http.ts'
 import { cleanName, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 const OUTLET = 17260
 
@@ -21,10 +21,7 @@ type Outlet = { menu_groups: { id: number; name: string; is_active: boolean }[] 
 type Recipe = { id: number; name: string; tags: { name: string; group: string }[] }
 type Group = { menus: { id: number; name: string; recipes: Recipe[]; config: { widgets: { class: string; config: { id: number } }[] } | null }[] }
 
-export const downing: Source = {
-  college: 'downing',
-  venue: 'servery-great-hall',
-  source_url: `https://wba.kafoodle.com/${OUTLET}`,
+export const downing: Adapter = {
   async fetch(ctx) {
     const outlet = await fetchJson<Outlet>(`https://kitchen.kafoodle.com/api/wba/v1/data/${OUTLET}`)
     const weekly = outlet.menu_groups.filter((g) => g.is_active && /WEEK\s*\d+/i.test(g.name))

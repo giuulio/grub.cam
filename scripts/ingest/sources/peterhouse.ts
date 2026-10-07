@@ -1,7 +1,7 @@
 import type { Dish, MenuDay } from '../../schema.ts'
 import { fetchJson } from '../lib/http.ts'
 import { cleanName, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 type Entry = [string, string[]]
 type DayMenu = {
@@ -38,10 +38,7 @@ function splitSalads(entries: Entry[]): Dish[] {
   return out
 }
 
-export const peterhouse: Source = {
-  college: 'peterhouse',
-  venue: 'hall-servery',
-  source_url: 'https://petmenu.co.uk/',
+export const peterhouse: Adapter = {
   async fetch(ctx) {
     const data = await fetchJson<Servery>('https://petmenu.co.uk/servery.json')
     const days: MenuDay[] = []

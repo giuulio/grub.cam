@@ -1,8 +1,0 @@
-college: trinity
-# Servery times from the Postdoc Society page (undated); may vary outside term.
-slots:
-  - { venue: hall-servery, meal: breakfast, days: mon-sat, start: "08:15", end: "09:30", prov: { source_kind: reported, confidence: low, source_url: "https://postdocsoc.trin.cam.ac.uk/servery-times/", note: "Postdoc Society, undated" } }
-  - { venue: hall-servery, meal: brunch, days: sun, start: "11:00", end: "14:00", prov: { source_kind: reported, confidence: low, source_url: "https://postdocsoc.trin.cam.ac.uk/servery-times/", note: "Postdoc Society, undated" } }
-  - { venue: hall-servery, meal: lunch, days: mon-sat, start: "11:30", end: "14:00", prov: { source_kind: reported, confidence: low, source_url: "https://postdocsoc.trin.cam.ac.uk/servery-times/", note: "Postdoc Society, undated; days assumed Mon–Sat" } }
-  - { venue: hall-servery, meal: dinner, days: daily, start: "17:30", end: "19:30", note: "end time varies", prov: { source_kind: reported, confidence: low, source_url: "https://postdocsoc.trin.cam.ac.uk/servery-times/", note: "Postdoc Society, undated; end time assumed" } }
-  # Coffee Shop and Bar (I Great Court): times not reconfirmed

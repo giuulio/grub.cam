@@ -1,45 +1,47 @@
-// Usage: npm run ingest -- [--week 2026-W41] [--only homerton,jesus]
-import { mkdirSync, writeFileSync } from 'node:fs'
+// Usage: npm run ingest -- [--only jesus,homerton] [--dry]
+// Fetches every scripted source from today until a week comes back empty, and saves it to Supabase.
+// Days already saved are kept; a day the source still lists is replaced with the latest version.
 import { parseArgs } from 'node:util'
-import { MenuFile } from '../schema.ts'
-import { isoWeek, todayLondon, weekDates } from './lib/dates.ts'
-import { toMenuFile, type Source } from './lib/source.ts'
-import { corpus } from './sources/corpus.ts'
-import { darwin } from './sources/darwin.ts'
-import { downing } from './sources/downing.ts'
-import { homerton } from './sources/homerton.ts'
-import { jesus } from './sources/jesus.ts'
-import { magdalene } from './sources/magdalene.ts'
-import { peterhouse } from './sources/peterhouse.ts'
-import { robinson } from './sources/robinson.ts'
-import { selwyn } from './sources/selwyn.ts'
-import { stJohns } from './sources/st-johns.ts'
-import { wolfson } from './sources/wolfson.ts'
+import { MenuDay } from '../schema.ts'
+import { addDays, isoWeek, todayLondon, weekDates } from './lib/dates.ts'
+import { connect } from './lib/db.ts'
+import { mergeDays, type Adapter } from './lib/source.ts'
+import { SOURCES } from './sources.ts'
 
-export const SOURCES: Source[] = [homerton, peterhouse, corpus, jesus, robinson, selwyn, stJohns, downing, darwin, wolfson, magdalene]
+const WEEKS_AHEAD = 9 // a whole Full Term
 
-const { values } = parseArgs({ options: { week: { type: 'string' }, only: { type: 'string' } } })
-const today = todayLondon()
-const week = values.week ?? isoWeek(today)
-const ctx = { week, dates: weekDates(week), today }
+const { values } = parseArgs({ options: { only: { type: 'string' }, dry: { type: 'boolean' } } })
 const only = values.only?.split(',').map((s) => s.trim())
+const db = values.dry ? undefined : connect()
+const today = todayLondon()
 
-const dir = `menus/${week}`
-mkdirSync(dir, { recursive: true })
+async function fetchAhead(adapter: Adapter): Promise<MenuDay[]> {
+  const days: MenuDay[] = []
+  for (let i = 0; i < WEEKS_AHEAD; i++) {
+    const week = isoWeek(addDays(today, 7 * i))
+    const dates = weekDates(week)
+    const res = await adapter.fetch({ week, dates, today })
+    const got = res.days.filter((d) => dates.includes(d.date) && d.date >= today && d.items.length)
+    if (!got.length && i > 0) break // the current week may be over already; later gaps mean nothing is published yet
+    days.push(...got.map((d) => MenuDay.parse(d)))
+  }
+  return mergeDays(days)
+}
 
 let failures = 0
 for (const src of SOURCES) {
-  if (only && !only.includes(src.college)) continue
-  const t0 = Date.now()
+  if (!src.adapter || (only && !only.includes(src.venue.split('/')[0]))) continue
+  const started = new Date().toISOString()
   try {
-    const { days, note } = await src.fetch(ctx)
-    const file = MenuFile.parse(toMenuFile(src, ctx, days, note))
-    const dishes = file.days.reduce((n, d) => n + d.items.length, 0)
-    writeFileSync(`${dir}/${src.college}.json`, JSON.stringify(file, null, 2) + '\n')
-    console.log(`✓ ${src.college.padEnd(16)} ${String(file.days.length).padStart(2)} services ${String(dishes).padStart(4)} dishes  ${Date.now() - t0}ms`)
+    const days = await fetchAhead(src.adapter)
+    const dishes = days.reduce((n, d) => n + d.items.length, 0)
+    await db?.saveMenu(src.venue, src.url!, started, 'script', days)
+    await db?.logRun({ venue_id: src.venue, method: 'script', started_at: started, status: days.length ? 'ok' : 'empty', days: days.length, dishes })
+    console.log(`✓ ${src.venue.padEnd(40)} ${String(days.length).padStart(3)} services ${String(dishes).padStart(5)} dishes  to ${days.at(-1)?.date ?? '—'}`)
   } catch (e) {
     failures++
-    console.error(`✗ ${src.college}: ${(e as Error).message}`)
+    await db?.logRun({ venue_id: src.venue, method: 'script', started_at: started, status: 'error', error: (e as Error).message })
+    console.error(`✗ ${src.venue}: ${(e as Error).message}`)
   }
 }
 process.exit(failures ? 1 : 0)

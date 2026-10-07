@@ -1,22 +1,26 @@
-// Compile hand-transcribed menus/<week>/<college>.txt into <college>.json (same schema as scripted sources).
+// Usage: npm run ingest:manual -- path/to/menu.txt [...] [--dry]
+// Saves hand-transcribed menus to Supabase. Keep the .txt files outside the repo.
 //
 // Format:
 //   college: churchill
 //   venue: dining-hall
 //   source: https://...
-//   note: optional free text
+//   fetched: 2026-10-07T20:40:00Z  <- optional, when it was read (defaults to now)
 //   ---
 //   2026-10-05 lunch            <- starts a service block (date + breakfast|brunch|lunch|dinner)
 //   ## Sides                    <- optional course heading for following lines (soup/main/side/dessert/other)
 //   Carrot & coconut soup (VG)  <- dish; (V)/(VG)/(H)/(GF)/(PB) markers become tags; trailing £x.xx becomes price
 //   Roast pork £3.60 | note     <- anything after " | " is appended to the dish name in brackets
 //   # comment
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { Meal, MenuFile, type Dish, type MenuDay } from '../schema.ts'
+import { readFileSync } from 'node:fs'
+import { parseArgs } from 'node:util'
+import { Meal, MenuDay, type Dish } from '../schema.ts'
+import { connect } from './lib/db.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromName } from './lib/tags.ts'
 
-export function compileManual(text: string, week: string): MenuFile {
+export type ManualMenu = { venue: string; source_url: string; fetched_at: string; days: MenuDay[] }
+
+export function parseManual(text: string): ManualMenu {
   const [head, body] = text.split(/\n---\n/)
   if (!body) throw new Error('missing --- separator')
   const meta: Record<string, string> = {}
@@ -50,35 +54,30 @@ export function compileManual(text: string, week: string): MenuFile {
     const full = noteParts.length ? `${name} (${noteParts.join(' | ')})` : name
     cur.items.push({ name: full, tags, course, ...(price !== undefined ? { price_gbp: price } : {}), ...(priceText ? { price_text: priceText } : {}) })
   }
-  return MenuFile.parse({
-    college: meta.college,
-    venue: meta.venue,
-    week,
+  if (!meta.college || !meta.venue || !meta.source) throw new Error('header needs college, venue and source')
+  return {
+    venue: `${meta.college}/${meta.venue}`,
     source_url: meta.source,
     fetched_at: meta.fetched ?? new Date().toISOString(),
-    method: 'llm',
-    note: meta.note || undefined,
-    days: days.filter((d) => d.items.length),
-  })
+    days: days.filter((d) => d.items.length).map((d) => MenuDay.parse(d)),
+  }
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()!)) {
-  const root = 'menus'
-  let n = 0
-  for (const week of readdirSync(root)) {
-    const dir = join(root, week)
-    for (const f of readdirSync(dir).filter((x) => x.endsWith('.txt'))) {
-      try {
-        const file = compileManual(readFileSync(join(dir, f), 'utf8'), week)
-        writeFileSync(join(dir, f.replace(/\.txt$/, '.json')), JSON.stringify(file, null, 2) + '\n')
-        const dishes = file.days.reduce((k, d) => k + d.items.length, 0)
-        console.log(`✓ ${week}/${f.padEnd(22)} ${String(file.days.length).padStart(2)} services ${String(dishes).padStart(4)} dishes`)
-        n++
-      } catch (e) {
-        console.error(`✗ ${week}/${f}: ${(e as Error).message}`)
-        process.exitCode = 1
-      }
+  const { values, positionals } = parseArgs({ options: { dry: { type: 'boolean' } }, allowPositionals: true })
+  if (!positionals.length) throw new Error('usage: npm run ingest:manual -- menu.txt [...] [--dry]')
+  const db = values.dry ? undefined : connect()
+  for (const f of positionals) {
+    const started = new Date().toISOString()
+    try {
+      const m = parseManual(readFileSync(f, 'utf8'))
+      await db?.saveMenu(m.venue, m.source_url, m.fetched_at, 'manual', m.days)
+      const dishes = m.days.reduce((n, d) => n + d.items.length, 0)
+      await db?.logRun({ venue_id: m.venue, method: 'manual', started_at: started, status: m.days.length ? 'ok' : 'empty', days: m.days.length, dishes })
+      console.log(`✓ ${m.venue.padEnd(40)} ${String(m.days.length).padStart(3)} services ${String(dishes).padStart(5)} dishes`)
+    } catch (e) {
+      console.error(`✗ ${f}: ${(e as Error).message}`)
+      process.exitCode = 1
     }
   }
-  if (!n) console.log('no .txt menus found')
 }

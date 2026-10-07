@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { DAYS, type VenueView } from '../lib/data/types.ts'
-import { useReady } from '../lib/data/useData.tsx'
+import { useReady } from '../lib/data.tsx'
+import { DAYS, type Venue } from '../lib/types.ts'
 import { ACCESS_LABEL, MEAL_LABEL, MEALS } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -12,7 +12,7 @@ import { NotFound } from './NotFound.tsx'
 
 export function College() {
   const { slug } = useParams()
-  const { bundle, venues } = useReady()
+  const { colleges, venues } = useReady()
   const now = useNow()
   const [picked, setPicked] = useState<string>()
   const { hash } = useLocation()
@@ -22,12 +22,12 @@ export function College() {
     if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView()
   }, [hash])
 
-  const college = bundle.colleges.find((c) => c.slug === slug)
+  const college = colleges.find((c) => c.slug === slug)
   if (!college) return <NotFound />
   const mine = venues.filter((v) => v.college.slug === college.slug)
 
   // Menu dates from today on; past days of the week aren't shown.
-  const dates = [...new Set(mine.flatMap((v) => v.menu?.days.map((d) => d.date) ?? []))].filter((d) => d >= now.date).sort()
+  const dates = [...new Set(mine.flatMap((v) => v.menu.map((d) => d.date)))].filter((d) => d >= now.date).sort()
   const date = picked && dates.includes(picked) ? picked : dates[0]
 
   return (
@@ -70,13 +70,13 @@ export function College() {
   )
 }
 
-function VenueSection({ venue, now, date }: { venue: VenueView; now: LocalNow; date?: string }) {
+function VenueSection({ venue, now, date }: { venue: Venue; now: LocalNow; date?: string }) {
   const open = openStatus(venue.slots, now).kind === 'open'
   const term = isFullTerm(now.date)
   const slots = venue.slots
     .filter((s) => s.period === 'all' || s.period === (term ? 'term' : 'vacation'))
     .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
-  const menu = date ? (venue.menu?.days.filter((d) => d.date === date && d.items.length) ?? []) : []
+  const menu = date ? venue.menu.filter((d) => d.date === date && d.items.length) : []
   menu.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
   const meta = [venue.access.level !== 'unknown' && ACCESS_LABEL[venue.access.level], venue.payment.bank_card && 'Bank card'].filter(Boolean).join(' · ')
 

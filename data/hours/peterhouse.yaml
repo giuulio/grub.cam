@@ -1,7 +1,0 @@
-college: peterhouse
-slots:
-  - { venue: hall-servery, meal: breakfast, days: mon-fri, start: "08:00", end: "09:30" }
-  - { venue: hall-servery, meal: lunch, days: mon-fri, start: "11:45", end: "13:30", note: "11:45–12:00 takeaway only" }
-  - { venue: hall-servery, meal: brunch, days: sat, start: "10:30", end: "13:30" }
-  - { venue: hall-servery, meal: dinner, days: daily, start: "17:45", end: "18:45", note: "Sunday roast" }
-  # Whittle Building Bar: every evening, times not published

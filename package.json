@@ -5,11 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:data && tsc -b && vite build",
-    "build:data": "tsx scripts/build-data.ts",
+    "build": "tsc -b && vite build",
     "ingest": "tsx scripts/ingest/index.ts",
     "ingest:manual": "tsx scripts/ingest/manual.ts",
-    "seed": "tsx scripts/seed-supabase.ts",
     "test": "vitest run",
     "typecheck": "tsc -b && tsc -p tsconfig.scripts.json",
     "lint": "oxlint",
@@ -34,7 +32,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vitest": "^5.0.3",
-    "yaml": "^2.9.1"
+    "vitest": "^5.0.3"
   }
 }

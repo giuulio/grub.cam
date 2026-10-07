@@ -3,12 +3,9 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays, parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
-export const robinson: Source = {
-  college: 'robinson',
-  venue: 'garden-restaurant-dining-hall',
-  source_url: 'https://www.robinson.cam.ac.uk/college-life/garden-restaurant-menu',
+export const robinson: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     const seen = new Set<string>()

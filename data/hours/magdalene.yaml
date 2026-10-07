@@ -1,6 +1,0 @@
-college: magdalene
-slots:
-  - { venue: ramsay-hall, meal: lunch, days: mon-fri, start: "12:00", end: "13:30" }
-  - { venue: ramsay-hall, meal: brunch, days: "sat,sun", start: "11:00", end: "13:30" }
-  - { venue: ramsay-hall, meal: dinner, days: daily, start: "18:00", end: "19:15" }
-  # College Café (daytime) and College Bar (evenings): times not published

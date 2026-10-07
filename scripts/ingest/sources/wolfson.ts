@@ -3,12 +3,9 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
-export const wolfson: Source = {
-  college: 'wolfson',
-  venue: 'buttery-dining-hall',
-  source_url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus',
+export const wolfson: Adapter = {
   async fetch(ctx) {
     const html = await fetchText('https://www.wolfson.cam.ac.uk/food/cafeteria-menus')
     const root = parse(html)

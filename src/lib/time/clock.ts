@@ -1,5 +1,4 @@
-import type { Day } from '../data/types.ts'
-import { DAYS } from '../data/types.ts'
+import { DAYS, type Day } from '../types.ts'
 
 export const TZ = 'Europe/London'
 
@@ -32,11 +31,6 @@ export function hhmmToMinutes(hhmm: string): number {
   return h * 60 + m
 }
 
-export function minutesToHHMM(min: number): string {
-  const m = ((min % 1440) + 1440) % 1440
-  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
-}
-
 export function addDaysISO(iso: string, n: number): string {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(Date.UTC(y, m - 1, d + n))
@@ -47,10 +41,6 @@ export function dayOfISO(iso: string): Day {
   const [y, m, d] = iso.split('-').map(Number)
   const idx = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
   return DAYS[idx]
-}
-
-export function nextDay(day: Day): Day {
-  return DAYS[(DAYS.indexOf(day) + 1) % 7]
 }
 
 const DAY_LABEL: Record<Day, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }

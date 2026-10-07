@@ -2,17 +2,14 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 const EVENTS: [number, MenuDay['service']][] = [
   [1, 'lunch'],
   [2, 'dinner'],
 ]
 
-export const jesus: Source = {
-  college: 'jesus',
-  venue: 'caff',
-  source_url: 'https://apps.jesus.cam.ac.uk/foodmenuview/?event_id=1',
+export const jesus: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     for (const date of ctx.dates) {

@@ -1,11 +1,10 @@
-import type { AccessLevel, DietTag, Dish, Meal, MenuDay, VenueType, VenueView } from './data/types.ts'
+import type { AccessLevel, DietTag, Dish, Meal, MenuDay, Venue, VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 
 export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'snacks', 'bar']
 export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', brunch: 'Brunch', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Café', bar: 'Bar' }
 
-export const DIETS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free', 'kosher']
 export const DIET_LABEL: Record<DietTag, string> = {
   vegetarian: 'Vegetarian',
   vegan: 'Vegan',
@@ -16,31 +15,26 @@ export const DIET_LABEL: Record<DietTag, string> = {
   pescatarian: 'Pescatarian',
   dairy_free: 'Dairy-free',
 }
-export const DIET_SHORT: Record<DietTag, string> = { vegetarian: 'V', vegan: 'VG', plant_based: 'PB', halal: 'H', gluten_free: 'GF', kosher: 'K', pescatarian: 'P', dairy_free: 'DF' }
 
-export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Hall', cafe: 'Café', bar: 'Bar', other: 'Other' }
 export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
 
 export type Filters = {
   meal?: Meal
   date: string // ISO date being viewed
   diets: DietTag[]
-  types: VenueType[]
   nonMemberOk: boolean
   bankCard: boolean
-  liveMenu: boolean
   openNow: boolean
   q: string
 }
 
-export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], types: [], nonMemberOk: false, bankCard: false, liveMenu: false, openNow: false, q: '' }
+export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], nonMemberOk: false, bankCard: false, openNow: false, q: '' }
 
-export function menuDaysFor(v: VenueView, date: string, meal?: Meal): MenuDay[] {
-  if (!v.menu) return []
-  return v.menu.days.filter((d) => d.date === date && (!meal || d.service === meal))
+export function menuDaysFor(v: Venue, date: string, meal?: Meal): MenuDay[] {
+  return v.menu.filter((d) => d.date === date && (!meal || d.service === meal))
 }
 
-export function matchesDiet(v: VenueView, days: MenuDay[], diets: DietTag[]): boolean {
+export function matchesDiet(v: Venue, days: MenuDay[], diets: DietTag[]): boolean {
   if (!diets.length) return true
   return diets.every((tag) => {
     const venueLevel = v.dietary.tags.includes(tag) || (tag === 'vegetarian' && v.dietary.tags.includes('vegan'))
@@ -60,16 +54,14 @@ function serviceDate(s: OpenStatus): string | undefined {
   if (s.kind === 'closed') return s.next?.date
 }
 
-export type Ranked = { venue: VenueView; status: OpenStatus; days: MenuDay[]; matchedDishes: number }
+export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number }
 
-export function applyFilters(venues: VenueView[], f: Filters, now: LocalNow): Ranked[] {
+export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked[] {
   const q = f.q.trim().toLowerCase()
   const out: Ranked[] = []
   for (const v of venues) {
-    if (f.types.length && !f.types.includes(v.type)) continue
     if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
     if (f.bankCard && v.payment.bank_card !== true) continue
-    if (f.liveMenu && !v.menu) continue
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
     // Viewing today: menus follow the service the status points at, so after tonight's last service it's tomorrow's menu.

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { useData } from '../lib/data/useData.tsx'
+import { useData } from '../lib/data.tsx'
 import { ISSUES_URL, REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { GitHubIcon } from './Header.tsx'
@@ -11,7 +11,7 @@ const linkClass = 'text-white/50 transition-colors hover:text-white'
 export function Footer() {
   const data = useData()
   const updated =
-    data.status === 'ready' ? new Date(data.bundle.generated_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long', year: 'numeric' }) : undefined
+    data.status === 'ready' && data.updated ? new Date(data.updated).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long', year: 'numeric' }) : undefined
 
   return (
     <footer className="mt-24 border-t border-white/10 text-sm">

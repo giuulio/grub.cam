@@ -1,17 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import type { ServiceSlot } from '../data/types.ts'
+import type { Slot } from '../types.ts'
 import type { LocalNow } from './clock.ts'
 import { formatDays } from './clock.ts'
-import { defaultMealFor, openStatus, slotApplies } from './openNow.ts'
+import { openStatus, slotApplies } from './openNow.ts'
 
-const slot = (p: Partial<ServiceSlot>): ServiceSlot => ({
-  venue: 'x',
+const slot = (p: Partial<Slot>): Slot => ({
   meal: 'lunch',
   days: ['mon', 'tue', 'wed', 'thu', 'fri'],
   start: '12:00',
   end: '14:00',
   period: 'all',
-  prov: { source_kind: 'official', confidence: 'high' },
   ...p,
 })
 
@@ -86,16 +84,6 @@ describe('openStatus', () => {
 
   it('returns unknown with no slots', () => {
     expect(openStatus([], at('2026-10-07', '12:30')).kind).toBe('unknown')
-  })
-})
-
-describe('defaultMealFor', () => {
-  it('maps time of day to a meal', () => {
-    expect(defaultMealFor(at('2026-10-07', '08:00'))).toBe('breakfast')
-    expect(defaultMealFor(at('2026-10-07', '12:00'))).toBe('lunch')
-    expect(defaultMealFor(at('2026-10-10', '12:00'))).toBe('brunch')
-    expect(defaultMealFor(at('2026-10-07', '18:00'))).toBe('dinner')
-    expect(defaultMealFor(at('2026-10-07', '22:00'))).toBeUndefined()
   })
 })
 

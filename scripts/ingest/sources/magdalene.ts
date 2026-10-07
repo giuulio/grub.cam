@@ -3,7 +3,7 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { WEEKDAYS, weekMonday } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 type LdItem = { name: string; suitableForDiet?: string | string[]; offers?: { price?: string } }
 type LdSection = { name: string; hasMenuItem?: LdItem[]; hasMenuSection?: LdSection[] }
@@ -26,10 +26,7 @@ function serviceOf(name: string): MenuDay['service'] | undefined {
   return undefined
 }
 
-export const magdalene: Source = {
-  college: 'magdalene',
-  venue: 'ramsay-hall',
-  source_url: 'https://viewthe.menu/lyzv',
+export const magdalene: Adapter = {
   async fetch(ctx) {
     const index = parse(await fetchText('https://viewthe.menu/lyzv'))
     const monday = weekMonday(ctx.week)

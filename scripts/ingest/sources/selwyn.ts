@@ -3,12 +3,9 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, tagsFromName } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
-export const selwyn: Source = {
-  college: 'selwyn',
-  venue: 'hall-servery',
-  source_url: 'https://www.sel.cam.ac.uk/current-members/hall-menu',
+export const selwyn: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     for (const date of ctx.dates) {

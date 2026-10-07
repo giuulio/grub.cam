@@ -3,12 +3,9 @@ import type { Dish, MenuDay } from '../../schema.ts'
 import { WEEKDAYS, addDays, weekMonday } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, parsePrice } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
-export const darwin: Source = {
-  college: 'darwin',
-  venue: 'servery',
-  source_url: 'https://www.darwin.cam.ac.uk/dine/weekly-menu/',
+export const darwin: Adapter = {
   async fetch(ctx) {
     const html = await fetchText('https://www.darwin.cam.ac.uk/dine/weekly-menu/')
     const root = parse(html)

@@ -1,9 +1,0 @@
-college: st-catharines
-slots:
-  - { venue: hall-cafeteria, meal: breakfast, days: mon-fri, start: "08:00", end: "09:00", period: term }
-  - { venue: hall-cafeteria, meal: lunch, days: mon-fri, start: "12:00", end: "13:30", period: term }
-  - { venue: hall-cafeteria, meal: brunch, days: "sat,sun", start: "10:30", end: "13:30", period: term }
-  - { venue: hall-cafeteria, meal: dinner, days: "mon,tue,fri,sat", start: "18:00", end: "19:00", period: term }
-  - { venue: hall-cafeteria, meal: dinner, days: "wed,thu,sun", start: "18:00", end: "18:45", period: term, note: "formal nights" }
-  - { venue: coffee-bar, meal: snacks, days: mon-fri, start: "09:00", end: "16:00", period: term, note: "MCR page says opens 10:00" }
-  - { venue: bar, meal: bar, days: wed-sat, start: "19:00", end: "23:00", period: term, note: "MCR page says Mon–Sat 17:00–23:00, Sun 17:00–22:00" }

@@ -1,34 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import type { College, VenueView } from './data/types.ts'
 import { applyFilters, DEFAULT_FILTERS, matchesDiet } from './filters.ts'
+import type { Venue } from './types.ts'
 
-const college: College = { slug: 'c', name: 'C', reviewed: '2026-10-07', links: [], venues: [], notes: [] }
-const prov = { source_kind: 'official' as const, confidence: 'high' as const }
-const base: VenueView = {
+const base: Venue = {
   id: 'c/hall',
   slug: 'hall',
   name: 'Hall',
   type: 'hall',
-  college,
-  slots: [{ college: 'c', venue: 'hall', meal: 'lunch', days: ['wed'], start: '12:00', end: '14:00', period: 'all', prov }],
-  access: { level: 'public', prov },
-  payment: { bank_card: true, prov },
-  dietary: { tags: ['vegetarian'], prov },
-  menu: {
-    college: 'c',
-    venue: 'hall',
-    week: '2026-W41',
-    source_url: 'https://x',
-    fetched_at: '',
-    method: 'script',
-    days: [{ date: '2026-10-07', service: 'lunch', items: [{ name: 'Dhal', tags: ['vegan', 'vegetarian'] }, { name: 'Lamb', tags: ['halal'] }] }],
-  },
+  where: null,
+  serves: null,
+  college: { slug: 'c', name: 'C', short_name: null, official_dining_url: null },
+  slots: [{ meal: 'lunch', days: ['wed'], start: '12:00', end: '14:00', period: 'all' }],
+  access: { level: 'public' },
+  payment: { bank_card: true },
+  dietary: { tags: ['vegetarian'] },
+  menu: [{ date: '2026-10-07', service: 'lunch', items: [{ name: 'Dhal', tags: ['vegan', 'vegetarian'] }, { name: 'Lamb', tags: ['halal'] }] }],
 }
 const now = { date: '2026-10-07', day: 'wed' as const, minutes: 12 * 60 + 30 }
 
 describe('matchesDiet', () => {
   it('uses dish tags when a menu exists for the day', () => {
-    const days = base.menu!.days
+    const days = base.menu
     expect(matchesDiet(base, days, ['vegan'])).toBe(true)
     expect(matchesDiet(base, days, ['halal'])).toBe(true)
     expect(matchesDiet(base, days, ['kosher'])).toBe(false)
@@ -41,7 +33,7 @@ describe('matchesDiet', () => {
 
 describe('applyFilters', () => {
   it('ranks open venues first and counts matched dishes', () => {
-    const closed: VenueView = { ...base, id: 'c/cafe', slug: 'cafe', type: 'cafe', menu: undefined, slots: [{ ...base.slots[0], meal: 'snacks', start: '15:00', end: '17:00' }] }
+    const closed: Venue = { ...base, id: 'c/cafe', slug: 'cafe', type: 'cafe', menu: [], slots: [{ ...base.slots[0], meal: 'snacks', start: '15:00', end: '17:00' }] }
     const r = applyFilters([closed, base], { ...DEFAULT_FILTERS, date: '2026-10-07', meal: undefined }, now)
     expect(r.map((x) => x.venue.id)).toEqual(['c/hall', 'c/cafe'])
     expect(r[0].status.kind).toBe('open')
@@ -49,7 +41,7 @@ describe('applyFilters', () => {
   })
   it('filters by open now, bank card and search', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', openNow: true }, { ...now, minutes: 9 * 60 })).toHaveLength(0)
-    expect(applyFilters([{ ...base, payment: { prov } }], { ...DEFAULT_FILTERS, date: '2026-10-07', bankCard: true }, now)).toHaveLength(0)
+    expect(applyFilters([{ ...base, payment: {} }], { ...DEFAULT_FILTERS, date: '2026-10-07', bankCard: true }, now)).toHaveLength(0)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'dhal' }, now)).toHaveLength(1)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })
@@ -58,7 +50,7 @@ describe('applyFilters', () => {
 describe('applyFilters menu date', () => {
   it("shows the next service's menu once today's services are over", () => {
     const thu = { date: '2026-10-08', service: 'lunch' as const, items: [{ name: 'Katsu curry', tags: [] }] }
-    const v: VenueView = { ...base, slots: [{ ...base.slots[0], days: ['wed', 'thu'] }], menu: { ...base.menu!, days: [...base.menu!.days, thu] } }
+    const v: Venue = { ...base, slots: [{ ...base.slots[0], days: ['wed', 'thu'] }], menu: [...base.menu, thu] }
     const evening = { ...now, minutes: 22 * 60 }
     const [r] = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, evening)
     expect(r.days.map((d) => d.date)).toEqual(['2026-10-08'])

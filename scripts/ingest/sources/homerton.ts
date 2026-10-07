@@ -1,7 +1,7 @@
 import type { Dish, MenuDay } from '../../schema.ts'
 import { fetchJson } from '../lib/http.ts'
 import { cleanName, tagsFromName } from '../lib/tags.ts'
-import type { Source } from '../lib/source.ts'
+import type { Adapter } from '../lib/source.ts'
 
 type Item = { name: string; allergens: string[]; price?: string }
 type Week = { meta: { weekOffset: number; start: string; end: string }; days: { date: string; weekday: string; breakfast: Item[]; lunch: Item[]; dinner: Item[] }[] }
@@ -12,10 +12,7 @@ const toDish = (it: Item): Dish => {
   return { name, tags, price_gbp: Number.isFinite(price) ? price : undefined }
 }
 
-export const homerton: Source = {
-  college: 'homerton',
-  venue: 'dining-hall',
-  source_url: 'https://www.homerton.cam.ac.uk/catering',
+export const homerton: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     // offset 0 = rest of this week, 1..3 = following weeks; collect all that overlap the requested week

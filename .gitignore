@@ -12,7 +12,6 @@ dist
 .env
 .env.*
 !.env.example
-public/data.json
 dist-ssr
 *.local
 
@@ -29,3 +28,6 @@ dist-ssr
 
 # Supabase CLI link state
 supabase/.temp
+
+# Agent worktrees
+.claude/worktrees
