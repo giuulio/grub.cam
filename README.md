@@ -14,7 +14,7 @@ npm run build:data   # validate data → public/data.json
 npm run dev
 ```
 
-See [AGENTS.md](AGENTS.md) for the data model, ingest pipeline, weekly refresh procedure and deployment notes.
+Live at [grub.cam](https://grub.cam) (once deployed). See [AGENTS.md](AGENTS.md) for the data model, ingest pipeline, weekly refresh procedure and deployment notes.
 
 ## Data
 

@@ -54,7 +54,11 @@ export function About() {
       </ul>
       <h2 className="mt-6 text-lg font-semibold">Something wrong?</h2>
       <p>
-        Open an issue or pull request on the public repository — every fact lives in a reviewable data file. Ratings, reviews and "report an error" are coming next.
+        Open an issue or pull request on{' '}
+        <a href="https://github.com/giuulio/grub.cam" target="_blank" rel="noopener" className="text-grub-600 hover:underline">
+          github.com/giuulio/grub.cam
+        </a>{' '}
+        — every fact lives in a reviewable data file. Ratings, reviews and "report an error" are coming next.
       </p>
       {ready && <p className="text-xs text-stone-500">Data source: {data.source}. Generated {new Date(data.bundle.generated_at).toLocaleString('en-GB', { timeZone: 'Europe/London' })}.</p>}
     </div>
