@@ -1,0 +1,188 @@
+college: st-edmunds
+venue: dining-hall
+source: https://my.st-edmunds.cam.ac.uk/category/menus/
+fetched: 2026-10-07T21:00:00Z
+note: Week commencing 5 Oct 2026 = cycle Week 2 (lunch "version 1", supper "version mexico"). Transcribed from the College's PDFs; calories omitted, no prices published. Dinner this week: Mon 18:30–19:30, Tue and Fri 18:00–18:45.
+---
+2026-10-05 lunch
+## Soup
+Tomato soup, served with freshly baked bread
+## Mains
+Street food: Napoletana flatbread pizza, rocket salad, balsamic glaze
+Beef ragu, pappardelle
+Mushroom, basil pesto gnocchi (V)
+## Sides
+Fresh focaccia
+Gremolata carrots
+Parmesan breadcrumbed courgettes
+Artichoke crudo
+## Dessert
+Chocolate pot, Chantilly cream, shaved chocolate
+
+2026-10-05 dinner | Dinner 18:30–19:30 this Monday
+## Soup
+Courgette soup, served with freshly baked bread
+## Mains
+Chicken methi
+Paneer tikka masala (V)
+Chickpea and cauliflower curry (V)
+## Sides
+Rice
+Naan
+Bombay potatoes
+Pickles
+Bhaji
+Pakora
+Samosa
+## Dessert
+Mango pannacotta
+
+2026-10-06 lunch
+## Soup
+Coconut squash soup, served with freshly baked bread
+## Mains
+Street food: Thai larb, spicy pork mince and rice with lettuce leaves
+Satay tofu (V)
+Vegetable Thai green curry (VG)
+## Sides
+Jasmine rice
+Spring rolls
+Thai cucumber salad
+Thai mango salad
+## Dessert
+Rice pudding, mango, mint and basil compote
+
+2026-10-06 dinner | Dinner 18:00–18:45 this Tuesday
+## Soup
+Soup of the day, served with freshly baked bread
+## Mains
+Steak and kidney pie
+Vegetarian haggis shepherd's pie (V)
+## Sides
+Sweet potato fries
+Colcannon mash
+Garlic bread
+Green beans, rosemary salt
+Cabbage, chive and onion
+## Dessert
+Orange and chocolate pot de crème
+
+2026-10-07 lunch
+## Soup
+Soup of the day, served with freshly baked bread
+## Mains
+Street food: Nam jim jaew tofu fried rice (V)
+Carvery roast picanha rump, Yorkshire pudding, horseradish
+Beetroot and goats cheese filo parcel, walnut pesto (V)
+## Sides
+Roast potatoes
+Garlic and parsley new potatoes
+Cauliflower, capers and almonds
+Braised red cabbage
+## Dessert
+Maple and pumpkin spice trifle
+
+2026-10-07 dinner
+## Soup
+Sopa de tortilla, served with freshly baked bread
+## Mains
+Pulled birria brisket, slow-cooked in a rich adobo chilli and tomato braise
+Bean chilli (V)
+## Sides
+Tacos
+Green rice
+Black bean mole
+Pico de gallo
+Salsa
+Guacamole
+Sour cream
+## Dessert
+Tres leches cake
+
+2026-10-08 lunch
+## Soup
+Nilagang baboy, served with freshly baked bread
+## Mains
+Street food: Pecan dukkah cauliflower wings, hot honey, pommes frites, rainbow slaw (V)
+Pork belly and pineapple adobo, mango atchara
+Tofu sisig, crispy tofu with spicy, tangy Filipino-style seasoning (V)
+## Sides
+Sinangag garlic fried rice
+Adobo mushrooms
+Sweetcorn salsa
+Green beans with soy and peanut
+## Dessert
+Crème caramel
+
+2026-10-08 dinner
+## Soup
+Spicy red pepper soup, served with freshly baked bread
+## Mains
+Southern fried chicken burger
+Beetroot burger, smashed avocado, fried beetroot rösti in a bun (V)
+## Sides
+Paprika fries
+Mac and cheese
+Corn on the cob
+Fennel cabbage slaw
+## Dessert
+Biscoff waffles
+
+2026-10-09 lunch
+## Soup
+Borscht, served with freshly baked bread
+## Mains
+Street food: Seafood tapas board, prawns, squid, olives, garlic aioli, chimichurri butterbeans, lime wedge
+Hand battered fish, tartare, lemon
+Sweetcorn fritters, sweet chilli jam (V)
+## Sides
+Triple cooked chips
+Peas
+Minted mushy peas
+Chimichurri butterbeans
+## Dessert
+Blackberry fool
+
+2026-10-09 dinner | Dinner 18:00–18:45 this Friday
+## Soup
+Soup of the day, served with freshly baked bread
+## Mains
+Beef chilli, slow cooked with cumin, paprika and chilli
+Bean chilli, spiced mixed beans in a rich tomato sauce (V)
+## Sides
+Tacos
+Nachos
+Guacamole
+Sour cream
+Salsa
+Jalapeño
+Sweetcorn
+## Dessert
+Cinnamon churros
+
+2026-10-10 brunch | Brunch 11:00–12:30
+Sausage
+Bacon
+Vegan sausage (VG)
+Hash brown
+Grilled tomatoes
+Mushrooms
+Eggs
+Beans
+Toast
+Fruit salad
+Waffles & chocolate sauce
+
+2026-10-11 lunch | Sunday roast
+## Soup
+Thai yellow corn soup, served with freshly baked bread
+## Mains
+Roast pork, apple sauce, pork crunch
+Vegan sausage plait (VG)
+## Sides
+Roast potatoes
+Steamed new potatoes
+Steamed cabbage
+Roasted carrots
+## Dessert
+Sticky toffee pudding, toffee sauce

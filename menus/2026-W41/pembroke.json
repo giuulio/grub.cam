@@ -1,0 +1,665 @@
+{
+  "college": "pembroke",
+  "venue": "servery-trough",
+  "week": "2026-W41",
+  "source_url": "https://www.pem.cam.ac.uk/college/catering/information-students/servery-menu",
+  "fetched_at": "2026-10-07T21:10:00Z",
+  "method": "llm",
+  "note": "3-week cycle, Week 1 PDF (w/c 5 Oct 2026). Rows: main / alternative / allergen-friendly dish; pudding and sides listed once per day and shown for both lunch and dinner. No prices or diet labels published.",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Potato pancakes with guacamole, salsa and refried beans",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Katsu pork",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable tagine (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Peach crumble",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted root veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Grilled peppers",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Dill new potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Coconut brown rice",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Mozzarella and sundried tomato stuffed mushroom",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Lemon and garlic chicken legs",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Falafel with warm quinoa salad and coconut yoghurt (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Peach crumble",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted root veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Grilled peppers",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Dill new potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Coconut brown rice",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Beef bolognese with penne pasta",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Blue cheese and courgette frittata",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bean chilli with nachos (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Apple cake with cinnamon sauce",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted squash",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Savoy cabbage",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Basmati rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mash potato",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Broccoli, leek, pea and goats cheese crumble",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Onion and cheddar quiche",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Wild rice and corn sauce stuffed tomato (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Apple cake with cinnamon sauce",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted squash",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Savoy cabbage",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Basmati rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mash potato",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Crispy chicken burger with slaw",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tempeh goujon with charred broccoli, steak and hoisin sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sweet potato, spinach and butter bean stew (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Orange polenta cake with cardamom cream",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Peas and carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted courgette",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Steamed rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Crushed new potatoes",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Creamy fish chowder",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Flatbread with grilled halloumi and Mediterranean vegetables",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Stir-fry with rice noodles (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Orange polenta cake with cardamom cream",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Peas and carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted courgette",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Steamed rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Crushed new potatoes",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Brisket bagel with caramelised onions",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mac and cheese",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Battered cauliflower with sweet chilli sauce (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Banana toffee cake",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted parsnip",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sautéed pak choi",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Parmentier potato",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Peri-peri halloumi fries with crunchy salad",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken quesadilla",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable fritters with salsa (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Banana toffee cake",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted parsnip",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sautéed pak choi",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Parmentier potato",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Lentil curry",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Baked gnocchi with mushroom sauce and cheddar",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "GF battered fish (allergen friendly)",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Vegan carrot cake with orange sauce",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mushy peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Turmeric roasted cauliflower",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Vegetable panache",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Coriander rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "New potatoes",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Teriyaki tofu, spring onion and nori rice bowl",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Spinach and feta pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Honey glazed chicken wings (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegan carrot cake with orange sauce",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mushy peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Turmeric roasted cauliflower",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Vegetable panache",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Coriander rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "New potatoes",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 10:00–13:15; menu not itemised"
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Chicken with bacon and tarragon sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushroom stroganoff",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Lentil loaf with tomato sauce (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Berries and plum puff pie",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green beans",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Steamed broccoli",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Crispy potatoes",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 10:00–13:15; menu not itemised"
+    },
+    {
+      "date": "2026-10-11",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Celeriac steak with chimichurri",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tomato and mozzarella pizza",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "BBQ ribs (allergen friendly)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Double chocolate brownie",
+          "tags": [],
+          "course": "dessert"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Corn on the cob",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Glazed carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roast potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+college: churchill
+venue: dining-hall
+source: https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/
+fetched: 2026-10-07T20:40:00Z
+note: Week commencing 5 Oct 2026. Thu–Sun not yet published by the College as of 7 Oct. No prices published. Daily themed special also available.
+---
+2026-10-05 lunch | Today's special: Churchill Trattoria
+## Soup
+Carrot & Coconut Soup (VG)
+## Mains
+Chana Masala with Spinach (VG)
+Vegetable Enchiladas (V)
+Sweet Potato & Black Bean Chilli (VG)
+Korean Gochujang Chicken with Spring Onion Rice (H)
+Wild Halibut in Creamy Dill Sauce
+## Sides
+Selection of Vegetables
+
+2026-10-05 dinner
+## Mains
+Thai Green Vegetable Curry (VG)
+Soya Mince Chilli (VG)
+Pearl Barley Stuffed Aubergine (VG)
+Leek & Mushroom Pie (V)
+Red Wine, Beef & Bacon Casserole
+Beef Chilli
+Spicy Pork Ribs
+Chicken Leg (H)
+## Sides
+Selection of Vegetables
+
+2026-10-06 lunch | Today's special: Churchill Crêperie
+## Soup
+Tomato Soup (VG)
+## Mains
+Red Lentil Dhal (VG)
+Tomato Pasta with Cheese (V)
+Moroccan Tagine (VG)
+Chicken Leg with Chasseur Sauce (H)
+Asian-style Braised Pork
+Sea Bass with Creamy Dill Sauce
+## Sides
+Selection of Vegetables
+
+2026-10-06 dinner
+## Mains
+Chana Masala (VG)
+Leek & Mushroom Gnocchi (V)
+Soya Mince & Beans Wrap (VG)
+Thai Green Vegan Curry (VG)
+Asian-style Pork
+Chicken Goulash (H)
+## Sides
+Selection of Vegetables
+
+2026-10-07 lunch | Today's special: Churchill Waffles
+## Soup
+Pea Soup (VG)
+## Mains
+Sweet Potato & Black Bean Chilli (VG)
+Moroccan Style Vegetable (VG)
+Spinach & Ricotta Cannelloni (V)
+Tuna Steak with a Courgette Cream
+Roast Pork
+Butter Chicken (H)
+## Sides
+Selection of Vegetables
+
+2026-10-07 dinner | Today's special: Churchill Burrito
+## Mains
+Sweet Potato & Black Bean Chilli (VG)
+Chana Masala (VG)
+Sea Bass
+Chicken Goulash (H)
+## Sides
+Selection of Vegetables

@@ -1,0 +1,227 @@
+college: trinity
+venue: hall-servery
+source: https://www.trin.cam.ac.uk/download/hall-menu-this-week/
+fetched: 2026-10-07T21:20:00Z
+note: Servery menu PDF, week ending 11 Oct 2026 (Wk41, cycle week 2). No prices published. (wf/df) = wheat- and dairy-free variant. Some evenings are marked with College dinners in Hall; servery items listed as printed.
+---
+2026-10-05 lunch
+## Soup
+Creamy sweet potato soup (V)(Vegan)
+## Mains
+Chicken, ham & leek pie
+Cheese & onion pie (V)
+Cauliflower & spinach balti pie (Vegan)
+Steak pie | wf/df
+Daily special: Pahadi style chainsu (Vegan)
+## Sides
+Individual potato gratin
+Peas
+Crushed carrot
+## Dessert
+Sticky toffee cheesecake
+
+2026-10-05 dinner
+## Soup
+Soup of the day (V)
+## Mains
+Battered prawns, kung pao sauce
+Vegetable nuggets, kung pao sauce (V)(Vegan)
+Bubble crumb fish bites | wf/df
+Daily special: Mixed vegetable & chickpea tagine with pitta (Vegan)
+## Sides
+Chinese style honey glazed carrots topped with toasted sesame seeds
+Vegetable noodles
+Broccoli
+## Dessert
+Milk chocolate mocha cake
+
+2026-10-06 lunch
+## Soup
+Soup of the day (V)
+## Mains
+Pan-fried butterfly chicken breast with creamy smoked paprika & mushroom sauce
+Chickpea & spinach Spanish vegetable stew (V)(Vegan)
+Pan-fried chicken | wf/df
+Daily special: Durum wheat pasta with tomato & roast butternut squash sauce (Vegan)
+## Sides
+Whole wheat fusilli pasta
+Pan-fried courgettes
+Green beans
+## Dessert
+Seasonal fruit brioche bread & butter pudding with custard
+
+2026-10-06 dinner | PDF also marks "No dinner – Fellowship Admission Dinner" in Hall; servery items as printed
+## Soup
+Roasted pumpkin soup (V)(Vegan)
+## Mains
+Pepperoni pizza
+Four cheese pizza (V)
+Pepper no-ni pizza (Vegan)
+Pepperoni pizza | wf/df
+Daily special: Jackfruit pizza (Vegan)
+## Sides
+Ziggy fries
+Breaded mushrooms
+Roasted red peppers & herb dressing
+## Dessert
+Chocolate fudge cake
+
+2026-10-07 lunch
+## Soup
+Roasted pumpkin soup (V)(Vegan)
+## Mains
+Sea bream with lemon & caper sauce
+Mixed bean & lentil stuffed red pepper with halloumi & Mediterranean sauce (V)
+Mixed bean stuffed red pepper with vegan cheese & Mediterranean sauce (Vegan)
+Pan-fried sea bream | wf/df
+Daily special: Jacket potato with lentil chilli (Vegan)
+## Sides
+Pan-fried new potatoes with spring onions
+Pan-fried garlic baby corn
+Herb roasted mixed peppers
+## Dessert
+Chunky chocolate chip shortbread
+
+2026-10-07 dinner
+## Soup
+Soup of the day (V)
+## Mains
+Breaded chicken escalope, honey chilli soy sauce
+Southern fried Quorn escalope, honey chilli soy sauce (V)
+Buttermilk Quorn bread steak (Vegan)
+Chicken butterfly | wf/df
+Daily special: Lentil, vegan mince & sweet potato cottage pie (Vegan)
+## Sides
+Fried vegetable rice
+Miso fried mushrooms
+Sesame broccoli
+## Dessert
+Salted caramel millefeuille
+
+2026-10-08 lunch
+## Soup
+Soup of the day (V)
+## Mains
+Kale & sausage tortelloni, fresh herb & shallot tomato sauce
+Courgette, stracciatella & lemon tortellini, fresh herb & shallot tomato sauce (V)
+Leek & sweet potato tortellini (Vegan)
+Pork & beef ragu with GF pasta | wf/df
+Daily special: Rice with stir fry vegetables, chickpeas & edamame beans (Vegan)
+## Sides
+Tomato focaccia
+Peas
+Chunky roast red onion
+## Dessert
+Black Forest slice
+
+2026-10-08 dinner | BA Freshers Formal Hall in Hall this evening; servery items as printed
+## Soup
+Roasted tomato & herb soup (V)(Vegan)
+## Mains
+Rib eye beef burger, spicy Mexican cheese
+Beyond Burger, spicy Mexican cheese (V)
+Beyond Burger, vegan smoked Applewood cheese (Vegan)
+Rib eye beef burger, dairy free cheese | wf/df
+Daily special: Lentil bolognaise with wholewheat pasta (Vegan)
+## Sides
+Sourdough bun, guacamole, mixed leaf salad, sliced tomato & red onion
+Sweet potato fries
+Pan-fried mini sweetcorn cobs
+Onion rings
+## Dessert
+Tiramisu
+
+2026-10-09 lunch
+## Soup
+Roasted tomato & herb soup (V)(Vegan)
+## Mains
+Battered haddock
+Battered vegetable sausage (V)
+Battered vegan sausage (Vegan)
+Grilled cod | wf/df
+Daily special: Coconut & mung bean curry, vegetable rice (Vegan)
+## Sides
+Chips
+Mushy peas
+Homemade tartare sauce
+Curry sauce
+## Dessert
+Caramel Portuguese egg custard tart
+
+2026-10-09 dinner
+## Soup
+Soup of the day (V)
+## Mains
+Spanish style pork ribeye & herb dressing, tomato chilli sauce
+Pepper, halloumi & chicken tikka pieces kebab, olive oil & herb dressing (V)
+Pepper, vegan cheese & chicken tikka pieces kebab (Vegan)
+Souvlaki pork kebab | wf/df
+Daily special: Kung pao cauliflower with rice (Vegan)
+## Sides
+Spiced vegetable giant couscous
+Pitta bread
+Tzatziki
+Roasted oregano peppers & onions
+## Dessert
+Matcha brownie
+
+2026-10-10 lunch
+## Soup
+Soup of the day (V)
+## Mains
+Hot & spicy chicken breast
+Quorn breaded goujons (V)
+Hot & spicy chicken legs | wf/df
+Daily special: Durum wheat pasta with Napolina sauce (Vegan)
+## Sides
+Sweet potato wedges
+Sautéed sliced peppers & onions
+Sweetcorn
+Tomato salsa
+## Dessert
+White chocolate & passion fruit cheesecake
+
+2026-10-10 dinner | PDF also marks "No dinner – Matriculation Dinner" in Hall; servery items as printed
+## Soup
+Spiced lentil & butternut squash soup (V)
+## Mains
+Beef mapo tofu
+Vegetarian tofu mapo (V)(Vegan)
+Mapo tofu | wf/df
+Daily special: Vegan vegetable katsu curry (Vegan)
+## Sides
+Steamed rice
+Chilli & garlic green beans
+Prawn crackers
+## Dessert
+Cookie topped cheesecake pie
+
+2026-10-11 brunch
+## Soup
+Vegetable soup (V)
+## Mains
+Pork fricassee
+Spinach & mushroom fricassee (V)
+Pork fricassee | wf/df
+Daily special: Vegan vegetable fricassee (Vegan)
+## Sides
+Braised rice
+Garlic bread
+## Dessert
+Apple pie with cream
+
+2026-10-11 dinner
+## Soup
+Cauliflower & potato soup (V)(Vegan)
+## Mains
+Roast pork, onion gravy
+Keema pie & onion gravy (V)(Vegan)
+Roast pork | wf/df
+Daily special: Sichuan style cauliflower steak (Vegan)
+## Sides
+Roast potatoes
+Yorkshire puddings
+Cauliflower & broccoli cheese
+Baton carrots
+## Dessert
+Treacle tart & spiced custard

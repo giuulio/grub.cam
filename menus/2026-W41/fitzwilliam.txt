@@ -1,0 +1,68 @@
+college: fitzwilliam
+venue: buttery
+source: https://www.fitz.cam.ac.uk/cafe-bar-and-buttery
+fetched: 2026-10-07T21:05:00Z
+note: Buttery Menu PDF, week commencing 5 Oct 2026. Mains only; no prices or sides published. "Menus are subject to change."
+---
+2026-10-05 lunch
+Halloumi & roasted vegetable wrap (V)
+Chicken & leek pie
+Mushroom & lentil thyme pie (Vegan)
+
+2026-10-05 dinner
+Beef bourguignon
+Tandoori chicken
+Crispy tofu with caramel chilli sauce (Vegan)
+
+2026-10-06 lunch
+Roast pork with apple sauce
+Root vegetable & lentil shepherd's pie (Vegan)
+Cheese & onion pasty (V)
+
+2026-10-06 dinner
+Chicken katsu curry
+Vegetable frittata (V)
+
+2026-10-07 lunch
+Jamaican chicken brown stew
+Mushroom bourguignon (Vegan)
+Seafood medley
+
+2026-10-07 dinner
+Sausage, mash & onion gravy
+Moroccan vegetable & chickpea tagine (Vegan)
+Chicken with mushroom & tarragon sauce
+
+2026-10-08 lunch
+Cottage pie
+Butternut squash & sage gnocchi (Vegan)
+Chicken sausage pasta bake
+
+2026-10-08 dinner
+Lamb keema pilau
+Vietnamese caramel chicken
+Tuscan butterbean & tomato stew (Vegan)
+
+2026-10-09 lunch
+Friday fish & chips | plain fish available cooked to order
+Pease pudding fritter (Vegan)
+Pork rib eye steaks
+
+2026-10-09 dinner
+Beef chilli & cheese nachos
+Three bean & sweet potato chilli (Vegan)
+Crispy chicken burger
+
+2026-10-10 brunch | Brunch 11:30–13:30; menu not itemised
+Brunch
+
+2026-10-10 dinner
+Chicken tikka masala
+Vegetable dhansak (Vegan)
+Lamb rogan josh
+
+2026-10-11 brunch | Brunch 11:30–13:30; menu not itemised
+Brunch
+
+2026-10-11 dinner
+Traditional British carvery: two roast meats, a vegetarian or vegan option, steamed & roasted vegetables, Yorkshire puddings & roast potatoes

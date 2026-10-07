@@ -1,0 +1,137 @@
+college: lucy-cavendish
+venue: warburton-hall-servery
+source: https://www.canva.com/design/DAFvirNLKtg/view
+fetched: 2026-10-07T21:30:00Z
+note: "Lucy Cavendish Catering: 5th October – 11th October" (Canva design, embedded on the College dining page). Transcribed from the rendered grid; no prices published. Thu and Fri evenings are Formal Hall (not cafeteria). Wed lunch is a BBQ event in the garden.
+---
+2026-10-05 lunch
+## Soup
+Cream of celery soup
+## Mains
+Smokey bean & crispy kale pancakes (V)
+Tilapia baked with garlic & parsley (GF)
+Breaded pork escalope with Asian slaw
+## Sides
+Sweet potato fries
+Corn on the cob
+## Dessert
+Chef's choice dessert
+
+2026-10-05 dinner
+## Mains
+Mushroom laksa (V)
+Ginger and soy coley (GF)
+Chicken rendang (GF)
+## Sides
+Rice
+Green beans
+## Dessert
+Raspberry and lime posset
+
+2026-10-06 lunch
+## Soup
+Butternut squash soup
+## Mains
+Vegan nut roast with onion and cranberry gravy (Vegan)
+Smokey paprika fish (GF)
+Braised beef in red wine (GF)
+## Sides
+Mash potatoes
+Cabbage
+## Dessert
+Apple & cinnamon cake
+
+2026-10-06 dinner | National Taco Day
+## Mains
+Taco shells with filling options
+BBQ tempeh with black beans (VN)
+Tempura fish goujons with salsa
+Mexican chilli beef
+## Sides
+Salad
+Spring onions
+## Dessert
+Cinnamon taco filled with jam compote and cream
+
+2026-10-07 lunch | BBQ lunch in the garden
+## Soup
+Spiced cauliflower soup
+## Mains
+BBQ event
+## Dessert
+Cherry Bakewell
+
+2026-10-07 dinner
+## Mains
+Gnocchi & spinach bake (VN)
+Smoked haddock, leek & potato pie
+Slow cooked pork steak in cider and red onions (GF)
+## Sides
+New potatoes
+Mixed vegetables
+## Dessert
+Coconut & banana slice
+
+2026-10-08 lunch
+## Soup
+Coconut & red pepper soup
+## Mains
+Italian aubergine traybake (VN)(GF)
+Harissa salmon (GF)
+Lamb moussaka
+## Sides
+Boulangère potatoes
+Carrots
+## Dessert
+Banoffee pie
+
+2026-10-09 lunch
+## Soup
+Mexican bean soup
+## Mains
+Vegetarian pizza (VN)
+Fried fish of the day
+## Sides
+Chips
+Peas
+## Dessert
+Pear & chocolate pudding
+
+2026-10-10 brunch
+Eggs
+Bacon
+Sausage
+Veggie sausage (V)
+Hash brown
+Baked beans
+Tomatoes
+Mushrooms
+Yogurt & granola
+Fresh fruit salad
+Selection of pastries
+
+2026-10-10 dinner | Street food 16:30–17:30; position in the published grid suggests Saturday, verify on the day
+## Mains
+Lentil veggie burger in a brioche-style bun (V)
+Beef smash burgers in a brioche-style bun
+## Sides
+Sriracha tater tots
+Crispy onions
+Gherkins
+Shredded lettuce
+Sliced tomato
+## Dessert
+Waffles with toppings
+
+2026-10-11 lunch | Sunday roast 12:30–14:00
+## Mains
+No toad in the hole (VN)
+Fish of the day
+Roast beef or chicken (GF)
+## Sides
+Roast potatoes
+Vegetables
+Yorkshire pudding
+Gravy
+## Dessert
+Chocolate pudding & chocolate custard

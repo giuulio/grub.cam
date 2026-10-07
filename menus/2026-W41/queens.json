@@ -1,0 +1,558 @@
+{
+  "college": "queens",
+  "venue": "cripps-dining-hall-cafeteria",
+  "week": "2026-W41",
+  "source_url": "https://www.queens.cam.ac.uk/life-at-queens/catering/dining-hall/weekly-menu/",
+  "fetched_at": "2026-10-07T20:50:00Z",
+  "method": "llm",
+  "note": "Week commencing 5 Oct 2026. \"Menu may be subject to change on the day.\" No prices published. Weekend brunch menus not itemised.",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the Day",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Lentil & Red Pepper Loaf with Onion Gravy",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Mushroom Bolognaise with Spaghetti",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Beef Bolognaise with Spaghetti",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Cheesy Ciabatta Garlic Bread",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green Beans & Peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chocolate Brownie with Chocolate Custard",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sweet & Sour Fried Veg & Tofu",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Wild Mushroom Stroganoff",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Paprikas",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mixed Veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the Day",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Grilled Flat Mushroom topped with Ratatouille & Vegan Applewood Cheese",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Creamy Spinach & Butterbean Pasta Bake",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Salmon Pasta Bake",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "New Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Broccoli & Green Beans",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Warm Cinnamon Buns",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Roasted Courgette & Pumpkin Seed Risotto with Rocket Pesto",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Spinach & Ricotta Cannelloni",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Beef Cannelloni",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Herby Diced Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Broccoli & Cauliflower",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the Day",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Spinach, Mushroom & Lentil Gluten-Free Lasagne",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Butternut & Pumpkin Seed Mac'n'Cheese",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Roast Chicken with Gravy & Stuffing Balls",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Roasted New Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cauliflower, Leek & Broccoli Mornay",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Warm Lemon Drizzle Cake with Citrus Custard",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Spiced Veg, Tofu & Guacamole Burrito",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet Potato Chilli Taco with Spicy Mexican Cheese, Guacamole & Sour Cream",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken & Black Bean Burrito",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet Potato Fries",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chipotle Grilled Corn",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the Day",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Butternut & Chickpea Stew with Rice",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Aubergine Parmigiana",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Bacon Loin Steak with Grilled Pineapple",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "New Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted Peppers, Courgettes & Red Onion",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cherry Bakewell Tart with Custard",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Stir Fried Veg & Tofu with Rice Noodles",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Veg Pukka Pie",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Beef Pukka Pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Herby Diced Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mixed Veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the Day",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Spicy Bean & Sweet Potato Fritter with Chimichurri",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Spinach & Feta Spanakopita",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Battered Fish",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Wet Fish",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Lemon & Tartare Sauce",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mushy Peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Peach Cobbler with Custard",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Veg Samosa with Lentil Curry & Rice",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Butternut & Chickpea Korma",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Korma",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Rice & Spiced Peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Garlic Naan or Popadom with Mango Chutney",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 11:00–13:30; menu not itemised by the College"
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "BBQ Fried Pepper & Onion Tacos with Guacamole",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Creamy Spinach & Mushroom Pasta Bake",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Lemon & Herb Grilled Chicken Burger with Coleslaw",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Roasted Med Veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "New Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 11:00–13:30; menu not itemised by the College"
+    },
+    {
+      "date": "2026-10-11",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Spinach & Mascarpone Risotto",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Jumbo Sausage Roll with Onion Gravy",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Herby Diced Potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mixed Veg",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Assorted Desserts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    }
+  ]
+}

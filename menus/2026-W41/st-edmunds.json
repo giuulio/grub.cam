@@ -1,0 +1,698 @@
+{
+  "college": "st-edmunds",
+  "venue": "dining-hall",
+  "week": "2026-W41",
+  "source_url": "https://my.st-edmunds.cam.ac.uk/category/menus/",
+  "fetched_at": "2026-10-07T21:00:00Z",
+  "method": "llm",
+  "note": "Week commencing 5 Oct 2026 = cycle Week 2 (lunch \"version 1\", supper \"version mexico\"). Transcribed from the College's PDFs; calories omitted, no prices published. Dinner this week: Mon 18:30–19:30, Tue and Fri 18:00–18:45.",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Tomato soup, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Street food: Napoletana flatbread pizza, rocket salad, balsamic glaze",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Beef ragu, pappardelle",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushroom, basil pesto gnocchi",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Fresh focaccia",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Gremolata carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Parmesan breadcrumbed courgettes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Artichoke crudo",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chocolate pot, Chantilly cream, shaved chocolate",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Courgette soup, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Chicken methi",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Paneer tikka masala",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chickpea and cauliflower curry",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Naan",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Bombay potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Pickles",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Bhaji",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Pakora",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Samosa",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mango pannacotta",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Dinner 18:30–19:30 this Monday"
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Coconut squash soup, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Street food: Thai larb, spicy pork mince and rice with lettuce leaves",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Satay tofu",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable Thai green curry",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Jasmine rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Spring rolls",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Thai cucumber salad",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Thai mango salad",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Rice pudding, mango, mint and basil compote",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Soup of the day, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Steak and kidney pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegetarian haggis shepherd's pie",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet potato fries",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Colcannon mash",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Garlic bread",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green beans, rosemary salt",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cabbage, chive and onion",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Orange and chocolate pot de crème",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Dinner 18:00–18:45 this Tuesday"
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Soup of the day, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Street food: Nam jim jaew tofu fried rice",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Carvery roast picanha rump, Yorkshire pudding, horseradish",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Beetroot and goats cheese filo parcel, walnut pesto",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Roast potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Garlic and parsley new potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cauliflower, capers and almonds",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Braised red cabbage",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Maple and pumpkin spice trifle",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sopa de tortilla, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Pulled birria brisket, slow-cooked in a rich adobo chilli and tomato braise",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bean chilli",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tacos",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Black bean mole",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Pico de gallo",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Salsa",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Guacamole",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sour cream",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Tres leches cake",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Nilagang baboy, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Street food: Pecan dukkah cauliflower wings, hot honey, pommes frites, rainbow slaw",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Pork belly and pineapple adobo, mango atchara",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tofu sisig, crispy tofu with spicy, tangy Filipino-style seasoning",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sinangag garlic fried rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Adobo mushrooms",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sweetcorn salsa",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green beans with soy and peanut",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Crème caramel",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Spicy red pepper soup, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Southern fried chicken burger",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Beetroot burger, smashed avocado, fried beetroot rösti in a bun",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Paprika fries",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mac and cheese",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Corn on the cob",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Fennel cabbage slaw",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Biscoff waffles",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Borscht, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Street food: Seafood tapas board, prawns, squid, olives, garlic aioli, chimichurri butterbeans, lime wedge",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Hand battered fish, tartare, lemon",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sweetcorn fritters, sweet chilli jam",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Triple cooked chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Minted mushy peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chimichurri butterbeans",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Blackberry fool",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Soup of the day, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Beef chilli, slow cooked with cumin, paprika and chilli",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bean chilli, spiced mixed beans in a rich tomato sauce",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tacos",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Nachos",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Guacamole",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sour cream",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Salsa",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Jalapeño",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sweetcorn",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cinnamon churros",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Dinner 18:00–18:45 this Friday"
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Sausage",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bacon",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegan sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Hash brown",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Grilled tomatoes",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushrooms",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Eggs",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Beans",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Toast",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Fruit salad",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Waffles & chocolate sauce",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 11:00–12:30"
+    },
+    {
+      "date": "2026-10-11",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Thai yellow corn soup, served with freshly baked bread",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Roast pork, apple sauce, pork crunch",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegan sausage plait",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Roast potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Steamed new potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Steamed cabbage",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roasted carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sticky toffee pudding, toffee sauce",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Sunday roast"
+    }
+  ]
+}

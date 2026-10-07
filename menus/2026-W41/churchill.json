@@ -1,0 +1,344 @@
+{
+  "college": "churchill",
+  "venue": "dining-hall",
+  "week": "2026-W41",
+  "source_url": "https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/",
+  "fetched_at": "2026-10-07T20:40:00Z",
+  "method": "llm",
+  "note": "Week commencing 5 Oct 2026. Thu–Sun not yet published by the College as of 7 Oct. No prices published. Daily themed special also available.",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Carrot & Coconut Soup",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "soup"
+        },
+        {
+          "name": "Chana Masala with Spinach",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable Enchiladas",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet Potato & Black Bean Chilli",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Korean Gochujang Chicken with Spring Onion Rice",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Wild Halibut in Creamy Dill Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ],
+      "note": "Today's special: Churchill Trattoria"
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Thai Green Vegetable Curry",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Soya Mince Chilli",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Pearl Barley Stuffed Aubergine",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Leek & Mushroom Pie",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Red Wine, Beef & Bacon Casserole",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Beef Chilli",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Spicy Pork Ribs",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Leg",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Tomato Soup",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "soup"
+        },
+        {
+          "name": "Red Lentil Dhal",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tomato Pasta with Cheese",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Moroccan Tagine",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Leg with Chasseur Sauce",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Asian-style Braised Pork",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sea Bass with Creamy Dill Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ],
+      "note": "Today's special: Churchill Crêperie"
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Chana Masala",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Leek & Mushroom Gnocchi",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Soya Mince & Beans Wrap",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Thai Green Vegan Curry",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Asian-style Pork",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Goulash",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Pea Soup",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "soup"
+        },
+        {
+          "name": "Sweet Potato & Black Bean Chilli",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Moroccan Style Vegetable",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Spinach & Ricotta Cannelloni",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tuna Steak with a Courgette Cream",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Roast Pork",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Butter Chicken",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ],
+      "note": "Today's special: Churchill Waffles"
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sweet Potato & Black Bean Chilli",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chana Masala",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sea Bass",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Goulash",
+          "tags": [
+            "halal"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Selection of Vegetables",
+          "tags": [],
+          "course": "side"
+        }
+      ],
+      "note": "Today's special: Churchill Burrito"
+    }
+  ]
+}

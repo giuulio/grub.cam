@@ -1,0 +1,1359 @@
+{
+  "college": "wolfson",
+  "venue": "buttery-dining-hall",
+  "week": "2026-W41",
+  "source_url": "https://www.wolfson.cam.ac.uk/food/cafeteria-menus",
+  "fetched_at": "2026-10-07T20:39:14.950Z",
+  "method": "script",
+  "note": "Student price shown first; \"others\" price second. Wolfson labels allergens but not diets, so only explicitly plant-based/vegan dish names are tagged.",
+  "days": [
+    {
+      "date": "2026-10-07",
+      "service": "breakfast",
+      "items": [
+        {
+          "name": "Grilled Sausage",
+          "tags": [],
+          "price_gbp": 0.7,
+          "price_text": "£0.70 student / £0.95 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Bacon",
+          "tags": [],
+          "price_gbp": 0.5,
+          "price_text": "£0.50 student / £0.65 others",
+          "course": "other"
+        },
+        {
+          "name": "Plant Based Lincolnshire Sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 0.9,
+          "price_text": "£0.90 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Fried Free-range Egg",
+          "tags": [],
+          "price_gbp": 0.51,
+          "price_text": "£0.51 student / £0.68 others",
+          "course": "other"
+        },
+        {
+          "name": "Boiled Egg",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Tomato Half",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Sautéed Mushrooms",
+          "tags": [],
+          "price_gbp": 1.25,
+          "price_text": "£1.25 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Hash Browns (2)",
+          "tags": [],
+          "price_gbp": 0.45,
+          "price_text": "£0.45 student / £0.60 others",
+          "course": "other"
+        },
+        {
+          "name": "Baked Beans (Breakfast/Brunch)",
+          "tags": [],
+          "price_gbp": 0.6,
+          "price_text": "£0.60 student / £0.80 others",
+          "course": "other"
+        },
+        {
+          "name": "Porridge & Toppings",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Orange Segments",
+          "tags": [],
+          "price_gbp": 0.81,
+          "price_text": "£0.81 student / £1.08 others",
+          "course": "other"
+        },
+        {
+          "name": "Grapefruit Segments",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Watermelon (x2 slices)",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Overnight Oats",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Chocolate Croissant",
+          "tags": [],
+          "price_gbp": 1.75,
+          "price_text": "£1.75 student / £2.30 others",
+          "course": "other"
+        },
+        {
+          "name": "Vegan Croissant",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.35 others",
+          "course": "other"
+        },
+        {
+          "name": "Blueberry Muffin",
+          "tags": [],
+          "price_gbp": 1.4,
+          "price_text": "£1.40 student / £1.85 others",
+          "course": "other"
+        },
+        {
+          "name": "Breakfast Cereal",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Granola",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Natural Yogurt",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Bread (per slice; refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.2,
+          "price_text": "£0.20 student / £0.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Butter, Flora, Jam, Honey (refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.3,
+          "price_text": "£0.30 student / £0.40 others",
+          "course": "other"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Crispy Shredded Cantonese Chilli Beef",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Homemade Pizza Traybake",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Crispy Chilli Tofu & Vegetable Stir Fry",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Fried Rice",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Sesame Green Beans",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Miso Roasted Squash",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Butterscotch Tart",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Fish of the Day, Chorizo & Borlotti Bean Ragu",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Homemade Pizza Traybake",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Baked Polenta, Roasted Tomatoes & Basil Oil",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Sautéed Potatoes",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Kale",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Carrots",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Warm Plum & Berry Cobbler, Custard",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        },
+        {
+          "name": "Mango & Passionfruit Fool",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "breakfast",
+      "items": [
+        {
+          "name": "Grilled Sausage",
+          "tags": [],
+          "price_gbp": 0.7,
+          "price_text": "£0.70 student / £0.95 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Bacon",
+          "tags": [],
+          "price_gbp": 0.5,
+          "price_text": "£0.50 student / £0.65 others",
+          "course": "other"
+        },
+        {
+          "name": "Plant Based Lincolnshire Sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 0.9,
+          "price_text": "£0.90 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Fried Free-range Egg",
+          "tags": [],
+          "price_gbp": 0.51,
+          "price_text": "£0.51 student / £0.68 others",
+          "course": "other"
+        },
+        {
+          "name": "Boiled Egg",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Tomato Half",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Sautéed Mushrooms",
+          "tags": [],
+          "price_gbp": 1.25,
+          "price_text": "£1.25 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Hash Browns (2)",
+          "tags": [],
+          "price_gbp": 0.45,
+          "price_text": "£0.45 student / £0.60 others",
+          "course": "other"
+        },
+        {
+          "name": "Baked Beans (Breakfast/Brunch)",
+          "tags": [],
+          "price_gbp": 0.6,
+          "price_text": "£0.60 student / £0.80 others",
+          "course": "other"
+        },
+        {
+          "name": "Porridge & Toppings",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Orange Segments",
+          "tags": [],
+          "price_gbp": 0.81,
+          "price_text": "£0.81 student / £1.08 others",
+          "course": "other"
+        },
+        {
+          "name": "Grapefruit Segments",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Watermelon (x2 slices)",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Overnight Oats",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Chocolate Croissant",
+          "tags": [],
+          "price_gbp": 1.75,
+          "price_text": "£1.75 student / £2.30 others",
+          "course": "other"
+        },
+        {
+          "name": "Vegan Croissant",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.35 others",
+          "course": "other"
+        },
+        {
+          "name": "Blueberry Muffin",
+          "tags": [],
+          "price_gbp": 1.4,
+          "price_text": "£1.40 student / £1.85 others",
+          "course": "other"
+        },
+        {
+          "name": "Breakfast Cereal",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Granola",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Natural Yogurt",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Bread (per slice; refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.2,
+          "price_text": "£0.20 student / £0.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Butter, Flora, Jam, Honey (refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.3,
+          "price_text": "£0.30 student / £0.40 others",
+          "course": "other"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Chicken, Bacon & Leek Cobbler",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Halloumi & Roast Aubergine Tray Bake, Pesto",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Mushroom, Leek & Celeriac Cobbler",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Creamy Mashed Potatoes",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Garden Peas",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Balsamic Roasted Beetroot",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Apple Upside Down Cake",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Piri-Piri Chicken Thighs, Charred Lemon (Halal)",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Halloumi & Roast Aubergine Tray Bake, Pesto",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Piri-Piri Roasted Cauliflower, Charred Lemon, Braised Cannellini Beans",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Braised Rice",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Roasted Peppers & Onions",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Sautéed Cabbage",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Steamed Ginger Sponge, Custard",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        },
+        {
+          "name": "Coconut & Lime Posset",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "breakfast",
+      "items": [
+        {
+          "name": "Grilled Sausage",
+          "tags": [],
+          "price_gbp": 0.7,
+          "price_text": "£0.70 student / £0.95 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Bacon",
+          "tags": [],
+          "price_gbp": 0.5,
+          "price_text": "£0.50 student / £0.65 others",
+          "course": "other"
+        },
+        {
+          "name": "Plant Based Lincolnshire Sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 0.9,
+          "price_text": "£0.90 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Fried Free-range Egg",
+          "tags": [],
+          "price_gbp": 0.51,
+          "price_text": "£0.51 student / £0.68 others",
+          "course": "other"
+        },
+        {
+          "name": "Boiled Egg",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Tomato Half",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Sautéed Mushrooms",
+          "tags": [],
+          "price_gbp": 1.25,
+          "price_text": "£1.25 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Hash Browns (2)",
+          "tags": [],
+          "price_gbp": 0.45,
+          "price_text": "£0.45 student / £0.60 others",
+          "course": "other"
+        },
+        {
+          "name": "Baked Beans (Breakfast/Brunch)",
+          "tags": [],
+          "price_gbp": 0.6,
+          "price_text": "£0.60 student / £0.80 others",
+          "course": "other"
+        },
+        {
+          "name": "Porridge & Toppings",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Orange Segments",
+          "tags": [],
+          "price_gbp": 0.81,
+          "price_text": "£0.81 student / £1.08 others",
+          "course": "other"
+        },
+        {
+          "name": "Grapefruit Segments",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Watermelon (x2 slices)",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Overnight Oats",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Chocolate Croissant",
+          "tags": [],
+          "price_gbp": 1.75,
+          "price_text": "£1.75 student / £2.30 others",
+          "course": "other"
+        },
+        {
+          "name": "Vegan Croissant",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.35 others",
+          "course": "other"
+        },
+        {
+          "name": "Blueberry Muffin",
+          "tags": [],
+          "price_gbp": 1.4,
+          "price_text": "£1.40 student / £1.85 others",
+          "course": "other"
+        },
+        {
+          "name": "Breakfast Cereal",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Granola",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Natural Yogurt",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Bread (per slice; refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.2,
+          "price_text": "£0.20 student / £0.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Butter, Flora, Jam, Honey (refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.3,
+          "price_text": "£0.30 student / £0.40 others",
+          "course": "other"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Lamb Navarin, Haricot Beans & Chive Oil (Halal)",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Chargrilled Gammon Steak, Parsley Sauce",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Roasted Butternut Squash, Caramelised Leek, Haricot Beans & Chive Oil",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Rosemary Parmentier Potatoes",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Steamed Carrots",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Roasted Shallots & Fennel",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "main"
+        },
+        {
+          "name": "Crème Brûlée",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Beer Battered Fish of the Day with Tartar Sauce",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Chargrilled Gammon Steak, Parsley Sauce",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Dahl Makhani & Rice",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Baked Beans (Side dish)",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Mushy Peas",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Garden Peas",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Bakewell Tart Slice & Cream",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        },
+        {
+          "name": "Banoffee Cheesecake Pot",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Grilled Bacon",
+          "tags": [],
+          "price_gbp": 0.5,
+          "price_text": "£0.50 student / £0.65 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Sausage",
+          "tags": [],
+          "price_gbp": 0.7,
+          "price_text": "£0.70 student / £0.95 others",
+          "course": "other"
+        },
+        {
+          "name": "Plant Based Lincolnshire Sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 0.9,
+          "price_text": "£0.90 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Fried Free-range Egg",
+          "tags": [],
+          "price_gbp": 0.51,
+          "price_text": "£0.51 student / £0.68 others",
+          "course": "other"
+        },
+        {
+          "name": "Boiled Egg",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Tomato Half",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Sautéed Mushrooms",
+          "tags": [],
+          "price_gbp": 1.25,
+          "price_text": "£1.25 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Hash Browns (2)",
+          "tags": [],
+          "price_gbp": 0.45,
+          "price_text": "£0.45 student / £0.60 others",
+          "course": "other"
+        },
+        {
+          "name": "Baked Beans (Breakfast/Brunch)",
+          "tags": [],
+          "price_gbp": 0.6,
+          "price_text": "£0.60 student / £0.80 others",
+          "course": "other"
+        },
+        {
+          "name": "Porridge & Toppings",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Orange Segments",
+          "tags": [],
+          "price_gbp": 0.81,
+          "price_text": "£0.81 student / £1.08 others",
+          "course": "other"
+        },
+        {
+          "name": "Grapefruit Segments",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Watermelon (x2 slices)",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Overnight Oats",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Chocolate Croissant",
+          "tags": [],
+          "price_gbp": 1.75,
+          "price_text": "£1.75 student / £2.30 others",
+          "course": "other"
+        },
+        {
+          "name": "Vegan Croissant",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.35 others",
+          "course": "other"
+        },
+        {
+          "name": "Blueberry Muffin",
+          "tags": [],
+          "price_gbp": 1.4,
+          "price_text": "£1.40 student / £1.85 others",
+          "course": "other"
+        },
+        {
+          "name": "Breakfast Cereal",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Granola",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Natural Yogurt",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Bread (per slice; refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.2,
+          "price_text": "£0.20 student / £0.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Butter, Flora, Jam, Honey (refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.3,
+          "price_text": "£0.30 student / £0.40 others",
+          "course": "other"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Malaysian Nyonya-style Turkey & Potato Kari Ayam",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Jackfruit & King Oyster Mushroom Rendang",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Steamed Jasmine Rice",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Pak Choi & Garlic Sesame Oil",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Stir Fried Baby Sweetcorn & Mangetout",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Warm Banana & Coconut Bread Pudding & Custard",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Grilled Bacon",
+          "tags": [],
+          "price_gbp": 0.5,
+          "price_text": "£0.50 student / £0.65 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Sausage",
+          "tags": [],
+          "price_gbp": 0.7,
+          "price_text": "£0.70 student / £0.95 others",
+          "course": "other"
+        },
+        {
+          "name": "Plant Based Lincolnshire Sausage",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 0.9,
+          "price_text": "£0.90 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Fried Free-range Egg",
+          "tags": [],
+          "price_gbp": 0.51,
+          "price_text": "£0.51 student / £0.68 others",
+          "course": "other"
+        },
+        {
+          "name": "Boiled Egg",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Grilled Tomato Half",
+          "tags": [],
+          "price_gbp": 0.55,
+          "price_text": "£0.55 student / £0.75 others",
+          "course": "other"
+        },
+        {
+          "name": "Sautéed Mushrooms",
+          "tags": [],
+          "price_gbp": 1.25,
+          "price_text": "£1.25 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Hash Browns (2)",
+          "tags": [],
+          "price_gbp": 0.45,
+          "price_text": "£0.45 student / £0.60 others",
+          "course": "other"
+        },
+        {
+          "name": "Baked Beans (Breakfast/Brunch)",
+          "tags": [],
+          "price_gbp": 0.6,
+          "price_text": "£0.60 student / £0.80 others",
+          "course": "other"
+        },
+        {
+          "name": "Porridge & Toppings",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Orange Segments",
+          "tags": [],
+          "price_gbp": 0.81,
+          "price_text": "£0.81 student / £1.08 others",
+          "course": "other"
+        },
+        {
+          "name": "Grapefruit Segments",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Watermelon (x2 slices)",
+          "tags": [],
+          "price_gbp": 0.85,
+          "price_text": "£0.85 student / £1.15 others",
+          "course": "other"
+        },
+        {
+          "name": "Overnight Oats",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.20 others",
+          "course": "other"
+        },
+        {
+          "name": "Chocolate Croissant",
+          "tags": [],
+          "price_gbp": 1.75,
+          "price_text": "£1.75 student / £2.30 others",
+          "course": "other"
+        },
+        {
+          "name": "Vegan Croissant",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.35 others",
+          "course": "other"
+        },
+        {
+          "name": "Blueberry Muffin",
+          "tags": [],
+          "price_gbp": 1.4,
+          "price_text": "£1.40 student / £1.85 others",
+          "course": "other"
+        },
+        {
+          "name": "Breakfast Cereal",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Granola",
+          "tags": [],
+          "price_gbp": 0.95,
+          "price_text": "£0.95 student / £1.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Natural Yogurt",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "other"
+        },
+        {
+          "name": "Bread (per slice; refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.2,
+          "price_text": "£0.20 student / £0.25 others",
+          "course": "other"
+        },
+        {
+          "name": "Butter, Flora, Jam, Honey (refer to packaging for allergens)",
+          "tags": [],
+          "price_gbp": 0.3,
+          "price_text": "£0.30 student / £0.40 others",
+          "course": "other"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sustainable Soup",
+          "tags": [],
+          "price_gbp": 1.3,
+          "price_text": "£1.30 student / £1.70 others",
+          "course": "soup"
+        },
+        {
+          "name": "Roast Chicken & Gravy",
+          "tags": [],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Vegan Wellington with Thyme Jus",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "price_gbp": 4.2,
+          "price_text": "£4.20 student / £5.50 others",
+          "course": "main"
+        },
+        {
+          "name": "Yorkshire Pudding",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Roast Potatoes",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Cabbage",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Seasonal Vegetables",
+          "tags": [],
+          "price_gbp": 1,
+          "price_text": "£1.00 student / £1.30 others",
+          "course": "side"
+        },
+        {
+          "name": "Chocolate & Orange Sponge",
+          "tags": [],
+          "price_gbp": 1.45,
+          "price_text": "£1.45 student / £1.90 others",
+          "course": "dessert"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import type { DietTag, Dish } from '../../schema.ts'
 export function tagFromLabel(label: string): DietTag | undefined {
   const s = label.trim().toLowerCase()
   if (!s) return undefined
-  if (s === 'vv' || s === 've' || s === 'vg' || s === 'vgn' || /vegan|plant.?based/.test(s)) return /plant.?based/.test(s) ? 'plant_based' : 'vegan'
+  if (s === 'vv' || s === 've' || s === 'vg' || s === 'vgn' || s === 'vn' || /vegan|plant.?based/.test(s)) return /plant.?based/.test(s) ? 'plant_based' : 'vegan'
   if (s === 'v' || /vegetarian/.test(s)) return 'vegetarian'
   if (s === 'h' || s === 'hm' || /halal/.test(s)) return 'halal'
   if (s === 'gf' || /gluten.?free/.test(s)) return 'gluten_free'

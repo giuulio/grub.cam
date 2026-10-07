@@ -1,0 +1,308 @@
+{
+  "college": "fitzwilliam",
+  "venue": "buttery",
+  "week": "2026-W41",
+  "source_url": "https://www.fitz.cam.ac.uk/cafe-bar-and-buttery",
+  "fetched_at": "2026-10-07T21:05:00Z",
+  "method": "llm",
+  "note": "Buttery Menu PDF, week commencing 5 Oct 2026. Mains only; no prices or sides published. \"Menus are subject to change.\"",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Halloumi & roasted vegetable wrap",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken & leek pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushroom & lentil thyme pie",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Beef bourguignon",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tandoori chicken",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Crispy tofu with caramel chilli sauce",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Roast pork with apple sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Root vegetable & lentil shepherd's pie",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Cheese & onion pasty",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Chicken katsu curry",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable frittata",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Jamaican chicken brown stew",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushroom bourguignon",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Seafood medley",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sausage, mash & onion gravy",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Moroccan vegetable & chickpea tagine",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken with mushroom & tarragon sauce",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Cottage pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Butternut squash & sage gnocchi",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken sausage pasta bake",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Lamb keema pilau",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vietnamese caramel chicken",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tuscan butterbean & tomato stew",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Friday fish & chips (plain fish available cooked to order)",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Pease pudding fritter",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Pork rib eye steaks",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Beef chilli & cheese nachos",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Three bean & sweet potato chilli",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Crispy chicken burger",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 11:30–13:30; menu not itemised"
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Chicken tikka masala",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Vegetable dhansak",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Lamb rogan josh",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 11:30–13:30; menu not itemised"
+    },
+    {
+      "date": "2026-10-11",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Traditional British carvery: two roast meats, a vegetarian or vegan option, steamed & roasted vegetables, Yorkshire puddings & roast potatoes",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    }
+  ]
+}

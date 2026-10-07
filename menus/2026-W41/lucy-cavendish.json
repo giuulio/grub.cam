@@ -1,0 +1,504 @@
+{
+  "college": "lucy-cavendish",
+  "venue": "warburton-hall-servery",
+  "week": "2026-W41",
+  "source_url": "https://www.canva.com/design/DAFvirNLKtg/view",
+  "fetched_at": "2026-10-07T21:30:00Z",
+  "method": "llm",
+  "note": "\"Lucy Cavendish Catering: 5th October – 11th October\" (Canva design, embedded on the College dining page). Transcribed from the rendered grid; no prices published. Thu and Fri evenings are Formal Hall (not cafeteria). Wed lunch is a BBQ event in the garden.",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Cream of celery soup",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Smokey bean & crispy kale pancakes",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tilapia baked with garlic & parsley",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Breaded pork escalope with Asian slaw",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sweet potato fries",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Corn on the cob",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chef's choice dessert",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Mushroom laksa",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Ginger and soy coley",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken rendang",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Green beans",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Raspberry and lime posset",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Butternut squash soup",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Vegan nut roast with onion and cranberry gravy",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Smokey paprika fish",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Braised beef in red wine",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Mash potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cabbage",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Apple & cinnamon cake",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Taco shells with filling options",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "BBQ tempeh with black beans",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Tempura fish goujons with salsa",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mexican chilli beef",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Salad",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Spring onions",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Cinnamon taco filled with jam compote and cream",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "National Taco Day"
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Spiced cauliflower soup",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "BBQ event",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Cherry Bakewell",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "BBQ lunch in the garden"
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Gnocchi & spinach bake",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Smoked haddock, leek & potato pie",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Slow cooked pork steak in cider and red onions",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "New potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Mixed vegetables",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Coconut & banana slice",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Coconut & red pepper soup",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Italian aubergine traybake",
+          "tags": [
+            "vegan",
+            "gluten_free",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Harissa salmon",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Lamb moussaka",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Boulangère potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Carrots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Banoffee pie",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Mexican bean soup",
+          "tags": [],
+          "course": "soup"
+        },
+        {
+          "name": "Vegetarian pizza",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Fried fish of the day",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Peas",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Pear & chocolate pudding",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Eggs",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bacon",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sausage",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Veggie sausage",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Hash brown",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Baked beans",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Tomatoes",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mushrooms",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Yogurt & granola",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Fresh fruit salad",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Selection of pastries",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Lentil veggie burger in a brioche-style bun",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Beef smash burgers in a brioche-style bun",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Sriracha tater tots",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Crispy onions",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Gherkins",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Shredded lettuce",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Sliced tomato",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Waffles with toppings",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Street food 16:30–17:30; position in the published grid suggests Saturday, verify on the day"
+    },
+    {
+      "date": "2026-10-11",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "No toad in the hole",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Fish of the day",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Roast beef or chicken",
+          "tags": [
+            "gluten_free"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Roast potatoes",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Vegetables",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Yorkshire pudding",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Gravy",
+          "tags": [],
+          "course": "side"
+        },
+        {
+          "name": "Chocolate pudding & chocolate custard",
+          "tags": [],
+          "course": "dessert"
+        }
+      ],
+      "note": "Sunday roast 12:30–14:00"
+    }
+  ]
+}

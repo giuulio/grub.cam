@@ -1,0 +1,274 @@
+{
+  "college": "darwin",
+  "venue": "servery",
+  "week": "2026-W41",
+  "source_url": "https://www.darwin.cam.ac.uk/dine/weekly-menu/",
+  "fetched_at": "2026-10-07T20:37:51.027Z",
+  "method": "script",
+  "note": "Darwin publishes allergen codes but no diet labels; member prices shown.",
+  "days": [
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Moving mountains fish finger burger sandwich, maire rose and pickles & fries",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Aubergine & Sweet potato lasagne, toasted walnuts",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Spiced squid ragu and rice",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Chicken Rogan Josh with rice",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Coconu & anise rice",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Medley of green vegetables",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Paprika fries",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Nigerian efo riro ( spinach stew) fried plantain with rice",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Red Leicester & caramelised leek tart, maple fried onions",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Shetland mussel and barley stew",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Chicken Rogan Josh with rice",
+          "tags": [],
+          "price_gbp": 4.6,
+          "course": "main"
+        },
+        {
+          "name": "Rice",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Spiced caraway cabbage",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Orange & fennel seed courgetteLemon & fennel seed courgettes",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Oyster mushroom & nori pie",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Kimchi ang gochung mac and cheese, black seeded honey",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Rarebit glazed cod, tomato and crispy leeks",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Pork sausage (3), Diane sauce, creamy mash",
+          "tags": [],
+          "price_gbp": 4.6,
+          "course": "main"
+        },
+        {
+          "name": "Sweet potato fries",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Honey parsnips",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Braised red cabbage",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Roasted roots, Marmite yeast and walnut crumble",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Yorkshire pudding, Glamorgan sausage, Cranberry and juniper jus",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Thai fish pie",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Pancetta, chorizo, and black eyed bean stew",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Salt & black pepper sauté potatoes",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Steamed broccoli",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "Smoked paprika roasted swede",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Vegan white pesto pizza, garlic field mushroom",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Fried chicken (halal) burger, honey mustard mayo with chips",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Specials, see daily boards for allergens",
+          "tags": [],
+          "course": "main"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Pad Kra Pao (Thai vegan mince and Thai basil) with rice",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Caramelised fennel, mascarpone, peacans, casareccia pasta",
+          "tags": [],
+          "price_gbp": 2.95,
+          "course": "main"
+        },
+        {
+          "name": "Battered hake, tartare sauce & lemon & chips",
+          "tags": [],
+          "price_gbp": 4.6,
+          "course": "main"
+        },
+        {
+          "name": "Sri Lankan marinated chicken leg, savoy cabbage Mallung",
+          "tags": [],
+          "price_gbp": 3.95,
+          "course": "main"
+        },
+        {
+          "name": "Chips",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "mushy peas",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        },
+        {
+          "name": "mustard dressed winter slaw",
+          "tags": [],
+          "price_gbp": 0.95,
+          "course": "side"
+        }
+      ]
+    }
+  ]
+}

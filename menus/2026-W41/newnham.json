@@ -1,0 +1,350 @@
+{
+  "college": "newnham",
+  "venue": "buttery",
+  "week": "2026-W41",
+  "source_url": "https://newn.cam.ac.uk/weekly-menus",
+  "fetched_at": "2026-10-07T20:45:00Z",
+  "method": "llm",
+  "note": "Week 5–11 Oct 2026. No prices published. Last item each service is the dessert. Saturday 10 Oct: brunch (no lunch menu listed).",
+  "days": [
+    {
+      "date": "2026-10-05",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Vegan Mushroom, Spinach & Pepper Stroganoff",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Cauliflower & Paneer Bhaji Pie",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken with a Piquant Mustard Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Victoria Sponge",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Crispy Korean BBQ Tofu",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Buffalo Chicken Wing with Ranch Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Fusilli Pasta with Tuna & Sweetcorn",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Banoffee Pie",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Sticky Sesame Soy Seitan with Steamed Rice",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Breaded Haddock with Red Pepper Mayo",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Reggae Reggae Pork Steak",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chocolate Cake",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Vegan Meatballs, Spicy Tomato Sauce & Spaghetti",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Prawns, Fennel & Lemon Risotto",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Kiev",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Cookies",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Mushroom, Cauliflower & Vegetable Biryani",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet Potato, Leek & Cheese Pie",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Roast Turkey Breast with Cranberry Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Rice Pudding",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Sweet Potato, Bean & Red Pepper Goulash",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Szechuan Chicken Burger",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Breaded Scampi with Chive & Lemon Mayo",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chocolate Choux Buns",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Cauliflower, Kale & Cheddar Arancini Cake",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Squash, Red Onion & Goats Cheese Quiche",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Sweet & Sour Chicken Hong Kong Style",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Lemon Posset",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Pakoras with Mint Chutney & Fried Rice",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Green Vegetable Mac n Cheese",
+          "tags": [
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Beef Bourguignon",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Custard Tarts",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "lunch",
+      "items": [
+        {
+          "name": "Chilli Tofu & Vegetable Rice Noodles",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Hunters Chicken",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Battered Fish with Lemon & Tartare Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Bakewell Tart",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Roasted Vegetable & Pesto Penne",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Tikka Masala",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Battered Fish with Lemon & Tartare Sauce",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chocolate Mousse",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "service": "brunch",
+      "items": [
+        {
+          "name": "Brunch",
+          "tags": [],
+          "course": "main"
+        }
+      ],
+      "note": "Brunch 09:30–13:30; menu not itemised by the College"
+    },
+    {
+      "date": "2026-10-10",
+      "service": "dinner",
+      "items": [
+        {
+          "name": "Cauliflower, Chickpea & Coconut Milk Curry",
+          "tags": [
+            "vegan",
+            "vegetarian"
+          ],
+          "course": "main"
+        },
+        {
+          "name": "Thai Red Fish Curry",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Chicken Korma",
+          "tags": [],
+          "course": "main"
+        },
+        {
+          "name": "Mango Cheesecake",
+          "tags": [],
+          "course": "dessert"
+        }
+      ]
+    }
+  ]
+}

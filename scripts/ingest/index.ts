@@ -5,15 +5,18 @@ import { MenuFile } from '../schema.ts'
 import { isoWeek, todayLondon, weekDates } from './lib/dates.ts'
 import { toMenuFile, type Source } from './lib/source.ts'
 import { corpus } from './sources/corpus.ts'
+import { darwin } from './sources/darwin.ts'
 import { downing } from './sources/downing.ts'
 import { homerton } from './sources/homerton.ts'
 import { jesus } from './sources/jesus.ts'
+import { magdalene } from './sources/magdalene.ts'
 import { peterhouse } from './sources/peterhouse.ts'
 import { robinson } from './sources/robinson.ts'
 import { selwyn } from './sources/selwyn.ts'
 import { stJohns } from './sources/st-johns.ts'
+import { wolfson } from './sources/wolfson.ts'
 
-export const SOURCES: Source[] = [homerton, peterhouse, corpus, jesus, robinson, selwyn, stJohns, downing]
+export const SOURCES: Source[] = [homerton, peterhouse, corpus, jesus, robinson, selwyn, stJohns, downing, darwin, wolfson, magdalene]
 
 const { values } = parseArgs({ options: { week: { type: 'string' }, only: { type: 'string' } } })
 const today = todayLondon()
