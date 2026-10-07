@@ -1,1 +1,13 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-charcoal: #1e1e1e;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-charcoal font-sans text-white antialiased;
+}

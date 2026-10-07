@@ -54,3 +54,14 @@ describe('applyFilters', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })
 })
+
+describe('applyFilters menu date', () => {
+  it("shows the next service's menu once today's services are over", () => {
+    const thu = { date: '2026-10-08', service: 'lunch' as const, items: [{ name: 'Katsu curry', tags: [] }] }
+    const v: VenueView = { ...base, slots: [{ ...base.slots[0], days: ['wed', 'thu'] }], menu: { ...base.menu!, days: [...base.menu!.days, thu] } }
+    const evening = { ...now, minutes: 22 * 60 }
+    const [r] = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, evening)
+    expect(r.days.map((d) => d.date)).toEqual(['2026-10-08'])
+    expect(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, now)).toEqual([])
+  })
+})

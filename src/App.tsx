@@ -1,17 +1,23 @@
-import { Route, Routes } from 'react-router'
+import { Outlet, Route, Routes } from 'react-router'
+import { Container } from './components/Container.tsx'
+import { Footer } from './components/Footer.tsx'
+import { Header } from './components/Header.tsx'
 import { DataProvider, useData } from './lib/data/useData.tsx'
+import { About } from './pages/About.tsx'
+import { College } from './pages/College.tsx'
+import { Home } from './pages/Home.tsx'
+import { NotFound } from './pages/NotFound.tsx'
 
-// Placeholder shell. The UI is intentionally unstyled until the brand identity is approved;
-// the data layer (src/lib/data), time logic (src/lib/time) and ranking (src/lib/filters.ts) are final.
-function Status() {
+function Layout() {
   const data = useData()
-  if (data.status === 'loading') return <p>Loading…</p>
-  if (data.status === 'error') return <p>Error: {data.error}</p>
-  const dishes = data.bundle.menus.reduce((n, m) => n + m.days.reduce((k, d) => k + d.items.length, 0), 0)
   return (
-    <p>
-      Data loaded from {data.source}: {data.bundle.colleges.length} colleges, {data.venues.length} venues, {data.bundle.slots.length} service slots, {dishes} dishes.
-    </p>
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1 pt-12">
+        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-white/50">{data.error}</p> : null}</Container>
+      </main>
+      <Footer />
+    </div>
   )
 }
 
@@ -19,7 +25,12 @@ export default function App() {
   return (
     <DataProvider>
       <Routes>
-        <Route path="*" element={<Status />} />
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="about" element={<About />} />
+          <Route path=":slug" element={<College />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
     </DataProvider>
   )

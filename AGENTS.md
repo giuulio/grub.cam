@@ -23,6 +23,7 @@ Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + 
 - `menus/<ISO week>/<college>.json` — dish observations. `.txt` siblings are the hand-transcribed source for non-scripted colleges (format documented at top of `scripts/ingest/manual.ts`).
 - `scripts/ingest/sources/*.ts` — one adapter per machine-readable college (11): homerton, peterhouse, corpus, jesus, robinson, selwyn, st-johns, downing (Kafoodle API), darwin, wolfson, magdalene (tenkites JSON-LD).
 - `supabase/migrations/0001_init.sql` — tables + RLS (anon SELECT only).
+- `src/pages/*` — routes: `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `diet`, `guests`, `card`; ranked venue list via `applyFilters`), `/:slug` College (venue list, anchors `#venue-slug`), `/about`, `*` 404. Header/footer in `src/components/`; site constants in `src/lib/site.ts`. White on charcoal (`#1e1e1e`), minimal text; free-text data fields (`notice`, `access.text`, …) are research notes and aren't shown.
 - `src/lib/time/*` — Europe/London clock, Full Term dates, `openStatus()`; `src/lib/filters.ts` — ranking.
 
 ## Weekly menu refresh (until all sources are scripted)

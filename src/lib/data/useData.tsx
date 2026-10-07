@@ -26,3 +26,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 }
 
 export const useData = () => useContext(Ctx)
+
+/** For pages rendered only once data is ready (App gates the routes on it). */
+export function useReady() {
+  const data = useContext(Ctx)
+  if (data.status !== 'ready') throw new Error('useReady() called before data loaded')
+  return data
+}
