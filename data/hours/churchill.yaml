@@ -6,4 +6,4 @@ slots:
   - { venue: dining-hall, meal: brunch, days: sat, start: "11:30", end: "14:00", period: term }
   - { venue: buttery, meal: bar, days: mon-thu, start: "08:00", end: "22:00" }
   - { venue: buttery, meal: bar, days: fri, start: "08:00", end: "23:00" }
-  - { venue: buttery, meal: bar, days: sat,sun, start: "14:00", end: "22:00" }
+  - { venue: buttery, meal: bar, days: "sat,sun", start: "14:00", end: "22:00" }

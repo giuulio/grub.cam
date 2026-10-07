@@ -3,6 +3,6 @@ slots:
   - { venue: servery-great-hall, meal: breakfast, days: mon-fri, start: "08:00", end: "10:15", period: term, note: "limited menu until 11:15" }
   - { venue: servery-great-hall, meal: lunch, days: mon-fri, start: "12:00", end: "13:30", period: term, note: "late lunch until 15:00" }
   - { venue: servery-great-hall, meal: dinner, days: daily, start: "17:45", end: "18:45", period: term }
-  - { venue: servery-great-hall, meal: brunch, days: sat,sun, start: "12:00", end: "13:30", period: term }
+  - { venue: servery-great-hall, meal: brunch, days: "sat,sun", start: "12:00", end: "13:30", period: term }
   - { venue: lord-butterfield-cafe, meal: snacks, days: mon-fri, start: "10:00", end: "18:00", note: "10:00–19:30 from Nov 2026" }
   - { venue: evening-bar, meal: bar, days: daily, start: "20:30", end: "23:30", period: term, note: "Michaelmas/Lent; Easter term closes 23:00; days not stated", prov: { confidence: medium } }

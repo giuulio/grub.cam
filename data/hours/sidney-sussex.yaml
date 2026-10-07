@@ -7,4 +7,4 @@ slots:
   - { venue: servery-dining-hall, meal: dinner, days: daily, start: "17:45", end: "19:00", period: term, note: "Sunday roast", prov: { confidence: medium, note: "Easter 2026 trial hours" } }
   - { venue: servery-dining-hall, meal: lunch, days: mon-fri, start: "12:00", end: "14:00", period: vacation, note: "usually lunch only in vacation", prov: { confidence: low } }
   - { venue: college-bar, meal: bar, days: sun-thu, start: "20:30", end: "23:00", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }
-  - { venue: college-bar, meal: bar, days: fri,sat, start: "20:30", end: "23:30", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }
+  - { venue: college-bar, meal: bar, days: "fri,sat", start: "20:30", end: "23:30", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }

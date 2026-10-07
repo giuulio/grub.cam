@@ -161,7 +161,7 @@ export const ServiceSlot = z.object({
   period: z.enum(['term', 'vacation', 'all']).default('all'),
   note: z.string().optional(),
   prov: Provenance.prefault({}),
-})
+}).strict() // an unquoted "days: sat,sun" inside { } parses as a stray "sun" key — fail instead of dropping it
 export type ServiceSlot = z.infer<typeof ServiceSlot>
 
 export const HoursFile = z.object({

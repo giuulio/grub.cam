@@ -19,7 +19,7 @@ Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + 
 
 - `scripts/schema.ts` — zod schemas; the single source of truth for types (app imports from here).
 - `data/colleges/<slug>.yaml` — 31 colleges: venues, access, payment, dietary, menu source, formal, notes. Every fact has a `prov` (source_kind / observed_at / confidence).
-- `data/hours/<slug>.yaml` — structured service slots. `days` accepts `mon-fri`, `daily`, `sat,sun`. Unknown hours ⇒ no slot (UI says "Hours not published", never "closed").
+- `data/hours/<slug>.yaml` — structured service slots. `days` accepts `mon-fri`, `daily`, `sat,sun` — quote comma lists inside `{ }` flow maps (`days: "sat,sun"`); slots are `.strict()` so an unquoted one fails the build. Unknown hours ⇒ no slot (UI says "Hours not published", never "closed").
 - `menus/<ISO week>/<college>.json` — dish observations. `.txt` siblings are the hand-transcribed source for non-scripted colleges (format documented at top of `scripts/ingest/manual.ts`).
 - `scripts/ingest/sources/*.ts` — one adapter per machine-readable college (11): homerton, peterhouse, corpus, jesus, robinson, selwyn, st-johns, downing (Kafoodle API), darwin, wolfson, magdalene (tenkites JSON-LD).
 - `supabase/migrations/0001_init.sql` — tables + RLS (anon SELECT only).

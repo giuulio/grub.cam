@@ -1,10 +1,10 @@
 college: darwin
 slots:
   - { venue: servery, meal: lunch, days: mon-fri, start: "12:00", end: "14:00" }
-  - { venue: servery, meal: dinner, days: mon,tue,thu, start: "18:00", end: "20:30" }
-  - { venue: servery, meal: dinner, days: wed,fri, start: "18:00", end: "19:00", period: term, note: "closes 19:00 on formal nights" }
-  - { venue: servery, meal: dinner, days: wed,fri, start: "18:00", end: "20:30", period: vacation }
-  - { venue: servery, meal: brunch, days: sat,sun, start: "10:00", end: "14:00" }
+  - { venue: servery, meal: dinner, days: "mon,tue,thu", start: "18:00", end: "20:30" }
+  - { venue: servery, meal: dinner, days: "wed,fri", start: "18:00", end: "19:00", period: term, note: "closes 19:00 on formal nights" }
+  - { venue: servery, meal: dinner, days: "wed,fri", start: "18:00", end: "20:30", period: vacation }
+  - { venue: servery, meal: brunch, days: "sat,sun", start: "10:00", end: "14:00" }
   - { venue: cafe, meal: snacks, days: mon-fri, start: "08:30", end: "19:00" }
-  - { venue: cafe, meal: snacks, days: sat,sun, start: "08:30", end: "20:30" }
+  - { venue: cafe, meal: snacks, days: "sat,sun", start: "08:30", end: "20:30" }
   # DarBar: evenings, times not published

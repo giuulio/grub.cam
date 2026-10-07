@@ -2,7 +2,7 @@ college: fitzwilliam
 slots:
   - { venue: buttery, meal: lunch, days: mon-fri, start: "12:00", end: "13:30" }
   - { venue: buttery, meal: dinner, days: daily, start: "18:00", end: "19:00" }
-  - { venue: buttery, meal: brunch, days: sat,sun, start: "11:30", end: "13:30" }
+  - { venue: buttery, meal: brunch, days: "sat,sun", start: "11:30", end: "13:30" }
   - { venue: coffee-shop, meal: breakfast, days: mon-sat, start: "08:00", end: "10:30", period: term }
   - { venue: coffee-shop, meal: breakfast, days: sun, start: "09:00", end: "10:30", period: term }
   - { venue: coffee-shop, meal: snacks, days: mon-fri, start: "08:00", end: "18:00", period: term }
