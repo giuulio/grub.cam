@@ -176,8 +176,8 @@ function menuSource(sub: Record<string, string>, fallbackChecked: string) {
   if (!Object.keys(sub).length) return undefined
   const kindRaw = (sub.Kind ?? 'unknown').toLowerCase()
   const km = kindRaw.match(/^(\w+)(?:\s*\(([^)]+)\))?/)
-  let kind = (km?.[1] ?? 'unknown') as 'html'
-  if (kind === '?') kind = 'unknown' as 'html'
+  let kind: string = km?.[1] ?? 'unknown'
+  if (kind === '?') kind = 'unknown'
   const platform = km?.[2]
   const urlField = sub.URL ?? ''
   const urls = [...urlField.matchAll(/(?:(\w+)\s+)?(https?:\/\/\S+)/g)]

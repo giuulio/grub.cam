@@ -80,21 +80,21 @@ export const Venue = z.object({
   access: z.object({
     level: AccessLevel.default('unknown'),
     text: z.string().optional(),
-    prov: Provenance.default({}),
+    prov: Provenance.prefault({}),
   }),
   payment: z.object({
     university_card: z.boolean().optional(),
     bank_card: z.boolean().optional(),
     cash: z.boolean().optional(),
     text: z.string().optional(),
-    prov: Provenance.default({}),
+    prov: Provenance.prefault({}),
   }),
-  prices: z.object({ text: z.string(), prov: Provenance.default({}) }).optional(),
+  prices: z.object({ text: z.string(), prov: Provenance.prefault({}) }).optional(),
   serves: z.string().optional(),
   dietary: z.object({
     tags: z.array(DietTag).default([]),
     text: z.string().optional(),
-    prov: Provenance.default({}),
+    prov: Provenance.prefault({}),
   }),
   menu_source: MenuSource.optional(),
 })
@@ -110,7 +110,7 @@ export const Formal = z.object({
   booking: z.string().optional(),
   guests: z.string().optional(),
   cost: z.string().optional(),
-  prov: Provenance.default({}),
+  prov: Provenance.prefault({}),
 })
 export type Formal = z.infer<typeof Formal>
 
@@ -160,7 +160,7 @@ export const ServiceSlot = z.object({
   end: hhmm,
   period: z.enum(['term', 'vacation', 'all']).default('all'),
   note: z.string().optional(),
-  prov: Provenance.default({}),
+  prov: Provenance.prefault({}),
 })
 export type ServiceSlot = z.infer<typeof ServiceSlot>
 
