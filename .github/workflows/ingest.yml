@@ -1,7 +1,7 @@
 name: Ingest menus
 
 # Fetches the scripted sources, commits menus/<week>/*.json, and (if secrets are set) seeds Supabase.
-# Manual-only until SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY secrets exist; then enable the cron.
+# Manual-only until SUPABASE_URL / SUPABASE_SECRET_KEY secrets exist; then enable the cron.
 on:
   workflow_dispatch:
   # schedule:
@@ -14,6 +14,10 @@ permissions:
 jobs:
   ingest:
     runs-on: ubuntu-latest
+    # `secrets` isn't allowed in step `if:` conditions, so expose them as env and test that instead.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,8 +37,5 @@ jobs:
           git diff --cached --quiet || git commit -m "Ingest menus $(date -u +%F)"
           git push
       - name: Seed Supabase
-        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        if: ${{ env.SUPABASE_SECRET_KEY != '' }}
         run: npm run seed
