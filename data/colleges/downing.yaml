@@ -1,0 +1,104 @@
+slug: downing
+name: Downing
+official_dining_url: https://www.dow.cam.ac.uk/current-students/catering
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: servery-great-hall
+    name: Servery / Great Hall
+    type: hall
+    hours_text: "full term: Mon–Fri 08:00–10:15 breakfast (limited menu to 11:15); Mon–Fri 12:00–13:30 lunch (late lunch to 15:00); daily 17:45–18:45 dinner; Sat–Sun 12:00–13:30 brunch. Outside term, hours change (emailed)"
+    access:
+      level: public
+      text: members+guests; non-Downing diners pay a fixed extra charge; Girton members get member-rate lunch with University card (reciprocal); unaccompanied visitors admitted [reported 2023](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2023-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2023
+    payment:
+      text: University card (preferred; billed to College account at term end) or bank card with student ID; without proof of status, extra charge and VAT
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+      bank_card: true
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+        - halal
+        - pescatarian
+      text: hot vegetarian or vegan choice; Kafoodle tags vegan, vegetarian, halal, pescatarian
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: app
+      platform: kafoodle
+      status: live
+      checked: 2026-10-07
+      cadence: weekly menu group, day by day
+      coverage: current week's menu group only
+      includes:
+        - dishes
+        - allergens
+        - nutrition
+        - ingredients
+        - carbon ratings
+        - diet tags
+      notes: "no prices seen. Other groups: weekday breakfast, Butterfield Café, desserts, formal hall"
+      url: https://wba.kafoodle.com/17260
+      data_url: outlet JSON https://kitchen.kafoodle.com/api/wba/v1/data/17260 lists menu groups; the current week's group page is https://wba.kafoodle.com/17260/4371 (group ID changes weekly). Needs JavaScript to render
+  - slug: lord-butterfield-cafe
+    name: Lord Butterfield Café
+    type: cafe
+    hours_text: Mon–Fri 10:00–18:00 (Oct 2026); 10:00–19:30 from Nov 2026. Google Maps returned only Wed 10:00–16:00 [Google Maps, 2026-10-07]
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: breakfast sandwiches, baguettes, cakes, coffee
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: evening-bar
+    name: Evening Bar
+    type: bar
+    where: Lord Butterfield (same building as café)
+    hours_text: Michaelmas/Lent 20:30–23:30; Easter term 20:30–23:00
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: Mon, Wed, Fri (term)
+  time: 19:30–21:00
+  dress: "? (separate conduct/attire page)"
+  format: fixed-price, fixed-menu, waiter service; menus on Kafoodle
+  booking: UPay, in advance
+  guests: permitted; guest price differs
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes: []

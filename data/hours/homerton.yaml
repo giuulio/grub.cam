@@ -1,0 +1,14 @@
+college: homerton
+# Easter term 2026 timetable; Michaelmas 2026 times not yet published (as of 7 Oct 2026).
+slots:
+  - { venue: dining-hall, meal: breakfast, days: mon-fri, start: "07:30", end: "09:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: dining-hall, meal: breakfast, days: sat, start: "08:00", end: "10:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: dining-hall, meal: lunch, days: mon-sat, start: "12:00", end: "14:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: dining-hall, meal: dinner, days: mon-fri, start: "17:30", end: "19:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: dining-hall, meal: brunch, days: sun, start: "11:00", end: "14:00", note: "alternates weekly with a 12:00–14:00 Sunday roast", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: buttery, meal: snacks, days: mon-fri, start: "08:30", end: "17:30", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: buttery, meal: snacks, days: sat,sun, start: "08:30", end: "16:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: griffin-bar, meal: bar, days: mon,wed,thu, start: "17:00", end: "22:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable; Google Maps says daily 18:00–23:00" } }
+  - { venue: griffin-bar, meal: bar, days: tue, start: "17:00", end: "22:30", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: griffin-bar, meal: bar, days: fri, start: "16:00", end: "22:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }
+  - { venue: griffin-bar, meal: bar, days: sat,sun, start: "15:00", end: "22:00", prov: { confidence: low, observed_at: 2026-04-01, note: "Easter 2026 timetable" } }

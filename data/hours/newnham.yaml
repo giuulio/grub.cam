@@ -1,0 +1,7 @@
+college: newnham
+slots:
+  - { venue: buttery, meal: lunch, days: mon-fri, start: "12:30", end: "13:45" }
+  - { venue: buttery, meal: dinner, days: mon-sat, start: "18:00", end: "19:15" }
+  - { venue: buttery, meal: brunch, days: sat, start: "09:30", end: "13:30" }
+  - { venue: iris-cafe, meal: snacks, days: daily, start: "08:00", end: "18:00", note: "days not stated by College; Google Maps: Mon–Fri 08:00–17:00, Sat 08:00–16:00, Sun 10:00–17:00", prov: { confidence: medium } }
+  # Iris Bar: evenings, times not published

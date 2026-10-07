@@ -1,0 +1,38 @@
+{
+  "name": "grub",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:data && tsc -b && vite build",
+    "build:data": "tsx scripts/build-data.ts",
+    "ingest": "tsx scripts/ingest/index.ts",
+    "seed": "tsx scripts/seed-supabase.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -b && tsc -p tsconfig.scripts.json",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.4.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.3",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,101 @@
+slug: girton
+name: Girton
+official_dining_url: https://www.girton.cam.ac.uk/dining-and-socialising
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: hall-cafeteria
+    name: Hall Cafeteria
+    type: hall
+    hours_text: "? (weekly internal notices give times; older visitor timetables are superseded)"
+    access:
+      level: unknown
+      text: "? walk-in eligibility unconfirmed; Downing members get member-rate lunch with ID ([Downing](https://www.dow.cam.ac.uk/current-students/catering))"
+      prov:
+        source_kind: official
+        confidence: medium
+        observed_at: 2026-10-07
+    payment:
+      text: cashless; College card at internal rates; credit/debit card at external rates
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+      bank_card: true
+      cash: false
+    serves: three buffet-style meals daily; weekend brunch, Sat evening service, Sun carvery dinner
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+      text: vegetarian, vegan daily; allergens on daily menus
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: email
+      status: members_only
+      checked: 2026-10-07
+      cadence: weekly (Friday internal newsletter)
+      includes:
+        - dishes
+        - allergens (on daily menus)
+      notes: no public menu; only sample (conference) menus found. See https://www.girton.cam.ac.uk/dining-and-socialising
+  - slug: social-hub-cafe
+    name: Social Hub Café
+    type: cafe
+    where: Social Hub
+    hours_text: daytime (times ?); counter becomes the bar in the evening
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      text: cashless (College card / bank card)
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+      bank_card: true
+      cash: false
+    serves: hot and cold food, drinks (opened 2019)
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: social-hub-bar
+    name: Social Hub Bar
+    type: bar
+    where: Social Hub counter (evenings); cellar bar beneath the Social Hub (bookable, e.g. JCR events)
+    hours_text: evenings (times ?)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      text: cashless
+      prov:
+        source_kind: official
+        confidence: medium
+      cash: false
+    serves: drinks; table football, bar games
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: Thu (term)
+  dress: gowns
+  format: waiter-served fine dining
+  booking: UPay ([postgraduate guidance](https://www.girton.cam.ac.uk/postgraduates/incoming-postgraduates/about-university-and-college))
+  guests: welcome, including from other colleges
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes: []

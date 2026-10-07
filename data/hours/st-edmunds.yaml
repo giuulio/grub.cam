@@ -1,0 +1,11 @@
+college: st-edmunds
+slots:
+  - { venue: dining-hall, meal: lunch, days: sun-fri, start: "12:30", end: "13:30" }
+  - { venue: dining-hall, meal: dinner, days: mon-fri, start: "18:30", end: "19:45", note: "weekly notices may shorten service (e.g. 18:00–18:45 on formal nights)" }
+  - { venue: dining-hall, meal: breakfast, days: wed, start: "08:00", end: "09:30" }
+  - { venue: dining-hall, meal: brunch, days: sat, start: "11:00", end: "12:30" }
+  - { venue: edspresso, meal: snacks, days: mon-fri, start: "08:00", end: "18:00" }
+  - { venue: edspresso, meal: snacks, days: sat, start: "11:00", end: "15:00" }
+  - { venue: common-room, meal: snacks, days: mon-fri, start: "11:00", end: "11:30", note: "free tea, coffee and biscuits; end time assumed" }
+  - { venue: common-room, meal: snacks, days: mon-fri, start: "15:00", end: "15:30", note: "free tea, coffee and biscuits; end time assumed" }
+  - { venue: common-room, meal: snacks, days: sun, start: "16:00", end: "16:30", note: "free tea, coffee and biscuits; end time assumed" }

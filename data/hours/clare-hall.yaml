@@ -1,0 +1,6 @@
+college: clare-hall
+slots:
+  - { venue: dining-hall, meal: lunch, days: mon-fri, start: "12:00", end: "13:30" }
+  - { venue: dining-hall, meal: dinner, days: mon-fri, start: "18:00", end: "19:00", note: "some evenings replaced by events; see weekly menu" }
+  - { venue: college-bar, meal: bar, days: wed,fri, start: "19:00", end: "23:00", note: "Google Maps differs (Wed 21:00–23:00, Thu–Sat 20:00–23:00)" }
+  - { venue: common-room, meal: snacks, days: tue,thu, start: "15:00", end: "16:00", note: "free coffee and cake gathering; end time assumed" }

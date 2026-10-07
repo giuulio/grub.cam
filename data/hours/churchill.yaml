@@ -1,0 +1,9 @@
+college: churchill
+slots:
+  - { venue: dining-hall, meal: breakfast, days: mon-fri, start: "07:30", end: "09:30", note: "days not stated by College; weekdays assumed", prov: { confidence: medium } }
+  - { venue: dining-hall, meal: lunch, days: mon-fri, start: "12:00", end: "14:00", note: "days not stated by College; weekdays assumed", prov: { confidence: medium } }
+  - { venue: dining-hall, meal: dinner, days: daily, start: "17:45", end: "19:10", note: "subject to change; leftover sale 19:10–19:15", prov: { confidence: medium } }
+  - { venue: dining-hall, meal: brunch, days: sat, start: "11:30", end: "14:00", period: term }
+  - { venue: buttery, meal: bar, days: mon-thu, start: "08:00", end: "22:00" }
+  - { venue: buttery, meal: bar, days: fri, start: "08:00", end: "23:00" }
+  - { venue: buttery, meal: bar, days: sat,sun, start: "14:00", end: "22:00" }

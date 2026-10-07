@@ -1,0 +1,9 @@
+college: selwyn
+slots:
+  - { venue: hall-servery, meal: breakfast, days: mon-fri, start: "08:00", end: "09:30" }
+  - { venue: hall-servery, meal: lunch, days: mon-fri, start: "12:00", end: "13:30" }
+  - { venue: hall-servery, meal: brunch, days: sat,sun, start: "11:00", end: "13:00" }
+  - { venue: hall-servery, meal: dinner, days: daily, start: "18:00", end: "19:00" }
+  - { venue: cafe, meal: snacks, days: daily, start: "11:00", end: "15:00", period: term }
+  - { venue: bar, meal: bar, days: daily, start: "18:00", end: "23:00", period: term }
+  # Borradaile Room: seating only, from 08:00 daily

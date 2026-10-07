@@ -1,0 +1,104 @@
+slug: wolfson
+name: Wolfson
+official_dining_url: https://www.wolfson.cam.ac.uk/college-life/food
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: buttery-dining-hall
+    name: Buttery / Dining Hall
+    type: hall
+    hours_text: Mon–Fri 08:00–09:15 breakfast, 12:00–14:00 lunch; Sat–Sun 11:00–14:00 brunch (no separate lunch); dinner 18:00–19:30 Mon, Wed, Thu, Sat, Sun in Dining Hall; Tue and Fri 17:30–19:00 in Club Room (formal nights) ([food page](https://www.wolfson.cam.ac.uk/college-life/food))
+    access:
+      level: members_guests
+      text: members+guests; College card required [reported 2015](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2015-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2015
+    payment:
+      text: cashless; 25% student discount with University Card
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+      cash: false
+    serves: usually three mains (meat, vegetarian, vegan); à la carte breakfast items
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+      text: vegetarian, vegan; allergens per item
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: html
+      status: live
+      checked: 2026-10-07
+      cadence: daily sections
+      coverage: current week only (to Sun 11 Oct)
+      includes:
+        - dishes
+        - student / other prices
+        - allergens
+      url: https://www.wolfson.cam.ac.uk/food/cafeteria-menus
+  - slug: the-den
+    name: The Den
+    type: cafe
+    where: Club Room
+    hours_text: daily from 09:15; hot drinks to 22:00
+    access:
+      level: members_guests
+      text: members and guests
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: sandwiches, snacks, drinks
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: the-den-bar
+    name: The Den Bar
+    type: bar
+    where: Club Room
+    hours_text: daily 17:00–00:00 (licensed)
+    access:
+      level: members_guests
+      text: members and guests
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  where: Dining Hall or Combination Room
+  days_text: Tue, Fri (full term); Tue otherwise
+  time: 19:15 to ~21:45 (drinks reception, 1.5 h dinner, coffee, port)
+  dress: formal business attire (jacket and tie or equivalent); gowns optional; no jeans, trainers, shorts, hats
+  format: candlelit three courses; wine package (reception glass, two with dinner, port) or no-wine card; no devices or photos; "Music and Madeira" nights ([formal halls](https://www.wolfson.cam.ac.uk/college-life/food/formal-halls))
+  booking: "[Dining Portal](https://formal.wolfson.cam.ac.uk/DiningPortal/) using University-card credit; closes 12:00 the day before; waiting list"
+  guests: up to 3 non-Wolfson guests, accompanied; 18+; groups of 10–20 by permission (one per formal)
+  cost: "with wine / without: student £28.00 / £17.80; student guest £31.56 / £21.36; non-student and their guests £41.70 / £31.50. Students get a free formal allowance"
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes: []

@@ -1,0 +1,7 @@
+college: christs
+slots:
+  - { venue: upper-hall, meal: breakfast, days: mon-fri, start: "08:15", end: "09:30" }
+  - { venue: upper-hall, meal: lunch, days: mon-fri, start: "12:00", end: "13:45" }
+  - { venue: upper-hall, meal: dinner, days: daily, start: "17:50", end: "19:00" }
+  - { venue: upper-hall, meal: brunch, days: sat,sun, start: "10:30", end: "12:30" }
+  # Buttery café and Buttery Bar: times not published

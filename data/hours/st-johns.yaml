@@ -1,0 +1,11 @@
+college: st-johns
+# Buttery times are from a Michaelmas 2024 hours file (now 404); College confirms daily lunch and dinner, Wed breakfast, weekend brunch.
+slots:
+  - { venue: buttery, meal: breakfast, days: wed, start: "08:00", end: "10:00", prov: { source_kind: lead, confidence: low, observed_at: 2024-10-01, note: "Michaelmas 2024 hours file" } }
+  - { venue: buttery, meal: lunch, days: sun-fri, start: "11:30", end: "13:30", prov: { source_kind: lead, confidence: low, observed_at: 2024-10-01, note: "Michaelmas 2024 hours file" } }
+  - { venue: buttery, meal: brunch, days: sat, start: "11:30", end: "14:00", prov: { source_kind: lead, confidence: low, observed_at: 2024-10-01, note: "Michaelmas 2024 hours file" } }
+  - { venue: buttery, meal: dinner, days: daily, start: "18:00", end: "20:00", prov: { source_kind: lead, confidence: low, observed_at: 2024-10-01, note: "Michaelmas 2024 hours file" } }
+  - { venue: bar, meal: bar, days: mon-fri, start: "17:00", end: "23:00", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }
+  - { venue: bar, meal: bar, days: sat, start: "12:30", end: "23:00", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }
+  - { venue: bar, meal: bar, days: sun, start: "12:30", end: "22:30", prov: { source_kind: google_maps, confidence: medium, observed_at: 2026-10-07 } }
+  # Café: times not published

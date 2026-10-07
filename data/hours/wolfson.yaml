@@ -1,0 +1,9 @@
+college: wolfson
+slots:
+  - { venue: buttery-dining-hall, meal: breakfast, days: mon-fri, start: "08:00", end: "09:15" }
+  - { venue: buttery-dining-hall, meal: lunch, days: mon-fri, start: "12:00", end: "14:00" }
+  - { venue: buttery-dining-hall, meal: brunch, days: sat,sun, start: "11:00", end: "14:00" }
+  - { venue: buttery-dining-hall, meal: dinner, days: mon,wed,thu,sat,sun, start: "18:00", end: "19:30" }
+  - { venue: buttery-dining-hall, meal: dinner, days: tue,fri, start: "17:30", end: "19:00", note: "served in the Club Room (formal nights)" }
+  - { venue: the-den, meal: snacks, days: daily, start: "09:15", end: "22:00", note: "hot drinks until 22:00" }
+  - { venue: the-den-bar, meal: bar, days: daily, start: "17:00", end: "00:00" }

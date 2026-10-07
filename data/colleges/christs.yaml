@@ -1,0 +1,97 @@
+slug: christs
+name: Christ's
+official_dining_url: https://www.christs.cam.ac.uk/student-life/meals
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: upper-hall
+    name: Upper Hall
+    type: hall
+    where: Second Court
+    hours_text: Mon–Fri 08:15–09:30 breakfast; Mon–Fri 12:00–13:45 lunch; daily 17:50–19:00 dinner; Sat–Sun 10:30–12:30 brunch
+    access:
+      level: members_only
+      text: members only; no unaccompanied visitors [reported 2022](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2022-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2022
+    payment:
+      text: University card at till, charged to College bill; breakfast/brunch priced per item, lunch/dinner set price
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+    serves: English/continental breakfast; self-service hot meals, salads, soup, jacket potatoes; free unlimited salad-bar sides at lunch and dinner
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+    menu_source:
+      kind: intranet
+      status: members_only
+      checked: 2026-10-07
+      includes: []
+      notes: no public description of how students get menus beyond the College intranet page https://intranet.christs.cam.ac.uk/upper-hall-menus (403 to the public) and the JCR homepage widget https://thejcr.co.uk, which pulls from the intranet and showed "Menu Unavailable!" on 7 Oct 2026
+  - slug: buttery
+    name: Buttery
+    type: cafe
+    where: First Court
+    hours_text: throughout the day (times ?)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    prices:
+      text: subsidised; 20% student discount on Costa coffee
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    serves: sandwiches, paninis, crisps, fruit, pastries, cakes, Costa coffee ([page](https://www.christs.cam.ac.uk/facilities/buttery))
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: buttery-bar
+    name: Buttery Bar
+    type: bar
+    where: First Court (same room as Buttery café)
+    hours_text: evenings (times ?)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: drinks, incl. non-alcoholic range; sofas, TV, darts
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: Sun–Fri (term only; never Sat)
+  time: food served from 19:30
+  dress: smart; gowns for members in term, not guests
+  format: three-course served dinner; Christmas/Halloween "super halls"
+  booking: "[online form](https://www.christs.cam.ac.uk/form/high-table-and-formal-hall) or mealbookings@christs.cam.ac.uk, by 14:00 two days before"
+  guests: permitted; guest prices linked from booking form
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes:
+  - Most accommodation has kitchenettes (kettle, induction hob, microwave).

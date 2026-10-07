@@ -1,0 +1,93 @@
+slug: clare
+name: Clare
+official_dining_url: https://www.clare.cam.ac.uk/admissions-outreach/undergraduate-study/life-clare/dining-and-catering
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: buttery
+    name: Buttery
+    type: hall
+    hours_text: "term: Mon–Fri lunch, dinner; Sat brunch; Sun dinner (times ?)"
+    access:
+      level: members_guests
+      text: members; visitors must be with a Clare member [reported 2024](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2024-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2024
+    payment:
+      text: University card (students); guest charges ?
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+    serves: lunch can be taken away to eat elsewhere in College
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+      text: vegetarian, vegan always; other requirements accommodated
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: intranet
+      status: members_only
+      checked: 2026-10-07
+      includes: []
+      notes: https://www.clare.cam.ac.uk/current-students/catering redirects to Cambridge Google login; a non-Clare Cambridge account gets "user not found in Drupal" (7 Oct 2026)
+  - slug: river-room
+    name: River Room
+    type: cafe
+    hours_text: "? (opened Dec 2023; seats ~70)"
+    access:
+      level: members_only
+      text: students, staff, Fellows
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: tea, coffee, sandwiches, cakes, soft drinks; study/social space overlooking the Cam
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: cellars
+    name: Cellars
+    type: bar
+    where: crypt under the Chapel
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: cheap drinks; student-run ([SU guide](https://cambridgesu.co.uk/access/alternative-prospectus/colleges/clare))
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: four times weekly (days ?); graduate formal every Fri 19:30 ([PG dining](https://www.clare.cam.ac.uk/admissions-outreach/postgraduate-study/dining-college))
+  dress: gowns usual for undergraduates; optional for graduates (about a third to half wear them)
+  format: three courses with Fellows; graduate Friday formal includes pre-drinks and wine, College-subsidised
+  booking: member system
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes:
+  - "MCR Bar: Fri after formal, Thu from 20:30 [reported 2024/25](https://mcr.clare.cam.ac.uk/freshers/MCR%20Welcome%20Booklet%2024-25.pdf)."
+  - Shared gyp rooms provide basic cooking facilities.

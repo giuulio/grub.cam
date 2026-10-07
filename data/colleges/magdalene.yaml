@@ -1,0 +1,103 @@
+slug: magdalene
+name: Magdalene
+official_dining_url: https://www.jcr.magd.cam.ac.uk/catering
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: ramsay-hall
+    name: Ramsay Hall
+    type: hall
+    where: Second Court
+    hours_text: Mon–Fri 12:00–13:30 lunch; Sat–Sun 11:00–13:30 brunch; daily 18:00–19:15 dinner; open (almost) all year incl. vacations (JCR)
+    access:
+      level: members_only
+      text: card reader at entrance admits College members only [reported 2015](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2015-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2015
+    payment:
+      text: '? method; main £3.20, side £0.80, dessert £1.50, "cheap option" £2.50, brunch item £0.86 ([JCR](https://www.jcr.magd.cam.ac.uk/catering), undated)'
+      prov:
+        source_kind: official
+        confidence: medium
+    serves: cooked meals, soup, sandwiches, drinks
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+      text: vegetarian choices; dietary requirements accommodated (MCR)
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: html
+      platform: viewthe.menu
+      status: live
+      checked: 2026-10-07
+      cadence: weekly
+      coverage: w/c 5 Oct is the newest week listed
+      includes:
+        - dishes
+        - allergens
+        - vegan/vegetarian filters
+      notes: choose the week from the toolbar; menus are not listed in date order (e.g. "Ramsay Wk4 Com 01/06/2026", "Ramsay Wk Com 08/06/26", "Ramsay Wk Com 05/10/26", "Ramsay Wk Com 25/05/26"), and the default is an old one. Pick by parsing the "Com DD/MM/YY" date in each label. Same toolbar has MAGD BAR and "Formal Hall WK Com 05/10/2026"; server-rendered HTML
+      url: https://viewthe.menu/lyzv
+  - slug: college-cafe
+    name: College Café
+    type: cafe
+    where: First Court
+    hours_text: daytime (times ?)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: hot drinks, cakes
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: college-bar
+    name: College Bar
+    type: bar
+    where: First Court
+    hours_text: evenings (times ?)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: drinks, snacks
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  where: Hall, First Court
+  days_text: Tue, Thu, Sun (per JCR); Fri BA dinner for MCR
+  time: 19:30
+  dress: smart; gowns for members
+  format: candlelit three courses, waiter service; menus on UPay / viewthe.menu
+  booking: UPay by 12:00 the day before
+  guests: 2 per student (MCR guidance)
+  cost: "student £12.00; guest £19.70; wine from £10.80; corkage £3.50 (JCR, undated). MCR 2024: £11.00, BA dinner £16.00"
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes:
+  - "Postgraduate/BA dinners: see [MCR guidance](https://mcr.magd.cam.ac.uk/food-drink) [lead: not rechecked]."

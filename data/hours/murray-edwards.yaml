@@ -1,0 +1,8 @@
+college: murray-edwards
+slots:
+  - { venue: dome-dining-hall, meal: lunch, days: mon-fri, start: "12:30", end: "13:30", prov: { source_kind: lead, confidence: low, note: "search snippet of a now-restricted College page; latest on My Medwards" } }
+  - { venue: dome-dining-hall, meal: dinner, days: daily, start: "18:00", end: "19:00", prov: { source_kind: lead, confidence: low, note: "search snippet of a now-restricted College page; latest on My Medwards" } }
+  - { venue: dome-dining-hall, meal: brunch, days: sat,sun, start: "11:00", end: "13:30", prov: { source_kind: lead, confidence: low, note: "search snippet of a now-restricted College page; latest on My Medwards" } }
+  - { venue: art-cafe, meal: snacks, days: mon-fri, start: "08:30", end: "17:00" }
+  - { venue: art-cafe, meal: snacks, days: sat,sun, start: "09:00", end: "17:00" }
+  # College Bar: evenings in the Art Café, times not published

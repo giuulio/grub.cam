@@ -1,0 +1,80 @@
+slug: emmanuel
+name: Emmanuel
+official_dining_url: https://www.emma.cam.ac.uk/explore/life
+reviewed: 2026-10-07
+links:
+  - label: Student intranet
+    url: https://apps.emma.cam.ac.uk/students/
+venues:
+  - slug: hall
+    name: Hall
+    type: hall
+    hours_text: "? Mon–Sat 08:15–09:15 breakfast; Mon–Fri 12:15–13:30 lunch, Sat 12:15–13:15; daily 17:45–19:00 dinner (19:10 on formal nights; 17:45–19:00 confirmed by live menu page 7 Oct 2026); Sun 10:30–12:30 brunch (term) [lead: other times from a search snippet of the former Hall & Catering page, now 404; reconfirm]"
+    access:
+      level: members_only
+      text: members only [reported 2015](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2015-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2015
+    payment:
+      text: Hall balance via student intranet; charges on termly College bill
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+    serves: self-service breakfast, brunch, lunch, dinner across the week
+    dietary:
+      tags: []
+      text: "? (handled on dietary-requirements page; not public)"
+      prov:
+        source_kind: official
+        confidence: medium
+        observed_at: 2026-10-07
+    menu_source:
+      kind: intranet
+      status: members_only
+      checked: 2026-10-07
+      cadence: current/next meal
+      includes:
+        - dishes
+        - prices
+        - allergens
+        - service time
+      notes: https://apps.emma.cam.ac.uk/college/menus/ now redirects anonymous visitors to login, and a non-Emmanuel Cambridge account gets "You do not have permission to view this page" (7 Oct 2026). One anonymous fetch that afternoon did return the evening menu (prices, allergens), so access briefly leaked; do not rely on it
+  - slug: fionas
+    name: Fiona's
+    type: cafe
+    where: Chapman's Garden
+    hours_text: daily 09:00–15:00 (advertised)
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: drinks, pastries, cakes
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: Full Term, every evening except Wed; traditional Formal Mon, Fri, Sat, Sun; group/society bookings other nights
+  time: seated by 19:15; dinner 19:30; late arrivals refused
+  dress: gowns compulsory for members
+  format: served dinner in Hall; no alternative dishes; no toasts, singing or drinking games
+  booking: online, by 19:00 three days before; free cancellation to 18:45 the day before ([rules PDF, Nov 2025](https://apps.emma.cam.ac.uk/college/documents/pdfs/FORMALS.pdf))
+  guests: up to 4 per member on traditional nights; groups of up to 10 non-members booked 10 days ahead
+  cost: £13.10 (living in College) / £13.95 (living out); 1st guest £22.65, further guests £28.30 (Nov 2025 PDF)
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes:
+  - 'Formals PDF is internally inconsistent: says group bookings on "Tuesdays and Saturdays" and later "Thursday and Saturday". Ask catering.'

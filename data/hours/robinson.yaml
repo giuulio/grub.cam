@@ -1,0 +1,11 @@
+college: robinson
+slots:
+  - { venue: garden-restaurant-dining-hall, meal: breakfast, days: mon-fri, start: "07:30", end: "09:00", note: "hot breakfast currently in the Crausaz Wordsworth Building", prov: { source_kind: lead, confidence: low, note: "2023 Bye-Fellows info" } }
+  - { venue: garden-restaurant-dining-hall, meal: lunch, days: mon-fri, start: "12:20", end: "13:40", prov: { source_kind: reported, confidence: medium, observed_at: 2026-01-01, source_url: "https://ssb22.user.srcf.net/buttery.html", note: "visitor report 2026" } }
+  - { venue: garden-restaurant-dining-hall, meal: dinner, days: mon-fri, start: "18:00", end: "19:15", prov: { source_kind: reported, confidence: medium, observed_at: 2026-01-01, source_url: "https://ssb22.user.srcf.net/buttery.html", note: "visitor report 2026" } }
+  - { venue: garden-restaurant-dining-hall, meal: lunch, days: sat, start: "12:00", end: "13:30", prov: { source_kind: reported, confidence: medium, observed_at: 2026-01-01, source_url: "https://ssb22.user.srcf.net/buttery.html", note: "visitor report 2026" } }
+  - { venue: garden-restaurant-dining-hall, meal: lunch, days: sun, start: "12:30", end: "13:30", prov: { source_kind: reported, confidence: medium, observed_at: 2026-01-01, source_url: "https://ssb22.user.srcf.net/buttery.html", note: "visitor report 2026" } }
+  - { venue: red-brick-cafe, meal: snacks, days: mon-fri, start: "08:00", end: "23:00", period: term, note: "Michaelmas 2026; pizza from 18:00" }
+  - { venue: red-brick-cafe, meal: snacks, days: sat,sun, start: "10:00", end: "23:00", period: term, note: "Michaelmas 2026; pizza from 18:00" }
+  - { venue: red-brick-cafe, meal: dinner, days: sat,sun, start: "18:00", end: "20:00", period: term, note: "weekend bar supper" }
+  - { venue: red-brick-bar, meal: bar, days: daily, start: "18:00", end: "23:00", period: term, note: "Michaelmas 2026" }

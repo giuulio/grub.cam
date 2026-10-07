@@ -1,0 +1,83 @@
+slug: churchill
+name: Churchill
+official_dining_url: https://www.chu.cam.ac.uk/about/campus/dining-at-college/
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: dining-hall
+    name: Dining Hall
+    type: hall
+    hours_text: breakfast 07:30–09:30; lunch 12:00–14:00; dinner 17:45–19:10 (days not stated; "subject to change"); Sat 11:30–14:00 brunch (term) ([published service](https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/))
+    access:
+      level: public
+      text: members; unaccompanied visitors admitted [reported 2023](https://ssb22.user.srcf.net/buttery.html)
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2023-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2023
+    payment:
+      text: University card at tills; catering account emailed fortnightly. Dinner (main, 2 sides, dessert) ~£7.29 (June 2026)
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+    serves: changing self-service mains; daily themed special (e.g. trattoria, crêperie, waffles)
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+        - halal
+      text: vegetarian, vegan, halal (labelled V / VG / H)
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: html
+      status: live
+      checked: 2026-10-07
+      cadence: weekly
+      coverage: w/c 5 Oct only (to 11 Oct)
+      includes:
+        - dishes
+        - diet tags (V / VG / H)
+        - Buttery hours
+      notes: no prices
+      url: https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/
+  - slug: buttery
+    name: Buttery
+    type: bar
+    hours_text: Mon–Thu 08:00–22:00; Fri 08:00–23:00; Sat–Sun 14:00–22:00 (per weekly menu page); Google Maps agrees
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      text: University card
+      prov:
+        source_kind: official
+        confidence: medium
+      university_card: true
+    serves: snacks, drinks, 12-inch pizza (~£8.90, June 2026)
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  days_text: Thu, Fri, Sun
+  time: 19:30
+  dress: slightly more formal; gowns not required
+  format: ?; wine not provided, strictly limited BYO
+  booking: internal SharePoint (current students)
+  guests: permitted (guest price)
+  cost: £15.70 student; £16.75 guest (June 2026)
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes:
+  - '"Love Food, Hate Waste" leftover sale 19:10–19:15.'

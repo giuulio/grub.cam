@@ -1,0 +1,7 @@
+college: corpus-christi
+slots:
+  - { venue: cafeteria, meal: breakfast, days: tue,thu, start: "08:15", end: "09:15", period: term, prov: { source_kind: reported, confidence: low, observed_at: 2024-11-01, source_url: "https://www.jcr.corpus.cam.ac.uk/catering", note: "JCR, Nov 2024" } }
+  - { venue: cafeteria, meal: lunch, days: mon-fri, start: "12:00", end: "13:30", period: term, prov: { source_kind: reported, confidence: medium, observed_at: 2024-11-01, source_url: "https://www.jcr.corpus.cam.ac.uk/catering", note: "JCR, Nov 2024; College page confirms daily lunch/dinner" } }
+  - { venue: cafeteria, meal: brunch, days: sat,sun, start: "11:30", end: "13:00", period: term, prov: { source_kind: reported, confidence: medium, observed_at: 2024-11-01, source_url: "https://www.jcr.corpus.cam.ac.uk/catering", note: "JCR, Nov 2024" } }
+  - { venue: cafeteria, meal: dinner, days: sun-fri, start: "17:45", end: "18:45", period: term, note: "no Saturday dinner", prov: { source_kind: reported, confidence: medium, observed_at: 2024-11-01, source_url: "https://www.jcr.corpus.cam.ac.uk/catering", note: "JCR, Nov 2024" } }
+  # Pelican Bar, Leckhampton Dining Hall, Leckhampton Bar: times not published

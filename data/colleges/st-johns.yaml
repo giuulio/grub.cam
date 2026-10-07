@@ -1,0 +1,96 @@
+slug: st-johns
+name: St John's
+official_dining_url: https://www.joh.cam.ac.uk/live-and-study/food-and-drink
+reviewed: 2026-10-07
+links: []
+venues:
+  - slug: buttery
+    name: Buttery
+    type: hall
+    hours_text: "daily lunch and dinner except one week at Christmas; Wed breakfast; Sat–Sun brunch and roast. ? Michaelmas 2024: Wed 08:00–10:00 breakfast; Sun–Fri 11:30–13:30 lunch; Sat 11:30–14:00 brunch; daily 18:00–20:00 dinner [lead: search snippet of a now-404 Michaelmas 2024 hours file]"
+    access:
+      level: members_guests
+      text: visitors must be with a St John's member [reported 2025](https://ssb22.user.srcf.net/buttery.html); visitor tariff ?
+      prov:
+        source_kind: reported
+        confidence: low
+        observed_at: 2025-01-01
+        source_url: https://ssb22.user.srcf.net/buttery.html
+        note: reported 2025
+    payment:
+      text: '? ("heavily discounted")'
+      prov:
+        source_kind: official
+        confidence: medium
+    serves: starter soup, vegan, vegetarian and halal mains, sides, desserts; sandwiches, baked potatoes, salads
+    dietary:
+      tags:
+        - vegetarian
+        - vegan
+        - halal
+      text: vegetarian, vegan; halal meat tagged per dish; free-range, organic, local sourcing
+      prov:
+        source_kind: official
+        confidence: high
+        observed_at: 2026-10-07
+    menu_source:
+      kind: html
+      status: live
+      checked: 2026-10-07
+      cadence: rolling 7 days
+      coverage: rolling 7 days (to 13 Oct)
+      includes:
+        - dishes
+        - diet tags (Vegan / Vegetarian / Halal)
+        - allergens
+      notes: 'no prices. Parsing: some dishes have no diet tag, so each "Contains" block belongs to the dish just above it. The 6 Oct vegan/milk conflict has dropped off; none found 7–13 Oct'
+      url: https://menu.joh.cam/
+  - slug: cafe
+    name: Café
+    type: cafe
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: barista coffee, cakes, pastries, fresh sandwiches and soup daily
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+  - slug: bar
+    name: Bar
+    type: bar
+    hours_text: Mon–Fri 17:00–23:00; Sat 12:30–23:00; Sun 12:30–22:30 [Google Maps, 2026-10-07]
+    access:
+      level: unknown
+      prov:
+        source_kind: unknown
+        confidence: low
+    payment:
+      prov:
+        source_kind: unknown
+        confidence: low
+    serves: local artisan beers, lagers, ciders, soft drinks, snacks at subsidised prices; quiz nights, tastings, music
+    dietary:
+      tags: []
+      prov:
+        source_kind: unknown
+        confidence: low
+formal:
+  where: 16th-century Hall
+  days_text: five nights weekly (days ?)
+  dress: black gowns; "reasonable" dress, no flip-flops, shorts or sportswear ([JCR](https://www.sjcjcr.com/studentlife/atcambridge))
+  format: candlelit three courses, 150 tickets, heavily discounted
+  booking: member system (undergraduate/postgraduate allocations)
+  guests: booked guests
+  prov:
+    source_kind: official
+    confidence: medium
+    observed_at: 2026-10-07
+notes: []
