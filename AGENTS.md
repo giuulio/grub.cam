@@ -10,7 +10,7 @@ Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + 
 | `npm run build:data` | Validate `data/` + `menus/` → `public/data.json`; prints counts and halls without hours |
 | `npm run ingest -- [--week 2026-W41] [--only jesus,homerton]` | Fetch scripted sources → `menus/<week>/<college>.json` |
 | `npm run ingest:manual` | Compile hand-transcribed `menus/<week>/<college>.txt` → `.json` |
-| `npm run seed` | Upsert everything into Supabase (needs `SUPABASE_SERVICE_ROLE_KEY` in `.env`) |
+| `npm run seed` | Upsert everything into Supabase (needs `SUPABASE_SECRET_KEY` in `.env`) |
 | `npm test` | Vitest (time logic, filters) |
 | `npm run typecheck` / `npm run lint` | `tsc -b` + scripts tsconfig / oxlint |
 | `npm run build` | build:data + typecheck + Vite build → `dist/` (static; deploy anywhere) |
@@ -22,7 +22,7 @@ Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + 
 - `data/hours/<slug>.yaml` — structured service slots. `days` accepts `mon-fri`, `daily`, `sat,sun` — quote comma lists inside `{ }` flow maps (`days: "sat,sun"`); slots are `.strict()` so an unquoted one fails the build. Unknown hours ⇒ no slot (UI says "Hours not published", never "closed").
 - `menus/<ISO week>/<college>.json` — dish observations. `.txt` siblings are the hand-transcribed source for non-scripted colleges (format documented at top of `scripts/ingest/manual.ts`).
 - `scripts/ingest/sources/*.ts` — one adapter per machine-readable college (11): homerton, peterhouse, corpus, jesus, robinson, selwyn, st-johns, downing (Kafoodle API), darwin, wolfson, magdalene (tenkites JSON-LD).
-- `supabase/migrations/0001_init.sql` — tables + RLS (anon SELECT only).
+- `supabase/migrations/0001_init.sql` — tables + RLS (anon SELECT only). Menus: `menu_days` → `menu_items` (each dish as printed) → `dishes` (one per college + `dishKey()` from `scripts/lib/dishKey.ts`, so a dish is tracked across weeks); `dish_stats` view; `ingest_runs` (service role only).
 - `src/pages/*` — routes: `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `diet`, `guests`, `card`; ranked venue list via `applyFilters`), `/:slug` College (venue list, anchors `#venue-slug`), `/about`, `*` 404. Header/footer in `src/components/`; site constants in `src/lib/site.ts`. White on charcoal (`#1e1e1e`), minimal text; free-text data fields (`notice`, `access.text`, …) are research notes and aren't shown.
 - `src/lib/time/*` — Europe/London clock, Full Term dates, `openStatus()`; `src/lib/filters.ts` — ranking.
 
@@ -38,6 +38,14 @@ Gotchas: Robinson's `?date=` returns the following day (adapter requests date−
 
 Michaelmas 2026 Full Term 6 Oct–4 Dec; Lent 2027 19 Jan–19 Mar; Easter 2027 27 Apr–18 Jun (`src/lib/time/termDates.ts`). Update yearly from cam.ac.uk.
 
+## Supabase
+
+Project `grub` (ref `leghyhbkovkyipgoygko`, org grub.cam, London `eu-west-2`, free tier), linked via `supabase link`. Keys live in `.env` (see `.env.example`): `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` (browser), `SUPABASE_SECRET_KEY` + `SUPABASE_DB_PASSWORD` (scripts/CLI only). With the `VITE_` vars set, dev and build read Supabase; without them, `public/data.json`.
+
+- Schema change: add `supabase/migrations/NNNN_name.sql`, then `set -a && . ./.env && set +a && supabase db push`.
+- `npm run seed` is idempotent: upserts reference data and menu days, adds new dishes, replaces each day's items.
+- `supabase projects api-keys --reveal` is needed to get the secret key in full (without it the CLI masks it).
+
 ## Deploy
 
-Static `dist/`. Cloudflare Pages: build `npm run build`, output `dist`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; SPA fallback to `/index.html` (add `public/_redirects` with `/* /index.html 200`).
+Static `dist/`. Cloudflare Pages: build `npm run build`, output `dist`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`; SPA fallback to `/index.html` (add `public/_redirects` with `/* /index.html 200`).

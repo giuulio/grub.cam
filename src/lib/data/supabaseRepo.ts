@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Repo } from './repo.ts'
-import type { College, Formal, MenuDay, MenuFile, ServiceSlot, Venue } from './types.ts'
+import type { College, Dish, Formal, MenuDay, MenuFile, ServiceSlot, Venue } from './types.ts'
 
 // Row shapes mirror supabase/migrations/0001_init.sql
 type CollegeRow = { slug: string; name: string; short_name: string | null; official_dining_url: string | null; reviewed: string; notice: string | null; links: College['links']; notes: string[] }
 type VenueRow = { id: string; college: string; slug: string; name: string; type: Venue['type']; where_text: string | null; hours_text: string | null; access: Venue['access']; payment: Venue['payment']; prices: Venue['prices'] | null; serves: string | null; dietary: Venue['dietary']; menu_source: Venue['menu_source'] | null; sort_order: number }
 type SlotRow = { venue_id: string; college: string; venue: string; meal: ServiceSlot['meal']; days: ServiceSlot['days']; start_time: string; end_time: string; period: ServiceSlot['period']; note: string | null; prov: ServiceSlot['prov'] }
 type FormalRow = { college: string } & Omit<Formal, 'prov'> & { prov: Formal['prov'] }
-type MenuDayRow = { college: string; venue: string; week: string; date: string; service: MenuDay['service']; items: MenuDay['items']; note: string | null; source_url: string; fetched_at: string; method: MenuFile['method']; file_note: string | null }
+type ItemRow = { position: number; name: string; tags: Dish['tags']; price_gbp: number | null; price_text: string | null; course: Dish['course'] | null; sold_out: boolean | null }
+type MenuDayRow = { college: string; venue: string; week: string; date: string; service: MenuDay['service']; menu_items: ItemRow[]; note: string | null; source_url: string; fetched_at: string; method: MenuFile['method']; file_note: string | null }
 
 export function supabaseRepo(url: string, anonKey: string): Repo {
   const sb = createClient(url, anonKey, { auth: { persistSession: false } })
@@ -19,7 +20,11 @@ export function supabaseRepo(url: string, anonKey: string): Repo {
         sb.from('venues').select('*').order('sort_order'),
         sb.from('service_slots').select('*'),
         sb.from('formals').select('*'),
-        sb.from('menu_days').select('*').gte('date', isoDaysAgo(8)),
+        sb
+          .from('menu_days')
+          .select('*, menu_items(position, name, tags, price_gbp, price_text, course, sold_out)')
+          .gte('date', isoDaysAgo(8))
+          .order('position', { referencedTable: 'menu_items' }),
       ])
       for (const r of [c, v, s, f, m]) if (r.error) throw new Error(r.error.message)
 
@@ -77,9 +82,11 @@ export function supabaseRepo(url: string, anonKey: string): Repo {
           file = { college: r.college, venue: r.venue, week: r.week, source_url: r.source_url, fetched_at: r.fetched_at, method: r.method, note: r.file_note ?? undefined, days: [] }
           menuFiles.set(k, file)
         }
-        file.days.push({ date: r.date, service: r.service, items: r.items, note: r.note ?? undefined })
+        file.days.push({ date: r.date, service: r.service, items: r.menu_items.map((i) => stripNulls({ ...i, position: undefined }) as Dish), note: r.note ?? undefined })
       }
-      return { generated_at: new Date().toISOString(), colleges, slots, menus: [...menuFiles.values()] }
+      // Freshness = latest menu fetch, not page-load time.
+      const latest = ((m.data ?? []) as MenuDayRow[]).reduce((max, r) => (r.fetched_at > max ? r.fetched_at : max), '')
+      return { generated_at: latest || new Date().toISOString(), colleges, slots, menus: [...menuFiles.values()] }
     },
   }
 }
