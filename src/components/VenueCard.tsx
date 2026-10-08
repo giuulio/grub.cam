@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useReady } from '../lib/data.tsx'
-import { TYPE_LABEL } from '../lib/filters.ts'
+import { ACCESS_LABEL, TYPE_LABEL } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { venuePath } from '../lib/site.ts'
 import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
@@ -9,10 +9,10 @@ import type { Venue } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 
 /** One venue in a list, linking to its page; the icon says what kind of place it is. Search leads with the site (college, West Cambridge, ...); a site page with the venue. */
-export function VenueCard({ venue, status, now, dishes = [], showSite = true }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean }) {
+export function VenueCard({ venue, status, now, dishes = [], showSite = true, date, showAccess = false }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean; date?: string; showAccess?: boolean }) {
   return (
     <li>
-      <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-3 rounded-md px-3 py-4 transition-colors hover:bg-ink/5">
+      <Link to={`${venuePath(venue)}${date ? `?date=${date}` : ''}`} className="-mx-3 flex items-start gap-3 rounded-md px-3 py-4 transition-colors hover:bg-ink/5">
         <span className="mt-0.5 text-muted">
           <Icon of={TYPE_ICON[venue.type]} className="size-5" />
           <span className="sr-only">{TYPE_LABEL[venue.type]}</span>
@@ -29,6 +29,7 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true }: 
             )}
           </p>
           {dishes.length > 0 && <p className="mt-1 truncate text-sm text-muted">{dishes.slice(0, 3).join(' · ')}</p>}
+          {showAccess && <p className="mt-1 text-xs text-muted">{ACCESS_LABEL[venue.access.level]}{venue.formal && !venue.slots.some((s) => s.meal !== 'formal') ? ' · Formal hall, booking required' : ''}</p>}
         </div>
         <StatusText s={status} now={now} />
       </Link>

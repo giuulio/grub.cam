@@ -55,6 +55,9 @@ export type Filters = {
   date: string // ISO date being viewed
   type?: VenueType
   site?: string // site slug
+  access?: AccessLevel
+  /** Explore pins menus to the selected date; venue/site browsing can preview the next service. */
+  exactDate?: boolean
   diets: DietTag[]
   nonMemberOk: boolean
   bankCard: boolean
@@ -108,12 +111,13 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   for (const v of venues) {
     if (f.type && !venueTypes(v).includes(f.type)) continue
     if (f.site && v.site.slug !== f.site) continue
+    if (f.access && v.access.level !== f.access) continue
     if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
     if (f.bankCard && v.payment.bank_card !== true) continue
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
-    // Viewing today: menus follow the service the status points at, so after tonight's last service it's tomorrow's menu.
-    const date = !searching && f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
+    // Site browsing can preview the next service; Explore and searches keep the explicit menu date.
+    const date = !f.exactDate && !searching && f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
     const days = menuDaysFor(v, date, f.meal)
     if (!matchesDiet(v, days, f.diets)) continue
     days.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))

@@ -23,7 +23,7 @@ export function CoveragePage() {
           <Icon of={ArrowRightUp} className="size-3.5" />
         </a>
       </div>
-      <p className="text-muted">Colleges only. Menus count what's published for {dates}; prices, a posted price list or priced dishes on those menus.</p>
+      <p className="max-w-3xl text-muted">Colleges only. Menus count what's published for {dates}; prices, a posted price list or priced dishes on those menus.</p>
 
       {coverage(data).map((c) => (
         <Section key={c.title} category={c} dates={dates} />

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
+    "maplibre-gl": "^6.13.0",
     "node-html-parser": "^9.0.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

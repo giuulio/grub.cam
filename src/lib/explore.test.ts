@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest'
+import { hasLocation, readExploreFilters, resultDishes } from './explore.ts'
+import { applyFilters, DEFAULT_FILTERS } from './filters.ts'
+import { clusterPoints } from './map.ts'
+import type { Venue } from './types.ts'
+
+const today = '2026-10-08'
+const site = { slug: 'jesus', name: 'Jesus', short_name: null, kind: 'college' as const, official_dining_url: null }
+const venue: Venue = {
+  id: 'jesus/caff', slug: 'caff', name: 'Caff', type: 'hall', url: null, where: null, serves: null,
+  access: { level: 'members_only' }, payment: {}, dietary: { tags: [] }, site,
+  slots: [{ meal: 'lunch', days: ['thu', 'fri'], start: '12:00', end: '14:00', period: 'all' }],
+  menu: [{ date: '2026-10-09', service: 'lunch', items: [{ name: 'Dhal', tags: ['vegan'] }] }],
+}
+const now = { date: today, day: 'thu' as const, minutes: 20 * 60 }
+const read = (q: string) => readExploreFilters(new URLSearchParams(q), today, [site], today, '2026-10-15')
+
+describe('Explore URL filters', () => {
+  it('validates meals, diet, access, sites and dates and ignores retired guest/card filters', () => {
+    expect(read('type=hall&meal=lunch&diet=vegan,halal,vegan,invalid&site=jesus&access=university&date=2026-10-10&guests=1&card=1')).toMatchObject({
+      type: 'hall', meal: 'lunch', diets: ['vegan', 'halal'], site: 'jesus', access: 'university', date: '2026-10-10', nonMemberOk: false, bankCard: false, exactDate: true,
+    })
+    expect(read('type=cafe&meal=formal&diet=vegan&site=missing&access=invalid&date=2026-02-30')).toMatchObject({ type: 'cafe', meal: undefined, diets: ['vegan'], site: undefined, access: undefined, date: today })
+    expect(read('date=2026-10-15').date).toBe(today)
+    expect(read('date=2026-10-07').date).toBe(today)
+  })
+  it('only applies Open now to today', () => {
+    expect(read('open=1').openNow).toBe(true)
+    expect(read('open=1&date=2026-10-09').openNow).toBe(false)
+  })
+  it('does not silently use tomorrow’s menu for a dietary match tonight', () => {
+    const filters = { ...read('diet=vegan') }
+    expect(applyFilters([venue], filters, now)).toHaveLength(0)
+    expect(applyFilters([venue], { ...filters, date: '2026-10-09' }, now)).toHaveLength(1)
+    expect(applyFilters([venue], { ...DEFAULT_FILTERS, date: today }, now)[0].days[0].date).toBe('2026-10-09')
+  })
+  it('distinguishes public, University members, invited guests and members-only access', () => {
+    const guests: Venue = { ...venue, id: 'jesus/bar', access: { level: 'members_guests' } }
+    expect(applyFilters([venue, guests], read('access=public'), now)).toHaveLength(0)
+    expect(applyFilters([venue, guests], read('access=members_guests'), now).map((r) => r.venue.id)).toEqual(['jesus/bar'])
+  })
+  it('still previews the published menu when a place name, rather than a dish, matched', () => {
+    expect(resultDishes({ venue, status: { kind: 'unknown' }, days: venue.menu, matchedDishes: 0, searchMatches: [] }, read('q=jesus'))).toEqual(['Dhal'])
+  })
+})
+
+describe('verified map points', () => {
+  it('requires both finite coordinates, including valid zero coordinates', () => {
+    expect(hasLocation(venue)).toBe(false)
+    expect(hasLocation({ ...venue, latitude: 52.2, longitude: null })).toBe(false)
+    expect(hasLocation({ ...venue, latitude: NaN, longitude: 0.1 })).toBe(false)
+    expect(hasLocation({ ...venue, latitude: 92, longitude: 0.1 })).toBe(false)
+    expect(hasLocation({ ...venue, latitude: 0, longitude: 0 })).toBe(true)
+  })
+  it('keeps coincident venues selectable together and separates distant points', () => {
+    const points = [{ id: 'cafe', x: 0, y: 0 }, { id: 'bar', x: 0, y: 0 }, { id: 'hall', x: 100, y: 100 }]
+    expect(clusterPoints(points).map((g) => g.map((p) => p.id))).toEqual([['cafe', 'bar'], ['hall']])
+    expect(clusterPoints([{ x: 0, y: 0 }, { x: 30, y: 30 }])).toHaveLength(2)
+    expect(clusterPoints([])).toEqual([])
+  })
+})

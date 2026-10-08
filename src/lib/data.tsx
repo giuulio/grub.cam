@@ -26,7 +26,7 @@ export async function load(): Promise<Data> {
   const [c, m] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, observed_on), formal:formals(venue_id), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, observed_on), formal:formals(venue_id), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),

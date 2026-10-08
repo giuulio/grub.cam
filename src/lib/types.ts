@@ -44,6 +44,10 @@ export type Venue = {
   url: string | null
   where: string | null
   serves: string | null
+  /** Verified venue or containing-building point, never a college/site centroid. */
+  latitude?: number | null
+  longitude?: number | null
+  location_source?: string | null
   access: { level: AccessLevel }
   payment: { bank_card?: boolean }
   dietary: { tags: DietTag[] }

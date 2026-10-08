@@ -44,3 +44,218 @@ select option, select optgroup {
   background: var(--canvas);
   color: var(--ink);
 }
+
+.filter-select {
+  @apply block min-h-11 w-full min-w-0 rounded-xl border border-ink/15 bg-canvas px-3 py-2 text-ink;
+}
+
+.view-button {
+  @apply min-h-9 cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors;
+}
+
+.venue-map {
+  width: 100%;
+  --map-canvas: #fff;
+  --map-ink: #232830;
+  --map-attribution: #ffffffed;
+  height: clamp(440px, 68svh, 740px);
+  background: #f4f1ec;
+  font: inherit;
+  z-index: 0;
+}
+
+.map-action {
+  @apply min-h-11 cursor-pointer rounded-xl border border-ink/15 bg-canvas px-4 py-2 text-sm text-ink shadow-sm;
+}
+
+.venue-pin-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.venue-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--map-ink);
+  border-radius: 50%;
+  background: var(--map-canvas);
+  color: var(--map-ink);
+  box-shadow: 0 2px 6px #0003;
+}
+
+.venue-pin.is-open {
+  background: var(--map-ink);
+  color: var(--map-canvas);
+}
+
+.venue-pin.is-selected {
+  border-color: var(--color-accent-ink);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  box-shadow: 0 0 0 5px #8ee8d855;
+}
+
+.venue-pin.is-cluster {
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.venue-pin:not(.is-cluster) > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.venue-map[data-map-theme='dark'] {
+  --map-canvas: #242e3d;
+  --map-ink: #f0f4f8;
+  --map-attribution: #242e3ded;
+  background: #242e3d;
+}
+
+/* Controls and pins follow the selected basemap palette. */
+.venue-map .maplibregl-ctrl-group {
+  background: var(--map-canvas);
+  color: var(--map-ink);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.venue-map .maplibregl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+
+.venue-map .maplibregl-ctrl-attrib {
+  background: var(--map-attribution);
+  color: var(--map-ink);
+  font-size: 11px;
+  line-height: 16px;
+}
+.venue-map .maplibregl-ctrl-attrib a { color: var(--map-ink); }
+
+.map-user-location {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 0 6px #2563eb26;
+}
+
+.venue-map[data-map-theme='dark'] .maplibregl-ctrl-icon,
+.venue-map[data-map-theme='dark'] .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}
+
+@media (max-width: 639px) {
+  .explore-page:not(.is-map) { padding-top: 1.25rem; }
+
+  .explore-page.is-map {
+    position: relative;
+    margin-inline: -1rem;
+  }
+
+  .is-map .venue-map {
+    height: max(360px, calc(100dvh - var(--explore-top, 112px)));
+  }
+
+  .is-map .explore-controls {
+    position: absolute;
+    inset: 12px 12px auto;
+    z-index: 700;
+    margin: 0;
+    max-height: calc(100dvh - var(--explore-top, 112px) - 80px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    pointer-events: none;
+  }
+
+  .is-map .explore-controls > * { pointer-events: auto; }
+
+  .is-map .explore-controls > label {
+    background: var(--canvas);
+    box-shadow: 0 2px 8px #0002;
+  }
+
+  .is-map .explore-chips {
+    flex-wrap: nowrap;
+  }
+
+  .is-map .explore-quick-chips {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .is-map .explore-clear span { display: none; }
+
+  .is-map .explore-chips button {
+    background: var(--canvas);
+    box-shadow: 0 1px 5px #0002;
+  }
+
+  .is-map .explore-chips button[aria-pressed='true'] {
+    background: var(--ink);
+  }
+
+  .is-map #explore-filters:not([hidden]),
+  .is-map .explore-controls > p,
+  .is-map .explore-controls > [aria-label='Dining meal'] {
+    border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+    border-radius: 16px;
+    padding: 12px;
+    background: var(--canvas);
+    box-shadow: 0 2px 8px #0002;
+  }
+
+  .is-map .explore-toolbar {
+    position: absolute;
+    top: calc(var(--explore-controls-height, 110px) + 24px);
+    left: 12px;
+    right: 12px;
+    z-index: 600;
+    margin: 0;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    pointer-events: none;
+  }
+
+  .is-map .explore-toolbar > * {
+    pointer-events: auto;
+    background: var(--canvas);
+    box-shadow: 0 2px 8px #0002;
+  }
+
+  .is-map .explore-toolbar > p {
+    border-radius: 16px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .is-map .explore-toolbar > div { flex-shrink: 0; }
+
+  .is-map .map-actions { top: auto; bottom: 64px; left: 12px; }
+  .is-map .maplibregl-ctrl-top-right { top: auto; bottom: 64px; }
+  .is-map .selected-place { max-height: min(65%, calc(100% - 220px)); }
+  .is-map .explore-map-note { padding-inline: 16px; }
+}
