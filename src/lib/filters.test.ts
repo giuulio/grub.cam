@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, matchesDiet } from './filters.ts'
+import { applyFilters, DEFAULT_FILTERS, matchesDiet, nextService } from './filters.ts'
 import type { Venue } from './types.ts'
 
 const base: Venue = {
@@ -51,6 +51,17 @@ describe('applyFilters', () => {
     expect(ids([])).toEqual(['c/hall', 'c/bar'])
     expect(ids(['bar'])).toEqual(['c/bar'])
     expect(ids(['hall', 'cafe'])).toEqual(['c/hall'])
+  })
+})
+
+describe('nextService', () => {
+  it("picks the menu for the service the status points at, else the day's first", () => {
+    const dinner = { date: '2026-10-07', service: 'dinner' as const, items: [{ name: 'Risotto', tags: [] }] }
+    const v: Venue = { ...base, slots: [...base.slots, { ...base.slots[0], meal: 'dinner', start: '18:00', end: '19:30' }], menu: [...base.menu, dinner] }
+    const at = (minutes: number) => nextService(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date }, { ...now, minutes })[0])?.service
+    expect(at(12 * 60 + 30)).toBe('lunch')
+    expect(at(15 * 60)).toBe('dinner')
+    expect(nextService({ status: { kind: 'unknown' }, days: v.menu })?.service).toBe('lunch')
   })
 })
 

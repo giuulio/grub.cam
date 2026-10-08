@@ -21,6 +21,11 @@ export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all'
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar', 'other']
 export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Hall', cafe: 'Café', bar: 'Bar', other: 'Other' }
 
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+/** The venue's type, unless its name already says it ("College Bar", "Iris Café"). */
+export const typeNote = (v: Pick<Venue, 'name' | 'type'>) => (fold(v.name).includes(fold(TYPE_LABEL[v.type])) ? undefined : TYPE_LABEL[v.type])
+
 export type Filters = {
   meal?: Meal
   date: string // ISO date being viewed
@@ -53,12 +58,20 @@ export function dishMatches(i: Dish, f: Pick<Filters, 'q' | 'diets'>): boolean {
   return (!q || i.name.toLowerCase().includes(q)) && f.diets.every((t) => i.tags.includes(t) || (t === 'vegetarian' && i.tags.includes('vegan')))
 }
 
-function serviceDate(s: OpenStatus): string | undefined {
+/** Date of the service the status points at: the one on now, opening next, or next after closing. */
+export function serviceDate(s: OpenStatus): string | undefined {
   if (s.kind === 'open' || s.kind === 'opening') return s.date
   if (s.kind === 'closed') return s.next?.date
 }
 
 export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number }
+
+/** The menu for the service the status points at, else the first menu that day. */
+export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>): MenuDay | undefined {
+  const slot = s.kind === 'open' || s.kind === 'opening' ? s.slot : s.kind === 'closed' ? s.next?.slot : undefined
+  const withItems = days.filter((d) => d.items.length)
+  return withItems.find((d) => d.service === slot?.meal) ?? withItems[0]
+}
 
 export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked[] {
   const q = f.q.trim().toLowerCase()

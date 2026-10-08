@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { VenueCard } from '../components/VenueCard.tsx'
 import { useReady } from '../lib/data.tsx'
 import type { DietTag, Meal, VenueType } from '../lib/types.ts'
-import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, MEALS, type Filters, type Ranked } from '../lib/filters.ts'
+import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, MEALS, nextService, type Filters, type Ranked } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
-import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
-import type { OpenStatus } from '../lib/time/openNow.ts'
+import type { LocalNow } from '../lib/time/clock.ts'
 
 const DIET_CHIPS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free']
 const TYPE_CHIPS: [VenueType, string][] = [
@@ -131,44 +131,9 @@ export function Home() {
 }
 
 function ResultRow({ r, f, now }: { r: Ranked; f: Filters; now: LocalNow }) {
-  const { venue } = r
-  // When searching or filtering by diet, show which dishes matched.
-  const dishes = f.q.trim() || f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, f)).map((i) => i.name) : []
-
-  return (
-    <li>
-      <Link to={`/${venue.college.slug}#${venue.slug}`} className="-mx-3 flex items-start gap-4 rounded-md px-3 py-4 transition-colors hover:bg-white/5">
-        <div className="min-w-0 flex-1">
-          <p className="truncate">
-            <span className="font-medium">{venue.college.short_name ?? venue.college.name}</span>
-            <span className="ml-2 text-white/50">{venue.name}</span>
-          </p>
-          {dishes.length > 0 && <p className="mt-1 truncate text-sm text-white/50">{dishes.slice(0, 3).join(' · ')}</p>}
-        </div>
-        <StatusText s={r.status} now={now} />
-      </Link>
-    </li>
-  )
-}
-
-function StatusText({ s, now }: { s: OpenStatus; now: LocalNow }) {
-  const cls = 'shrink-0 text-sm tabular-nums'
-  switch (s.kind) {
-    case 'open':
-      return <span className={`${cls} text-white`}>Open until {s.slot.end}</span>
-    case 'opening':
-      return <span className={`${cls} text-white/60`}>Opens {s.slot.start}</span>
-    case 'closed':
-      if (!s.next) return null
-      return (
-        <span className={`${cls} text-white/40`}>
-          Opens {s.next.date === now.date ? '' : `${dayLabel(dayOfISO(s.next.date))} `}
-          {s.next.slot.start}
-        </span>
-      )
-    case 'unknown':
-      return null
-  }
+  // When searching or filtering by diet, show which dishes matched; otherwise what's on at the next service.
+  const dishes = f.q.trim() || f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, f)) : (nextService(r)?.items ?? [])
+  return <VenueCard venue={r.venue} status={r.status} now={now} dishes={dishes.map((i) => i.name)} />
 }
 
 const chipClass = (active: boolean) =>
