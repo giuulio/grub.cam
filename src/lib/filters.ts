@@ -81,6 +81,12 @@ export function serviceDate(s: OpenStatus): string | undefined {
 
 export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number }
 
+/** How results are grouped, in ranking order. Unknown hours are their own group, never "closed". */
+export type Section = 'open' | 'later' | 'other' | 'unknown'
+export const SECTIONS: Section[] = ['open', 'later', 'other', 'unknown']
+export const SECTION_LABEL: Record<Section, string> = { open: 'Open now', later: 'Later today', other: 'Other days', unknown: 'Hours not published' }
+export const sectionOf = (s: OpenStatus): Section => (s.kind === 'open' ? 'open' : s.kind === 'opening' ? 'later' : s.kind === 'closed' ? 'other' : 'unknown')
+
 /** The menu for the service the status points at, else the first menu that day. */
 export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>): MenuDay | undefined {
   const slot = s.kind === 'open' || s.kind === 'opening' ? s.slot : s.kind === 'closed' ? s.next?.slot : undefined

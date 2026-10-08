@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, dishTags, matchesDiet, nextService, type Filters } from './filters.ts'
+import { applyFilters, DEFAULT_FILTERS, dishTags, matchesDiet, nextService, sectionOf, type Filters } from './filters.ts'
 import type { Venue } from './types.ts'
 
 const base: Venue = {
@@ -55,6 +55,16 @@ describe('applyFilters', () => {
     expect(ids({ type: 'cafe' })).toEqual([])
     expect(ids({ site: 'd' })).toEqual(['d/hall'])
     expect(ids({ type: 'hall', site: 'c' })).toEqual(['c/hall'])
+  })
+})
+
+describe('sectionOf', () => {
+  it('groups by status: open, later today, other days, unknown hours', () => {
+    const at = (minutes: number, v: Venue = base) => sectionOf(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date }, { ...now, minutes })[0].status)
+    expect(at(12 * 60 + 30)).toBe('open')
+    expect(at(9 * 60)).toBe('later')
+    expect(at(15 * 60)).toBe('other')
+    expect(at(12 * 60, { ...base, slots: [] })).toBe('unknown')
   })
 })
 
