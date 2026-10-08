@@ -1,21 +1,22 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
+import { DayMenu } from '../components/DayMenu.tsx'
+import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
-import { useReady } from '../lib/data.tsx'
-import { ACCESS_LABEL, MEAL_LABEL, MEALS, serviceDate, typeNote } from '../lib/filters.ts'
+import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
+import { ACCESS_LABEL, MEAL_LABEL, MEALS, typeNote } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
-import { formatDays, formatISODate } from '../lib/time/clock.ts'
+import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus } from '../lib/time/openNow.ts'
 import { isFullTerm } from '../lib/time/termDates.ts'
-import { DAYS } from '../lib/types.ts'
+import { DAYS, type Venue } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 export function VenuePage() {
   const params = useParams()
   const { venues } = useReady()
   const now = useNow()
-  const [picked, setPicked] = useState<string>()
 
   const venue = venues.find((v) => v.college.slug === params.college && v.slug === params.venue)
   if (!venue) return <NotFound />
@@ -26,12 +27,6 @@ export function VenuePage() {
   const slots = venue.slots
     .filter((s) => s.period === 'all' || s.period === (term ? 'term' : 'vacation'))
     .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
-
-  // Menu dates from today on; opens on the day of the next service.
-  const dates = [...new Set(venue.menu.filter((d) => d.items.length).map((d) => d.date))].filter((d) => d >= now.date).sort()
-  const next = serviceDate(status)
-  const date = picked && dates.includes(picked) ? picked : next && dates.includes(next) ? next : dates[0]
-  const menu = venue.menu.filter((d) => d.date === date && d.items.length).sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
 
   const meta = [typeNote(venue), venue.access.level !== 'unknown' && ACCESS_LABEL[venue.access.level], venue.payment.bank_card && 'Bank card'].filter(Boolean).join(' · ')
 
@@ -70,36 +65,82 @@ export function VenuePage() {
         )}
       </section>
 
-      {date && (
-        <section className="border-t border-white/10 py-8">
-          <h2 className="mb-3 text-sm text-white/40">Menu</h2>
-          {dates.length > 1 && (
-            <div role="group" aria-label="Menu day" className="flex max-w-full overflow-x-auto rounded-lg border border-white/10 p-1 text-sm scrollbar-none sm:inline-flex">
-              {dates.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={d === date}
-                  onClick={() => setPicked(d)}
-                  className={`shrink-0 cursor-pointer rounded-md px-3 py-1.5 transition-colors ${d === date ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
-                >
-                  {formatISODate(d, { weekday: 'short' })}
-                </button>
-              ))}
-            </div>
-          )}
-          {menu.map((d) => (
-            <div key={d.service} className="mt-6 text-sm leading-relaxed">
-              <h3 className="mb-1 text-white/40">{MEAL_LABEL[d.service]}</h3>
-              <ul className="text-white/70">
-                {d.items.map((item, i) => (
-                  <li key={i}>{item.name}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
+      <MenuSection key={venue.id} venue={venue} now={now} />
     </>
+  )
+}
+
+/** The menu for one date (?date=, default today), with a calendar of every date that has one. */
+function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
+  const [params, setParams] = useSearchParams()
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const asked = params.get('date') ?? ''
+  const date = isISODate(asked) ? asked : now.date
+  const setDate = (d: string) => setParams(d === now.date ? {} : { date: d }, { replace: true })
+
+  // Dates already loaded show straight away; the full history fills in once fetched.
+  const fetched = useMenuDates(venue.id)
+  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
+  const { days, failed } = useMenuOn(venue, date)
+  if (!dates.length && !asked) return null
+
+  const dateSet = new Set(dates)
+  const relative = relativeDay(date, now.date)
+  const dayMonth: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', ...(date.slice(0, 4) === now.date.slice(0, 4) ? {} : { year: 'numeric' }) }
+  const calendar = <MenuCalendar value={date} today={now.date} dates={dateSet} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
+
+  return (
+    <section className="border-t border-white/10 py-8">
+      <h2 className="mb-4 text-sm text-white/40">Menu</h2>
+      <div className="sm:grid sm:grid-cols-[14rem_1fr] sm:gap-10">
+        <div className="hidden sm:block">
+          <div className="sticky top-24">{calendar}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCalendarOpen(!calendarOpen)}
+              aria-expanded={calendarOpen}
+              className="-ml-2 flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-white/5 sm:pointer-events-none sm:cursor-auto"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-xl font-medium">
+                  <span className="sm:hidden">{formatISODate(date, { weekday: 'short', ...dayMonth })}</span>
+                  <span className="hidden sm:inline">{formatISODate(date, { weekday: 'long', ...dayMonth })}</span>
+                </span>
+                {relative && <span className="block text-sm text-white/50">{relative}</span>}
+              </span>
+              <CalendarIcon className="size-4 shrink-0 text-white/50 sm:hidden" />
+            </button>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {date !== now.date && (
+                <button type="button" onClick={() => setDate(now.date)} className="cursor-pointer rounded-md px-2 py-1 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+                  Today
+                </button>
+              )}
+              <DayStepper value={date} dates={dates} onChange={setDate} />
+            </div>
+          </div>
+          {calendarOpen && <div className="mt-4 sm:hidden">{calendar}</div>}
+          <div className="mt-6">
+            {days?.some((d) => d.items.length) ? (
+              <DayMenu days={days} slots={venue.slots} date={date} />
+            ) : (
+              <p className="text-sm text-white/40">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className={className}>
+      <rect x="2" y="3" width="12" height="11" rx="2" />
+      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" strokeLinecap="round" />
+    </svg>
   )
 }

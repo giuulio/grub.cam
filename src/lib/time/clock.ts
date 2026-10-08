@@ -63,3 +63,27 @@ export function formatDays(days: Day[]): string {
   }
   return runs.map((r) => (r.length >= 3 ? `${DAY_LABEL[DAYS[r[0]]]}–${DAY_LABEL[DAYS[r.at(-1)!]]}` : r.map((i) => DAY_LABEL[DAYS[i]]).join(', '))).join(', ')
 }
+
+/** A real YYYY-MM-DD date (rejects 2026-02-30). */
+export const isISODate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && addDaysISO(s, 0) === s
+
+/** Month `ym` (YYYY-MM) shifted by `n` months. */
+export function addMonthsYM(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7)
+}
+
+/** A month's dates laid out Monday-first: a null per blank leading cell, then each date. */
+export function monthCells(ym: string): (string | null)[] {
+  const [y, m] = ym.split('-').map(Number)
+  const first = `${ym}-01`
+  const length = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return [...Array<null>(DAYS.indexOf(dayOfISO(first))).fill(null), ...Array.from({ length }, (_, i) => addDaysISO(first, i))]
+}
+
+/** "Today", "Tomorrow", "Yesterday", or nothing. */
+export function relativeDay(date: string, today: string): string | undefined {
+  if (date === today) return 'Today'
+  if (date === addDaysISO(today, 1)) return 'Tomorrow'
+  if (date === addDaysISO(today, -1)) return 'Yesterday'
+}

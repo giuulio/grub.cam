@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, matchesDiet, nextService, type Filters } from './filters.ts'
+import { applyFilters, DEFAULT_FILTERS, dishTags, matchesDiet, nextService, type Filters } from './filters.ts'
 import type { Venue } from './types.ts'
 
 const base: Venue = {
@@ -76,5 +76,13 @@ describe('applyFilters menu date', () => {
     const [r] = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, evening)
     expect(r.days.map((d) => d.date)).toEqual(['2026-10-08'])
     expect(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, now)).toEqual([])
+  })
+})
+
+describe('dishTags', () => {
+  it('keeps only the strictest of vegan/vegetarian, in a fixed order', () => {
+    expect(dishTags(['halal', 'vegetarian', 'gluten_free', 'vegan'])).toEqual(['vegan', 'gluten_free', 'halal'])
+    expect(dishTags(['pescatarian', 'vegetarian'])).toEqual(['vegetarian'])
+    expect(dishTags([])).toEqual([])
   })
 })

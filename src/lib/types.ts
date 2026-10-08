@@ -25,6 +25,6 @@ export type Venue = {
   dietary: { tags: DietTag[] }
   college: College
   slots: Slot[]
-  /** Menu days from today for the next week, by date. */
+  /** Menu days from today for the next week (`useMenuOn` reaches beyond it). */
   menu: MenuDay[]
 }

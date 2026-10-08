@@ -16,6 +16,20 @@ export const DIET_LABEL: Record<DietTag, string> = {
   dairy_free: 'Dairy-free',
 }
 
+/** Menu codes, explained in a key under each day's menu. */
+export const DIET_SHORT: Record<DietTag, string> = { vegan: 'VG', plant_based: 'PB', vegetarian: 'V', pescatarian: 'P', gluten_free: 'GF', dairy_free: 'DF', halal: 'H', kosher: 'K' }
+const DIET_ORDER = Object.keys(DIET_SHORT) as DietTag[]
+
+/** A dish's tags to show, in a fixed order: only the strictest of vegan/plant-based/vegetarian/pescatarian. */
+export function dishTags(tags: DietTag[]): DietTag[] {
+  const has = (t: DietTag) => tags.includes(t)
+  const hidden = new Set<DietTag>()
+  if (has('vegan')) hidden.add('plant_based')
+  if (has('vegan') || has('plant_based')) hidden.add('vegetarian')
+  if (has('vegan') || has('plant_based') || has('vegetarian')) hidden.add('pescatarian')
+  return DIET_ORDER.filter((t) => has(t) && !hidden.has(t))
+}
+
 export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
 
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar', 'other']
