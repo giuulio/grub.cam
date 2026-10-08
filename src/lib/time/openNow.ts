@@ -1,4 +1,4 @@
-import type { Meal, Slot } from '../types.ts'
+import type { Meal, MenuDay, Slot } from '../types.ts'
 import { addDaysISO, dayOfISO, hhmmToMinutes, type LocalNow } from './clock.ts'
 import { isFullTerm } from './termDates.ts'
 
@@ -7,6 +7,25 @@ export type OpenStatus =
   | { kind: 'opening'; slot: Slot; opensInMin: number; date: string }
   | { kind: 'closed'; next?: { slot: Slot; date: string; opensInMin: number } }
   | { kind: 'unknown' }
+
+/** Meals that can stand in for each other on a day that only serves one: a brunch is the morning's breakfast and lunch. */
+const STANDS_IN: Partial<Record<Meal, Meal[]>> = { breakfast: ['brunch'], lunch: ['brunch'], brunch: ['lunch', 'breakfast'] }
+
+/**
+ * Files each menu under the meal served that day, when the source names one that isn't but its brunch counterpart is
+ * (Corpus posts Saturday's brunch as "Lunch"). A day with no hours, or whose meal is served, is left as posted.
+ */
+export function servedService<D extends Pick<MenuDay, 'date' | 'service'>>(days: D[], slots: Slot[]): D[] {
+  const taken = new Set(days.map((d) => `${d.date}/${d.service}`))
+  return days.map((d) => {
+    const on = slots.filter((s) => slotApplies(s, d.date)).map((s) => s.meal)
+    if (!on.length || on.includes(d.service)) return d
+    const meal = STANDS_IN[d.service]?.find((m) => on.includes(m) && !taken.has(`${d.date}/${m}`))
+    if (!meal) return d
+    taken.add(`${d.date}/${meal}`)
+    return { ...d, service: meal }
+  })
+}
 
 /** Does this slot apply on the given date, considering term/vacation? */
 export function slotApplies(slot: Slot, date: string): boolean {

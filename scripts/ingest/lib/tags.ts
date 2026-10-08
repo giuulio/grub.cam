@@ -62,6 +62,9 @@ export function courseFromHeading(h: string): Dish['course'] {
   return 'other'
 }
 
+/** "(Breakfast /Brunch)" after a dish: which meals it's on, said already by where it's listed. */
+const MEALS_NOTE = /\s*\((?:\s*(?:breakfast|brunch|lunch|dinner|supper)\s*(?:[/,&]|and)?)+\s*\)$/i
+
 export function cleanName(s: string): string {
   return s
     .replace(/&amp;/g, '&')
@@ -72,5 +75,6 @@ export function cleanName(s: string): string {
     .replace(/\s{2,}/g, ' ')
     .replace(/(,\s*)+/g, ', ')
     .replace(/^[,\s]+|[,\s]+$/g, '')
+    .replace(MEALS_NOTE, '')
     .trim()
 }

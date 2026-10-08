@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Slot } from '../types.ts'
 import type { LocalNow } from './clock.ts'
 import { formatDays } from './clock.ts'
-import { openStatus, slotApplies } from './openNow.ts'
+import { openStatus, servedService, slotApplies } from './openNow.ts'
 
 const slot = (p: Partial<Slot>): Slot => ({
   meal: 'lunch',
@@ -93,5 +93,21 @@ describe('formatDays', () => {
     expect(formatDays(['sat', 'sun'])).toBe('Sat, Sun')
     expect(formatDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).toBe('Daily')
     expect(formatDays(['mon', 'wed', 'thu', 'sat', 'sun'])).toBe('Mon, Wed, Thu, Sat, Sun')
+  })
+})
+
+describe('servedService', () => {
+  const week = [slot({ meal: 'lunch' }), slot({ meal: 'brunch', days: ['sat', 'sun'], start: '11:30', end: '13:00' }), slot({ meal: 'dinner', days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sun'] })]
+  it("files a Saturday 'lunch' under the brunch served that day", () => {
+    expect(servedService([{ date: '2026-10-10', service: 'lunch' }], week)).toEqual([{ date: '2026-10-10', service: 'brunch' }])
+  })
+  it('leaves a meal that is served, and a day without hours, as posted', () => {
+    expect(servedService([{ date: '2026-10-07', service: 'lunch' }], week)[0].service).toBe('lunch')
+    expect(servedService([{ date: '2026-10-10', service: 'dinner' }], week)[0].service).toBe('dinner')
+    expect(servedService([{ date: '2026-10-10', service: 'lunch' }], [])[0].service).toBe('lunch')
+  })
+  it("doesn't file two menus under one brunch", () => {
+    const days = servedService([{ date: '2026-10-10', service: 'breakfast' }, { date: '2026-10-10', service: 'lunch' }], week)
+    expect(days.map((d) => d.service)).toEqual(['brunch', 'lunch'])
   })
 })

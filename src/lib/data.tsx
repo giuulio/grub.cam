@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
+import { servedService } from './time/openNow.ts'
 import type { MenuDay, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
@@ -50,7 +51,7 @@ export async function load(): Promise<Data> {
     for (const v of rows) {
       // Postgres `time` comes back as HH:MM:SS
       const slots = v.slots.map((s) => ({ ...s, start: s.start.slice(0, 5), end: s.end.slice(0, 5) }))
-      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal: !!v.formal, menu: menus.get(v.id) ?? [] })
+      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal: !!v.formal, menu: servedService(menus.get(v.id) ?? [], slots) })
     }
   }
   // Freshness = latest menu fetch, not page-load time.
@@ -122,7 +123,7 @@ export function useMenuOn(venue: Venue, date: string): { days?: MenuDay[]; faile
   const r = useFetched(loaded ? undefined : `menu:${venue.id}:${date}`, async () => {
     const q = await sb.from('menu_days').select(`date, service, note, ${ITEMS}`).eq('venue_id', venue.id).eq('date', date).order('position', { referencedTable: 'menu_items' }).returns<MenuDay[]>()
     if (q.error) throw new Error(q.error.message)
-    return q.data
+    return servedService(q.data, venue.slots)
   })
   return loaded ? { days: venue.menu.filter((d) => d.date === date), failed: false } : { days: r.data, failed: r.failed }
 }

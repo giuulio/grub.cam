@@ -129,14 +129,12 @@ function GroupHead({ label, columns }: { label?: string; columns: boolean }) {
 function Row({ name, tags = [], soldOut, price, columns }: { name: string; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
     <li className="flex items-baseline gap-3 py-1 text-sm">
-      <span className={`min-w-0 flex-1 ${soldOut ? 'text-muted line-through' : 'text-ink'}`}>{name}</span>
-      {tags.length > 0 && (
-        <span className="flex shrink-0 gap-1">
-          {tags.map((t) => (
-            <Code key={t} tag={t} />
-          ))}
-        </span>
-      )}
+      <span className="min-w-0 flex-1">
+        <span className={soldOut ? 'text-muted line-through' : 'text-ink'}>{name}</span>
+        {tags.map((t) => (
+          <Code key={t} tag={t} className="ml-1.5 align-[1px]" />
+        ))}
+      </span>
       {soldOut ? (
         <span className={`${PRICE_COL} text-muted`}>Sold out</span>
       ) : (
@@ -162,9 +160,9 @@ function PriceText({ price, className = '' }: { price: Price; className?: string
   )
 }
 
-function Code({ tag }: { tag: DietTag }) {
+function Code({ tag, className = '' }: { tag: DietTag; className?: string }) {
   return (
-    <abbr title={DIET_LABEL[tag]} className="inline-block min-w-6 rounded border border-ink/15 px-1 text-center text-[10px] leading-4 font-medium text-muted no-underline">
+    <abbr title={DIET_LABEL[tag]} className={`inline-block min-w-6 rounded border border-ink/15 px-1 text-center text-[10px] leading-4 font-medium text-muted no-underline ${className}`}>
       {DIET_SHORT[tag]}
     </abbr>
   )
