@@ -29,7 +29,8 @@ export const typeNote = (v: Pick<Venue, 'name' | 'type'>) => (fold(v.name).inclu
 export type Filters = {
   meal?: Meal
   date: string // ISO date being viewed
-  types: VenueType[]
+  type?: VenueType
+  college?: string // college slug
   diets: DietTag[]
   nonMemberOk: boolean
   bankCard: boolean
@@ -37,7 +38,7 @@ export type Filters = {
   q: string
 }
 
-export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { types: [], diets: [], nonMemberOk: false, bankCard: false, openNow: false, q: '' }
+export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], nonMemberOk: false, bankCard: false, openNow: false, q: '' }
 
 export function menuDaysFor(v: Venue, date: string, meal?: Meal): MenuDay[] {
   return v.menu.filter((d) => d.date === date && (!meal || d.service === meal))
@@ -77,7 +78,8 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   const q = f.q.trim().toLowerCase()
   const out: Ranked[] = []
   for (const v of venues) {
-    if (f.types.length && !f.types.includes(v.type)) continue
+    if (f.type && v.type !== f.type) continue
+    if (f.college && v.college.slug !== f.college) continue
     if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
     if (f.bankCard && v.payment.bank_card !== true) continue
     const meals = f.meal ? [f.meal] : undefined

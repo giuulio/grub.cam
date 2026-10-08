@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, matchesDiet, nextService } from './filters.ts'
+import { applyFilters, DEFAULT_FILTERS, matchesDiet, nextService, type Filters } from './filters.ts'
 import type { Venue } from './types.ts'
 
 const base: Venue = {
@@ -45,12 +45,15 @@ describe('applyFilters', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'dhal' }, now)).toHaveLength(1)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })
-  it('filters by venue type', () => {
+  it('filters by venue type and college', () => {
     const bar: Venue = { ...base, id: 'c/bar', slug: 'bar', type: 'bar', menu: [] }
-    const ids = (types: Venue['type'][]) => applyFilters([base, bar], { ...DEFAULT_FILTERS, date: '2026-10-07', types }, now).map((r) => r.venue.id)
-    expect(ids([])).toEqual(['c/hall', 'c/bar'])
-    expect(ids(['bar'])).toEqual(['c/bar'])
-    expect(ids(['hall', 'cafe'])).toEqual(['c/hall'])
+    const other: Venue = { ...base, id: 'd/hall', college: { ...base.college, slug: 'd', name: 'D' } }
+    const ids = (f: Partial<Filters>) => applyFilters([base, bar, other], { ...DEFAULT_FILTERS, date: '2026-10-07', ...f }, now).map((r) => r.venue.id)
+    expect(ids({})).toEqual(['c/hall', 'c/bar', 'd/hall'])
+    expect(ids({ type: 'bar' })).toEqual(['c/bar'])
+    expect(ids({ type: 'cafe' })).toEqual([])
+    expect(ids({ college: 'd' })).toEqual(['d/hall'])
+    expect(ids({ type: 'hall', college: 'c' })).toEqual(['c/hall'])
   })
 })
 

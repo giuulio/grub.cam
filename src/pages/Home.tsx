@@ -2,31 +2,36 @@ import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { VenueCard } from '../components/VenueCard.tsx'
 import { useReady } from '../lib/data.tsx'
-import type { DietTag, Meal, VenueType } from '../lib/types.ts'
-import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, MEALS, nextService, type Filters, type Ranked } from '../lib/filters.ts'
+import type { College, DietTag, Meal, VenueType } from '../lib/types.ts'
+import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, nextService, type Filters, type Ranked } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import type { LocalNow } from '../lib/time/clock.ts'
 
-const DIET_CHIPS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free']
-const TYPE_CHIPS: [VenueType, string][] = [
+const TYPE_TABS: [VenueType | undefined, string][] = [
+  [undefined, 'All'],
   ['hall', 'Halls'],
   ['cafe', 'Cafés'],
   ['bar', 'Bars'],
 ]
+// Only halls have meal times, menus and diet tags, so these filters appear (and apply) only with Halls picked.
+const HALL_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
+const DIET_CHIPS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free']
 
-const readList = <T extends string>(p: URLSearchParams, key: string, allowed: T[]) => (p.get(key)?.split(',') ?? []).filter((x): x is T => allowed.includes(x as T))
-
-// All filter state lives in the URL (?q=&open=1&meal=&type=hall,cafe&diet=vegan,halal&guests=1&card=1) so a search can be shared.
-function readFilters(p: URLSearchParams, date: string): Filters {
-  const meal = p.get('meal') as Meal | null
+// All filter state lives in the URL (?q=&type=hall&college=jesus&open=1&guests=1&card=1&meal=lunch&diet=vegan,halal) so a search can be shared.
+function readFilters(p: URLSearchParams, date: string, colleges: College[]): Filters {
+  const type = TYPE_TABS.find(([t]) => t && t === p.get('type'))?.[0]
+  const college = colleges.find((c) => c.slug === p.get('college'))?.slug
+  const meal = HALL_MEALS.find((m) => m === p.get('meal'))
+  const diets = (p.get('diet')?.split(',') ?? []).filter((d): d is DietTag => DIET_CHIPS.includes(d as DietTag))
   return {
     ...DEFAULT_FILTERS,
     date,
     q: p.get('q') ?? '',
-    meal: meal && MEALS.includes(meal) ? meal : undefined,
-    types: readList(p, 'type', TYPE_CHIPS.map(([t]) => t)),
-    diets: readList(p, 'diet', DIET_CHIPS),
+    type,
+    college,
+    meal: type === 'hall' ? meal : undefined,
+    diets: type === 'hall' ? diets : [],
     openNow: p.has('open'),
     nonMemberOk: p.has('guests'),
     bankCard: p.has('card'),
@@ -34,10 +39,10 @@ function readFilters(p: URLSearchParams, date: string): Filters {
 }
 
 export function Home() {
-  const { venues } = useReady()
+  const { colleges, venues } = useReady()
   const now = useNow()
   const [params, setParams] = useSearchParams()
-  const f = readFilters(params, now.date)
+  const f = readFilters(params, now.date, colleges)
   const results = applyFilters(venues, f, now)
   const active = params.toString() !== ''
 
@@ -46,13 +51,18 @@ export function Home() {
     fn(next)
     setParams(next, { replace: true })
   }
-  const toggle = (key: string) => update((p) => (p.has(key) ? p.delete(key) : p.set(key, '1')))
-  const toggleIn = <T extends string>(key: string, list: T[], x: T) =>
+  const set = (key: string, value?: string) => update((p) => (value ? p.set(key, value) : p.delete(key)))
+  const toggle = (key: string) => set(key, params.has(key) ? undefined : '1')
+  const setType = (type?: VenueType) =>
     update((p) => {
-      const next = list.includes(x) ? list.filter((y) => y !== x) : [...list, x]
-      if (next.length) p.set(key, next.join(','))
-      else p.delete(key)
+      if (type) p.set('type', type)
+      else p.delete('type')
+      if (type !== 'hall') ['meal', 'diet'].forEach((k) => p.delete(k))
     })
+  const toggleDiet = (tag: DietTag) => {
+    const diets = f.diets.includes(tag) ? f.diets.filter((d) => d !== tag) : [...f.diets, tag]
+    set('diet', diets.join(','))
+  }
 
   return (
     <>
@@ -63,51 +73,52 @@ export function Home() {
           <input
             type="search"
             value={f.q}
-            onChange={(e) => update((p) => (e.target.value ? p.set('q', e.target.value) : p.delete('q')))}
+            onChange={(e) => set('q', e.target.value)}
             placeholder="Search colleges or dishes"
             aria-label="Search colleges or dishes"
             className="w-full bg-transparent text-white outline-none placeholder:text-white/40"
           />
         </label>
-        <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+
+        <ChipRow>
+          <div role="group" aria-label="Type" className="flex shrink-0 rounded-full border border-white/15 p-0.5 text-sm">
+            {TYPE_TABS.map(([type, label]) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={f.type === type}
+                onClick={() => setType(type)}
+                className={`cursor-pointer rounded-full px-3 py-1 transition-colors ${f.type === type ? 'bg-white text-charcoal' : 'text-white/70 hover:text-white'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <SelectChip label="College" value={f.college ?? ''} onChange={(v) => set('college', v)} options={[['', 'All colleges'], ...colleges.map((c): [string, string] => [c.slug, c.short_name ?? c.name])]} />
+        </ChipRow>
+
+        <ChipRow>
           <Chip active={f.openNow} onClick={() => toggle('open')}>
             Open now
           </Chip>
-          <span className={`relative shrink-0 ${f.meal ? 'text-charcoal' : 'text-white/70'}`}>
-            <select
-              value={f.meal ?? ''}
-              onChange={(e) => update((p) => (e.target.value ? p.set('meal', e.target.value) : p.delete('meal')))}
-              aria-label="Meal"
-              className={`${chipClass(!!f.meal)} appearance-none pr-8`}
-            >
-              <option value="">Any meal</option>
-              {MEALS.map((m) => (
-                <option key={m} value={m}>
-                  {MEAL_LABEL[m]}
-                </option>
-              ))}
-            </select>
-            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2">
-              <path d="m3 4.5 3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          {TYPE_CHIPS.map(([type, label]) => (
-            <Chip key={type} active={f.types.includes(type)} onClick={() => toggleIn('type', f.types, type)}>
-              {label}
-            </Chip>
-          ))}
           <Chip active={f.nonMemberOk} onClick={() => toggle('guests')}>
             Guests welcome
           </Chip>
           <Chip active={f.bankCard} onClick={() => toggle('card')}>
             Bank card
           </Chip>
-          {DIET_CHIPS.map((tag) => (
-            <Chip key={tag} active={f.diets.includes(tag)} onClick={() => toggleIn('diet', f.diets, tag)}>
-              {DIET_LABEL[tag]}
-            </Chip>
-          ))}
-        </div>
+        </ChipRow>
+
+        {f.type === 'hall' && (
+          <ChipRow>
+            <SelectChip label="Meal" value={f.meal ?? ''} onChange={(v) => set('meal', v)} options={[['', 'Any meal'], ...HALL_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+            {DIET_CHIPS.map((tag) => (
+              <Chip key={tag} active={f.diets.includes(tag)} onClick={() => toggleDiet(tag)}>
+                {DIET_LABEL[tag]}
+              </Chip>
+            ))}
+          </ChipRow>
+        )}
       </div>
 
       <div className="mt-4 mb-2 flex items-baseline justify-between text-sm text-white/40">
@@ -133,7 +144,13 @@ export function Home() {
 function ResultRow({ r, f, now }: { r: Ranked; f: Filters; now: LocalNow }) {
   // When searching or filtering by diet, show which dishes matched; otherwise what's on at the next service.
   const dishes = f.q.trim() || f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, f)) : (nextService(r)?.items ?? [])
-  return <VenueCard venue={r.venue} status={r.status} now={now} dishes={dishes.map((i) => i.name)} />
+  // With one college picked, lead with the venue
+  return <VenueCard venue={r.venue} status={r.status} now={now} dishes={dishes.map((i) => i.name)} showCollege={!f.college} />
+}
+
+/** One line of filters: scrolls sideways on phones, wraps on wider screens. */
+function ChipRow({ children }: { children: ReactNode }) {
+  return <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">{children}</div>
 }
 
 const chipClass = (active: boolean) =>
@@ -146,6 +163,24 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button type="button" aria-pressed={active} onClick={onClick} className={chipClass(active)}>
       {children}
     </button>
+  )
+}
+
+/** A native select styled as a chip; the first option ('') means "any". */
+function SelectChip({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
+  return (
+    <span className={`relative shrink-0 ${value ? 'text-charcoal' : 'text-white/70'}`}>
+      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} className={`${chipClass(!!value)} appearance-none pr-8`}>
+        {options.map(([v, l]) => (
+          <option key={v} value={v}>
+            {l}
+          </option>
+        ))}
+      </select>
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2">
+        <path d="m3 4.5 3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   )
 }
 
