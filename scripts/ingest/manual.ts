@@ -2,7 +2,7 @@
 // Saves hand-transcribed menus to Supabase. Keep the .txt files outside the repo.
 //
 // Format:
-//   college: churchill
+//   site: churchill          <- the college or University site ("college:" also works)
 //   venue: dining-hall
 //   source: https://...
 //   fetched: 2026-10-07T20:40:00Z  <- optional, when it was read (defaults to now)
@@ -54,9 +54,10 @@ export function parseManual(text: string): ManualMenu {
     const full = noteParts.length ? `${name} (${noteParts.join(' | ')})` : name
     cur.items.push({ name: full, tags, course, ...(price !== undefined ? { price_gbp: price } : {}), ...(priceText ? { price_text: priceText } : {}) })
   }
-  if (!meta.college || !meta.venue || !meta.source) throw new Error('header needs college, venue and source')
+  const site = meta.site ?? meta.college
+  if (!site || !meta.venue || !meta.source) throw new Error('header needs site, venue and source')
   return {
-    venue: `${meta.college}/${meta.venue}`,
+    venue: `${site}/${meta.venue}`,
     source_url: meta.source,
     fetched_at: meta.fetched ?? new Date().toISOString(),
     days: days.filter((d) => d.items.length).map((d) => MenuDay.parse(d)),

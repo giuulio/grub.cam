@@ -7,9 +7,10 @@ const base: Venue = {
   slug: 'hall',
   name: 'Hall',
   type: 'hall',
+  url: null,
   where: null,
   serves: null,
-  college: { slug: 'c', name: 'C', short_name: null, official_dining_url: null },
+  site: { slug: 'c', name: 'C', short_name: null, kind: 'college', official_dining_url: null },
   slots: [{ meal: 'lunch', days: ['wed'], start: '12:00', end: '14:00', period: 'all' }],
   access: { level: 'public' },
   payment: { bank_card: true },
@@ -45,15 +46,15 @@ describe('applyFilters', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'dhal' }, now)).toHaveLength(1)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })
-  it('filters by venue type and college', () => {
+  it('filters by venue type and site', () => {
     const bar: Venue = { ...base, id: 'c/bar', slug: 'bar', type: 'bar', menu: [] }
-    const other: Venue = { ...base, id: 'd/hall', college: { ...base.college, slug: 'd', name: 'D' } }
+    const other: Venue = { ...base, id: 'd/hall', site: { ...base.site, slug: 'd', name: 'D', kind: 'university' } }
     const ids = (f: Partial<Filters>) => applyFilters([base, bar, other], { ...DEFAULT_FILTERS, date: '2026-10-07', ...f }, now).map((r) => r.venue.id)
     expect(ids({})).toEqual(['c/hall', 'c/bar', 'd/hall'])
     expect(ids({ type: 'bar' })).toEqual(['c/bar'])
     expect(ids({ type: 'cafe' })).toEqual([])
-    expect(ids({ college: 'd' })).toEqual(['d/hall'])
-    expect(ids({ type: 'hall', college: 'c' })).toEqual(['c/hall'])
+    expect(ids({ site: 'd' })).toEqual(['d/hall'])
+    expect(ids({ type: 'hall', site: 'c' })).toEqual(['c/hall'])
   })
 })
 

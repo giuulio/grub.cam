@@ -5,9 +5,9 @@ import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
 import { DataProvider, useData } from './lib/data.tsx'
 import { About } from './pages/About.tsx'
-import { College } from './pages/College.tsx'
 import { Home } from './pages/Home.tsx'
 import { NotFound } from './pages/NotFound.tsx'
+import { SitePage } from './pages/Site.tsx'
 import { VenuePage } from './pages/Venue.tsx'
 
 function Layout() {
@@ -35,8 +35,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
-          <Route path=":slug" element={<College />} />
-          <Route path=":college/:venue" element={<VenuePage />} />
+          <Route path=":slug" element={<SitePage />} />
+          <Route path=":site/:venue" element={<VenuePage />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

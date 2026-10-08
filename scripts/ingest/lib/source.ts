@@ -16,9 +16,9 @@ export type Adapter = {
 
 export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'
 
-/** How a college publishes a venue's menu. */
+/** How a venue's menu is published. */
 export type MenuSource = {
-  /** venues.id in Supabase: "<college>/<venue>" */
+  /** venues.id in Supabase: "<site>/<venue>" */
   venue: string
   channel: Channel
   url?: string

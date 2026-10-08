@@ -1,16 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
-import type { College, MenuDay, Venue } from './types.ts'
+import type { MenuDay, Site, Venue } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
 /** `menuFrom`–`menuTo` (exclusive) is the window of menus loaded up front, into `Venue.menu`. */
-type Data = { colleges: College[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string }
+type Data = { sites: Site[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string }
 type State = { status: 'loading' } | { status: 'error'; error: string } | ({ status: 'ready' } & Data)
 
-type VenueRow = Omit<Venue, 'college' | 'menu'>
-type CollegeRow = College & { venues: VenueRow[] }
+type VenueRow = Omit<Venue, 'site' | 'menu'>
+type SiteRow = Site & { venues: VenueRow[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
 const ITEMS = 'items:menu_items(name, tags, price_gbp, price_text, course, sold_out)'
@@ -21,11 +21,11 @@ async function load(): Promise<Data> {
   const menuTo = addDaysISO(today, MENU_DAYS)
   const [c, m] = await Promise.all([
     sb
-      .from('colleges')
-      .select('slug, name, short_name, official_dining_url, venues(id, slug, name, type, where:where_text, serves, access, payment, dietary, slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .from('sites')
+      .select('slug, name, short_name, kind, official_dining_url, venues(id, slug, name, type, url, where:where_text, serves, access, payment, dietary, slots:service_slots(meal, days, start:start_time, end:end_time, period))')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
-      .returns<CollegeRow[]>(),
+      .returns<SiteRow[]>(),
     sb
       .from('menu_days')
       .select(`venue_id, date, service, note, fetched_at, ${ITEMS}`)
@@ -39,19 +39,19 @@ async function load(): Promise<Data> {
 
   const menus = new Map<string, MenuDay[]>()
   for (const d of m.data) menus.set(d.venue_id, [...(menus.get(d.venue_id) ?? []), d])
-  const colleges: College[] = []
+  const sites: Site[] = []
   const venues: Venue[] = []
-  for (const { venues: rows, ...college } of c.data) {
-    colleges.push(college)
+  for (const { venues: rows, ...site } of c.data) {
+    sites.push(site)
     for (const v of rows) {
       // Postgres `time` comes back as HH:MM:SS
       const slots = v.slots.map((s) => ({ ...s, start: s.start.slice(0, 5), end: s.end.slice(0, 5) }))
-      venues.push({ ...v, college, slots, menu: menus.get(v.id) ?? [] })
+      venues.push({ ...v, site, slots, menu: menus.get(v.id) ?? [] })
     }
   }
   // Freshness = latest menu fetch, not page-load time.
   const updated = m.data.reduce<string | undefined>((max, d) => (!max || d.fetched_at > max ? d.fetched_at : max), undefined)
-  return { colleges, venues, updated, menuFrom: today, menuTo }
+  return { sites, venues, updated, menuFrom: today, menuTo }
 }
 
 const Ctx = createContext<State>({ status: 'loading' })

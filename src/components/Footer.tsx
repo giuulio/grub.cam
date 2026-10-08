@@ -18,7 +18,7 @@ export function Footer() {
       <Container className="grid gap-10 py-12 sm:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
           <p className="font-semibold tracking-tight text-white">{SITE_NAME}</p>
-          <p className="max-w-xs text-white/50">Opening hours and menus for Cambridge college dining halls, cafés and bars.</p>
+          <p className="max-w-xs text-white/50">Opening hours and menus for Cambridge college and University dining halls, cafés and bars.</p>
         </div>
         <Column title="Links">
           <Link to="/about" className={linkClass}>

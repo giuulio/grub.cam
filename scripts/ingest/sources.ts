@@ -1,5 +1,5 @@
-// How each college publishes its menus. Scripted sources have an adapter and are fetched by
-// `npm run ingest`; the rest are transcribed by hand or need a collaborator in the college.
+// How each venue (college or University) publishes its menu. Scripted sources have an adapter and are
+// fetched by `npm run ingest`; the rest are transcribed by hand or need a collaborator in the college.
 // Checked 7 Oct 2026.
 import type { MenuSource } from './lib/source.ts'
 import { corpus } from './sources/corpus.ts'

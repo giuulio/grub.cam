@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
+import { ExternalLink } from '../components/ExternalLink.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
@@ -18,9 +19,9 @@ export function VenuePage() {
   const { venues } = useReady()
   const now = useNow()
 
-  const venue = venues.find((v) => v.college.slug === params.college && v.slug === params.venue)
+  const venue = venues.find((v) => v.site.slug === params.site && v.slug === params.venue)
   if (!venue) return <NotFound />
-  const college = venue.college.short_name ?? venue.college.name
+  const site = venue.site.short_name ?? venue.site.name
   const status = openStatus(venue.slots, now)
 
   const term = isFullTerm(now.date)
@@ -32,12 +33,15 @@ export function VenuePage() {
 
   return (
     <>
-      <title>{`${venue.name}, ${college} · ${SITE_NAME}`}</title>
-      <Link to={`/${venue.college.slug}`} className="mb-6 inline-block text-sm text-white/50 transition-colors hover:text-white">
-        ← {college}
+      <title>{`${venue.name}, ${site} · ${SITE_NAME}`}</title>
+      <Link to={`/${venue.site.slug}`} className="mb-6 inline-block text-sm text-white/50 transition-colors hover:text-white">
+        ← {site}
       </Link>
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">{venue.name}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">{venue.name}</h1>
+          {venue.url && <ExternalLink href={venue.url} />}
+        </div>
         <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm text-white/50">
           <span>{meta}</span>
           <StatusText s={status} now={now} />

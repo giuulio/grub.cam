@@ -5,17 +5,17 @@ import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
 import type { OpenStatus } from '../lib/time/openNow.ts'
 import type { Venue } from '../lib/types.ts'
 
-/** One venue in a list, linking to its page. Search leads with the college; a college page leads with the venue. */
-export function VenueCard({ venue, status, now, dishes = [], showCollege = true }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showCollege?: boolean }) {
+/** One venue in a list, linking to its page. Search leads with the site (college, West Cambridge, ...); a site page leads with the venue. */
+export function VenueCard({ venue, status, now, dishes = [], showSite = true }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean }) {
   const type = typeNote(venue)
   return (
     <li>
       <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-4 rounded-md px-3 py-4 transition-colors hover:bg-white/5">
         <div className="min-w-0 flex-1">
           <p className="truncate">
-            {showCollege ? (
+            {showSite ? (
               <>
-                <span className="font-medium">{venue.college.short_name ?? venue.college.name}</span>
+                <span className="font-medium">{venue.site.short_name ?? venue.site.name}</span>
                 <span className="ml-2 text-white/50">{venue.name}</span>
               </>
             ) : (

@@ -30,10 +30,10 @@ export function dishTags(tags: DietTag[]): DietTag[] {
   return DIET_ORDER.filter((t) => has(t) && !hidden.has(t))
 }
 
-export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
+export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', university: 'University members', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
 
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar', 'other']
-export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Hall', cafe: 'Café', bar: 'Bar', other: 'Other' }
+export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar', other: 'Other' }
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
@@ -44,7 +44,7 @@ export type Filters = {
   meal?: Meal
   date: string // ISO date being viewed
   type?: VenueType
-  college?: string // college slug
+  site?: string // site slug
   diets: DietTag[]
   nonMemberOk: boolean
   bankCard: boolean
@@ -93,7 +93,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   const out: Ranked[] = []
   for (const v of venues) {
     if (f.type && v.type !== f.type) continue
-    if (f.college && v.college.slug !== f.college) continue
+    if (f.site && v.site.slug !== f.site) continue
     if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
     if (f.bankCard && v.payment.bank_card !== true) continue
     const meals = f.meal ? [f.meal] : undefined
@@ -103,7 +103,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     const days = menuDaysFor(v, date, f.meal)
     if (!matchesDiet(v, days, f.diets)) continue
     if (q) {
-      const nameHit = [v.college.name, v.college.short_name ?? '', v.name].join(' ').toLowerCase().includes(q)
+      const nameHit = [v.site.name, v.site.short_name ?? '', v.name].join(' ').toLowerCase().includes(q)
       // With a menu, a single dish must match both the query and the diets; the free-text description only counts without one.
       const dishHit = days.some((d) => d.items.some((i) => dishMatches(i, { ...f, q })))
       const servesHit = !days.length && [v.where ?? '', v.serves ?? ''].join(' ').toLowerCase().includes(q)
@@ -123,7 +123,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     const t = TYPES.indexOf(a.venue.type) - TYPES.indexOf(b.venue.type)
     if (t) return t
     if (b.matchedDishes !== a.matchedDishes) return b.matchedDishes - a.matchedDishes
-    return a.venue.college.name.localeCompare(b.venue.college.name)
+    return a.venue.site.name.localeCompare(b.venue.site.name)
   })
   return out
 }
