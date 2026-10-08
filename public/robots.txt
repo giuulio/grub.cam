@@ -1,0 +1,5 @@
+# Every page is meant to be read, by search engines and AI agents alike.
+User-agent: *
+Allow: /
+
+Sitemap: https://grub.cam/sitemap.xml

@@ -1,13 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
-import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
 import type { MenuDay, Site, Venue } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
-/** `menuFrom`–`menuTo` (exclusive) is the window of menus loaded up front, into `Venue.menu`. */
-type Data = { sites: Site[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string }
-type State = { status: 'loading' } | { status: 'error'; error: string } | ({ status: 'ready' } & Data)
+/**
+ * `menuFrom`–`menuTo` (exclusive) is the window of menus loaded up front, into `Venue.menu`.
+ * `snapshot`: rendered at build time (scripts/prerender.ts), so nothing that depends on the clock is shown.
+ */
+export type Data = { sites: Site[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string; snapshot?: boolean }
+export type State = { status: 'loading' } | { status: 'error'; error: string } | ({ status: 'ready' } & Data)
 
 type VenueRow = Omit<Venue, 'site' | 'menu'>
 type SiteRow = Site & { venues: VenueRow[] }
@@ -16,7 +19,8 @@ type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 const ITEMS = 'items:menu_items(name, tags, price_gbp, price_text, course, sold_out)'
 const MENU_DAYS = 7
 
-async function load(): Promise<Data> {
+/** Everything the pages need up front: sites, venues, hours and the next week of menus. */
+export async function load(): Promise<Data> {
   const today = toLocalNow().date
   const menuTo = addDaysISO(today, MENU_DAYS)
   const [c, m] = await Promise.all([
@@ -56,18 +60,9 @@ async function load(): Promise<Data> {
 
 const Ctx = createContext<State>({ status: 'loading' })
 
-export function DataProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<State>({ status: 'loading' })
-  useEffect(() => {
-    let cancelled = false
-    load()
-      .then((data) => !cancelled && setState({ status: 'ready', ...data }))
-      .catch((e: Error) => !cancelled && setState({ status: 'error', error: e.message }))
-    return () => {
-      cancelled = true
-    }
-  }, [])
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>
+/** The app renders once data has loaded (main.tsx) or from build-time data (entry-server.tsx). */
+export function DataProvider({ value, children }: { value: State; children: ReactNode }) {
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
 export const useData = () => useContext(Ctx)

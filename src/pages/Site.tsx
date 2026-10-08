@@ -4,7 +4,7 @@ import { ExternalLink } from '../components/ExternalLink.tsx'
 import { VenueCard } from '../components/VenueCard.tsx'
 import { useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, nextService, TYPES } from '../lib/filters.ts'
-import { SITE_NAME, venuePath } from '../lib/site.ts'
+import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { NotFound } from './NotFound.tsx'
 
@@ -30,10 +30,10 @@ export function SitePage() {
 
   return (
     <>
-      <title>{`${site.short_name ?? site.name} · ${SITE_NAME}`}</title>
+      <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
       <BackButton up="/" />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">{site.name}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{siteName(site)}</h1>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </div>
 

@@ -8,14 +8,13 @@ import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
-import { ACCESS_LABEL, MEAL_LABEL, MEALS, TYPE_LABEL, typeNote } from '../lib/filters.ts'
+import { ACCESS_LABEL, MEAL_LABEL, periodSlots, TYPE_LABEL, typeNote } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
-import { SITE_NAME } from '../lib/site.ts'
+import { SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus } from '../lib/time/openNow.ts'
-import { isFullTerm } from '../lib/time/termDates.ts'
-import { DAYS, type Venue } from '../lib/types.ts'
+import type { Venue } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 export function VenuePage() {
@@ -28,16 +27,13 @@ export function VenuePage() {
   const site = venue.site.short_name ?? venue.site.name
   const status = openStatus(venue.slots, now)
 
-  const term = isFullTerm(now.date)
-  const slots = venue.slots
-    .filter((s) => s.period === 'all' || s.period === (term ? 'term' : 'vacation'))
-    .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
+  const slots = periodSlots(venue.slots, now.date)
   // A café's "Café, Daily" says nothing the page doesn't: name the meal only when there's more than one
   const meals = new Set(slots.map((s) => s.meal)).size > 1
 
   return (
     <>
-      <title>{`${venue.name}, ${site} · ${SITE_NAME}`}</title>
+      <title>{`${venue.name}, ${siteName(venue.site)}: ${venue.menu.length ? 'menu and hours' : 'opening hours'} · ${SITE_NAME}`}</title>
       <BackButton up={`/${venue.site.slug}`} />
       <div className="mb-8">
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
@@ -102,6 +98,7 @@ export function VenuePage() {
 
 /** The menu for one date (?date=, default today), with a calendar of every date that has one. */
 function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
+  const { snapshot } = useReady()
   const [params, setParams] = useSearchParams()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const asked = params.get('date') ?? ''
@@ -115,7 +112,8 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
   if (!dates.length && !asked) return null
 
   const dateSet = new Set(dates)
-  const relative = relativeDay(date, now.date)
+  // A build-time page can't know what "today" will be when it's read
+  const relative = snapshot ? undefined : relativeDay(date, now.date)
   const dayMonth: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', ...(date.slice(0, 4) === now.date.slice(0, 4) ? {} : { year: 'numeric' }) }
   const calendar = <MenuCalendar value={date} today={now.date} dates={dateSet} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
 

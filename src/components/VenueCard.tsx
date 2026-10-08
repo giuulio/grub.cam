@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useReady } from '../lib/data.tsx'
 import { TYPE_LABEL } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { venuePath } from '../lib/site.ts'
@@ -35,6 +36,8 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true }: 
 }
 
 export function StatusText({ s, now }: { s: OpenStatus; now: LocalNow }) {
+  // Prerendered pages are read long after they're built: no "open until"
+  if (useReady().snapshot) return null
   const cls = 'shrink-0 text-sm tabular-nums'
   switch (s.kind) {
     case 'open':

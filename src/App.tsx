@@ -2,7 +2,7 @@ import { Outlet, Route, Routes } from 'react-router'
 import { Container } from './components/Container.tsx'
 import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
-import { DataProvider, useData } from './lib/data.tsx'
+import { DataProvider, useData, type State } from './lib/data.tsx'
 import { useScrollMemory } from './lib/useScrollMemory.ts'
 import { About } from './pages/About.tsx'
 import { Home } from './pages/Home.tsx'
@@ -24,9 +24,9 @@ function Layout() {
   )
 }
 
-export default function App() {
+export default function App({ data }: { data: State }) {
   return (
-    <DataProvider>
+    <DataProvider value={data}>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />

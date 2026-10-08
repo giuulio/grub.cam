@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && tsx scripts/prerender.ts",
     "ingest": "tsx scripts/ingest/index.ts",
     "ingest:manual": "tsx scripts/ingest/manual.ts",
     "test": "vitest run",

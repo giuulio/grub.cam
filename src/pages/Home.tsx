@@ -43,16 +43,19 @@ function readFilters(p: URLSearchParams, date: string, sites: Site[]): Filters {
 }
 
 export function Home() {
-  const { sites, venues } = useReady()
+  const { sites, venues, snapshot } = useReady()
   const now = useNow()
   const [params, setParams] = useSearchParams()
   const f = readFilters(params, now.date, sites)
   const results = applyFilters(venues, f, now)
   const filtered = [...params.keys()].some((k) => k !== 'more')
 
-  const groups = SECTIONS.map((section) => ({ section, rows: results.filter((r) => sectionOf(r.status) === section) })).filter((g) => g.rows.length)
-  const fold = !f.q.trim() && !params.has('more') && groups.some((g) => !FOLDED.has(g.section))
-  const shown = fold ? groups.filter((g) => !FOLDED.has(g.section)) : groups
+  // Built ahead of time, "open now" would be stale: list everything by place until live data takes over
+  const groups = snapshot
+    ? [{ section: undefined, rows: [...results].sort((a, b) => a.venue.site.name.localeCompare(b.venue.site.name)) }]
+    : SECTIONS.map((section) => ({ section, rows: results.filter((r) => sectionOf(r.status) === section) })).filter((g) => g.rows.length)
+  const fold = !snapshot && !f.q.trim() && !params.has('more') && groups.some((g) => g.section && !FOLDED.has(g.section))
+  const shown = fold ? groups.filter((g) => g.section && !FOLDED.has(g.section)) : groups
   const hidden = results.length - shown.reduce((n, g) => n + g.rows.length, 0)
 
   const update = (fn: (p: URLSearchParams) => void) => {
@@ -73,7 +76,7 @@ export function Home() {
 
   return (
     <>
-      <title>{SITE_NAME}</title>
+      <title>{`${SITE_NAME}: Cambridge college and University menus`}</title>
       <div className="sticky top-16 z-10 -mx-4 bg-charcoal px-4 pt-2 pb-4 sm:-mx-6 sm:px-6">
         <label className="flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-white/40 focus-within:border-white/40">
           <Icon of={Search} className="size-5" />
@@ -142,9 +145,9 @@ export function Home() {
 
       {!results.length && <p className="mt-6 text-white/50">Nothing matches.</p>}
       {shown.map((g) => (
-        <section key={g.section} aria-labelledby={`section-${g.section}`} className="mt-6">
-          <h2 id={`section-${g.section}`} className="flex items-baseline justify-between pb-2 text-sm text-white/40">
-            {SECTION_LABEL[g.section]}
+        <section key={g.section ?? 'all'} aria-labelledby={`section-${g.section ?? 'all'}`} className="mt-6">
+          <h2 id={`section-${g.section ?? 'all'}`} className="flex items-baseline justify-between pb-2 text-sm text-white/40">
+            {g.section ? SECTION_LABEL[g.section] : 'Everywhere'}
             <span className="tabular-nums">{g.rows.length}</span>
           </h2>
           <ul className="divide-y divide-white/10 border-t border-white/10">

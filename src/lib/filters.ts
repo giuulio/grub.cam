@@ -1,6 +1,7 @@
-import type { AccessLevel, DietTag, Dish, Meal, MenuDay, Venue, VenueType } from './types.ts'
+import { DAYS, type AccessLevel, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
+import { isFullTerm } from './time/termDates.ts'
 
 export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'snacks', 'bar']
 export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', brunch: 'Brunch', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Café', bar: 'Bar' }
@@ -33,6 +34,14 @@ export function dishTags(tags: DietTag[]): DietTag[] {
 export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', university: 'University members', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
 
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar', 'other']
+
+/** The hours that apply around `date` (term or vacation), meal by meal, then by first day. */
+export function periodSlots(slots: Slot[], date: string): Slot[] {
+  const period = isFullTerm(date) ? 'term' : 'vacation'
+  return slots
+    .filter((s) => s.period === 'all' || s.period === period)
+    .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
+}
 export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar', other: 'Other' }
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
