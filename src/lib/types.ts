@@ -1,7 +1,7 @@
 // Shapes the app reads from Supabase (supabase/migrations). Menu shapes come from the ingest schema.
-import type { Channel, DietTag, Meal, MenuDay } from '../../scripts/schema.ts'
+import type { Channel, DietTag, Meal, MenuDay, PriceCourse } from '../../scripts/schema.ts'
 
-export type { Channel, DietTag, Dish, Meal, MenuDay } from '../../scripts/schema.ts'
+export type { Channel, DietTag, Dish, Meal, MenuDay, PriceCourse } from '../../scripts/schema.ts'
 
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -19,6 +19,20 @@ export function venueTypes(v: { type: VenueType; slots: Slot[] }): VenueType[] {
 
 /** Where venues belong: a college, or a University site (West Cambridge, Sidgwick, a museum, ...). */
 export type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university'; official_dining_url: string | null; aliases?: string[] }
+
+/**
+ * One line of the price list posted at a venue (venue_prices). With a `course`, the price of the day's dishes of that course
+ * (or of the whole meal); without, something sold at those meals. `services`: the meals it applies to, null for all.
+ */
+export type VenuePrice = {
+  section: string | null
+  name: string
+  price_gbp: number
+  non_member_gbp: number | null
+  services: Meal[] | null
+  course: PriceCourse | null
+  observed_on: string
+}
 
 export type Venue = {
   id: string
@@ -42,6 +56,8 @@ export type Venue = {
   menu_scripted?: boolean
   /** Holds formal hall (`formals`), whether or not its days and times are published as 'formal' slots */
   formal?: boolean
+  /** As posted, in order; empty when no one has reported it */
+  prices?: VenuePrice[]
   /** Menu days from today for the next week (`useMenuOn` reaches beyond it). */
   menu: MenuDay[]
 }

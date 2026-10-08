@@ -26,5 +26,22 @@ export const MenuDay = z.object({
 })
 export type MenuDay = z.infer<typeof MenuDay>
 
+/** What a price list line prices: dishes of that course, or (`meal`) the whole meal. */
+export const PriceCourse = z.enum(['soup', 'main', 'side', 'dessert', 'other', 'meal'])
+export type PriceCourse = z.infer<typeof PriceCourse>
+
+/** One line of a price list as posted at a venue (scripts/ingest/prices.ts). */
+export const PriceItem = z.object({
+  section: z.string().optional(),
+  name: z.string().min(1),
+  price_gbp: z.number().nonnegative(),
+  non_member_gbp: z.number().nonnegative().optional(),
+  /** The meals it applies to; every meal when absent */
+  services: z.array(Meal).min(1).optional(),
+  /** Absent: an item sold at those meals rather than the price of the day's dishes */
+  course: PriceCourse.optional(),
+})
+export type PriceItem = z.infer<typeof PriceItem>
+
 /** How a venue publishes its menu (scripts/ingest/sources.ts, copied to venues.menu_channel). */
 export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'

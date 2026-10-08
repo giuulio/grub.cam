@@ -8,12 +8,13 @@ import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
 import { menuGap } from '../lib/coverage.ts'
+import { servedMeals } from '../lib/prices.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { ACCESS_LABEL, MEAL_LABEL, periodSlots, TYPE_LABEL, typeNote } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
-import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
+import { addDaysISO, formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus } from '../lib/time/openNow.ts'
 import type { Channel, Venue } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
@@ -96,6 +97,8 @@ export function VenuePage() {
   )
 }
 
+const FIXED_MENU_DAYS = 14
+
 /** The menu for one date (?date=, default today), with a calendar of every date that has one. */
 function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
   const { snapshot } = useReady()
@@ -107,7 +110,9 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
 
   // Dates already loaded show straight away; the full history fills in once fetched.
   const fetched = useMenuDates(venue.id)
-  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
+  // Days with dishes, and the next two weeks' days with a fixed menu (a brunch or bar list from the posted prices)
+  const fixed = Array.from({ length: FIXED_MENU_DAYS }, (_, i) => addDaysISO(now.date, i)).filter((d) => servedMeals([], venue.slots, venue.prices, d).length)
+  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date), ...fixed])].sort()
   const { days, failed } = useMenuOn(venue, date)
   // Never had a menu here: say where it is instead, once the history has confirmed it
   if (!dates.length && !asked) return fetched ? <MissingMenu venue={venue} /> : null
@@ -157,8 +162,8 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
           </div>
           {calendarOpen && <div className="mt-4 sm:hidden">{calendar}</div>}
           <div className="mt-6">
-            {days?.some((d) => d.items.length) ? (
-              <DayMenu days={days} slots={venue.slots} date={date} />
+            {days && servedMeals(days, venue.slots, venue.prices, date).length ? (
+              <DayMenu days={days} slots={venue.slots} date={date} prices={venue.prices} />
             ) : (
               <p className="text-sm text-muted">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
             )}

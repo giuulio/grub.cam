@@ -22,7 +22,7 @@ export type Missing = { site: Site; venues: Venue[] }
 
 export type Category = {
   title: string
-  /** Menus and prices are only known for the loaded dates (`Data.menuFrom`–`menuTo`) */
+  /** Counted on the loaded dates (`Data.menuFrom`–`menuTo`) */
   dated: boolean
   unit: 'colleges' | 'places'
   have: number
@@ -31,16 +31,17 @@ export type Category = {
 }
 
 const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
-const hasPrices = (v: Venue) => v.menu.some((d) => d.items.some((i) => i.price_gbp != null || i.price_text))
+/** A posted price list, or prices on the loaded menus */
+const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items.some((i) => i.price_gbp != null || i.price_text))
 
 export function coverage({ sites, venues }: Pick<Data, 'sites' | 'venues'>): Category[] {
   const colleges = sites.filter((s) => s.kind === 'college').map((site) => ({ site, venues: venues.filter((v) => v.site.slug === site.slug) }))
 
   /** Counted by college: one that has any of `places` with `has` counts; colleges without such places don't. */
-  const byCollege = (title: string, places: (v: Venue) => boolean, has: (v: Venue) => boolean): Category => {
+  const byCollege = (title: string, places: (v: Venue) => boolean, has: (v: Venue) => boolean, dated = false): Category => {
     const rows = colleges.map((c) => ({ site: c.site, venues: c.venues.filter(places) })).filter((c) => c.venues.length)
     const missing = rows.filter((c) => !c.venues.some(has))
-    return { title, dated: true, unit: 'colleges', have: rows.length - missing.length, of: rows.length, missing }
+    return { title, dated, unit: 'colleges', have: rows.length - missing.length, of: rows.length, missing }
   }
   /** Counted place by place, listed by college. */
   const byPlace = (title: string, has: (v: Venue) => boolean): Category => {
@@ -51,7 +52,7 @@ export function coverage({ sites, venues }: Pick<Data, 'sites' | 'venues'>): Cat
   const ofType = (t: VenueType) => (v: Venue) => venueTypes(v).includes(t)
 
   return [
-    byCollege('Menus', () => true, hasMenu),
+    byCollege('Menus', () => true, hasMenu, true),
     byCollege('Dining prices', ofType('hall'), hasPrices),
     byCollege('Café prices', ofType('cafe'), hasPrices),
     byCollege('Bar prices', ofType('bar'), hasPrices),

@@ -2,6 +2,7 @@
 // llms.txt / llms-full.txt. Pure functions of the loaded data; scripts/prerender.ts writes them out at build time.
 import type { Data } from './data.tsx'
 import { ACCESS_LABEL, DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
+import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
 import type { Day, DietTag, MenuDay, Site, Slot, Venue, VenueType } from './types.ts'
@@ -62,11 +63,11 @@ function venueJsonLd(v: Venue, date: string): object {
           hasMenuSection: sections.map((d) => ({
             '@type': 'MenuSection',
             name: `${MEAL_LABEL[d.service]}, ${formatISODate(d.date, { weekday: 'long', day: 'numeric', month: 'long' })}`,
-            hasMenuItem: d.items.map((i) => ({
+            hasMenuItem: d.items.map((i) => ({ i, price: dishPrice(i, mealPrices(v.prices, d.service))?.gbp })).map(({ i, price }) => ({
               '@type': 'MenuItem',
               name: i.name,
               suitableForDiet: dietUrls(i.tags),
-              offers: i.price_gbp != null ? { '@type': 'Offer', price: i.price_gbp.toFixed(2), priceCurrency: 'GBP' } : undefined,
+              offers: price != null ? { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'GBP' } : undefined,
             })),
           })),
         }
@@ -159,10 +160,16 @@ export function llmsTxt(data: Data): string {
   ].join('\n\n') + '\n'
 }
 
-function menuLine(d: MenuDay): string {
+/** "£3.75", or "£3.75 (non-members £5.65)" */
+const priceText = (gbp: number, nonMember?: number | null) => `${formatGbp(gbp)}${nonMember != null ? ` (non-members ${formatGbp(nonMember)})` : ''}`
+
+function menuLine(d: MenuDay, prices: Venue['prices']): string {
+  const m = mealPrices(prices, d.service)
   const dishes = d.items.map((i) => {
     const tags = dishTags(i.tags).map((t) => DIET_SHORT[t])
-    return tags.length ? `${i.name} [${tags.join(' ')}]` : i.name
+    const p = dishPrice(i, m)
+    const price = p?.gbp != null ? ` ${priceText(p.gbp, p.nonMember)}` : p?.text ? ` ${p.text}` : ''
+    return `${i.name}${tags.length ? ` [${tags.join(' ')}]` : ''}${price}`
   })
   return `- ${day(d.date)}, ${MEAL_LABEL[d.service].toLowerCase()}: ${dishes.join('; ')}`
 }
@@ -178,7 +185,12 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
       if (v.access.level !== 'unknown') lines.push(`Access: ${ACCESS_LABEL[v.access.level].toLowerCase()}`)
       if (v.payment.bank_card) lines.push('Bank card accepted')
       const menus = menusOf(v)
-      if (menus.length) lines.push(`Menus:\n${menus.map(menuLine).join('\n')}`)
+      if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v.prices)).join('\n')}`)
+      if (v.prices?.length) {
+        const when = v.prices.map((p) => p.observed_on).sort().at(-1)!
+        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name} ${priceText(p.price_gbp, p.non_member_gbp)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
+        lines.push(`Prices as posted ${day(when)}:\n${list.join('\n')}`)
+      }
       out.push(lines.join('\n'))
     }
   }

@@ -46,6 +46,12 @@ describe('coverage', () => {
     expect(byTitle['Dining prices']).toMatchObject({ have: 1, of: 2 })
     expect(missing('Dining prices')).toEqual(['d:hall'])
   })
+  it('counts a posted price list as prices', () => {
+    const listed = { ...hall, id: 'x/bar', type: 'bar' as const, prices: [{ section: null, name: 'Pint', price_gbp: 3.5, non_member_gbp: null, services: null, course: null, observed_on: '2026-10-08' }] }
+    const rows = coverage({ sites: [site], venues: [listed] })
+    expect(rows.find((c) => c.title === 'Bar prices')).toMatchObject({ have: 1, of: 1, dated: false })
+    expect(rows.find((c) => c.title === 'Menus')).toMatchObject({ have: 0, dated: true })
+  })
   it('only counts colleges that have that kind of place', () => {
     expect(byTitle['Bar prices']).toMatchObject({ have: 0, of: 1 })
     expect(byTitle['Café prices']).toMatchObject({ have: 0, of: 0, missing: [] })

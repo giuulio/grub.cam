@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { MenuDay } from '../../schema.ts'
+import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { MenuSource } from './source.ts'
 
 type Method = 'script' | 'manual'
@@ -20,6 +20,11 @@ export function connect() {
     async saveMenu(venue: string, sourceUrl: string, fetchedAt: string, method: Method, days: MenuDay[]) {
       const { error } = await sb.rpc('save_menu', { p_venue_id: venue, p_source_url: sourceUrl, p_fetched_at: fetchedAt, p_method: method, p_days: days })
       if (error) throw new Error(`save_menu ${venue}: ${error.message}`)
+    },
+    /** Replaces the venue's price list. */
+    async savePrices(venue: string, observedOn: string, source: string, items: PriceItem[]) {
+      const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
+      if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
     },
     /** How many services after `date` are saved for this venue. */
     async savedAfter(venue: string, date: string): Promise<number> {

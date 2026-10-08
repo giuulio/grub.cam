@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
-import type { MenuDay, Site, Venue } from './types.ts'
+import type { MenuDay, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
@@ -12,7 +12,7 @@ const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_
 export type Data = { sites: Site[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string; snapshot?: boolean }
 export type State = { status: 'loading' } | { status: 'error'; error: string } | ({ status: 'ready' } & Data)
 
-type VenueRow = Omit<Venue, 'site' | 'menu' | 'formal'> & { formal: { venue_id: string } | null }
+type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal'> & { prices: (VenuePrice & { position: number })[]; formal: { venue_id: string } | null }
 type SiteRow = Site & { venues: VenueRow[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
@@ -26,7 +26,7 @@ export async function load(): Promise<Data> {
   const [c, m] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, access, payment, dietary, menu_channel, menu_url, menu_scripted, formal:formals(venue_id), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, observed_on), formal:formals(venue_id), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),
@@ -50,7 +50,7 @@ export async function load(): Promise<Data> {
     for (const v of rows) {
       // Postgres `time` comes back as HH:MM:SS
       const slots = v.slots.map((s) => ({ ...s, start: s.start.slice(0, 5), end: s.end.slice(0, 5) }))
-      venues.push({ ...v, site, slots, formal: !!v.formal, menu: menus.get(v.id) ?? [] })
+      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal: !!v.formal, menu: menus.get(v.id) ?? [] })
     }
   }
   // Freshness = latest menu fetch, not page-load time.

@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build && tsx scripts/prerender.ts",
     "ingest": "tsx scripts/ingest/index.ts",
     "ingest:manual": "tsx scripts/ingest/manual.ts",
+    "ingest:prices": "tsx scripts/ingest/prices.ts",
     "search:snapshot": "tsx scripts/search-snapshot.ts",
     "test": "vitest run",
     "typecheck": "tsc -b && tsc -p tsconfig.scripts.json",
