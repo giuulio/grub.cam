@@ -21,12 +21,18 @@ function slotEndMinutes(slot: Slot): number {
   return e <= s ? e + 1440 : e // crosses midnight (e.g. bar 17:00–00:00)
 }
 
+/** Formal hall is booked ahead, so it only counts when asked for, or where it's all a venue holds (a Hall used only for formals). */
+function walkIn(slots: Slot[]): Slot[] {
+  const open = slots.filter((s) => s.meal !== 'formal')
+  return open.length ? open : slots
+}
+
 /**
  * Compute status for a venue at `now`, optionally restricted to certain meals.
  * Looks ahead up to 7 days for the next service.
  */
 export function openStatus(slots: Slot[], now: LocalNow, meals?: Meal[]): OpenStatus {
-  const relevant = meals?.length ? slots.filter((s) => meals.includes(s.meal)) : slots
+  const relevant = meals?.length ? slots.filter((s) => meals.includes(s.meal)) : walkIn(slots)
   if (!relevant.length) return { kind: 'unknown' }
 
   // Open now? Include slots from yesterday that cross midnight.

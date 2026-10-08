@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyFilters, DEFAULT_FILTERS, type Filters } from './filters.ts'
 import snapshot from './fixtures/snapshot.json'
-import { DAYS, type Dish, type Venue } from './types.ts'
+import { DAYS, venueTypes, type Dish, type Venue } from './types.ts'
 
 // Real data: what the app had loaded on the snapshot's date (scripts/search-snapshot.ts), searched at 12:30 that day.
 type Snapshot = { date: string; sites: (Omit<Venue['site'], 'official_dining_url'> & { venues: Omit<Venue, 'site' | 'url' | 'where' | 'serves'>[] })[] }
@@ -48,7 +48,8 @@ describe('venues', () => {
     ['jesus caff', 'jesus/caff'], ['caff', 'jesus/caff'], ['darbar', 'darwin/darbar'], ['dar bar', 'darwin/darbar'], ['qbar', 'queens/qbar'], ['q bar', 'queens/qbar'],
     ['edspresso', 'st-edmunds/edspresso'], ['trough', 'pembroke/servery-trough'], ['whale cafe', 'new-museums/whale-cafe'], ['kings coffee shop', 'kings/coffee-shop'],
     ['garden cafe', 'botanic-garden/garden-cafe'], ['courtyard kitchen', 'fitzwilliam-museum/courtyard-kitchen'], ['cybercafe', 'chemistry/cybercafe'], ['cyber cafe', 'chemistry/cybercafe'],
-    ['the den', 'wolfson/the-den'], ['arc cafe', 'sidgwick/arc-cafe'],
+    ['the den', 'wolfson/the-den'], ['arc cafe', 'sidgwick/arc-cafe'], ['the roost', 'jesus/the-roost'], ['eddies bar', 'st-edmunds/eddies-bar'],
+    ['st johns formal', 'st-johns/hall'], ['queens old hall', 'queens/old-hall'], ['harveys', 'gonville-and-caius/florey-cafe'],
   ])('%s lists %s first', (q, id) => {
     expect(search(q)[0]?.venue.id).toBe(id)
   })
@@ -56,9 +57,14 @@ describe('venues', () => {
   it('coffeeshop finds the coffee shops', () => {
     expect(search('coffeeshop')[0]?.venue.name).toBe('Coffee Shop')
   })
-  it.each([['bar', 'bar'], ['cafe', 'cafe']] as const)('%s lists every %s', (q, type) => {
+  it('formal lists every place that holds formal hall', () => {
+    const ids = new Set(search('formal').map((r) => r.venue.id))
+    expect(real.filter((v) => v.formal).length).toBeGreaterThan(30)
+    expect(real.filter((v) => v.formal).every((v) => ids.has(v.id))).toBe(true)
+  })
+  it.each([['bar', 'bar'], ['cafe', 'cafe']] as const)('%s lists every %s, including cafés that are bars by night', (q, type) => {
     const ids = new Set(search(q).map((r) => r.venue.id))
-    expect(real.filter((v) => v.type === type).every((v) => ids.has(v.id))).toBe(true)
+    expect(real.filter((v) => venueTypes(v).includes(type)).every((v) => ids.has(v.id))).toBe(true)
   })
 })
 
@@ -153,6 +159,11 @@ describe('rules', () => {
   })
   it('ranks an exact place ahead of a typo match even when it is closed', () => {
     expect(find('homerton', {}, [venue('test/hall', 'Homertom', 'Test'), { ...homerton, slots: [] }])[0].venue.id).toBe(homerton.id)
+  })
+  it('finds where formal hall is held, with or without published days', () => {
+    const dated = { ...venue('jesus/hall', 'Hall', 'Jesus'), slots: [{ meal: 'formal' as const, days: ['thu' as const], start: '19:30', end: '21:30', period: 'all' as const }] }
+    const undated = { ...venue('st-johns/hall', 'Hall', 'St John’s'), slots: [], formal: true }
+    expect(find('formal', {}, [dated, undated, homerton]).map((r) => r.venue.id).sort()).toEqual(['jesus/hall', 'st-johns/hall'])
   })
   it('does not use editorial notes as evidence of current food', () => {
     expect(find('pizza', {}, [{ ...homerton, serves: 'Pizza last year', where: 'Pizza room' }])).toEqual([])

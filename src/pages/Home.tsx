@@ -18,7 +18,7 @@ const TYPE_CHIPS: [VenueType, string][] = [
   ['bar', 'Bars'],
 ]
 // Only dining venues have meal times, menus and diet tags, so these filters appear (and apply) only with Dining picked.
-const HALL_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
+const HALL_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 const DIET_CHIPS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free']
 // Without a search, places that aren't open today wait behind "Show more" (?more keeps them shown on the way back).
 const FOLDED = new Set(['other', 'unknown'])

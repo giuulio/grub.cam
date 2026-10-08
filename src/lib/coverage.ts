@@ -2,7 +2,7 @@
 // note on a venue page that has never had a menu.
 import type { Data } from './data.tsx'
 import { addDaysISO, formatISODate } from './time/clock.ts'
-import type { Channel, Site, Venue, VenueType } from './types.ts'
+import { venueTypes, type Channel, type Site, type Venue, type VenueType } from './types.ts'
 
 /** Why a venue has no menu here: published online but not here; posted for members only; not published anywhere known. */
 export type MenuGap = 'online' | 'members' | 'unpublished'
@@ -48,7 +48,7 @@ export function coverage({ sites, venues }: Pick<Data, 'sites' | 'venues'>): Cat
     const missing = colleges.map((c) => ({ site: c.site, venues: c.venues.filter((v) => !has(v)) })).filter((c) => c.venues.length)
     return { title, dated: false, unit: 'places', have: all.filter(has).length, of: all.length, missing }
   }
-  const ofType = (t: VenueType) => (v: Venue) => v.type === t
+  const ofType = (t: VenueType) => (v: Venue) => venueTypes(v).includes(t)
 
   return [
     byCollege('Menus', () => true, hasMenu),

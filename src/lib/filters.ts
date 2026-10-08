@@ -1,11 +1,11 @@
-import { DAYS, type AccessLevel, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
+import { DAYS, venueTypes, type AccessLevel, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
 import { compareSearchHits, normalizeSearch, searchVenues, type SearchHit } from './search.ts'
 
-export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'snacks', 'bar']
-export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', brunch: 'Brunch', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Café', bar: 'Bar' }
+export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
+export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', brunch: 'Brunch', lunch: 'Lunch', dinner: 'Dinner', formal: 'Formal', snacks: 'Café', bar: 'Bar' }
 
 export const DIET_LABEL: Record<DietTag, string> = {
   vegetarian: 'Vegetarian',
@@ -106,7 +106,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   const searching = !!normalizeSearch(f.q)
   const kept = new Map<string, Omit<Ranked, 'searchMatches'>>()
   for (const v of venues) {
-    if (f.type && v.type !== f.type) continue
+    if (f.type && !venueTypes(v).includes(f.type)) continue
     if (f.site && v.site.slug !== f.site) continue
     if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
     if (f.bankCard && v.payment.bank_card !== true) continue
@@ -118,8 +118,9 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     if (!matchesDiet(v, days, f.diets)) continue
     days.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
     if (f.openNow && status.kind !== 'open') continue
-    // If a meal is selected and the venue neither serves it (no slot) nor has a menu for it, drop it
-    if (f.meal && !v.slots.some((s) => s.meal === f.meal) && !days.length) continue
+    // If a meal is selected and the venue neither serves it (no slot) nor has a menu for it, drop it; formal hall
+    // counts where it's held even when its days aren't published
+    if (f.meal && !v.slots.some((s) => s.meal === f.meal) && !days.length && !(f.meal === 'formal' && v.formal)) continue
     const matchedDishes = days.reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
     kept.set(v.id, { venue: v, status, days, matchedDishes })
   }

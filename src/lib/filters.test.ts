@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyFilters, DEFAULT_FILTERS, dishTags, matchesDiet, nextService, sectionOf, type Filters } from './filters.ts'
-import type { Venue } from './types.ts'
+import type { Venue, VenueType } from './types.ts'
 
 const base: Venue = {
   id: 'c/hall',
@@ -55,6 +55,26 @@ describe('applyFilters', () => {
     expect(ids({ type: 'cafe' })).toEqual([])
     expect(ids({ site: 'd' })).toEqual(['d/hall'])
     expect(ids({ type: 'hall', site: 'c' })).toEqual(['c/hall'])
+  })
+  it('lists a café that is a bar by night under both, by its hours', () => {
+    const cafeBar: Venue = { ...base, id: 'c/cafe-bar', slug: 'cafe-bar', type: 'cafe', menu: [], slots: [{ ...base.slots[0], meal: 'snacks' }, { ...base.slots[0], meal: 'bar', start: '18:00', end: '23:00' }] }
+    const ids = (type: VenueType) => applyFilters([cafeBar], { ...DEFAULT_FILTERS, date: '2026-10-07', type }, now).map((r) => r.venue.id)
+    expect(ids('cafe')).toEqual(['c/cafe-bar'])
+    expect(ids('bar')).toEqual(['c/cafe-bar'])
+    expect(ids('hall')).toEqual([])
+  })
+  it('counts formal hall only when asked for, or where it is all a hall holds', () => {
+    const formal = { ...base.slots[0], meal: 'formal' as const, start: '19:30', end: '21:30' }
+    const evening = { ...now, minutes: 20 * 60 }
+    const status = (v: Venue, f: Partial<Filters> = {}) => applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, ...f }, evening)[0]?.status.kind
+    const hall: Venue = { ...base, slots: [...base.slots, formal] }
+    expect(status(hall)).toBe('closed')
+    expect(status(hall, { type: 'hall', meal: 'formal' })).toBe('open')
+    expect(status({ ...base, id: 'c/formal-hall', slots: [formal] })).toBe('open')
+    // Where formal hall is held but its days aren't published, it's still listed under Formal
+    const unpublished: Venue = { ...base, id: 'c/old-hall', slots: [], menu: [], formal: true }
+    const formalHalls = applyFilters([unpublished, { ...unpublished, id: 'c/caff', formal: false }], { ...DEFAULT_FILTERS, date: now.date, type: 'hall', meal: 'formal' }, now)
+    expect(formalHalls.map((r) => r.venue.id)).toEqual(['c/old-hall'])
   })
 })
 

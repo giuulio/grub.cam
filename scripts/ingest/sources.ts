@@ -70,7 +70,7 @@ export const SOURCES: MenuSource[] = [
     adapter: peterhouse,
   },
   {
-    venue: 'robinson/garden-restaurant-dining-hall',
+    venue: 'robinson/garden-restaurant',
     channel: 'html',
     url: 'https://www.robinson.cam.ac.uk/college-life/garden-restaurant-menu',
     cadence: 'daily, about 2 weeks ahead',

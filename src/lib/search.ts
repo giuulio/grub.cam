@@ -1,4 +1,4 @@
-import type { DietTag, Dish, Meal, Venue, VenueType } from './types.ts'
+import { venueTypes, type DietTag, type Dish, type Meal, type Venue, type VenueType } from './types.ts'
 
 // Search the way established engines do it (Meilisearch, Typesense, Algolia), sized for one city's menus:
 // words match exactly, as plurals or synonyms, the last one as a prefix while it's being typed; only a word
@@ -26,7 +26,7 @@ const synonyms = new Map(SYNONYMS.flatMap((group) => group.map((w) => [w, group]
 
 // What else describes a place or a dish, so "jesus cafe", "homerton lunch" and "vegan curry" mean what they say.
 const KIND_WORDS: Record<VenueType, string> = { hall: 'dining', cafe: 'cafe', bar: 'bar', other: '' }
-const MEAL_WORDS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
+const MEAL_WORDS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 const dietWords = (tag: DietTag) => tag.replace('_', ' ') + (tag === 'vegan' ? ' vegetarian' : '')
 
 // Where a word matched, best first.
@@ -93,11 +93,13 @@ function indexFor(venues: Venue[]): Index {
       for (const alias of aliases) add(doc, alias, ALIAS)
       add(doc, kind, KIND)
     }
-    const meals = MEAL_WORDS.filter((m) => v.slots.some((s) => s.meal === m))
-    place(docs.push({ venue: v, names: [...names, ...aliases].map(nameWords) }) - 1, [KIND_WORDS[v.type], ...meals].join(' '))
+    // A café that's a bar by night is both; formal hall counts where it's held, even without published days
+    const kinds = venueTypes(v).map((t) => KIND_WORDS[t]).join(' ')
+    const meals = MEAL_WORDS.filter((m) => v.slots.some((s) => s.meal === m) || (m === 'formal' && v.formal))
+    place(docs.push({ venue: v, names: [...names, ...aliases].map(nameWords) }) - 1, [kinds, ...meals].join(' '))
     for (const day of v.menu) for (const dish of day.items) {
       const doc = docs.push({ venue: v, dish, date: day.date, service: day.service, names: [nameWords(dish.name)] }) - 1
-      place(doc, KIND_WORDS[v.type])
+      place(doc, kinds)
       add(doc, dish.name, DISH)
       add(doc, [...dish.tags.map(dietWords), MEAL_WORDS.includes(day.service) ? day.service : ''].join(' '), TAG)
     }

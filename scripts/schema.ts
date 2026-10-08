@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 // Scraped and transcribed menus are validated against these before they're saved. The app imports the types.
 
-export const Meal = z.enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snacks', 'bar'])
+export const Meal = z.enum(['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar'])
 export type Meal = z.infer<typeof Meal>
 
 export const DietTag = z.enum(['vegetarian', 'vegan', 'plant_based', 'halal', 'gluten_free', 'kosher', 'pescatarian', 'dairy_free'])
