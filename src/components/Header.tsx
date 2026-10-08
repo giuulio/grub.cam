@@ -12,7 +12,7 @@ export function Header() {
           {/* Still being built: say so to anyone who lands here */}
           <span title="Still being built: some menus, hours and places are missing" className="rounded-full border border-ink/20 px-1.5 text-[10px] leading-4 font-medium tracking-wide text-muted uppercase">Beta</span>
         </div>
-        <nav aria-label="Main navigation" className="order-3 flex w-full gap-6 sm:order-none sm:ml-4 sm:w-auto">
+        <nav aria-label="Main navigation" className="order-3 flex w-full gap-6 sm:order-0 sm:ml-4 sm:w-auto">
           {([['/', 'Explore'], ['/colleges', 'Colleges'], ['/university', 'University']] as const).map(([to, label]) => (
             <NavLink key={to} to={to} end className={({ isActive }) => `border-b-2 py-3 text-sm transition-colors sm:py-5 ${isActive ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>{label}</NavLink>
           ))}
