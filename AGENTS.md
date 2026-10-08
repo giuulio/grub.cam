@@ -21,7 +21,7 @@ Cambridge college menus, hours and access, live. Vite + React 19 + TypeScript + 
 - `scripts/schema.ts` — zod for `Dish` / `MenuDay`, checked before anything is saved; the app imports the types.
 - `supabase/migrations/` — tables + RLS (anon SELECT only). Menus: `menu_days` (one per venue/date/service, upserted) → `menu_items` (dishes as printed, replaced per day) → `dishes` (one per college + `dish_key(name)`, tracked across weeks); `dish_stats` view; `ingest_runs` (one row per source per run; service role only). Writes go through `save_menu()` (service role only).
 - `src/lib/data.tsx` — loads colleges/venues/slots and the next 7 days of menus. `src/lib/time/*` — Europe/London clock, Full Term dates, `openStatus()`; `src/lib/filters.ts` — ranking.
-- `src/pages/*` — `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `diet`, `guests`, `card`), `/:slug` college (anchors `#venue-slug`), `/about`, `*` 404. White on charcoal (`#1e1e1e`), minimal text; free-text DB fields (`notice`, `hours_text`, `access.text`, …) are research notes for editors and aren't shown.
+- `src/pages/*` — the venue is the unit: `/` search (query + filter chips in the URL: `q`, `open`, `meal`, `type`, `diet`, `guests`, `card`), `/:slug` college (its venues, halls → cafés → bars; old `#venue-slug` links redirect), `/:college/:venue` venue (status, hours, 7-day menu), `/about`, `*` 404. Every list uses `src/components/VenueCard.tsx`. White on charcoal (`#1e1e1e`), minimal text; free-text DB fields (`notice`, `hours_text`, `access.text`, …) are research notes for editors and aren't shown.
 
 ## Menus
 
