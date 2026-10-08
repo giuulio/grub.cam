@@ -20,6 +20,12 @@ export function connect() {
       const { error } = await sb.rpc('save_menu', { p_venue_id: venue, p_source_url: sourceUrl, p_fetched_at: fetchedAt, p_method: method, p_days: days })
       if (error) throw new Error(`save_menu ${venue}: ${error.message}`)
     },
+    /** How many services after `date` are saved for this venue. */
+    async savedAfter(venue: string, date: string): Promise<number> {
+      const { count, error } = await sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)
+      if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
+      return count ?? 0
+    },
     async logRun(run: { venue_id: string; method: Method; started_at: string; status: 'ok' | 'empty' | 'error'; days?: number; dishes?: number; error?: string }) {
       const { error } = await sb.from('ingest_runs').insert(run)
       if (error) console.error(`ingest_runs: ${error.message}`)
