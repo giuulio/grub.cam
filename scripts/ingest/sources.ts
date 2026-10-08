@@ -1,6 +1,6 @@
 // How each venue (college or University) publishes its menu. Scripted sources have an adapter and are
 // fetched by `npm run ingest`; the rest are transcribed by hand or need a collaborator in the college.
-// Checked 7 Oct 2026.
+// Checked 7 Oct 2026 (colleges), 8 Oct 2026 (University).
 import type { MenuSource } from './lib/source.ts'
 import { corpus } from './sources/corpus.ts'
 import { darwin } from './sources/darwin.ts'
@@ -12,7 +12,11 @@ import { peterhouse } from './sources/peterhouse.ts'
 import { robinson } from './sources/robinson.ts'
 import { selwyn } from './sources/selwyn.ts'
 import { stJohns } from './sources/st-johns.ts'
+import { ucsWeekly } from './sources/ucs.ts'
 import { wolfson } from './sources/wolfson.ts'
+
+// University Catering pages that post this week's lunch, all in the same format
+const ucs = (venue: string, url: string, notes?: string): MenuSource => ({ venue, channel: 'html', url, cadence: 'weekly, current week only (Mon–Fri lunch)', notes, adapter: ucsWeekly(url) })
 
 export const SOURCES: MenuSource[] = [
   // Scripted
@@ -76,6 +80,9 @@ export const SOURCES: MenuSource[] = [
   { venue: 'selwyn/hall-servery', channel: 'html', url: 'https://www.sel.cam.ac.uk/current-members/hall-menu', cadence: 'daily, about 4 weeks ahead', adapter: selwyn },
   { venue: 'st-johns/buttery', channel: 'html', url: 'https://menu.joh.cam/', cadence: 'rolling 7 days', adapter: stJohns },
   { venue: 'wolfson/buttery-dining-hall', channel: 'html', url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus', cadence: 'current week only', adapter: wolfson },
+  ucs('west-cambridge/west-hub-canteen', 'https://www.catering.admin.cam.ac.uk/cafes/west-hub-canteen'),
+  ucs('west-cambridge/greenwich-house-cafe', 'https://www.catering.admin.cam.ac.uk/cafes/greenwich-house-cafe', 'Hot dishes from the West Hub kitchen.'),
+  ucs('west-cambridge/scholars-brew', 'https://www.catering.admin.cam.ac.uk/cafes/scholars-brew'),
 
   // Public, transcribed by hand. PDFs: curl -A "Mozilla/5.0" URL | pdftotext -layout - -
   // Sway/Canva: Chrome --headless=new --dump-dom URL
@@ -142,6 +149,16 @@ export const SOURCES: MenuSource[] = [
   { venue: 'kings/servery-dining-hall', channel: 'email', cadence: 'weekly, Sunday member email' },
   { venue: 'murray-edwards/dome-dining-hall', channel: 'intranet', notes: 'My Medwards' },
   { venue: 'trinity-hall/cafeteria', channel: 'intranet', cadence: 'daily' },
+
+  // University: menus that aren't dated (fixed or seasonal) or aren't online; not ingested
+  { venue: 'west-cambridge/occidente', channel: 'html', url: 'https://www.catering.admin.cam.ac.uk/cafes/occidente-kitchen-and-bar', cadence: 'fixed', notes: 'Bistro menu with prices on the page.' },
+  { venue: 'west-cambridge/cavendish-cafe', channel: 'pdf', url: 'https://www.cdc.events/cavendish-cafe/', cadence: 'seasonal', notes: 'Menu PDF linked from the page.' },
+  { venue: 'downing-site/pathology-cafe', channel: 'none', cadence: 'weekly', notes: 'Menu changes weekly; not published online.' },
+  { venue: 'biomedical-campus/cruk-cafe', channel: 'none', cadence: 'daily', notes: 'Daily menus printed in the café only.' },
+  { venue: 'fitzwilliam-museum/courtyard-kitchen', channel: 'pdf', url: 'https://www.cdc.events/events/courtyardkitchen/', cadence: 'seasonal' },
+  { venue: 'kettles-yard/garden-kitchen', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/gardenkitchenatkettlesyard', cadence: 'fixed' },
+  { venue: 'botanic-garden/garden-cafe', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/the-garden-cafe', cadence: 'fixed' },
+  { venue: 'madingley-hall/cafe', channel: 'pdf', url: 'https://madingleyhall.cam.ac.uk/dining/the-cafe/', cadence: 'fixed' },
 
   // No known menu
   { venue: 'sidney-sussex/servery-dining-hall', channel: 'none' },
