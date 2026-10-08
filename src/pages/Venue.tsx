@@ -32,6 +32,8 @@ export function VenuePage() {
   const slots = venue.slots
     .filter((s) => s.period === 'all' || s.period === (term ? 'term' : 'vacation'))
     .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
+  // A café's "Café, Daily" says nothing the page doesn't: name the meal only when there's more than one
+  const meals = new Set(slots.map((s) => s.meal)).size > 1
 
   return (
     <>
@@ -79,7 +81,7 @@ export function VenuePage() {
             <tbody>
               {slots.map((s, i) => (
                 <tr key={i}>
-                  <td className="py-0.5 pr-4">{MEAL_LABEL[s.meal]}</td>
+                  {meals && <td className="py-0.5 pr-4">{MEAL_LABEL[s.meal]}</td>}
                   <td className="py-0.5 pr-4">{formatDays(s.days)}</td>
                   <td className="py-0.5 text-right">
                     {s.start}–{s.end}

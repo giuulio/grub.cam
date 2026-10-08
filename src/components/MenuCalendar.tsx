@@ -54,14 +54,6 @@ export function MenuCalendar({ value, today, dates, onChange }: { value: string;
           )
         })}
       </div>
-      <p className="mt-3 flex gap-4 text-xs text-white/40">
-        <span className="flex items-center gap-1.5">
-          <span className="size-3 rounded-sm bg-white/10" /> Menu
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-3 rounded-sm ring-1 ring-white/70 ring-inset" /> Today
-        </span>
-      </p>
     </div>
   )
 }
