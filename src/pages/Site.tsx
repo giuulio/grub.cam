@@ -37,7 +37,7 @@ export function SitePage() {
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </div>
 
-      <ul className="divide-y divide-white/10 border-t border-white/10">
+      <ul className="divide-y divide-ink/10 border-t border-ink/10">
         {rows.map((r) => (
           <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={nextService(r)?.items.map((i) => i.name)} showSite={false} />
         ))}

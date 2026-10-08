@@ -1,13 +1,46 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-charcoal: #1e1e1e;
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: #8ee8d8;
+  --color-accent-ink: #133844;
 }
 
 :root {
+  color-scheme: light;
+  --canvas: #ffffff;
+  --ink: #232830;
+  --muted: #546072;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --canvas: #1e1e1e;
+    --ink: #eceef1;
+    --muted: #b5bdc8;
+  }
+}
+
+:root[data-theme='dark'] {
   color-scheme: dark;
+  --canvas: #1e1e1e;
+  --ink: #eceef1;
+  --muted: #b5bdc8;
 }
 
 body {
-  @apply bg-charcoal font-sans text-white antialiased;
+  @apply bg-canvas font-sans text-ink antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 4px;
+}
+
+select option, select optgroup {
+  background: var(--canvas);
+  color: var(--ink);
 }

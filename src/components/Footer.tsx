@@ -7,9 +7,9 @@ export function Footer() {
   const updated = data.status === 'ready' && data.updated ? new Date(data.updated).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short' }) : undefined
 
   return (
-    <footer className="mt-24 border-t border-white/10 text-xs text-white/40">
+    <footer className="mt-24 border-t border-ink/10 text-xs text-muted">
       <Container className="flex flex-wrap items-center gap-x-5 gap-y-2 py-6">
-        <a href={ISSUES_URL} target="_blank" rel="noopener" className="transition-colors hover:text-white">
+        <a href={ISSUES_URL} target="_blank" rel="noopener" className="transition-colors hover:text-ink">
           Report an error
         </a>
         {updated && <span>Menus updated {updated}</span>}

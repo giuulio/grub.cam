@@ -1,18 +1,20 @@
 import { Link, NavLink } from 'react-router'
 import { REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
+import { ThemeToggle } from './ThemeToggle.tsx'
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-charcoal">
+    <header className="sticky top-0 z-20 border-b border-ink/10 bg-canvas">
       <Container className="flex h-16 items-center gap-6">
-        <Link to="/" className="font-semibold tracking-tight text-white">
+        <Link to="/" className="font-semibold tracking-tight text-ink">
           {SITE_NAME}
         </Link>
-        <NavLink to="/about" className={({ isActive }) => `ml-auto text-sm transition-colors ${isActive ? 'text-white' : 'text-white/50 hover:text-white'}`}>
+        <NavLink to="/about" className={({ isActive }) => `ml-auto text-sm transition-colors ${isActive ? 'text-ink' : 'text-muted hover:text-ink'}`}>
           About
         </NavLink>
-        <a href={REPO_URL} target="_blank" rel="noopener" aria-label="GitHub repository" className="text-white/50 transition-colors hover:text-white">
+        <ThemeToggle />
+        <a href={REPO_URL} target="_blank" rel="noopener" aria-label="GitHub repository" className="text-muted transition-colors hover:text-ink">
           <GitHubIcon className="size-5" />
         </a>
       </Container>

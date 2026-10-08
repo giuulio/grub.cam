@@ -17,7 +17,7 @@ function Layout() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 pt-12">
-        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-white/50">{data.error}</p> : null}</Container>
+        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
       </main>
       <Footer />
     </div>

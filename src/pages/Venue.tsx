@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar2, Card, ChefHat, Clock, Pin, Users } from 'reicon-react'
+import { Calendar2, Card, Users } from 'reicon-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { BackButton } from '../components/BackButton.tsx'
 import { DayMenu } from '../components/DayMenu.tsx'
@@ -40,15 +40,14 @@ export function VenuePage() {
           <h1 className="text-3xl font-semibold tracking-tight">{venue.name}</h1>
           {venue.url && <ExternalLink href={venue.url} />}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/50">
-          <Link to={`/${venue.site.slug}`} className="flex items-center gap-1.5 transition-colors hover:text-white">
-            <Icon of={Pin} />
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+          <Link to={`/${venue.site.slug}`} className="flex items-center gap-1.5 transition-colors hover:text-ink">
             {site}
           </Link>
-          <span title={TYPE_LABEL[venue.type]} className="flex items-center gap-1.5">
+          {typeNote(venue) && <span title={TYPE_LABEL[venue.type]} className="flex items-center gap-1.5">
             <Icon of={TYPE_ICON[venue.type]} />
             {typeNote(venue)}
-          </span>
+          </span>}
           {venue.access.level !== 'unknown' && (
             <span className="flex items-center gap-1.5">
               <Icon of={Users} />
@@ -61,19 +60,19 @@ export function VenuePage() {
               Bank card
             </span>
           )}
-          <span className="ml-auto">
+          <span className="ml-auto flex items-center gap-2">
+            <span className="sr-only">Current or next service</span>
             <StatusText s={status} now={now} />
           </span>
         </div>
       </div>
 
-      <section className="border-t border-white/10 py-8">
-        <h2 className="mb-3 flex items-center gap-2 text-sm text-white/40">
-          <Icon of={Clock} />
+      <section className="border-t border-ink/10 py-8">
+        <h2 className="mb-3 flex items-center gap-2 text-sm text-muted">
           Hours
         </h2>
         {slots.length ? (
-          <table className="w-full text-sm text-white/60 tabular-nums">
+          <table className="w-full text-sm text-muted tabular-nums">
             <tbody>
               {slots.map((s, i) => (
                 <tr key={i}>
@@ -87,7 +86,7 @@ export function VenuePage() {
             </tbody>
           </table>
         ) : (
-          <p className="text-sm text-white/40">Hours not published</p>
+          <p className="text-sm text-muted">Hours not published</p>
         )}
       </section>
 
@@ -118,9 +117,8 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
   const calendar = <MenuCalendar value={date} today={now.date} dates={dateSet} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
 
   return (
-    <section className="border-t border-white/10 py-8">
-      <h2 className="mb-4 flex items-center gap-2 text-sm text-white/40">
-        <Icon of={ChefHat} />
+    <section className="border-t border-ink/10 py-8">
+      <h2 className="mb-4 flex items-center gap-2 text-sm text-muted">
         Menu
       </h2>
       <div className="sm:grid sm:grid-cols-[14rem_1fr] sm:gap-10">
@@ -133,22 +131,22 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
               type="button"
               onClick={() => setCalendarOpen(!calendarOpen)}
               aria-expanded={calendarOpen}
-              className="-ml-2 flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-white/5 sm:pointer-events-none sm:cursor-auto"
+              className="-ml-2 flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-ink/5 sm:pointer-events-none sm:cursor-auto"
             >
               <span className="min-w-0">
                 <span className="block truncate text-xl font-medium">
                   <span className="sm:hidden">{formatISODate(date, { weekday: 'short', ...dayMonth })}</span>
                   <span className="hidden sm:inline">{formatISODate(date, { weekday: 'long', ...dayMonth })}</span>
                 </span>
-                {relative && <span className="block text-sm text-white/50">{relative}</span>}
+                {relative && <span className="block text-sm text-muted">{relative}</span>}
               </span>
-              <span className="text-white/50 sm:hidden">
+              <span className="text-muted sm:hidden">
                 <Icon of={Calendar2} />
               </span>
             </button>
             <div className="ml-auto flex shrink-0 items-center gap-1">
               {date !== now.date && (
-                <button type="button" onClick={() => setDate(now.date)} className="cursor-pointer rounded-md px-2 py-1 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+                <button type="button" onClick={() => setDate(now.date)} className="cursor-pointer rounded-md px-2 py-1 text-sm text-muted transition-colors hover:bg-ink/10 hover:text-ink">
                   Today
                 </button>
               )}
@@ -160,7 +158,7 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
             {days?.some((d) => d.items.length) ? (
               <DayMenu days={days} slots={venue.slots} date={date} />
             ) : (
-              <p className="text-sm text-white/40">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
+              <p className="text-sm text-muted">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
             )}
           </div>
         </div>

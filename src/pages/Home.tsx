@@ -77,8 +77,12 @@ export function Home() {
   return (
     <>
       <title>{`${SITE_NAME}: Cambridge college and University menus`}</title>
-      <div className="sticky top-16 z-10 -mx-4 bg-charcoal px-4 pt-2 pb-4 sm:-mx-6 sm:px-6">
-        <label className="flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-white/40 focus-within:border-white/40">
+      <div className="mb-8 max-w-xl">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Your guide to food at Cambridge.</h1>
+        <p className="mt-3 text-muted">College and University menus, hours and access. All in one place.</p>
+      </div>
+      <div className="sticky top-16 z-10 -mx-4 bg-canvas px-4 pt-2 pb-4 sm:-mx-6 sm:px-6">
+        <label className="flex items-center gap-3 rounded-full border border-ink/15 bg-ink/5 px-5 py-3 text-muted focus-within:border-ink/40">
           <Icon of={Search} className="size-5" />
           <input
             type="search"
@@ -86,7 +90,7 @@ export function Home() {
             onChange={(e) => set('q', e.target.value)}
             placeholder="Search places or dishes"
             aria-label="Search places or dishes"
-            className="w-full bg-transparent text-white outline-none placeholder:text-white/40"
+            className="w-full bg-transparent text-ink outline-none placeholder:text-muted"
           />
         </label>
 
@@ -114,10 +118,10 @@ export function Home() {
             Guests
           </Chip>
           <Chip icon={Card} active={f.bankCard} onClick={() => toggle('card')}>
-            Card
+              Card
           </Chip>
           {filtered && (
-            <button type="button" onClick={() => setParams({}, { replace: true })} className="flex shrink-0 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-sm text-white/50 hover:text-white">
+            <button type="button" onClick={() => setParams({}, { replace: true })} className="flex shrink-0 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-sm text-muted hover:text-ink">
               <Icon of={CloseCircle} />
               Clear
             </button>
@@ -143,14 +147,14 @@ export function Home() {
         )}
       </div>
 
-      {!results.length && <p className="mt-6 text-white/50">Nothing matches.</p>}
+      {!results.length && <p className="mt-6 text-muted">Nothing matches.</p>}
       {shown.map((g) => (
         <section key={g.section ?? 'all'} aria-labelledby={`section-${g.section ?? 'all'}`} className="mt-6">
-          <h2 id={`section-${g.section ?? 'all'}`} className="flex items-baseline justify-between pb-2 text-sm text-white/40">
+          <h2 id={`section-${g.section ?? 'all'}`} className="flex items-baseline justify-between pb-2 text-sm text-muted">
             {g.section ? SECTION_LABEL[g.section] : 'Everywhere'}
             <span className="tabular-nums">{g.rows.length}</span>
           </h2>
-          <ul className="divide-y divide-white/10 border-t border-white/10">
+          <ul className="divide-y divide-ink/10 border-t border-ink/10">
             {g.rows.map((r) => (
               <ResultRow key={r.venue.id} r={r} f={f} now={now} />
             ))}
@@ -158,7 +162,7 @@ export function Home() {
         </section>
       ))}
       {fold && hidden > 0 && (
-        <button type="button" onClick={() => set('more', '1')} className="mt-4 flex cursor-pointer items-center gap-1.5 text-sm text-white/50 hover:text-white">
+        <button type="button" onClick={() => set('more', '1')} className="mt-4 flex cursor-pointer items-center gap-1.5 text-sm text-muted hover:text-ink">
           <Icon of={ChevronDown} />
           {hidden} more
         </button>
@@ -181,7 +185,7 @@ function ChipRow({ children }: { children: ReactNode }) {
 
 const chipClass = (active: boolean) =>
   `flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap transition-colors ${
-    active ? 'border-white bg-white text-charcoal' : 'border-white/15 text-white/70 hover:border-white/40 hover:text-white'
+    active ? 'border-accent bg-accent text-accent-ink' : 'border-ink/15 text-muted hover:border-ink/40 hover:text-ink'
   }`
 
 function Chip({ icon, active, onClick, children }: { icon?: IconComponent; active: boolean; onClick: () => void; children: ReactNode }) {
@@ -196,7 +200,7 @@ function Chip({ icon, active, onClick, children }: { icon?: IconComponent; activ
 /** A native select styled as a chip; an option with value '' means "any". */
 function SelectChip({ icon, label, value, onChange, children }: { icon?: IconComponent; label: string; value: string; onChange: (v: string) => void; children: ReactNode }) {
   return (
-    <span className={`relative shrink-0 ${value ? 'text-charcoal' : 'text-white/70'}`}>
+    <span className={`relative shrink-0 ${value ? 'text-accent-ink' : 'text-muted'}`}>
       {icon && (
         <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
           <Icon of={icon} />

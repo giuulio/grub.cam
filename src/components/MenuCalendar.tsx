@@ -30,7 +30,7 @@ export function MenuCalendar({ value, today, dates, onChange }: { value: string;
       </div>
       <div role="group" aria-label="Menu dates" className="grid grid-cols-7 gap-1 text-center text-sm tabular-nums">
         {WEEKDAYS.map((d, i) => (
-          <span key={i} aria-hidden="true" className="pb-1 text-xs text-white/30">
+          <span key={i} aria-hidden="true" className="pb-1 text-xs text-muted">
             {d}
           </span>
         ))}
@@ -38,7 +38,7 @@ export function MenuCalendar({ value, today, dates, onChange }: { value: string;
           if (!d) return <span key={i} />
           const has = dates.has(d)
           const picked = d === value
-          const cls = picked ? 'bg-white font-medium text-charcoal' : has ? 'cursor-pointer bg-white/10 text-white hover:bg-white/20' : 'text-white/25'
+          const cls = picked ? 'bg-accent font-medium text-accent-ink' : has ? 'cursor-pointer bg-ink/5 text-ink hover:bg-ink/10' : 'text-ink/30'
           return (
             <button
               key={d}
@@ -47,7 +47,7 @@ export function MenuCalendar({ value, today, dates, onChange }: { value: string;
               aria-pressed={picked}
               aria-label={`${formatISODate(d, { weekday: 'long', day: 'numeric', month: 'long' })}${d === today ? ', today' : ''}${has ? '' : ', no menu'}`}
               onClick={() => onChange(d)}
-              className={`flex aspect-square items-center justify-center rounded-md transition-colors ${cls} ${d === today && !picked ? 'ring-1 ring-white/70 ring-inset' : ''}`}
+              className={`flex aspect-square items-center justify-center rounded-md transition-colors ${cls} ${d === today && !picked ? 'ring-1 ring-ink/70 ring-inset' : ''}`}
             >
               {Number(d.slice(8))}
             </button>
@@ -78,7 +78,7 @@ function ArrowButton({ dir, label, disabled, onClick }: { dir: 'prev' | 'next'; 
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex size-8 cursor-pointer items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/15 disabled:hover:bg-transparent"
+      className="flex size-8 cursor-pointer items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/10 hover:text-ink disabled:cursor-default disabled:text-ink/30 disabled:hover:bg-transparent"
     >
       <Icon of={dir === 'prev' ? ChevronLeft : ChevronRight} />
     </button>

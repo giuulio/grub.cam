@@ -12,22 +12,23 @@ import { Icon } from './Icon.tsx'
 export function VenueCard({ venue, status, now, dishes = [], showSite = true }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean }) {
   return (
     <li>
-      <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-3 rounded-md px-3 py-4 transition-colors hover:bg-white/5">
-        <span title={TYPE_LABEL[venue.type]} className="mt-0.5 text-white/40">
+      <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-3 rounded-md px-3 py-4 transition-colors hover:bg-ink/5">
+        <span className="mt-0.5 text-muted">
           <Icon of={TYPE_ICON[venue.type]} className="size-5" />
+          <span className="sr-only">{TYPE_LABEL[venue.type]}</span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate">
+          <p className="min-w-0">
             {showSite ? (
               <>
-                <span className="font-medium">{venue.site.short_name ?? venue.site.name}</span>
-                <span className="ml-2 text-white/50">{venue.name}</span>
+                <span className="block truncate font-medium sm:inline">{venue.site.short_name ?? venue.site.name}</span>
+                {venue.name !== (venue.site.short_name ?? venue.site.name) && <span className="block truncate text-sm text-muted sm:ml-2 sm:inline">{venue.name}</span>}
               </>
             ) : (
               <span className="font-medium">{venue.name}</span>
             )}
           </p>
-          {dishes.length > 0 && <p className="mt-1 truncate text-sm text-white/50">{dishes.slice(0, 3).join(' · ')}</p>}
+          {dishes.length > 0 && <p className="mt-1 truncate text-sm text-muted">{dishes.slice(0, 3).join(' · ')}</p>}
         </div>
         <StatusText s={status} now={now} />
       </Link>
@@ -36,20 +37,20 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true }: 
 }
 
 export function StatusText({ s, now }: { s: OpenStatus; now: LocalNow }) {
-  // Prerendered pages are read long after they're built: no "open until"
+  // Prerendered pages cannot know which service will be current when read.
   if (useReady().snapshot) return null
-  const cls = 'shrink-0 text-sm tabular-nums'
+  const cls = 'shrink-0 text-right text-xs whitespace-nowrap tabular-nums sm:text-sm'
   switch (s.kind) {
     case 'open':
-      return <span className={`${cls} text-white`}>Open until {s.slot.end}</span>
+      return <span className={`${cls} text-ink`} aria-label={`Open, ${s.slot.start} to ${s.slot.end}`}>{s.slot.start}–{s.slot.end}</span>
     case 'opening':
-      return <span className={`${cls} text-white/60`}>Opens {s.slot.start}</span>
+      return <span className={`${cls} text-muted`}>{s.slot.start}–{s.slot.end}</span>
     case 'closed':
       if (!s.next) return null
       return (
-        <span className={`${cls} text-white/40`}>
-          Opens {s.next.date === now.date ? '' : `${dayLabel(dayOfISO(s.next.date))} `}
-          {s.next.slot.start}
+        <span className={`${cls} text-muted`}>
+          {s.next.date !== now.date && <span className="block text-xs">{dayLabel(dayOfISO(s.next.date))}</span>}
+          {s.next.slot.start}–{s.next.slot.end}
         </span>
       )
     case 'unknown':

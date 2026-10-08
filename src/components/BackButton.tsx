@@ -13,7 +13,7 @@ export function BackButton({ up }: { up: string }) {
       aria-label="Back"
       title="Back"
       onClick={() => (cameFromSite ? navigate(-1) : navigate(up))}
-      className="-ml-2 mb-4 flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+      className="-ml-2 mb-4 flex size-9 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/10 hover:text-ink"
     >
       <Icon of={ArrowLeft} className="size-5" />
     </button>

@@ -3,7 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1e1e1e" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
+    <script>
+      try {
+        const theme = localStorage.getItem('grub-theme');
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme;
+          document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+            meta.content = theme === 'dark' ? '#1e1e1e' : '#ffffff';
+          });
+        }
+      } catch {}
+    </script>
     <title>grub.cam</title>
     <meta name="description" content="Opening hours, access and today's menus for every Cambridge college dining hall, café and bar, and the University's own cafés and canteens." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

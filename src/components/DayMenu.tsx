@@ -21,16 +21,16 @@ export function DayMenu({ days, slots, date }: { days: MenuDay[]; slots: Slot[];
           .join(', ')
         return (
           <div key={d.service}>
-            <div className="flex items-baseline justify-between gap-4 border-b border-white/10 pb-2">
+            <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2">
               <h4 className="font-medium">{MEAL_LABEL[d.service]}</h4>
-              {hours && <span className="text-sm text-white/50 tabular-nums">{hours}</span>}
+              {hours && <span className="text-sm text-muted tabular-nums">{hours}</span>}
             </div>
             <Dishes items={d.items} />
           </div>
         )
       })}
       {key.length > 0 && (
-        <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/40">
+        <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
           {key.map((t) => (
             <span key={t}>
               <Code tag={t} /> {DIET_LABEL[t]}
@@ -50,7 +50,7 @@ function Dishes({ items }: { items: Dish[] }) {
     <div className="mt-3 space-y-4">
       {groups.map((g) => (
         <div key={g.course}>
-          {groups.length > 1 && <h5 className="mb-1 text-xs tracking-wide text-white/35 uppercase">{COURSE_LABEL[g.course]}</h5>}
+          {groups.length > 1 && <h5 className="mb-1 text-xs tracking-wide text-muted uppercase">{COURSE_LABEL[g.course]}</h5>}
           <ul>
             {g.items.map((i, n) => (
               <DishRow key={n} dish={i} priced={priced} />
@@ -67,10 +67,7 @@ function DishRow({ dish, priced }: { dish: Dish; priced: boolean }) {
   const price = dish.price_gbp != null ? `£${dish.price_gbp.toFixed(2)}` : dish.price_text
   return (
     <li className="flex items-baseline gap-3 py-1 text-sm">
-      <span aria-hidden="true" className="-mr-1 text-white/30">
-        •
-      </span>
-      <span className={`min-w-0 flex-1 ${dish.sold_out ? 'text-white/30 line-through' : 'text-white/85'}`}>{dish.name}</span>
+      <span className={`min-w-0 flex-1 ${dish.sold_out ? 'text-muted line-through' : 'text-ink'}`}>{dish.name}</span>
       {tags.length > 0 && (
         <span className="flex shrink-0 gap-1">
           {tags.map((t) => (
@@ -79,7 +76,7 @@ function DishRow({ dish, priced }: { dish: Dish; priced: boolean }) {
         </span>
       )}
       {(priced || dish.sold_out) && (
-        <span title={dish.price_text ?? undefined} className="w-14 shrink-0 text-right text-white/50 tabular-nums">
+        <span title={dish.price_text ?? undefined} className="w-14 shrink-0 text-right text-muted tabular-nums">
           {dish.sold_out ? 'Sold out' : price}
         </span>
       )}
@@ -89,7 +86,7 @@ function DishRow({ dish, priced }: { dish: Dish; priced: boolean }) {
 
 function Code({ tag }: { tag: DietTag }) {
   return (
-    <abbr title={DIET_LABEL[tag]} className="inline-block min-w-6 rounded border border-white/15 px-1 text-center text-[10px] leading-4 font-medium text-white/60 no-underline">
+    <abbr title={DIET_LABEL[tag]} className="inline-block min-w-6 rounded border border-ink/15 px-1 text-center text-[10px] leading-4 font-medium text-muted no-underline">
       {DIET_SHORT[tag]}
     </abbr>
   )
