@@ -1,7 +1,8 @@
 name: Ingest menus
 
 # Fetches every scripted source from today until a week comes back empty and saves it to Supabase.
-# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY.
+# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY; with CF_PAGES_DEPLOY_HOOK set it then rebuilds
+# the site, so the prerendered pages, sitemap and llms.txt carry the new menus.
 on:
   workflow_dispatch:
   schedule:
@@ -16,6 +17,7 @@ jobs:
     env:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      CF_PAGES_DEPLOY_HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -24,3 +26,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ingest
+      # Even if one source failed, the others were saved: rebuild anyway. Skipped until the hook exists.
+      - if: ${{ !cancelled() }}
+        run: '[ -z "$CF_PAGES_DEPLOY_HOOK" ] || curl -fsS -X POST "$CF_PAGES_DEPLOY_HOOK" > /dev/null'
