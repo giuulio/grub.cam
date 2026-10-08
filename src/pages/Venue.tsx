@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Calendar2, ChefHat, Clock } from 'reicon-react'
+import { Calendar2, Card, ChefHat, Clock, Pin, Users } from 'reicon-react'
 import { Link, useParams, useSearchParams } from 'react-router'
+import { BackButton } from '../components/BackButton.tsx'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
-import { ACCESS_LABEL, MEAL_LABEL, MEALS, typeNote } from '../lib/filters.ts'
+import { ACCESS_LABEL, MEAL_LABEL, MEALS, TYPE_LABEL, typeNote } from '../lib/filters.ts'
+import { TYPE_ICON } from '../lib/icons.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
@@ -31,23 +33,40 @@ export function VenuePage() {
     .filter((s) => s.period === 'all' || s.period === (term ? 'term' : 'vacation'))
     .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
 
-  const meta = [typeNote(venue), venue.access.level !== 'unknown' && ACCESS_LABEL[venue.access.level], venue.payment.bank_card && 'Bank card'].filter(Boolean).join(' · ')
-
   return (
     <>
       <title>{`${venue.name}, ${site} · ${SITE_NAME}`}</title>
-      <Link to={`/${venue.site.slug}`} className="mb-6 inline-block text-sm text-white/50 transition-colors hover:text-white">
-        ← {site}
-      </Link>
+      <BackButton up={`/${venue.site.slug}`} />
       <div className="mb-8">
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <h1 className="text-3xl font-semibold tracking-tight">{venue.name}</h1>
           {venue.url && <ExternalLink href={venue.url} />}
         </div>
-        <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm text-white/50">
-          <span>{meta}</span>
-          <StatusText s={status} now={now} />
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/50">
+          <Link to={`/${venue.site.slug}`} className="flex items-center gap-1.5 transition-colors hover:text-white">
+            <Icon of={Pin} />
+            {site}
+          </Link>
+          <span title={TYPE_LABEL[venue.type]} className="flex items-center gap-1.5">
+            <Icon of={TYPE_ICON[venue.type]} />
+            {typeNote(venue)}
+          </span>
+          {venue.access.level !== 'unknown' && (
+            <span className="flex items-center gap-1.5">
+              <Icon of={Users} />
+              {ACCESS_LABEL[venue.access.level]}
+            </span>
+          )}
+          {venue.payment.bank_card && (
+            <span className="flex items-center gap-1.5">
+              <Icon of={Card} />
+              Bank card
+            </span>
+          )}
+          <span className="ml-auto">
+            <StatusText s={status} now={now} />
+          </span>
+        </div>
       </div>
 
       <section className="border-t border-white/10 py-8">

@@ -1,4 +1,5 @@
-import { Link, Navigate, useLocation, useParams } from 'react-router'
+import { Navigate, useLocation, useParams } from 'react-router'
+import { BackButton } from '../components/BackButton.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
 import { VenueCard } from '../components/VenueCard.tsx'
 import { useReady } from '../lib/data.tsx'
@@ -30,9 +31,7 @@ export function SitePage() {
   return (
     <>
       <title>{`${site.short_name ?? site.name} · ${SITE_NAME}`}</title>
-      <Link to="/" className="mb-6 inline-block text-sm text-white/50 transition-colors hover:text-white">
-        ← Search
-      </Link>
+      <BackButton up="/" />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">{site.name}</h1>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}

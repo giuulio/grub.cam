@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import { ArrowLeft } from 'reicon-react'
+import { Icon } from '../components/Icon.tsx'
 import { SITE_NAME } from '../lib/site.ts'
 
 export function NotFound() {
@@ -6,8 +8,9 @@ export function NotFound() {
     <>
       <title>{`Not found · ${SITE_NAME}`}</title>
       <h1 className="mb-4 text-3xl font-semibold tracking-tight">Page not found</h1>
-      <Link to="/" className="text-white/60 hover:text-white">
-        ← Search
+      <Link to="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white">
+        <Icon of={ArrowLeft} />
+        Search
       </Link>
     </>
   )

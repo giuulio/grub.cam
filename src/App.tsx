@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
-import { Outlet, Route, Routes, useLocation } from 'react-router'
+import { Outlet, Route, Routes } from 'react-router'
 import { Container } from './components/Container.tsx'
 import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
 import { DataProvider, useData } from './lib/data.tsx'
+import { useScrollMemory } from './lib/useScrollMemory.ts'
 import { About } from './pages/About.tsx'
 import { Home } from './pages/Home.tsx'
 import { NotFound } from './pages/NotFound.tsx'
@@ -12,11 +12,7 @@ import { VenuePage } from './pages/Venue.tsx'
 
 function Layout() {
   const data = useData()
-  const { pathname, hash } = useLocation()
-  // New page starts at the top (pages with a #hash scroll themselves)
-  useEffect(() => {
-    if (!hash) window.scrollTo(0, 0)
-  }, [pathname, hash])
+  useScrollMemory()
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
