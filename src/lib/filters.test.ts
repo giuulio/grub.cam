@@ -80,13 +80,15 @@ describe('nextService', () => {
 })
 
 describe('applyFilters menu date', () => {
-  it("shows the next service's menu once today's services are over", () => {
+  it("browses the next service but keeps searches on the selected date", () => {
     const thu = { date: '2026-10-08', service: 'lunch' as const, items: [{ name: 'Katsu curry', tags: [] }] }
     const v: Venue = { ...base, slots: [{ ...base.slots[0], days: ['wed', 'thu'] }], menu: [...base.menu, thu] }
     const evening = { ...now, minutes: 22 * 60 }
-    const [r] = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, evening)
+    const [r] = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date }, evening)
     expect(r.days.map((d) => d.date)).toEqual(['2026-10-08'])
     expect(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, now)).toEqual([])
+    expect(applyFilters([v], { ...DEFAULT_FILTERS, date: now.date, q: 'katsu' }, evening)).toEqual([])
+    expect(applyFilters([v], { ...DEFAULT_FILTERS, date: thu.date, q: 'katsu' }, evening)).toHaveLength(1)
   })
 })
 

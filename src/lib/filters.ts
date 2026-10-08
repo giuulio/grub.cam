@@ -2,6 +2,7 @@ import { DAYS, type AccessLevel, type DietTag, type Dish, type Meal, type MenuDa
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
+import { compareSearchHits, normalizeSearch, searchVenues, type SearchHit } from './search.ts'
 
 export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'snacks', 'bar']
 export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', brunch: 'Brunch', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Café', bar: 'Bar' }
@@ -69,11 +70,9 @@ export function menuDaysFor(v: Venue, date: string, meal?: Meal): MenuDay[] {
 
 export function matchesDiet(v: Venue, days: MenuDay[], diets: DietTag[]): boolean {
   if (!diets.length) return true
-  return diets.every((tag) => {
-    const venueLevel = v.dietary.tags.includes(tag) || (tag === 'vegetarian' && v.dietary.tags.includes('vegan'))
-    const dishLevel = days.some((d) => d.items.some((i) => i.tags.includes(tag) || (tag === 'vegetarian' && i.tags.includes('vegan'))))
-    return days.length ? dishLevel || (venueLevel && v.type !== 'hall') : venueLevel
-  })
+  const venueLevel = dishMatches({ name: '', tags: v.dietary.tags }, { q: '', diets })
+  const dishLevel = days.some((d) => d.items.some((i) => dishMatches(i, { q: '', diets })))
+  return days.length ? dishLevel || (venueLevel && v.type !== 'hall') : venueLevel
 }
 
 /** Dish matches the query (substring, lowercased) and every selected diet (vegan counts as vegetarian). */
@@ -88,7 +87,7 @@ export function serviceDate(s: OpenStatus): string | undefined {
   if (s.kind === 'closed') return s.next?.date
 }
 
-export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number }
+export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number; search?: SearchHit; searchMatches: SearchHit[] }
 
 /** How results are grouped, in ranking order. Unknown hours are their own group, never "closed". */
 export type Section = 'open' | 'later' | 'other' | 'unknown'
@@ -104,8 +103,8 @@ export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>
 }
 
 export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked[] {
-  const q = f.q.trim().toLowerCase()
-  const out: Ranked[] = []
+  const searching = !!normalizeSearch(f.q)
+  const kept = new Map<string, Omit<Ranked, 'searchMatches'>>()
   for (const v of venues) {
     if (f.type && v.type !== f.type) continue
     if (f.site && v.site.slug !== f.site) continue
@@ -114,24 +113,31 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
     // Viewing today: menus follow the service the status points at, so after tonight's last service it's tomorrow's menu.
-    const date = f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
+    const date = !searching && f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
     const days = menuDaysFor(v, date, f.meal)
     if (!matchesDiet(v, days, f.diets)) continue
-    if (q) {
-      const nameHit = [v.site.name, v.site.short_name ?? '', v.name].join(' ').toLowerCase().includes(q)
-      // With a menu, a single dish must match both the query and the diets; the free-text description only counts without one.
-      const dishHit = days.some((d) => d.items.some((i) => dishMatches(i, { ...f, q })))
-      const servesHit = !days.length && [v.where ?? '', v.serves ?? ''].join(' ').toLowerCase().includes(q)
-      if (!nameHit && !dishHit && !servesHit) continue
-    }
     days.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
     if (f.openNow && status.kind !== 'open') continue
     // If a meal is selected and the venue neither serves it (no slot) nor has a menu for it, drop it
     if (f.meal && !v.slots.some((s) => s.meal === f.meal) && !days.length) continue
     const matchedDishes = days.reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
-    out.push({ venue: v, status, days, matchedDishes })
+    kept.set(v.id, { venue: v, status, days, matchedDishes })
+  }
+  // Searches see the places left, and only dishes on the date viewed, at the meal and with every diet picked.
+  const hits = searching
+    ? searchVenues(venues, f.q, (d) => kept.has(d.venue.id) && (!d.dish || (d.date === f.date && (!f.meal || d.service === f.meal) && dishMatches(d.dish, { q: '', diets: f.diets }))))
+    : undefined
+  const out: Ranked[] = []
+  for (const r of kept.values()) {
+    const matches = hits?.get(r.venue.id) ?? []
+    if (hits && !matches.length) continue
+    out.push({ ...r, search: matches[0], searchMatches: matches.filter((hit) => hit.dish) })
   }
   out.sort((a, b) => {
+    if (a.search && b.search) {
+      const relevance = compareSearchHits(a.search, b.search)
+      if (relevance) return relevance
+    }
     const r = statusRank(a.status) - statusRank(b.status)
     if (r) return r
     if (a.status.kind === 'open' && b.status.kind === 'open') return a.status.closesInMin - b.status.closesInMin

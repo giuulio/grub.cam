@@ -10,6 +10,7 @@ import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, nex
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import type { LocalNow } from '../lib/time/clock.ts'
+import { normalizeSearch } from '../lib/search.ts'
 
 const TYPE_CHIPS: [VenueType, string][] = [
   ['hall', 'Dining'],
@@ -48,10 +49,13 @@ export function Home() {
   const [params, setParams] = useSearchParams()
   const f = readFilters(params, now.date, sites)
   const results = applyFilters(venues, f, now)
+  const searching = !!normalizeSearch(f.q)
   const filtered = [...params.keys()].some((k) => k !== 'more')
 
   // Built ahead of time, "open now" would be stale: list everything by place until live data takes over
-  const groups = snapshot
+  const groups = searching
+    ? [{ section: undefined, rows: results }]
+    : snapshot
     ? [{ section: undefined, rows: [...results].sort((a, b) => a.venue.site.name.localeCompare(b.venue.site.name)) }]
     : SECTIONS.map((section) => ({ section, rows: results.filter((r) => sectionOf(r.status) === section) })).filter((g) => g.rows.length)
   const fold = !snapshot && !f.q.trim() && !params.has('more') && groups.some((g) => g.section && !FOLDED.has(g.section))
@@ -151,7 +155,7 @@ export function Home() {
       {shown.map((g) => (
         <section key={g.section ?? 'all'} aria-labelledby={`section-${g.section ?? 'all'}`} className="mt-6">
           <h2 id={`section-${g.section ?? 'all'}`} className="flex items-baseline justify-between pb-2 text-sm text-muted">
-            {g.section ? SECTION_LABEL[g.section] : 'Everywhere'}
+            {searching ? 'Results · today’s menus' : g.section ? SECTION_LABEL[g.section] : 'Everywhere'}
             <span className="tabular-nums">{g.rows.length}</span>
           </h2>
           <ul className="divide-y divide-ink/10 border-t border-ink/10">
@@ -173,9 +177,11 @@ export function Home() {
 
 function ResultRow({ r, f, now }: { r: Ranked; f: Filters; now: LocalNow }) {
   // When searching or filtering by diet, show which dishes matched; otherwise what's on at the next service.
-  const dishes = f.q.trim() || f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, f)) : (nextService(r)?.items ?? [])
+  const dishes = normalizeSearch(f.q)
+    ? r.searchMatches.map((hit) => `${hit.service ? `${MEAL_LABEL[hit.service]}: ` : ''}${hit.dish!.name}`)
+    : (f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, f)) : (nextService(r)?.items ?? [])).map((i) => i.name)
   // With one site picked, lead with the venue
-  return <VenueCard venue={r.venue} status={r.status} now={now} dishes={dishes.map((i) => i.name)} showSite={!f.site} />
+  return <VenueCard venue={r.venue} status={r.status} now={now} dishes={dishes} showSite={!f.site} />
 }
 
 /** One line of filters: scrolls sideways on phones, wraps on wider screens. */

@@ -12,12 +12,13 @@ export type VenueType = 'hall' | 'cafe' | 'bar' | 'other'
 export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all' }
 
 /** Where venues belong: a college, or a University site (West Cambridge, Sidgwick, a museum, ...). */
-export type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university'; official_dining_url: string | null }
+export type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university'; official_dining_url: string | null; aliases?: string[] }
 
 export type Venue = {
   id: string
   slug: string
   name: string
+  aliases?: string[]
   type: VenueType
   /** The venue's own page, when it has one */
   url: string | null
