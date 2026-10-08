@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useReady } from '../lib/data.tsx'
-import type { DietTag, Meal } from '../lib/types.ts'
+import type { DietTag, Meal, VenueType } from '../lib/types.ts'
 import { applyFilters, DEFAULT_FILTERS, dishMatches, DIET_LABEL, MEAL_LABEL, MEALS, type Filters, type Ranked } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -9,8 +9,15 @@ import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
 import type { OpenStatus } from '../lib/time/openNow.ts'
 
 const DIET_CHIPS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free']
+const TYPE_CHIPS: [VenueType, string][] = [
+  ['hall', 'Halls'],
+  ['cafe', 'Cafés'],
+  ['bar', 'Bars'],
+]
 
-// All filter state lives in the URL (?q=&open=1&meal=&diet=vegan,halal&guests=1&card=1) so a search can be shared.
+const readList = <T extends string>(p: URLSearchParams, key: string, allowed: T[]) => (p.get(key)?.split(',') ?? []).filter((x): x is T => allowed.includes(x as T))
+
+// All filter state lives in the URL (?q=&open=1&meal=&type=hall,cafe&diet=vegan,halal&guests=1&card=1) so a search can be shared.
 function readFilters(p: URLSearchParams, date: string): Filters {
   const meal = p.get('meal') as Meal | null
   return {
@@ -18,7 +25,8 @@ function readFilters(p: URLSearchParams, date: string): Filters {
     date,
     q: p.get('q') ?? '',
     meal: meal && MEALS.includes(meal) ? meal : undefined,
-    diets: (p.get('diet')?.split(',') ?? []).filter((d): d is DietTag => DIET_CHIPS.includes(d as DietTag)),
+    types: readList(p, 'type', TYPE_CHIPS.map(([t]) => t)),
+    diets: readList(p, 'diet', DIET_CHIPS),
     openNow: p.has('open'),
     nonMemberOk: p.has('guests'),
     bankCard: p.has('card'),
@@ -39,11 +47,11 @@ export function Home() {
     setParams(next, { replace: true })
   }
   const toggle = (key: string) => update((p) => (p.has(key) ? p.delete(key) : p.set(key, '1')))
-  const toggleDiet = (tag: DietTag) =>
+  const toggleIn = <T extends string>(key: string, list: T[], x: T) =>
     update((p) => {
-      const diets = f.diets.includes(tag) ? f.diets.filter((d) => d !== tag) : [...f.diets, tag]
-      if (diets.length) p.set('diet', diets.join(','))
-      else p.delete('diet')
+      const next = list.includes(x) ? list.filter((y) => y !== x) : [...list, x]
+      if (next.length) p.set(key, next.join(','))
+      else p.delete(key)
     })
 
   return (
@@ -83,6 +91,11 @@ export function Home() {
               <path d="m3 4.5 3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
+          {TYPE_CHIPS.map(([type, label]) => (
+            <Chip key={type} active={f.types.includes(type)} onClick={() => toggleIn('type', f.types, type)}>
+              {label}
+            </Chip>
+          ))}
           <Chip active={f.nonMemberOk} onClick={() => toggle('guests')}>
             Guests welcome
           </Chip>
@@ -90,7 +103,7 @@ export function Home() {
             Bank card
           </Chip>
           {DIET_CHIPS.map((tag) => (
-            <Chip key={tag} active={f.diets.includes(tag)} onClick={() => toggleDiet(tag)}>
+            <Chip key={tag} active={f.diets.includes(tag)} onClick={() => toggleIn('diet', f.diets, tag)}>
               {DIET_LABEL[tag]}
             </Chip>
           ))}

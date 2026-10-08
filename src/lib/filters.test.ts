@@ -45,6 +45,13 @@ describe('applyFilters', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'dhal' }, now)).toHaveLength(1)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })
+  it('filters by venue type', () => {
+    const bar: Venue = { ...base, id: 'c/bar', slug: 'bar', type: 'bar', menu: [] }
+    const ids = (types: Venue['type'][]) => applyFilters([base, bar], { ...DEFAULT_FILTERS, date: '2026-10-07', types }, now).map((r) => r.venue.id)
+    expect(ids([])).toEqual(['c/hall', 'c/bar'])
+    expect(ids(['bar'])).toEqual(['c/bar'])
+    expect(ids(['hall', 'cafe'])).toEqual(['c/hall'])
+  })
 })
 
 describe('applyFilters menu date', () => {
