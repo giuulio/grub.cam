@@ -25,3 +25,6 @@ export const MenuDay = z.object({
   note: z.string().optional(),
 })
 export type MenuDay = z.infer<typeof MenuDay>
+
+/** How a venue publishes its menu (scripts/ingest/sources.ts, copied to venues.menu_channel). */
+export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'

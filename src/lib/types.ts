@@ -1,7 +1,7 @@
 // Shapes the app reads from Supabase (supabase/migrations). Menu shapes come from the ingest schema.
-import type { DietTag, Meal, MenuDay } from '../../scripts/schema.ts'
+import type { Channel, DietTag, Meal, MenuDay } from '../../scripts/schema.ts'
 
-export type { DietTag, Dish, Meal, MenuDay } from '../../scripts/schema.ts'
+export type { Channel, DietTag, Dish, Meal, MenuDay } from '../../scripts/schema.ts'
 
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -29,6 +29,11 @@ export type Venue = {
   dietary: { tags: DietTag[] }
   site: Site
   slots: Slot[]
+  /** How the venue publishes its menu (scripts/ingest/sources.ts); unset for most cafés and bars. */
+  menu_channel?: Channel | null
+  menu_url?: string | null
+  /** Fetched by `npm run ingest`, rather than transcribed by hand */
+  menu_scripted?: boolean
   /** Menu days from today for the next week (`useMenuOn` reaches beyond it). */
   menu: MenuDay[]
 }

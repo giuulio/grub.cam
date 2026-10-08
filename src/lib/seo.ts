@@ -94,6 +94,7 @@ export function pages(data: Data, date: string): Page[] {
     },
   }
   const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
+  const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours, access, card payments) and what's still missing." }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {
@@ -109,7 +110,7 @@ export function pages(data: Data, date: string): Page[] {
     }
   })
   const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date) }))
-  return [home, about, ...sites, ...venues]
+  return [home, about, coverage, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')

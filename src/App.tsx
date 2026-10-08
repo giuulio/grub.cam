@@ -5,6 +5,7 @@ import { Header } from './components/Header.tsx'
 import { DataProvider, useData, type State } from './lib/data.tsx'
 import { useScrollMemory } from './lib/useScrollMemory.ts'
 import { About } from './pages/About.tsx'
+import { CoveragePage } from './pages/Coverage.tsx'
 import { Home } from './pages/Home.tsx'
 import { NotFound } from './pages/NotFound.tsx'
 import { SitePage } from './pages/Site.tsx'
@@ -31,6 +32,7 @@ export default function App({ data }: { data: State }) {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
+          <Route path="coverage" element={<CoveragePage />} />
           <Route path=":slug" element={<SitePage />} />
           <Route path=":site/:venue" element={<VenuePage />} />
           <Route path="*" element={<NotFound />} />

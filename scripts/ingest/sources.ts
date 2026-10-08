@@ -86,7 +86,13 @@ export const SOURCES: MenuSource[] = [
 
   // Public, transcribed by hand. PDFs: curl -A "Mozilla/5.0" URL | pdftotext -layout - -
   // Sway/Canva: Chrome --headless=new --dump-dom URL
-  { venue: 'churchill/dining-hall', channel: 'html', url: 'https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/', cadence: 'weekly' },
+  {
+    venue: 'churchill/dining-hall',
+    channel: 'html',
+    url: 'https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/',
+    cadence: 'weekly, filled in day by day',
+    notes: 'Cloudflare blocks curl: use headless Chrome. One table per day, Lunch and Dinner columns; later days stay empty until posted.',
+  },
   {
     venue: 'clare-hall/dining-hall',
     channel: 'sway',

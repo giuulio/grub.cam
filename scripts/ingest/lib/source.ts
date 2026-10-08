@@ -1,4 +1,4 @@
-import type { MenuDay } from '../../schema.ts'
+import type { Channel, MenuDay } from '../../schema.ts'
 
 export type SourceContext = {
   /** ISO week being fetched, e.g. 2026-W41 */
@@ -13,8 +13,6 @@ export type Adapter = {
   /** Return menu days for the requested week (days outside it are dropped). */
   fetch(ctx: SourceContext): Promise<{ days: MenuDay[]; note?: string }>
 }
-
-export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'
 
 /** How a venue's menu is published. */
 export type MenuSource = {

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { MenuDay } from '../../schema.ts'
+import type { MenuSource } from './source.ts'
 
 type Method = 'script' | 'manual'
 
@@ -25,6 +26,17 @@ export function connect() {
       const { count, error } = await sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)
       if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
       return count ?? 0
+    },
+    /** Copies how each venue publishes its menu to `venues`, for the app. Returns the ids that matched no venue. */
+    async syncSources(sources: MenuSource[]): Promise<string[]> {
+      const missing = await Promise.all(
+        sources.map(async (s) => {
+          const { data, error } = await sb.from('venues').update({ menu_channel: s.channel, menu_url: s.url ?? null, menu_scripted: !!s.adapter }).eq('id', s.venue).select('id')
+          if (error) throw new Error(`venues ${s.venue}: ${error.message}`)
+          return data.length ? [] : [s.venue]
+        }),
+      )
+      return missing.flat()
     },
     async logRun(run: { venue_id: string; method: Method; started_at: string; status: 'ok' | 'empty' | 'error'; days?: number; dishes?: number; error?: string }) {
       const { error } = await sb.from('ingest_runs').insert(run)

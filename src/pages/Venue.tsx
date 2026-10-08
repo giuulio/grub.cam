@@ -7,6 +7,7 @@ import { ExternalLink } from '../components/ExternalLink.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
+import { menuGap } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { ACCESS_LABEL, MEAL_LABEL, periodSlots, TYPE_LABEL, typeNote } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
@@ -14,7 +15,7 @@ import { SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus } from '../lib/time/openNow.ts'
-import type { Venue } from '../lib/types.ts'
+import type { Channel, Venue } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 export function VenuePage() {
@@ -108,7 +109,8 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
   const fetched = useMenuDates(venue.id)
   const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
   const { days, failed } = useMenuOn(venue, date)
-  if (!dates.length && !asked) return null
+  // Never had a menu here: say where it is instead, once the history has confirmed it
+  if (!dates.length && !asked) return fetched ? <MissingMenu venue={venue} /> : null
 
   const dateSet = new Set(dates)
   // A build-time page can't know what "today" will be when it's read
@@ -163,6 +165,35 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
           </div>
         </div>
       </div>
+    </section>
+  )
+}
+
+const MEMBERS_WHERE: Partial<Record<Channel, string>> = { intranet: 'on the college intranet', app: 'in a college app', email: 'by email' }
+
+/** Why a venue with a known menu source has no menu here, and how to help. */
+function MissingMenu({ venue }: { venue: Venue }) {
+  const status = menuGap(venue)
+  if (!status || venue.menu_scripted) return null
+  const site = venue.site.short_name ?? venue.site.name
+  return (
+    <section className="border-t border-ink/10 py-8">
+      <h2 className="mb-3 text-sm text-muted">Menu</h2>
+      <p className="text-sm text-muted">
+        {status === 'members'
+          ? `Posted for ${site} members only, ${MEMBERS_WHERE[venue.menu_channel!] ?? 'not online'}.`
+          : status === 'online'
+          ? 'Published, not here yet.'
+          : 'Not published anywhere we know of.'}{' '}
+        <Link to="/coverage" className="text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+          Help get it here
+        </Link>
+      </p>
+      {status === 'online' && venue.menu_url && (
+        <div className="mt-2">
+          <ExternalLink href={venue.menu_url} />
+        </div>
+      )}
     </section>
   )
 }

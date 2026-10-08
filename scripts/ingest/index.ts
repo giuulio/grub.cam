@@ -30,6 +30,11 @@ async function fetchAhead(adapter: Adapter): Promise<MenuDay[]> {
 }
 
 let failures = 0
+const unknown = (await db?.syncSources(SOURCES)) ?? []
+for (const id of unknown) {
+  failures++
+  console.error(`✗ ${id}: in sources.ts but not in venues`)
+}
 for (const src of SOURCES) {
   if (!src.adapter || (only && !only.includes(src.venue.split('/')[0]))) continue
   const started = new Date().toISOString()
