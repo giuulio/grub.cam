@@ -1,16 +1,20 @@
 import { Link } from 'react-router'
-import { typeNote } from '../lib/filters.ts'
+import { TYPE_LABEL } from '../lib/filters.ts'
+import { TYPE_ICON } from '../lib/icons.ts'
 import { venuePath } from '../lib/site.ts'
 import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
 import type { OpenStatus } from '../lib/time/openNow.ts'
 import type { Venue } from '../lib/types.ts'
+import { Icon } from './Icon.tsx'
 
-/** One venue in a list, linking to its page. Search leads with the site (college, West Cambridge, ...); a site page leads with the venue. */
+/** One venue in a list, linking to its page; the icon says what kind of place it is. Search leads with the site (college, West Cambridge, ...); a site page with the venue. */
 export function VenueCard({ venue, status, now, dishes = [], showSite = true }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean }) {
-  const type = typeNote(venue)
   return (
     <li>
-      <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-4 rounded-md px-3 py-4 transition-colors hover:bg-white/5">
+      <Link to={venuePath(venue)} className="-mx-3 flex items-start gap-3 rounded-md px-3 py-4 transition-colors hover:bg-white/5">
+        <span title={TYPE_LABEL[venue.type]} className="mt-0.5 text-white/40">
+          <Icon of={TYPE_ICON[venue.type]} className="size-5" />
+        </span>
         <div className="min-w-0 flex-1">
           <p className="truncate">
             {showSite ? (
@@ -19,10 +23,7 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true }: 
                 <span className="ml-2 text-white/50">{venue.name}</span>
               </>
             ) : (
-              <>
-                <span className="font-medium">{venue.name}</span>
-                {type && <span className="ml-2 text-white/50">{type}</span>}
-              </>
+              <span className="font-medium">{venue.name}</span>
             )}
           </p>
           {dishes.length > 0 && <p className="mt-1 truncate text-sm text-white/50">{dishes.slice(0, 3).join(' · ')}</p>}

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Calendar2, ChefHat, Clock } from 'reicon-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
+import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { StatusText } from '../components/VenueCard.tsx'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
@@ -49,7 +51,10 @@ export function VenuePage() {
       </div>
 
       <section className="border-t border-white/10 py-8">
-        <h2 className="mb-3 text-sm text-white/40">Hours</h2>
+        <h2 className="mb-3 flex items-center gap-2 text-sm text-white/40">
+          <Icon of={Clock} />
+          Hours
+        </h2>
         {slots.length ? (
           <table className="w-full text-sm text-white/60 tabular-nums">
             <tbody>
@@ -95,7 +100,10 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
 
   return (
     <section className="border-t border-white/10 py-8">
-      <h2 className="mb-4 text-sm text-white/40">Menu</h2>
+      <h2 className="mb-4 flex items-center gap-2 text-sm text-white/40">
+        <Icon of={ChefHat} />
+        Menu
+      </h2>
       <div className="sm:grid sm:grid-cols-[14rem_1fr] sm:gap-10">
         <div className="hidden sm:block">
           <div className="sticky top-24">{calendar}</div>
@@ -115,7 +123,9 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
                 </span>
                 {relative && <span className="block text-sm text-white/50">{relative}</span>}
               </span>
-              <CalendarIcon className="size-4 shrink-0 text-white/50 sm:hidden" />
+              <span className="text-white/50 sm:hidden">
+                <Icon of={Calendar2} />
+              </span>
             </button>
             <div className="ml-auto flex shrink-0 items-center gap-1">
               {date !== now.date && (
@@ -137,14 +147,5 @@ function MenuSection({ venue, now }: { venue: Venue; now: LocalNow }) {
         </div>
       </div>
     </section>
-  )
-}
-
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className={className}>
-      <rect x="2" y="3" width="12" height="11" rx="2" />
-      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" strokeLinecap="round" />
-    </svg>
   )
 }

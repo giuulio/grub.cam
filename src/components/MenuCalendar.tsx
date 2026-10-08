@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'reicon-react'
 import { addMonthsYM, formatISODate, monthCells } from '../lib/time/clock.ts'
+import { Icon } from './Icon.tsx'
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -86,9 +88,7 @@ function ArrowButton({ dir, label, disabled, onClick }: { dir: 'prev' | 'next'; 
       onClick={onClick}
       className="flex size-8 cursor-pointer items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/15 disabled:hover:bg-transparent"
     >
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true" className="size-4">
-        <path d={dir === 'prev' ? 'm10 3.5-4.5 4.5 4.5 4.5' : 'm6 3.5 4.5 4.5-4.5 4.5'} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <Icon of={dir === 'prev' ? ChevronLeft : ChevronRight} />
     </button>
   )
 }
