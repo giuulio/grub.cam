@@ -1,0 +1,3 @@
+# Cloudflare Pages: the college and University directories became one page (/directory).
+/colleges /directory?kind=college 301
+/university /directory?kind=university 301

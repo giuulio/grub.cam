@@ -158,7 +158,12 @@ export const SOURCES: MenuSource[] = [
 
   // University: menus that aren't dated (fixed or seasonal) or aren't online; not ingested
   { venue: 'west-cambridge/occidente', channel: 'html', url: 'https://www.catering.admin.cam.ac.uk/cafes/occidente-kitchen-and-bar', cadence: 'fixed', notes: 'Bistro menu with prices on the page.' },
-  { venue: 'west-cambridge/cavendish-cafe', channel: 'pdf', url: 'https://www.cdc.events/cavendish-cafe/', cadence: 'seasonal', notes: 'Menu PDF linked from the page.' },
+  {
+    venue: 'west-cambridge/cavendish-cafe',
+    channel: 'none',
+    cadence: 'daily',
+    notes: 'Daily hot lunch, not published online (reported). The seasonal café menu PDF linked from https://www.cdc.events/cavendish-cafe/ is its price list (ingest:prices).',
+  },
   { venue: 'downing-site/pathology-cafe', channel: 'none', cadence: 'weekly', notes: 'Menu changes weekly; not published online.' },
   { venue: 'biomedical-campus/cruk-cafe', channel: 'none', cadence: 'daily', notes: 'Daily menus printed in the café only.' },
   { venue: 'fitzwilliam-museum/courtyard-kitchen', channel: 'pdf', url: 'https://www.cdc.events/events/courtyardkitchen/', cadence: 'seasonal' },

@@ -26,6 +26,13 @@ export function connect() {
       const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
       if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
     },
+    /** Adds a photo after the venue's others of its kind. */
+    async savePhoto(photo: { venue_id: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean }) {
+      const { count, error: countError } = await sb.from('venue_photos').select('*', { count: 'exact', head: true }).eq('venue_id', photo.venue_id).eq('kind', photo.kind)
+      if (countError) throw new Error(`venue_photos ${photo.venue_id}: ${countError.message}`)
+      const { error } = await sb.from('venue_photos').insert({ ...photo, position: count ?? 0 })
+      if (error) throw new Error(`venue_photos ${photo.venue_id}: ${error.message}`)
+    },
     /** How many services after `date` are saved for this venue. */
     async savedAfter(venue: string, date: string): Promise<number> {
       const { count, error } = await sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)

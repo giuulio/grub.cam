@@ -5,16 +5,14 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/explore.ts'
 import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
-import { TYPE_ICON } from '../lib/icons.ts'
 import { sideBySide } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import type { VenueType } from '../lib/types.ts'
-import { Icon } from './Icon.tsx'
 
 type Props = { results: Ranked[]; selected?: string; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
-const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar', 'other']
+const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
 const CAMBRIDGE: [number, number] = [0.117, 52.205]
 const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.latitude!]
 const fitPadding = (map: MapLibre.Map) => {
@@ -64,7 +62,7 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
       map.addControl(new M.AttributionControl({ compact: true }), 'bottom-right')
       map.getCanvas().setAttribute('aria-label', 'Food and drink in Cambridge. Drag to pan; scroll or pinch to zoom. Use arrow keys to pan, plus and minus to zoom.')
       map.on('load', () => { if (!disposed) { setLoaded(true); setError('') } })
-      map.on('error', () => { if (!disposed) setError('The map couldn’t fully load. You can still browse Results.') })
+      map.on('error', () => { if (!disposed) setError('The map couldn’t fully load. You can still use the list.') })
       const syncTheme = () => {
         const theme = resolvedTheme()
         if (container.current) container.current.dataset.mapTheme = theme
@@ -92,7 +90,7 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
       observer = new ResizeObserver(() => map.resize())
       observer.observe(container.current)
       setReady(true)
-    }).catch(() => { if (!disposed) setError('The map couldn’t load. You can still browse Results.') })
+    }).catch(() => { if (!disposed) setError('The map couldn’t load. You can still use the list.') })
     return () => {
       disposed = true
       observer?.disconnect()
@@ -200,14 +198,14 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
   )
 }
 
-/** A place's pin: its type's colour and icon, filled while it's open now. Places side by side get narrower targets so none overlap. */
+/** A place's pin: a dot in its type's colour, filled while it's open now. Places side by side get narrower targets so none overlap. */
 function MapPin({ r, selected, open, shared, onSelect }: { r: Ranked; selected: boolean; open: boolean; shared: boolean; onSelect: (id: string) => void }) {
   const v = r.venue
   const label = `${v.site.short_name ?? v.site.name}: ${v.name} (${TYPE_LABEL[v.type]}${open ? ', open now' : ''})`
   return (
     <button type="button" className={`venue-pin-target ${shared ? 'is-shared' : ''}`} title={label} aria-label={label} aria-pressed={selected}
       onClick={(event) => { event.stopPropagation(); onSelect(v.id) }}>
-      <span className={`venue-pin ${selected ? 'is-selected' : ''} ${open ? 'is-open' : ''}`} data-type={v.type}><Icon of={TYPE_ICON[v.type]} className="size-3.5" /></span>
+      <span className={`venue-pin ${selected ? 'is-selected' : ''} ${open ? 'is-open' : ''}`} data-type={v.type} />
     </button>
   )
 }

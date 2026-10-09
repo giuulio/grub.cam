@@ -12,12 +12,14 @@
 //   Main course dish | £3.75 | £5.65 | main   <- a 4th field prices every dish of that course on the day's menu
 //                                             (soup/main/side/dessert/other), or the whole meal (meal); shown on the menu
 //   Soup | £1.75 | | soup                  <- an empty field skips the non-member price
+//   Hummus wrap (VE, GF) | £4               <- diet codes in brackets after the name become tags (V, VE/VG, GF, DF, H)
 //   # comment
 // Lines without a course are sold at those meals as listed: the menu itself when the meal has no dishes posted (a fixed brunch).
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { Meal, PriceCourse, PriceItem } from '../schema.ts'
 import { connect } from './lib/db.ts'
+import { tagsFromName } from './lib/tags.ts'
 
 export type PriceList = { venue: string; source: string; observed_on: string; items: PriceItem[] }
 
@@ -52,12 +54,14 @@ export function parsePrices(text: string): PriceList {
       services = meals ? meals.split(',').map((m) => Meal.parse(m.trim().toLowerCase())) : undefined
       continue
     }
-    const [name, price, nonMember, course, ...rest] = line.split('|').map((p) => p.trim())
+    const [posted, price, nonMember, course, ...rest] = line.split('|').map((p) => p.trim())
     if (!price || rest.length) throw new Error(`expected "name | price | non-member price | course": "${line}"`)
+    const { name, tags } = tagsFromName(posted)
     items.push(
       PriceItem.parse({
         section,
         name,
+        ...(tags.length ? { tags } : {}),
         price_gbp: parseGbp(price),
         ...(nonMember ? { non_member_gbp: parseGbp(nonMember) } : {}),
         ...(services ? { services } : {}),

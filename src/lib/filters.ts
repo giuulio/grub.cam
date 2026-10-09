@@ -34,21 +34,17 @@ export function dishTags(tags: DietTag[]): DietTag[] {
 
 export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', university: 'University members', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
 
-export const TYPES: VenueType[] = ['hall', 'cafe', 'bar', 'other']
+export const TYPES: VenueType[] = ['hall', 'cafe', 'bar']
+
+/** Meal by meal, then by first day. */
+export const slotOrder = (a: Slot, b: Slot) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0])
 
 /** The hours that apply around `date` (term or vacation), meal by meal, then by first day. */
 export function periodSlots(slots: Slot[], date: string): Slot[] {
   const period = isFullTerm(date) ? 'term' : 'vacation'
-  return slots
-    .filter((s) => s.period === 'all' || s.period === period)
-    .sort((a, b) => MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) || DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
+  return slots.filter((s) => s.period === 'all' || s.period === period).sort(slotOrder)
 }
-export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar', other: 'Other' }
-
-const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
-
-/** The venue's type, unless its name already says it ("College Bar", "Iris Café"). */
-export const typeNote = (v: Pick<Venue, 'name' | 'type'>) => (fold(v.name).includes(fold(TYPE_LABEL[v.type])) ? undefined : TYPE_LABEL[v.type])
+export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar' }
 
 export type Filters = {
   meal?: Meal

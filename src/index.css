@@ -46,11 +46,19 @@ select option, select optgroup {
 }
 
 .filter-select {
-  @apply block min-h-11 w-full min-w-0 rounded-xl border border-ink/15 bg-canvas px-3 py-2 text-ink;
+  @apply block h-11 w-full min-w-0 rounded-xl border border-ink/15 bg-canvas px-3 text-base text-ink sm:h-10 sm:text-sm;
 }
 
-.view-button {
-  @apply min-h-9 cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors;
+/* Safari pins a date field's text to the top of a fixed height: size it by its line instead, centred. 16px text on a
+   phone, so iOS doesn't zoom in on focus. */
+input[type='date'].filter-select {
+  @apply h-auto py-[9px] leading-6 sm:py-[7px];
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type='date'].filter-select::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
 }
 
 .venue-map {
@@ -65,7 +73,12 @@ select option, select optgroup {
 }
 
 .map-action {
-  @apply min-h-11 cursor-pointer rounded-xl border border-ink/15 bg-canvas px-4 py-2 text-sm text-ink shadow-sm;
+  @apply min-h-11 cursor-pointer rounded-full border border-ink/15 bg-canvas px-4 text-sm text-ink shadow-sm sm:min-h-9 sm:px-3.5;
+}
+
+/* Above a phone, the map fills the rest of the screen (--map-top is measured by Explore). */
+@media (min-width: 640px) {
+  .is-map .venue-map { height: max(26rem, calc(100svh - var(--map-top, 12rem) - 1.5rem)); }
 }
 
 .venue-pin-target {
@@ -83,45 +96,49 @@ select option, select optgroup {
 /* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
 .venue-pin-target.is-shared { width: 30px; }
 
-/* Venue types in the Cambridge palette (cam.ac.uk/brand-resources/guidelines/colour): Dark Crest, Indigo, Dark Cherry,
-   Slate 3. Validated as categorical colours against both basemaps, park green and the white ring; the same in both
+/* Venue types in the Cambridge palette (cam.ac.uk/brand-resources/guidelines/colour): Dark Crest, Indigo, Dark Cherry.
+   Validated as categorical colours against both basemaps, park green and the white ring; the same in both
    themes, where the white ring carries contrast on the dark map. The icon repeats the type, so colour is never alone. */
 :root {
   --type-hall: #dd3025;
   --type-cafe: #5366e0;
   --type-bar: #911449;
-  --type-other: #546072;
 }
 
+/* A dot per place, no icon: a ring of its type's colour around white, filled when open now. The white halo keeps it
+   clear of both basemaps. */
 .venue-pin {
-  --pin: var(--type-other);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: 2px solid var(--pin);
+  --pin: var(--muted);
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 4px solid var(--pin);
   border-radius: 50%;
   background: #fff;
-  color: var(--pin);
-  box-shadow: 0 1px 4px #0005;
+  box-shadow: 0 0 0 1.5px #fff, 0 1px 3px #0006;
   transition: transform 120ms ease-out;
 }
-:is(.venue-pin, .type-swatch)[data-type='hall'] { --pin: var(--type-hall); }
-:is(.venue-pin, .type-swatch)[data-type='cafe'] { --pin: var(--type-cafe); }
-:is(.venue-pin, .type-swatch)[data-type='bar'] { --pin: var(--type-bar); }
+:is(.venue-pin, .type-swatch, .type-dot)[data-type='hall'] { --pin: var(--type-hall); }
+:is(.venue-pin, .type-swatch, .type-dot)[data-type='cafe'] { --pin: var(--type-cafe); }
+:is(.venue-pin, .type-swatch, .type-dot)[data-type='bar'] { --pin: var(--type-bar); }
 
-/* Open now: filled. */
-.venue-pin.is-open {
-  border-color: #fff;
+/* The map key's dot for a type. */
+.type-dot {
+  --pin: var(--muted);
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: var(--pin);
-  color: #fff;
 }
 
-/* Selected: Cambridge Blue on Cambridge Dark Blue, visible on either basemap. */
+/* Open now: filled. */
+.venue-pin.is-open { background: var(--pin); }
+
+/* Selected: larger, Cambridge Blue on Cambridge Dark Blue, visible on either basemap. */
 .venue-pin.is-selected {
-  transform: scale(1.2);
-  box-shadow: 0 0 0 3px #8ee8d8, 0 0 0 5px #133844;
+  transform: scale(1.5);
+  box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px #8ee8d8, 0 0 0 4.5px #133844;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -130,7 +147,7 @@ select option, select optgroup {
 
 /* The type filters double as the map's legend: a filled pin in miniature. */
 .type-swatch {
-  --pin: var(--type-other);
+  --pin: var(--muted);
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -210,8 +227,7 @@ select option, select optgroup {
 
   .is-map .explore-controls > * { pointer-events: auto; }
 
-  .is-map .explore-controls > label {
-    background: var(--canvas);
+  .is-map .explore-search {
     box-shadow: 0 2px 8px #0002;
   }
 
@@ -240,7 +256,10 @@ select option, select optgroup {
     background: var(--ink);
   }
 
-  .is-map #explore-filters:not([hidden]),
+  .is-map #explore-filters:not([hidden]) {
+    box-shadow: 0 2px 8px #0002;
+  }
+
   .is-map .explore-controls > p,
   .is-map .explore-controls > [aria-label='Dining meal'] {
     border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
@@ -250,35 +269,7 @@ select option, select optgroup {
     box-shadow: 0 2px 8px #0002;
   }
 
-  .is-map .explore-toolbar {
-    position: absolute;
-    top: calc(var(--explore-controls-height, 110px) + 24px);
-    left: 12px;
-    right: 12px;
-    z-index: 600;
-    margin: 0;
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    pointer-events: none;
-  }
-
-  .is-map .explore-toolbar > * {
-    pointer-events: auto;
-    background: var(--canvas);
-    box-shadow: 0 2px 8px #0002;
-  }
-
-  .is-map .explore-toolbar > p {
-    border-radius: 16px;
-    padding: 8px 12px;
-    font-size: 12px;
-    line-height: 16px;
-  }
-
-  .is-map .explore-toolbar > div { flex-shrink: 0; }
-
   .is-map .map-actions { top: auto; bottom: 64px; left: 12px; }
   .is-map .maplibregl-ctrl-top-right { top: auto; bottom: 64px; }
   .is-map .selected-place { max-height: min(65%, calc(100% - 220px)); }
-  .is-map .explore-map-note { padding-inline: 16px; }
 }

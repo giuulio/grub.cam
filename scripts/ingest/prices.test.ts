@@ -24,6 +24,14 @@ describe('parsePrices', () => {
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-08\n---\n## X | elevenses\nTea | 1')).toThrow()
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-08\n---\nTea | 1 | | starter')).toThrow()
   })
+  it('takes diet codes after a name as tags', () => {
+    const p = parsePrices('site: c\nvenue: cafe\nsource: s\nobserved: 2026-10-09\n---\nRoasted pepper & hummus (VE) | £5\nRocky road (GF, DF, VE) | 4\nMarinara (GFA) | 10')
+    expect(p.items.map((i) => [i.name, i.tags])).toEqual([
+      ['Roasted pepper & hummus', ['vegan', 'vegetarian']],
+      ['Rocky road', ['gluten_free', 'dairy_free', 'vegan', 'vegetarian']],
+      ['Marinara (GFA)', undefined], // not a code we know: kept as printed
+    ])
+  })
   it('rejects lines without a price, and a header without a date', () => {
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-08\n---\nSoup')).toThrow(/expected/)
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\n---\nSoup | 1')).toThrow(/observed/)

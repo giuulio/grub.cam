@@ -40,6 +40,8 @@ export const PriceItem = z.object({
   services: z.array(Meal).min(1).optional(),
   /** Absent: an item sold at those meals rather than the price of the day's dishes */
   course: PriceCourse.optional(),
+  /** From the codes printed after the name: "Hummus wrap (VE)" */
+  tags: z.array(DietTag).optional(),
 })
 export type PriceItem = z.infer<typeof PriceItem>
 

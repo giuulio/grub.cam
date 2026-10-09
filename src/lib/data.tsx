@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
 import { servedService } from './time/openNow.ts'
-import type { MenuDay, Site, Venue, VenuePrice } from './types.ts'
+import type { Formal, MenuDay, Photo, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
@@ -13,7 +13,11 @@ const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_
 export type Data = { sites: Site[]; venues: Venue[]; updated?: string; menuFrom: string; menuTo: string; snapshot?: boolean }
 export type State = { status: 'loading' } | { status: 'error'; error: string } | ({ status: 'ready' } & Data)
 
-type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal'> & { prices: (VenuePrice & { position: number })[]; formal: { venue_id: string } | null }
+type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal' | 'photos'> & {
+  prices: (VenuePrice & { position: number })[]
+  formal: Formal | null
+  photos: (Photo & { kind: 'venue' | 'menu'; position: number })[]
+}
 type SiteRow = Site & { venues: VenueRow[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
@@ -27,7 +31,7 @@ export async function load(): Promise<Data> {
   const [c, m] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, observed_on), formal:formals(venue_id), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos:venue_photos(kind, position, path, widths, width, height, color, alt, credit), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),
@@ -51,7 +55,10 @@ export async function load(): Promise<Data> {
     for (const v of rows) {
       // Postgres `time` comes back as HH:MM:SS
       const slots = v.slots.map((s) => ({ ...s, start: s.start.slice(0, 5), end: s.end.slice(0, 5) }))
-      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal: !!v.formal, menu: servedService(menus.get(v.id) ?? [], slots) })
+      // Only approved photos are readable (RLS); menu-board photos are sources, not shown
+      const photos = v.photos.filter((p) => p.kind === 'venue').sort((a, b) => a.position - b.position)
+      const formal = v.formal ? { ...v.formal, book_by: v.formal.book_by?.slice(0, 5) ?? null } : undefined
+      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal, photos, menu: servedService(menus.get(v.id) ?? [], slots) })
     }
   }
   // Freshness = latest menu fetch, not page-load time.

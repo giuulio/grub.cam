@@ -31,7 +31,7 @@ export function SitePage() {
   return (
     <>
       <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
-      <BackButton up="/" />
+      <BackButton up={`/directory?kind=${site.kind}`} />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">{siteName(site)}</h1>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}

@@ -1,8 +1,6 @@
-// A venue's posted price list (venue_prices) applied to its menus: the price beside each dish, one price for a whole
-// meal, and what else is sold at a meal. A meal whose list has items but no course prices is a fixed menu (a brunch,
-// a bar's list): shown on every day it's served, with or without dishes posted.
-import { slotApplies } from './time/openNow.ts'
-import type { Dish, Meal, MenuDay, Slot, VenuePrice } from './types.ts'
+// A venue's posted price list (venue_prices): split between the venue's sections (its Dining menu, café, bar), and
+// applied to a day's dishes: the price beside each dish, one price for a whole meal, and what else is sold at a meal.
+import type { Dish, Meal, VenuePrice, VenueType } from './types.ts'
 
 export type Price = { gbp?: number; nonMember?: number; text?: string }
 
@@ -26,9 +24,6 @@ export function mealPrices(prices: VenuePrice[] | undefined, meal: Meal): MealPr
   return out
 }
 
-/** A list of items with no course prices: the meal's menu whether or not dishes are posted. */
-export const isFixedMenu = (m: MealPrices) => m.items.length > 0 && !m.meal && !Object.keys(m.course).length
-
 export const fromList = (p: VenuePrice): Price => ({ gbp: p.price_gbp, nonMember: p.non_member_gbp ?? undefined })
 
 /** The dish's own price as printed, else its course's price from the list. */
@@ -38,11 +33,28 @@ export function dishPrice(dish: Dish, m: MealPrices): Price | undefined {
   return p && fromList(p)
 }
 
-/** The meals to show on a date: those with dishes, plus fixed menus served that day (in that order, deduplicated). */
-export function servedMeals(days: MenuDay[], slots: Slot[], prices: VenuePrice[] | undefined, date: string): Meal[] {
-  const withDishes = days.filter((d) => d.items.length).map((d) => d.service)
-  const fixed = slots.filter((s) => slotApplies(s, date) && isFixedMenu(mealPrices(prices, s.meal))).map((s) => s.meal)
-  return [...new Set([...withDishes, ...fixed])]
+const DINING: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
+
+/**
+ * The lines each of a venue's sections shows (`types`: venueTypes(), its own type first), in posted order. A line sold
+ * only at the bar goes to the bar, only at the café to the café, only at meals to the Dining menu; a line for every
+ * meal goes to the venue's own type, except that a Dining venue that's also a café lists it under the café.
+ */
+export function priceGroups(prices: VenuePrice[] | undefined, types: VenueType[]): Partial<Record<VenueType, VenuePrice[]>> {
+  const [own] = types
+  const out: Partial<Record<VenueType, VenuePrice[]>> = {}
+  for (const p of prices ?? []) {
+    let t: VenueType = own
+    if (p.services?.every((m) => m === 'bar')) t = 'bar'
+    else if (p.services?.every((m) => m === 'snacks')) t = 'cafe'
+    else if (p.services?.every((m) => DINING.includes(m))) t = 'hall'
+    else if (!p.services && own === 'hall' && types.includes('cafe')) t = 'cafe'
+    ;(out[types.includes(t) ? t : own] ??= []).push(p)
+  }
+  return out
 }
+
+/** The latest date any of these lines was seen. */
+export const postedOn = (lines: VenuePrice[]) => lines.reduce<string | undefined>((max, p) => (!max || p.observed_on > max ? p.observed_on : max), undefined)
 
 export const formatGbp = (n: number) => `£${n.toFixed(2)}`

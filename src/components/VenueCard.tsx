@@ -5,7 +5,7 @@ import { TYPE_ICON } from '../lib/icons.ts'
 import { venuePath } from '../lib/site.ts'
 import { dayOfISO, dayLabel, type LocalNow } from '../lib/time/clock.ts'
 import type { OpenStatus } from '../lib/time/openNow.ts'
-import type { Venue } from '../lib/types.ts'
+import { isFormalOnly, type Venue } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 
 /** One venue in a list, linking to its page; the icon says what kind of place it is. Search leads with the site (college, West Cambridge, ...); a site page with the venue. */
@@ -29,12 +29,18 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true, da
             )}
           </p>
           {dishes.length > 0 && <p className="mt-1 truncate text-sm text-muted">{dishes.slice(0, 3).join(' · ')}</p>}
-          {showAccess && <p className="mt-1 text-xs text-muted">{ACCESS_LABEL[venue.access.level]}{venue.formal && !venue.slots.some((s) => s.meal !== 'formal') ? ' · Formal hall, booking required' : ''}</p>}
+          {showAccess && <AccessLine venue={venue} />}
         </div>
         <StatusText s={status} now={now} />
       </Link>
     </li>
   )
+}
+
+/** Who can go, when known, and that formal hall is booked where it's all a Hall holds. */
+function AccessLine({ venue }: { venue: Venue }) {
+  const parts = [venue.access.level !== 'unknown' && ACCESS_LABEL[venue.access.level], isFormalOnly(venue) && 'Formal hall, booking required'].filter(Boolean)
+  return parts.length ? <p className="mt-1 text-xs text-muted">{parts.join(' · ')}</p> : null
 }
 
 export function StatusText({ s, now }: { s: OpenStatus; now: LocalNow }) {

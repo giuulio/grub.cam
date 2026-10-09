@@ -72,8 +72,8 @@ describe('applyFilters', () => {
     expect(status(hall, { type: 'hall', meal: 'formal' })).toBe('open')
     expect(status({ ...base, id: 'c/formal-hall', slots: [formal] })).toBe('open')
     // Where formal hall is held but its days aren't published, it's still listed under Formal
-    const unpublished: Venue = { ...base, id: 'c/old-hall', slots: [], menu: [], formal: true }
-    const formalHalls = applyFilters([unpublished, { ...unpublished, id: 'c/caff', formal: false }], { ...DEFAULT_FILTERS, date: now.date, type: 'hall', meal: 'formal' }, now)
+    const unpublished: Venue = { ...base, id: 'c/old-hall', slots: [], menu: [], formal: {} }
+    const formalHalls = applyFilters([unpublished, { ...unpublished, id: 'c/caff', formal: undefined }], { ...DEFAULT_FILTERS, date: now.date, type: 'hall', meal: 'formal' }, now)
     expect(formalHalls.map((r) => r.venue.id)).toEqual(['c/old-hall'])
   })
 })

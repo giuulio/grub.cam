@@ -7,7 +7,7 @@ export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 export type AccessLevel = 'public' | 'university' | 'members_guests' | 'members_only' | 'unknown'
-export type VenueType = 'hall' | 'cafe' | 'bar' | 'other'
+export type VenueType = 'hall' | 'cafe' | 'bar'
 
 export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all' }
 
@@ -15,6 +15,15 @@ export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period
 export function venueTypes(v: { type: VenueType; slots: Slot[] }): VenueType[] {
   const also = (['cafe', 'bar'] as const).filter((t) => t !== v.type && v.slots.some((s) => s.meal === (t === 'cafe' ? 'snacks' : 'bar')))
   return [v.type, ...also]
+}
+
+/**
+ * A Hall used only for formal hall (St John's Hall, Christ's Hall, ...): its only hours are formal; or it has no hours,
+ * holds formal and isn't in the menu source registry, which lists every place serving daily meals (sources.ts).
+ * A cafeteria whose hours aren't published (Girton's) isn't one.
+ */
+export function isFormalOnly(v: { formal?: object; slots: Slot[]; menu_channel?: string | null }): boolean {
+  return v.slots.length ? v.slots.every((s) => s.meal === 'formal') : !!v.formal && !v.menu_channel
 }
 
 /** Where venues belong: a college, or a University site (West Cambridge, Sidgwick, a museum, ...). */
@@ -31,8 +40,36 @@ export type VenuePrice = {
   non_member_gbp: number | null
   services: Meal[] | null
   course: PriceCourse | null
+  tags: DietTag[]
   observed_on: string
+  /** A URL, or where it was seen */
+  source: string
 }
+
+/** What a member needs to know to go to formal hall (`formals`); every field may be unknown. Days with a published start are 'formal' slots. */
+export type Formal = {
+  /** Days when there's no slot because the start isn't published */
+  days?: Day[] | null
+  /** Members' gowns */
+  gowns?: 'required' | 'optional' | null
+  dress_code?: 'black_tie' | 'formal' | 'smart' | 'relaxed' | null
+  guests_allowed?: boolean | null
+  /** Per member */
+  guests_max?: number | null
+  /** The booking system, by name ("UPay") */
+  book_via?: string | null
+  /** With `book_by` (HH:MM): book by then, this many days before */
+  book_days_before?: number | null
+  book_by?: string | null
+  /** The formal hall's own page */
+  url?: string | null
+  price_gbp?: number | null
+  guest_gbp?: number | null
+  prices_seen?: string | null
+}
+
+/** A photo of the venue (`venue_photos`): files at `<VITE_PHOTOS_URL>/<path>-<width>.webp`, one per width. */
+export type Photo = { path: string; widths: number[]; width: number; height: number; color: string | null; alt: string; credit: string | null }
 
 export type Venue = {
   id: string
@@ -49,7 +86,8 @@ export type Venue = {
   longitude?: number | null
   location_source?: string | null
   access: { level: AccessLevel }
-  payment: { bank_card?: boolean }
+  /** true or false where known: a bank card, the University (or college) card, cash */
+  payment: { bank_card?: boolean; university_card?: boolean; cash?: boolean }
   dietary: { tags: DietTag[] }
   site: Site
   slots: Slot[]
@@ -59,7 +97,9 @@ export type Venue = {
   /** Fetched by `npm run ingest`, rather than transcribed by hand */
   menu_scripted?: boolean
   /** Holds formal hall (`formals`), whether or not its days and times are published as 'formal' slots */
-  formal?: boolean
+  formal?: Formal
+  /** Approved photos of the venue, in order */
+  photos?: Photo[]
   /** As posted, in order; empty when no one has reported it */
   prices?: VenuePrice[]
   /** Menu days from today for the next week (`useMenuOn` reaches beyond it). */

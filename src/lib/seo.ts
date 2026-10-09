@@ -2,14 +2,16 @@
 // llms.txt / llms-full.txt. Pure functions of the loaded data; scripts/prerender.ts writes them out at build time.
 import type { Data } from './data.tsx'
 import { ACCESS_LABEL, DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
+import { photoSrc, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
-import type { Day, DietTag, MenuDay, Site, Slot, Venue, VenueType } from './types.ts'
+import { venueTypes, type Day, type DietTag, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
-export type Page = { path: string; description: string; jsonLd?: object }
+/** `image`: a photo for link previews (og:image) */
+export type Page = { path: string; description: string; jsonLd?: object; image?: string }
 
-const TYPE_SCHEMA: Record<VenueType, string> = { hall: 'FoodEstablishment', cafe: 'CafeOrCoffeeShop', bar: 'BarOrPub', other: 'Place' }
+const TYPE_SCHEMA: Record<VenueType, string> = { hall: 'FoodEstablishment', cafe: 'CafeOrCoffeeShop', bar: 'BarOrPub' }
 const DAY_SCHEMA: Record<Day, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
 const DIET_SCHEMA: Partial<Record<DietTag, string>> = {
   vegan: 'https://schema.org/VeganDiet',
@@ -38,8 +40,9 @@ const clip = (s: string, n = 160) => (s.length <= n ? s : `${s.slice(0, n - 1).r
 
 function venueDescription(v: Venue, date: string): string {
   const hours = hoursText(periodSlots(v.slots, date))
-  const menu = v.menu.some((d) => d.items.length) ? ' Menu dish by dish.' : ''
-  return clip(`${v.name}, ${siteName(v.site)}, Cambridge: ${TYPE_LABEL[v.type].toLowerCase()}. ${hours ? `Open ${hours}.` : 'Hours not published.'}${menu}`)
+  const menu = v.menu.some((d) => d.items.length) ? ' Menu dish by dish.' : v.prices?.length ? ' Menu with prices.' : ''
+  const types = venueTypes(v).map((t) => TYPE_LABEL[t].toLowerCase()).join(' and ')
+  return clip(`${v.name}, ${siteName(v.site)}, Cambridge: ${types}. ${hours ? `Open ${hours}.` : 'Hours not published.'}${menu}`)
 }
 
 function venueJsonLd(v: Venue, date: string): object {
@@ -55,6 +58,7 @@ function venueJsonLd(v: Venue, date: string): object {
     containedInPlace: { '@type': siteType(v.site), name: siteName(v.site), url: abs(sitePath(v.site)) },
     address: { '@type': 'PostalAddress', streetAddress: [v.where, siteName(v.site)].filter(Boolean).join(', '), addressLocality: 'Cambridge', addressCountry: 'GB' },
     openingHoursSpecification: periodSlots(v.slots, date).map((s) => ({ '@type': 'OpeningHoursSpecification', name: MEAL_LABEL[s.meal], dayOfWeek: s.days.map((d) => DAY_SCHEMA[d]), opens: s.start, closes: s.end })),
+    image: venueImage(v),
     publicAccess: level === 'public' ? true : level === 'members_only' || level === 'university' ? false : undefined,
     paymentAccepted: v.payment.bank_card ? 'Credit card, Debit card' : undefined,
     hasMenu: sections.length
@@ -73,6 +77,12 @@ function venueJsonLd(v: Venue, date: string): object {
         }
       : undefined,
   }
+}
+
+/** The venue's photo at the largest width up to 1600px, for link previews and structured data. */
+function venueImage(v: Venue): string | undefined {
+  const p = venuePhoto(v)
+  return p && photoSrc(p, p.widths.filter((w) => w <= 1600).at(-1) ?? p.widths[0])
 }
 
 function dietUrls(tags: DietTag[]): string[] | undefined {
@@ -96,10 +106,8 @@ export function pages(data: Data, date: string): Page[] {
   }
   const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours, access, card payments) and what's still missing." }
-  const directories: Page[] = [
-    { path: '/colleges', description: 'Browse Cambridge colleges and find their dining halls, cafés and bars, with opening hours and published menus.' },
-    { path: '/university', description: 'Find food and drink across University of Cambridge sites, museums and gardens, with opening hours and published menus.' },
-  ]
+  const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
+  const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {
@@ -114,8 +122,8 @@ export function pages(data: Data, date: string): Page[] {
       },
     }
   })
-  const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date) }))
-  return [home, about, coverage, ...directories, ...sites, ...venues]
+  const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))
+  return [home, directory, about, coverage, terms, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
@@ -130,6 +138,7 @@ export function headTags(page: Page, title: string): string {
     `<meta property="og:description" content="${escapeAttr(page.description)}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
   ]
+  if (page.image) tags.push(`<meta property="og:image" content="${escapeAttr(page.image)}" />`, '<meta name="twitter:card" content="summary_large_image" />')
   // "<" escaped so a dish name can't close the script tag
   if (page.jsonLd) tags.push(`<script type="application/ld+json">${JSON.stringify(page.jsonLd).replace(/</g, '\\u003c')}</script>`)
   return tags.join('\n    ')
@@ -185,14 +194,14 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
     out.push(`## ${siteName(s)}\n\n${abs(sitePath(s))}`)
     for (const v of data.venues.filter((x) => x.site.slug === s.slug)) {
       const hours = hoursText(periodSlots(v.slots, date))
-      const lines = [`### ${v.name} (${TYPE_LABEL[v.type].toLowerCase()})`, abs(venuePath(v)), `Hours: ${hours || 'not published'}`]
+      const lines = [`### ${v.name} (${venueTypes(v).map((t) => TYPE_LABEL[t].toLowerCase()).join(', ')})`, abs(venuePath(v)), `Hours: ${hours || 'not published'}`]
       if (v.access.level !== 'unknown') lines.push(`Access: ${ACCESS_LABEL[v.access.level].toLowerCase()}`)
       if (v.payment.bank_card) lines.push('Bank card accepted')
       const menus = menusOf(v)
       if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v.prices)).join('\n')}`)
       if (v.prices?.length) {
         const when = v.prices.map((p) => p.observed_on).sort().at(-1)!
-        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name} ${priceText(p.price_gbp, p.non_member_gbp)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
+        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
         lines.push(`Prices as posted ${day(when)}:\n${list.join('\n')}`)
       }
       out.push(lines.join('\n'))

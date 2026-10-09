@@ -162,7 +162,7 @@ describe('rules', () => {
   })
   it('finds where formal hall is held, with or without published days', () => {
     const dated = { ...venue('jesus/hall', 'Hall', 'Jesus'), slots: [{ meal: 'formal' as const, days: ['thu' as const], start: '19:30', end: '21:30', period: 'all' as const }] }
-    const undated = { ...venue('st-johns/hall', 'Hall', 'St John’s'), slots: [], formal: true }
+    const undated = { ...venue('st-johns/hall', 'Hall', 'St John’s'), slots: [], formal: {} }
     expect(find('formal', {}, [dated, undated, homerton]).map((r) => r.venue.id).sort()).toEqual(['jesus/hall', 'st-johns/hall'])
   })
   it('does not use editorial notes as evidence of current food', () => {

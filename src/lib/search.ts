@@ -25,7 +25,7 @@ const SYNONYMS = [
 const synonyms = new Map(SYNONYMS.flatMap((group) => group.map((w) => [w, group] as const)))
 
 // What else describes a place or a dish, so "jesus cafe", "homerton lunch" and "vegan curry" mean what they say.
-const KIND_WORDS: Record<VenueType, string> = { hall: 'dining', cafe: 'cafe', bar: 'bar', other: '' }
+const KIND_WORDS: Record<VenueType, string> = { hall: 'dining', cafe: 'cafe', bar: 'bar' }
 const MEAL_WORDS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 const dietWords = (tag: DietTag) => tag.replace('_', ' ') + (tag === 'vegan' ? ' vegetarian' : '')
 

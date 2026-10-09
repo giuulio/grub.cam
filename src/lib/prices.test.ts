@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { dishPrice, isFixedMenu, mealPrices, servedMeals } from './prices.ts'
-import type { Slot, VenuePrice } from './types.ts'
+import { dishPrice, mealPrices, postedOn, priceGroups } from './prices.ts'
+import type { VenuePrice } from './types.ts'
 
-const line = (name: string, price: number, more: Partial<VenuePrice> = {}): VenuePrice => ({ section: null, name, price_gbp: price, non_member_gbp: null, services: null, course: null, observed_on: '2026-10-08', ...more })
+const line = (name: string, price: number, more: Partial<VenuePrice> = {}): VenuePrice => ({ section: null, name, price_gbp: price, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-08', source: 'noticeboard', ...more })
 const list = [
   line('Main course', 3.75, { non_member_gbp: 5.65, services: ['lunch', 'dinner'], course: 'main' }),
   line('Soup', 1.75, { services: ['lunch', 'dinner'], course: 'soup' }),
@@ -15,8 +15,6 @@ describe('mealPrices', () => {
     const lunch = mealPrices(list, 'lunch')
     expect(Object.keys(lunch.course)).toEqual(['main', 'soup'])
     expect(lunch.items.map((p) => p.name)).toEqual(['Crisps'])
-    expect(isFixedMenu(lunch)).toBe(false)
-    expect(isFixedMenu(mealPrices(list, 'brunch'))).toBe(true)
     expect(mealPrices(list, 'formal')).toEqual({ course: {}, items: [] })
   })
 })
@@ -31,14 +29,26 @@ describe('dishPrice', () => {
   })
 })
 
-describe('servedMeals', () => {
-  const slots: Slot[] = [
-    { meal: 'lunch', days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '12:30', end: '13:30', period: 'all' },
-    { meal: 'brunch', days: ['sat', 'sun'], start: '11:00', end: '13:30', period: 'all' },
-  ]
-  it('shows meals with dishes, and fixed menus on the days they are served', () => {
-    expect(servedMeals([], slots, list, '2026-10-10')).toEqual(['brunch']) // Saturday
-    expect(servedMeals([], slots, list, '2026-10-08')).toEqual([]) // Thursday: lunch is priced by course, so it needs dishes
-    expect(servedMeals([{ date: '2026-10-08', service: 'lunch', items: [{ name: 'Pie', tags: [] }] }], slots, list, '2026-10-08')).toEqual(['lunch'])
+describe('priceGroups', () => {
+  const names = (g: VenuePrice[] | undefined) => g?.map((p) => p.name)
+  it('puts a line where it is sold: at meals, the café or the bar', () => {
+    const cafeBar = [line('Latte', 3.1, { services: ['snacks'] }), line('Pint', 4.5, { services: ['bar'] }), line('Crisps', 1)]
+    expect(priceGroups(cafeBar, ['cafe', 'bar'])).toEqual({ cafe: [cafeBar[0], cafeBar[2]], bar: [cafeBar[1]] })
+    // A bar first: lines for every meal are its drinks list
+    expect(names(priceGroups(cafeBar, ['bar', 'cafe']).bar)).toEqual(['Pint', 'Crisps'])
+    expect(names(priceGroups(list, ['hall']).hall)).toEqual(['Main course', 'Soup', 'Crisps', 'Bacon x 2'])
+  })
+  it('lists a Dining venue’s all-day list under its café, and a section it lacks under its own type', () => {
+    const cavendish = [line('Croissant', 3.5), line('Hot lunch', 6, { services: ['lunch'] })]
+    expect(priceGroups(cavendish, ['hall', 'cafe'])).toEqual({ cafe: [cavendish[0]], hall: [cavendish[1]] })
+    expect(priceGroups([line('Pint', 4.5, { services: ['bar'] })], ['cafe'])).toEqual({ cafe: [line('Pint', 4.5, { services: ['bar'] })] })
+    expect(priceGroups(undefined, ['bar'])).toEqual({})
+  })
+})
+
+describe('postedOn', () => {
+  it('is the latest date a line was seen', () => {
+    expect(postedOn([line('A', 1), line('B', 1, { observed_on: '2026-10-09' })])).toBe('2026-10-09')
+    expect(postedOn([])).toBeUndefined()
   })
 })
