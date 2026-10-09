@@ -14,6 +14,11 @@ type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
 const CAMBRIDGE: [number, number] = [0.117, 52.205]
+/**
+ * The widest view: Dry Drayton to Teversham, Histon to Trumpington, every venue well inside. The map never zooms out
+ * past fitting it (the minimum zoom follows the map's size), so a phone still sees all of it across.
+ */
+const REACH: [[number, number], [number, number]] = [[0.0103, 52.1664], [0.2179, 52.2534]]
 const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.latitude!]
 const fitPadding = (map: MapLibre.Map) => {
   if (window.innerWidth >= 640) return 60
@@ -49,13 +54,20 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
       const map = new M.Map({
         container: container.current,
         style,
-        center: CAMBRIDGE, zoom: 13, minZoom: 9, maxZoom: 19,
+        center: CAMBRIDGE, zoom: 13, minZoom: 10, maxZoom: 19,
         // This page is primarily a map: wheel/trackpad and touch gestures act directly on it.
         scrollZoom: true, touchZoomRotate: true, cooperativeGestures: false,
         dragRotate: false, touchPitch: false, pitchWithRotate: false,
         attributionControl: false,
       })
       engine.current = { M, map, pins: new Map() }
+      // Never zoom out past fitting REACH at the map's current size
+      const limitZoom = () => {
+        const zoom = map.cameraForBounds(REACH)?.zoom
+        if (zoom != null && Number.isFinite(zoom)) map.setMinZoom(zoom)
+      }
+      limitZoom()
+      map.on('resize', limitZoom)
       map.touchZoomRotate.disableRotation()
       map.keyboard.disableRotation()
       map.addControl(new M.NavigationControl({ showCompass: false }), 'top-right')
