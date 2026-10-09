@@ -1,6 +1,7 @@
 // Usage: npm run ingest -- [--only jesus,homerton] [--dry]
-// Fetches every scripted source from today until a week comes back empty, and saves it to Supabase.
-// Days already saved are kept; a day the source still lists is replaced with the latest version.
+// Fetches every scripted source from this week's Monday until a week comes back empty, and saves it to Supabase.
+// Earlier days of this week are kept when the source still lists them (a venue first fetched on Thursday gets
+// Monday to Wednesday too). Days already saved are kept; a day the source still lists is replaced with the latest version.
 // Fails (so GitHub emails) on any error, or when a source that had menus saved ahead suddenly returns nothing.
 import { parseArgs } from 'node:util'
 import { MenuDay } from '../schema.ts'
@@ -22,7 +23,7 @@ async function fetchAhead(adapter: Adapter): Promise<MenuDay[]> {
     const week = isoWeek(addDays(today, 7 * i))
     const dates = weekDates(week)
     const res = await adapter.fetch({ week, dates, today })
-    const got = res.days.filter((d) => dates.includes(d.date) && d.date >= today && d.items.length)
+    const got = res.days.filter((d) => dates.includes(d.date) && d.items.length)
     if (!got.length && i > 0) break // the current week may be over already; later gaps mean nothing is published yet
     days.push(...got.map((d) => MenuDay.parse(d)))
   }
