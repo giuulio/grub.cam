@@ -39,7 +39,7 @@ describe('Explore URL filters', () => {
     expect(applyFilters([venue, guests], read('access=public'), now)).toHaveLength(0)
     expect(applyFilters([venue, guests], read('access=members_guests'), now).map((r) => r.venue.id)).toEqual(['jesus/bar'])
   })
-  it('still previews the published menu when a place name, rather than a dish, matched', () => {
+  it('still previews the published menu when a venue name, rather than a dish, matched', () => {
     expect(resultDishes({ venue, status: { kind: 'unknown' }, days: venue.menu, matchedDishes: 0, searchMatches: [] }, read('q=jesus'))).toEqual(['Dhal'])
   })
 })
@@ -52,7 +52,7 @@ describe('verified map points', () => {
     expect(hasLocation({ ...venue, latitude: 92, longitude: 0.1 })).toBe(false)
     expect(hasLocation({ ...venue, latitude: 0, longitude: 0 })).toBe(true)
   })
-  it('never merges places: those sharing a coordinate sit side by side, the rest stay on their point', () => {
+  it('never merges venues: those sharing a coordinate sit side by side, the rest stay on their point', () => {
     const at = (id: string, latitude: number, longitude = 0.1) => ({ id, latitude, longitude })
     const offsets = sideBySide([at('hall', 52.2), at('cafe', 52.2), at('bar', 52.2), at('near', 52.2001)])
     expect([...offsets]).toEqual([['hall', [-30, 0]], ['cafe', [0, 0]], ['bar', [30, 0]]]) // 'near' keeps its own point

@@ -23,7 +23,7 @@ export function SitePage() {
   const linked = hash && mine.find((v) => v.slug === decodeURIComponent(hash.slice(1)))
   if (linked) return <Navigate to={venuePath(linked)} replace />
 
-  // Dining, cafés, bars; in the site's own order within each, so the list doesn't reshuffle as places open and close.
+  // Dining, cafés, bars; in the site's own order within each, so the list doesn't reshuffle as venues open and close.
   const rows = applyFilters(mine, { ...DEFAULT_FILTERS, date: now.date }, now).sort(
     (a, b) => TYPES.indexOf(a.venue.type) - TYPES.indexOf(b.venue.type) || mine.indexOf(a.venue) - mine.indexOf(b.venue),
   )

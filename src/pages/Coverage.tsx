@@ -27,7 +27,9 @@ export function CoveragePage() {
   const [detail, setDetail] = useState<string>()
   const dates = menuWindow(data, true)
   const categories = coverage(data, kind)
-  const sites = kind === 'college' ? 'colleges' : 'sites'
+  // The page counts one kind at a time, so the units say so: "college venues", not a share of every venue
+  const sites = kind === 'college' ? 'colleges' : 'University sites'
+  const venues = kind === 'college' ? 'college venues' : 'University venues'
 
   const score = (cells: Cell[]) => cells.reduce((n, c) => n + (c.state === 'na' ? 0 : c.state === 'all' ? 0 : c.state === 'some' ? 0.5 : 1), 0)
   const name = (s: Site) => s.short_name ?? s.name
@@ -48,7 +50,7 @@ export function CoveragePage() {
 
       <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-7">
         {categories.map((c) => (
-          <Tile key={c.title} category={c} unit={c.unit === 'sites' ? sites : 'places'} dates={dates} />
+          <Tile key={c.title} category={c} unit={c.unit === 'sites' ? sites : venues} dates={dates} />
         ))}
       </ul>
 
@@ -75,7 +77,7 @@ export function CoveragePage() {
         </div>
         <Legend />
         <p aria-live="polite" className="mt-3 min-h-6 text-sm text-muted">
-          {detail ?? 'Point at or tab to a square to see what’s missing; squares link to the place.'}
+          {detail ?? 'Point at or tab to a square to see what’s missing; squares link to the venue.'}
         </p>
 
         <div className="mt-2 overflow-x-auto rounded-xl border border-ink/10" onMouseLeave={() => setDetail(undefined)}>
@@ -162,10 +164,10 @@ function Mark({ state }: { state: Cell['state'] }) {
 
 function Legend() {
   const items: [Cell['state'], string][] = [
-    ['all', 'Every place'],
-    ['some', 'Some places'],
+    ['all', 'Every venue'],
+    ['some', 'Some venues'],
     ['none', 'None yet'],
-    ['na', 'No such place'],
+    ['na', 'No such venue'],
   ]
   return (
     <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted" aria-label="Key">
@@ -181,9 +183,9 @@ function Legend() {
   )
 }
 
-/** "Jesus · Hours: 2 of 3 places, missing The Roost" */
+/** "Jesus · Hours: 2 of 3 venues, missing The Roost" */
 function describe(site: string, title: string, c: Cell): string {
-  if (c.state === 'na') return `${site} · ${title}: no place it applies to`
+  if (c.state === 'na') return `${site} · ${title}: no venue it applies to`
   const missing = c.missing.length ? `; missing ${c.missing.map((v) => v.name).join(', ')}` : ''
-  return `${site} · ${title}: ${c.have} of ${c.of} ${c.of === 1 ? 'place' : 'places'}${missing}`
+  return `${site} · ${title}: ${c.have} of ${c.of} ${c.of === 1 ? 'venue' : 'venues'}${missing}`
 }

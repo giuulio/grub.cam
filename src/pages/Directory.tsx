@@ -11,9 +11,9 @@ import { venueTypes, type Site } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
 
 type Kind = 'all' | Site['kind']
-type Sort = 'name' | 'open' | 'places'
+type Sort = 'name' | 'open' | 'venues'
 const KINDS: [Kind, string][] = [['all', 'All'], ['college', 'Colleges'], ['university', 'University']]
-const SORTS: [Sort, string][] = [['name', 'A–Z'], ['open', 'Open now'], ['places', 'Most places']]
+const SORTS: [Sort, string][] = [['name', 'A–Z'], ['open', 'Open now'], ['venues', 'Most venues']]
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/[’']/g, '').toLowerCase()
 
@@ -41,13 +41,13 @@ export function Directory() {
       const mine = venues.filter((v) => v.site.slug === site.slug)
       return {
         site,
-        places: mine.length,
+        venues: mine.length,
         types: TYPES.filter((t) => mine.some((v) => venueTypes(v).includes(t))),
         open: snapshot ? 0 : mine.filter((v) => openStatus(v.slots, now).kind === 'open').length,
         menuToday: !snapshot && mine.some((v) => v.menu.some((d) => d.date === now.date && d.items.length)),
       }
     })
-    .sort((a, b) => (sort === 'open' ? b.open - a.open : sort === 'places' ? b.places - a.places : 0) || name(a.site).localeCompare(name(b.site)))
+    .sort((a, b) => (sort === 'open' ? b.open - a.open : sort === 'venues' ? b.venues - a.venues : 0) || name(a.site).localeCompare(name(b.site)))
   const count = (k: Site['kind']) => sites.filter((s) => s.kind === k).length
 
   return (
@@ -90,7 +90,7 @@ export function Directory() {
                     </span>
                   )}
                   <span>
-                    {r.places} {r.places === 1 ? 'place' : 'places'}
+                    {r.venues} {r.venues === 1 ? 'venue' : 'venues'}
                   </span>
                   {r.open > 0 && <span className="rounded bg-open px-1.5 py-0.5 font-medium text-open-ink">{r.open} open now</span>}
                   {r.menuToday && <span>Menu today</span>}

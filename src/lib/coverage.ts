@@ -17,21 +17,21 @@ export function menuGap(v: Venue): MenuGap | undefined {
   return 'online'
 }
 
-/** A college missing something; `venues` names which of its places, for what's known place by place. */
+/** A college missing something; `venues` names which of its venues, for what's known venue by venue. */
 export type Missing = { site: Site; venues: Venue[] }
 
 export type Category = {
   title: string
   /** Counted on the loaded dates (`Data.menuFrom`–`menuTo`) */
   dated: boolean
-  /** Counted by site (one that has any of its places with it counts) or place by place */
-  unit: 'sites' | 'places'
+  /** Counted by site (one that has any of its venues with it counts) or venue by venue */
+  unit: 'sites' | 'venues'
   have: number
   of: number
   missing: Missing[]
 }
 
-/** One site and one category: whether all, some or none of the site's places of that kind have it ('na': it has none). */
+/** One site and one category: whether all, some or none of the site's venues of that kind have it ('na': it has none). */
 export type Cell = { state: 'all' | 'some' | 'none' | 'na'; have: number; of: number; missing: Venue[] }
 export type CoverageRow = { site: Site; cells: Cell[] }
 
@@ -42,15 +42,15 @@ const ofType = (t: VenueType) => (v: Venue) => venueTypes(v).includes(t)
 /** Where a daily menu is expected: Dining, but not a Hall used only for formal hall */
 const servesMeals = (v: Venue) => v.type === 'hall' && !isFormalOnly(v)
 
-/** What's tracked: which places it applies to, and what having it means. */
-const CATEGORIES: { title: string; dated?: boolean; unit: Category['unit']; places: (v: Venue) => boolean; has: (v: Venue) => boolean }[] = [
-  { title: 'Menus', dated: true, unit: 'sites', places: servesMeals, has: hasMenu },
-  { title: 'Dining prices', unit: 'sites', places: ofType('hall'), has: hasPrices },
-  { title: 'Café prices', unit: 'sites', places: ofType('cafe'), has: hasPrices },
-  { title: 'Bar prices', unit: 'sites', places: ofType('bar'), has: hasPrices },
-  { title: 'Hours', unit: 'places', places: () => true, has: (v) => v.slots.length > 0 },
-  { title: 'Who can eat there', unit: 'places', places: () => true, has: (v) => v.access.level !== 'unknown' },
-  { title: 'Card payments', unit: 'places', places: () => true, has: (v) => v.payment.bank_card != null },
+/** What's tracked: which venues it applies to, and what having it means. */
+const CATEGORIES: { title: string; dated?: boolean; unit: Category['unit']; applies: (v: Venue) => boolean; has: (v: Venue) => boolean }[] = [
+  { title: 'Menus', dated: true, unit: 'sites', applies: servesMeals, has: hasMenu },
+  { title: 'Dining prices', unit: 'sites', applies: ofType('hall'), has: hasPrices },
+  { title: 'Café prices', unit: 'sites', applies: ofType('cafe'), has: hasPrices },
+  { title: 'Bar prices', unit: 'sites', applies: ofType('bar'), has: hasPrices },
+  { title: 'Hours', unit: 'venues', applies: () => true, has: (v) => v.slots.length > 0 },
+  { title: 'Who can eat there', unit: 'venues', applies: () => true, has: (v) => v.access.level !== 'unknown' },
+  { title: 'Card payments', unit: 'venues', applies: () => true, has: (v) => v.payment.bank_card != null },
 ]
 export const CATEGORY_TITLES = CATEGORIES.map((c) => c.title)
 
@@ -60,8 +60,8 @@ const sitesOf = ({ sites, venues }: Pick<Data, 'sites' | 'venues'>, kind: Site['
 /** Each category's count across the colleges (or University sites): what has it, out of what could. */
 export function coverage(data: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'] = 'college'): Category[] {
   const sites = sitesOf(data, kind)
-  return CATEGORIES.map(({ title, dated = false, unit, places, has }) => {
-    const rows = sites.map((c) => ({ site: c.site, venues: c.venues.filter(places) })).filter((c) => c.venues.length)
+  return CATEGORIES.map(({ title, dated = false, unit, applies, has }) => {
+    const rows = sites.map((c) => ({ site: c.site, venues: c.venues.filter(applies) })).filter((c) => c.venues.length)
     if (unit === 'sites') {
       const missing = rows.filter((c) => !c.venues.some(has))
       return { title, dated, unit, have: rows.length - missing.length, of: rows.length, missing }
@@ -72,12 +72,12 @@ export function coverage(data: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'
   })
 }
 
-/** Site by site, each category (in CATEGORY_TITLES order) as a cell: all, some or none of its places, or none that apply. */
+/** Site by site, each category (in CATEGORY_TITLES order) as a cell: all, some or none of its venues, or none that apply. */
 export function coverageMatrix(data: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'] = 'college'): CoverageRow[] {
   return sitesOf(data, kind).map(({ site, venues }) => ({
     site,
-    cells: CATEGORIES.map(({ places, has }) => {
-      const mine = venues.filter(places)
+    cells: CATEGORIES.map(({ applies, has }) => {
+      const mine = venues.filter(applies)
       const missing = mine.filter((v) => !has(v))
       const have = mine.length - missing.length
       return { state: !mine.length ? 'na' : !missing.length ? 'all' : have ? 'some' : 'none', have, of: mine.length, missing }

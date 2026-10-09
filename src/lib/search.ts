@@ -24,7 +24,7 @@ const SYNONYMS = [
 ]
 const synonyms = new Map(SYNONYMS.flatMap((group) => group.map((w) => [w, group] as const)))
 
-// What else describes a place or a dish, so "jesus cafe", "homerton lunch" and "vegan curry" mean what they say.
+// What else describes a venue or a dish, so "jesus cafe", "homerton lunch" and "vegan curry" mean what they say.
 const KIND_WORDS: Record<VenueType, string> = { hall: 'dining', cafe: 'cafe', bar: 'bar' }
 const MEAL_WORDS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 const dietWords = (tag: DietTag) => tag.replace('_', ' ') + (tag === 'vegan' ? ' vegetarian' : '')
@@ -64,7 +64,7 @@ function typos(a: string, b: string, prefix: boolean): number {
   return (prefix ? Math.min(...above) : above[b.length]) + (a[0] === b[0] ? 0 : 1)
 }
 
-/** A place, or one dish on one day's menu there, which also carries its place's names. */
+/** A venue, or one dish on one day's menu there, which also carries its venue's names. */
 export type SearchDoc = { venue: Venue; dish?: Dish; date?: string; service?: Meal }
 type Doc = SearchDoc & { names: string[][] }
 type Index = { docs: Doc[]; fields: Map<string, Map<number, number>>; byForm: Map<string, Set<string>> }
@@ -88,7 +88,7 @@ function indexFor(venues: Venue[]): Index {
   for (const v of venues) {
     const names = [v.name, v.site.name, v.site.short_name ?? '', v.site.kind === 'college' ? `${v.site.name} College` : ''].filter(Boolean)
     const aliases = [...(v.aliases ?? []), ...(v.site.aliases ?? [])]
-    const place = (doc: number, kind: string) => {
+    const field = (doc: number, kind: string) => {
       for (const name of names) add(doc, name, NAME)
       for (const alias of aliases) add(doc, alias, ALIAS)
       add(doc, kind, KIND)
@@ -96,10 +96,10 @@ function indexFor(venues: Venue[]): Index {
     // A café that's a bar by night is both; formal hall counts where it's held, even without published days
     const kinds = venueTypes(v).map((t) => KIND_WORDS[t]).join(' ')
     const meals = MEAL_WORDS.filter((m) => v.slots.some((s) => s.meal === m) || (m === 'formal' && v.formal))
-    place(docs.push({ venue: v, names: [...names, ...aliases].map(nameWords) }) - 1, [kinds, ...meals].join(' '))
+    field(docs.push({ venue: v, names: [...names, ...aliases].map(nameWords) }) - 1, [kinds, ...meals].join(' '))
     for (const day of v.menu) for (const dish of day.items) {
       const doc = docs.push({ venue: v, dish, date: day.date, service: day.service, names: [nameWords(dish.name)] }) - 1
-      place(doc, kinds)
+      field(doc, kinds)
       add(doc, dish.name, DISH)
       add(doc, [...dish.tags.map(dietWords), MEAL_WORDS.includes(day.service) ? day.service : ''].join(' '), TAG)
     }
@@ -186,7 +186,7 @@ export function searchVenues(venues: Venue[], query: string, inScope: (doc: Sear
   for (const [i, byWord] of matched) {
     const doc = docs[i]
     const hits = byWord.filter(Boolean)
-    // A dish matches for what's on it, not for its place's name alone
+    // A dish matches for what's on it, not for its venue's name alone
     if (doc.dish && !hits.some((m) => m.field >= DISH)) continue
     const whole = hits.length === q.length && doc.names.some((name) =>
       name.length > 0 && name.every((t) => hits.some((m) => m.tokens.has(t))) && hits.every((m) => name.some((t) => m.tokens.has(t))))

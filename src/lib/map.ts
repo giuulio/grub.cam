@@ -1,6 +1,6 @@
 /**
- * Pixel offsets that set places sharing a coordinate (several venues in one building) side by side around it: one row
- * of up to three, a centred grid beyond that. Only those places are listed; every other one stays exactly on its point,
+ * Pixel offsets that set venues sharing a coordinate (several venues in one building) side by side around it: one row
+ * of up to three, a centred grid beyond that. Only those venues are listed; every other one stays exactly on its point,
  * and nothing is ever merged.
  */
 export function sideBySide<T extends { id: string; latitude: number; longitude: number }>(points: T[], spacing = 30): Map<string, [number, number]> {

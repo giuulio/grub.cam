@@ -9,7 +9,7 @@ import { sideBySide } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import type { VenueType } from '../lib/types.ts'
 
-/** `panel`: the picked place's panel, which covers part of the map (its left side, or its foot on a phone) */
+/** `panel`: the picked venue's panel, which covers part of the map (its left side, or its foot on a phone) */
 type Props = { results: Ranked[]; selected?: string; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean; panel?: RefObject<HTMLElement | null> }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
@@ -114,16 +114,16 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
     }
   }, [])
 
-  // One marker per place, kept while it stays in the results; places sharing a coordinate sit side by side.
+  // One marker per venue, kept while it stays in the results; venues sharing a coordinate sit side by side.
   const mapped = results.filter((r) => hasLocation(r.venue)).sort((a, b) => TYPE_ORDER.indexOf(a.venue.type) - TYPE_ORDER.indexOf(b.venue.type) || a.venue.name.localeCompare(b.venue.name) || a.venue.id.localeCompare(b.venue.id))
   const offsets = sideBySide(mapped.map((r) => ({ id: r.venue.id, latitude: r.venue.latitude!, longitude: r.venue.longitude! })))
   const key = mapped.map((r) => r.venue.id).join('|')
-  const places = useRef({ mapped, offsets })
-  useEffect(() => { places.current = { mapped, offsets } }, [mapped, offsets])
+  const pins = useRef({ mapped, offsets })
+  useEffect(() => { pins.current = { mapped, offsets } }, [mapped, offsets])
   useEffect(() => {
     const e = engine.current
     if (!ready || !e) return
-    const { mapped, offsets } = places.current
+    const { mapped, offsets } = pins.current
     const next = new Map<string, Pin>()
     for (const r of mapped) {
       const pin = e.pins.get(r.venue.id) ?? (() => {
@@ -137,23 +137,23 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
     for (const [id, pin] of e.pins) if (!next.has(id)) pin.marker.remove()
     e.pins = next
     setAnchors(new Map([...next].map(([id, pin]) => [id, pin.el])))
-  }, [ready, key]) // `key` names the mapped places, so their offsets too
+  }, [ready, key]) // `key` names the mapped venues, so their offsets too
 
   useEffect(() => {
     const e = engine.current
     if (!ready || !e) return
-    const { mapped } = places.current
+    const { mapped } = pins.current
     const fit = `${!!filtered}:${key}`
     if (fit === fitKey.current) return
     fitKey.current = fit
     if (filtered && mapped.length) e.map.fitBounds(mapped.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(e.map), maxZoom: 15, duration: 0 })
     if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
-  }, [ready, key, filtered]) // refit only when the matching places change
+  }, [ready, key, filtered]) // refit only when the matching venues change
 
-  // The selected place's pin sits above its neighbours.
+  // The selected venue's pin sits above its neighbours.
   useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected ? '1' : '' }) }, [anchors, selected])
 
-  // A picked place stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
+  // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
   // middle of what the panel leaves free.
   useEffect(() => {
     const e = engine.current
@@ -178,7 +178,7 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
       const e = engine.current
       if (!e) return
       if (coords.latitude < 52.14 || coords.latitude > 52.26 || coords.longitude < -0.01 || coords.longitude > 0.2) {
-        setLocationNote('You’re outside Cambridge. Move the map to explore places here.')
+        setLocationNote('You’re outside Cambridge. Move the map to explore venues here.')
         return
       }
       e.user?.remove()
@@ -218,7 +218,7 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
   )
 }
 
-/** A place's pin: a dot in its type's colour, filled while it's open now. Places side by side get narrower targets so none overlap. */
+/** A venue's pin: a dot in its type's colour, filled while it's open now. Venues side by side get narrower targets so none overlap. */
 function MapPin({ r, selected, open, shared, onSelect }: { r: Ranked; selected: boolean; open: boolean; shared: boolean; onSelect: (id: string) => void }) {
   const v = r.venue
   const label = `${v.site.short_name ?? v.site.name}: ${v.name} (${TYPE_LABEL[v.type]}${open ? ', open now' : ''})`

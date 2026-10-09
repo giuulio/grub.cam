@@ -14,8 +14,8 @@ export function Credits() {
       <div className="max-w-2xl leading-relaxed">
         <h1 className="title text-4xl">Photo credits</h1>
         <p className="mt-4 text-muted">
-          Most photos of places here are from Wikimedia Commons, shared by the people who took them under open licences; each is credited where it's shown,
-          and all of them below. Where no photo of the room itself is free to use, it's the building or court the place is in. Took a better one?{' '}
+          Most photos of venues here are from Wikimedia Commons, shared by the people who took them under open licences; each is credited where it's shown,
+          and all of them below. Where no photo of the room itself is free to use, it's the building or court the venue is in. Took a better one?{' '}
           <a href={ISSUES_URL} target="_blank" rel="noopener" className="link text-ink">
             Send it
           </a>

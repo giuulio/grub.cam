@@ -54,7 +54,8 @@ export function Home() {
   }, [filtersShown, list])
   const f = readExploreFilters(params, now.date, sites, menuFrom, menuTo)
   const results = applyFilters(venues, f, now)
-  const selected = results.find((r) => r.venue.id === params.get('place'))
+  // `venue` picks a pin; `place` is the name old links use
+  const selected = results.find((r) => r.venue.id === (params.get('venue') ?? params.get('place')))
   const unmapped = results.filter((r) => !hasLocation(r.venue)).length
   const extras = Number(!!f.access) + f.diets.length + Number(f.date !== now.date) + Number(!!f.site)
   const filtered = !!(f.q || f.type || f.meal || f.openNow || extras)
@@ -64,20 +65,20 @@ export function Home() {
     setParams(next, { replace: true })
   }
   const set = (key: string, value?: string) => update((p) => { if (value) p.set(key, value); else p.delete(key) })
-  const clear = () => update((p) => { for (const k of ['q', 'type', 'meal', 'diet', 'access', 'site', 'date', 'open', 'guests', 'card', 'more', 'place']) p.delete(k) })
+  const clear = () => update((p) => { for (const k of ['q', 'type', 'meal', 'diet', 'access', 'site', 'date', 'open', 'guests', 'card', 'more', 'venue', 'place']) p.delete(k) })
   const clearMore = () => update((p) => { for (const k of ['diet', 'access', 'site', 'date']) p.delete(k) })
-  const select = (id: string) => set('place', id)
-  const places = `${results.length} ${results.length === 1 ? 'place' : 'places'}${f.q.trim() ? ' found' : ''}`
+  const select = (id?: string) => update((p) => { p.delete('place'); if (id) p.set('venue', id); else p.delete('venue') })
+  const count = `${results.length} ${results.length === 1 ? 'venue' : 'venues'}${f.q.trim() ? ' found' : ''}`
   const siteName = (slug: string) => { const s = sites.find((x) => x.slug === slug); return s?.short_name ?? s?.name }
 
   return (
     <div ref={page} className={`explore-page ${!list ? 'is-map' : ''}`}>
       <title>{`${SITE_NAME}: Cambridge college and University menus`}</title>
       <h1 className="sr-only">Find food and drink in Cambridge</h1>
-      <p role="status" className="sr-only">{places}</p>
+      <p role="status" className="sr-only">{count}</p>
       <div ref={controls} className="explore-controls relative z-800 mb-4">
         <div className="explore-bar flex flex-wrap items-center gap-2 lg:flex-nowrap">
-          <SearchField value={f.q} onChange={(q) => set('q', q)} placeholder="Search places or dishes" className="explore-search lg:w-64 lg:shrink-0 xl:w-80" />
+          <SearchField value={f.q} onChange={(q) => set('q', q)} placeholder="Search venues or dishes" className="explore-search lg:w-64 lg:shrink-0 xl:w-80" />
           <div className="explore-chips flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
             <div className="explore-quick-chips contents">
               {EXPLORE_TYPES.map(([type, label]) => (
@@ -106,7 +107,7 @@ export function Home() {
             {DINING_MEALS.map((m) => <Chip key={m} active={f.meal === m} onClick={() => set('meal', f.meal === m ? undefined : m)}>{MEAL_LABEL[m]}</Chip>)}
           </div>
         )}
-        {/* Over the map, the filters open down its left side, where a picked place opens: the pins stay in view as they change */}
+        {/* Over the map, the filters open down its left side, where a picked venue opens: the pins stay in view as they change */}
         <div id="explore-filters" hidden={!filtersShown} className="explore-filters @container mt-3 rounded-xl p-4 sm:p-5">
           <div className="grid gap-x-4 gap-y-5 @xl:grid-cols-3">
             <Field label="Access">
@@ -132,22 +133,22 @@ export function Home() {
           </fieldset>
           <div className="mt-6 flex items-center gap-2 border-t border-ink/10 pt-4">
             {extras > 0 && <button type="button" onClick={clearMore} className="-ml-3 h-10 cursor-pointer rounded-lg px-3 text-sm text-muted underline-offset-4 hover:text-ink hover:underline">Reset filters</button>}
-            <button type="button" onClick={() => setFiltersShown(false)} className="btn btn-primary ml-auto">{results.length ? `Show ${results.length} ${results.length === 1 ? 'place' : 'places'}` : 'No places match'}</button>
+            <button type="button" onClick={() => setFiltersShown(false)} className="btn btn-primary ml-auto">{results.length ? `Show ${results.length} ${results.length === 1 ? 'venue' : 'venues'}` : 'No venues match'}</button>
           </div>
         </div>
         {!filtersShown && extras > 0 && <p className="mt-3 text-sm text-muted">{[f.access && ACCESS_LABEL[f.access], ...f.diets.map((d) => DIET_LABEL[d]), f.date !== now.date && `menus for ${formatISODate(f.date)}`, f.site && siteName(f.site)].filter(Boolean).join(', ')}</p>}
       </div>
 
       {list ? (
-        <section aria-label="Matching places">
-          <p className="mb-1 text-sm text-muted">{places}</p>
+        <section aria-label="Matching venues">
+          <p className="mb-1 text-sm text-muted">{count}</p>
           {results.length ? <ul className="grid gap-x-10 lg:grid-cols-2">{results.map((r) => <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={resultDishes(r, f)} showSite={!f.site} date={f.date} showAccess />)}</ul> : <Empty onClear={clear} />}
         </section>
       ) : (
-        <section ref={mapShell} className={`explore-map-shell relative isolate overflow-hidden bg-ink/5 sm:rounded-xl sm:border sm:border-ink/10 ${selected || filtersShown ? 'has-panel' : ''}`} aria-label="Map of matching places" onKeyDown={(e) => { if (e.key === 'Escape') set('place') }}>
+        <section ref={mapShell} className={`explore-map-shell relative isolate overflow-hidden bg-ink/5 sm:rounded-xl sm:border sm:border-ink/10 ${selected || filtersShown ? 'has-panel' : ''}`} aria-label="Map of matching venues" onKeyDown={(e) => { if (e.key === 'Escape') select() }}>
           <VenueMap results={results} selected={selected?.venue.id} onSelect={select} snapshot={snapshot} filtered={filtered} panel={panel} />
           {!results.length && <div className="raised absolute inset-x-4 top-20 z-500 mx-auto max-w-sm rounded-xl p-5"><Empty onClear={clear} /></div>}
-          {results.length > 0 && unmapped === results.length && <div className="raised absolute inset-x-4 top-24 z-500 mx-auto max-w-sm rounded-xl p-5 text-center"><p className="font-medium">{results.length === 1 ? 'This place isn’t mapped yet.' : 'These places aren’t mapped yet.'}</p><button type="button" onClick={() => set('view', 'list')} className="link mt-3 cursor-pointer text-sm">Show the list</button></div>}
+          {results.length > 0 && unmapped === results.length && <div className="raised absolute inset-x-4 top-24 z-500 mx-auto max-w-sm rounded-xl p-5 text-center"><p className="font-medium">{results.length === 1 ? 'This venue isn’t mapped yet.' : 'These venues aren’t mapped yet.'}</p><button type="button" onClick={() => set('view', 'list')} className="link mt-3 cursor-pointer text-sm">Show the list</button></div>}
           {/* Key and count, in the corner the map leaves free */}
           <div className="map-key raised absolute bottom-4 left-4 z-450 hidden items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-muted sm:flex">
             {EXPLORE_TYPES.map(([type]) => <span key={type} className="flex items-center gap-1.5"><span aria-hidden="true" className="type-dot" data-type={type} />{TYPE_LABEL[type]}</span>)}
@@ -155,10 +156,10 @@ export function Home() {
             {!snapshot && <span className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2.5 rounded-full bg-ink" />Open now</span>}
             {!snapshot && <span className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2.5 rounded-full border-2 border-ink" />Not open</span>}
             <span aria-hidden="true" className="h-3 border-l border-ink/20" />
-            <span className="text-ink">{places}</span>
+            <span className="text-ink">{count}</span>
             {unmapped > 0 && <button type="button" onClick={() => set('view', 'list')} className="cursor-pointer underline underline-offset-4 hover:text-ink">{unmapped} not on the map</button>}
           </div>
-          {selected && <VenuePanel ref={panel} r={selected} dishes={resultDishes(selected, f)} date={f.date} results={results} formalSelected={f.meal === 'formal'} onSelect={select} onClose={() => set('place')} />}
+          {selected && <VenuePanel ref={panel} r={selected} dishes={resultDishes(selected, f)} date={f.date} results={results} formalSelected={f.meal === 'formal'} onSelect={select} onClose={() => select()} />}
         </section>
       )}
       {/* On a phone, one button switches between the map and the list */}
@@ -184,5 +185,5 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function Empty({ onClear }: { onClear: () => void }) {
-  return <div className="py-5 text-center"><p className="font-medium">No places match.</p><button type="button" onClick={onClear} className="link mt-2 cursor-pointer text-sm text-muted">Clear filters</button></div>
+  return <div className="py-5 text-center"><p className="font-medium">No venues match.</p><button type="button" onClick={onClear} className="link mt-2 cursor-pointer text-sm text-muted">Clear filters</button></div>
 }

@@ -14,7 +14,7 @@ const dishNames = (r: ReturnType<typeof search>[number]) => r.searchMatches.map(
 const listed = (q: string) => search(q).map((r) => [r.venue.id, ...dishNames(r).sort()].join(' · ')).sort()
 const today = real.flatMap((v) => v.menu.filter((d) => d.date === date).flatMap((d) => d.items))
 
-describe('places', () => {
+describe('venues', () => {
   it.each([
     ['homerton', 'homerton'], ['HOMERTON', 'homerton'], ['homreton', 'homerton'], ['homertn', 'homerton'], ['homer', 'homerton'],
     ['eddies', 'st-edmunds'], ['st edmunds', 'st-edmunds'], ['St Edmund’s', 'st-edmunds'],
@@ -57,7 +57,7 @@ describe('venues', () => {
   it('coffeeshop finds the coffee shops', () => {
     expect(search('coffeeshop')[0]?.venue.name).toBe('Coffee Shop')
   })
-  it('formal lists every place that holds formal hall', () => {
+  it('formal lists every venue that holds formal hall', () => {
     const ids = new Set(search('formal').map((r) => r.venue.id))
     expect(real.filter((v) => v.formal).length).toBeGreaterThan(30)
     expect(real.filter((v) => v.formal).every((v) => ids.has(v.id))).toBe(true)
@@ -102,7 +102,7 @@ describe('dishes on the day', () => {
     expect(expected.length).toBeGreaterThan(0)
     expect(expected.filter((d) => !shown.has(d)).map((d) => d.name)).toEqual([])
   })
-  it('a place with no matching dish is listed without dishes', () => {
+  it('a venue with no matching dish is listed without dishes', () => {
     const [first] = search('jesus sushi')
     expect(first.venue.site.slug).toBe('jesus')
     expect(dishNames(first)).toEqual([])
@@ -157,7 +157,7 @@ describe('rules', () => {
     expect(find('chicken', { date: '2026-10-09' }, [tomorrow])).toHaveLength(1)
     expect(find('jesus', {}, [tomorrow])).toHaveLength(1)
   })
-  it('ranks an exact place ahead of a typo match even when it is closed', () => {
+  it('ranks an exact venue ahead of a typo match even when it is closed', () => {
     expect(find('homerton', {}, [venue('test/hall', 'Homertom', 'Test'), { ...homerton, slots: [] }])[0].venue.id).toBe(homerton.id)
   })
   it('finds where formal hall is held, with or without published days', () => {

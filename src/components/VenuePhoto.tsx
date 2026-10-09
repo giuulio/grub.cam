@@ -9,7 +9,7 @@ import { Icon } from './Icon.tsx'
  * A venue's picture, in a box the caller shapes (`className`): its photo, cropped to fill, its average colour showing
  * until it loads; or, when it has none or the photo can't load, its type's tile (the type's tint, its icon in the
  * middle, `icon` sized). `sizes` is how wide it's shown, so the browser picks the smallest file that's sharp enough.
- * `decorative` when text beside it already names the place; `overlay` sits over a photo, never over the tile.
+ * `decorative` when text beside it already names the venue; `overlay` sits over a photo, never over the tile.
  */
 export function VenueImage({ venue, sizes, className = '', icon = 'size-[40%]', eager = false, decorative = false, overlay }: { venue: Venue; sizes: string; className?: string; icon?: string; eager?: boolean; decorative?: boolean; overlay?: ReactNode }) {
   const photo = venuePhoto(venue)
@@ -64,7 +64,7 @@ export function VenueThumb({ venue, className = 'size-16' }: { venue: Venue; cla
       sizes="4rem"
       decorative
       className={`rounded-lg ${className}`}
-      // The photo doesn't say what kind of place it is: its mark does
+      // The photo doesn't say what kind of venue it is: its mark does
       overlay={<TypeMark type={venue.type} className="absolute -right-1 -bottom-1 size-5 ring-2 ring-canvas" label />}
     />
   )

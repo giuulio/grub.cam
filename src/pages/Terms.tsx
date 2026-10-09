@@ -32,7 +32,7 @@ export function Terms() {
 
         <Part title="Not affiliated">
           <p>
-            {SITE_NAME} isn't run or endorsed by the University of Cambridge or any college. Their names are used only to say which places are described, and
+            {SITE_NAME} isn't run or endorsed by the University of Cambridge or any college. Their names are used only to say which venues are described, and
             belong to them.
           </p>
         </Part>

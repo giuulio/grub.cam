@@ -19,7 +19,7 @@ export function venueTypes(v: { type: VenueType; slots: Slot[] }): VenueType[] {
 
 /**
  * A Hall used only for formal hall (St John's Hall, Christ's Hall, ...): its only hours are formal; or it has no hours,
- * holds formal and isn't in the menu source registry, which lists every place serving daily meals (sources.ts).
+ * holds formal and isn't in the menu source registry, which lists every venue serving daily meals (sources.ts).
  * A cafeteria whose hours aren't published (Girton's) isn't one.
  */
 export function isFormalOnly(v: { formal?: object; slots: Slot[]; menu_channel?: string | null }): boolean {

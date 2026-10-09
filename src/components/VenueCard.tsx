@@ -49,23 +49,23 @@ function AccessLine({ venue }: { venue: Venue }) {
 }
 
 /**
- * The place picked on the map, as Google Maps shows one: down the map's left side on a wide screen, a sheet from the
+ * The venue picked on the map, as Google Maps shows one: down the map's left side on a wide screen, a sheet from the
  * bottom on a phone. Its photo, name, types, whether it's open, the dishes that matched on the menu date, its page,
- * and the other places in the same building.
+ * and the other venues in the same building.
  */
 export function VenuePanel({ r, dishes, date, results, formalSelected, onSelect, onClose, ref }: { r: Ranked; dishes: string[]; date: string; results: Ranked[]; formalSelected: boolean; onSelect: (id: string) => void; onClose: () => void; ref?: Ref<HTMLDivElement> }) {
   const { snapshot } = useReady()
   const v = r.venue
   const close = useRef<HTMLButtonElement>(null)
   useEffect(() => { close.current?.focus({ preventScroll: true }) }, [v.id])
-  // Places in the same building (same point), whose pins sit beside this one
+  // Venues in the same building (same point), whose pins sit beside this one
   const others = results.filter((o) => o.venue.id !== v.id && hasLocation(v) && hasLocation(o.venue) && v.latitude === o.venue.latitude && v.longitude === o.venue.longitude)
   const slot = r.status.kind === 'open' || r.status.kind === 'opening' ? r.status.slot : r.status.kind === 'closed' ? r.status.next?.slot : undefined
   const photo = venuePhoto(v)
   const now = useNow()
   return (
-    <div ref={ref} aria-label="Selected place" className="selected-place raised absolute inset-x-0 bottom-0 z-600 max-h-[62%] overflow-y-auto rounded-t-xl text-ink sm:inset-x-auto sm:top-3 sm:bottom-auto sm:left-3 sm:max-h-[calc(100%-1.5rem)] sm:w-(--panel-w) sm:rounded-xl">
-      <button ref={close} type="button" aria-label="Close selected place" title="Close" onClick={onClose} className="raised absolute top-3 right-3 z-10 flex size-9 cursor-pointer items-center justify-center rounded-lg text-ink">
+    <div ref={ref} aria-label="Selected venue" className="selected-venue raised absolute inset-x-0 bottom-0 z-600 max-h-[62%] overflow-y-auto rounded-t-xl text-ink sm:inset-x-auto sm:top-3 sm:bottom-auto sm:left-3 sm:max-h-[calc(100%-1.5rem)] sm:w-(--panel-w) sm:rounded-xl">
+      <button ref={close} type="button" aria-label="Close selected venue" title="Close" onClick={onClose} className="raised absolute top-3 right-3 z-10 flex size-9 cursor-pointer items-center justify-center rounded-lg text-ink">
         <Icon of={Xmark} className="size-4.5" />
       </button>
       <VenueImage venue={v} sizes="(min-width: 640px) 22rem, 100vw" icon="size-10" className="block aspect-5/2 w-full sm:aspect-video" />

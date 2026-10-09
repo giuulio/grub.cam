@@ -19,7 +19,7 @@ export function Header() {
         <div className="flex items-baseline gap-2">
           <Link to="/" className="title py-4 text-xl">{SITE_NAME}</Link>
           {/* Still being built: say so to anyone who lands here */}
-          <span title="Still being built: some menus, hours and places are missing" className="text-xs text-muted">beta</span>
+          <span title="Still being built: some menus, hours and venues are missing" className="text-xs text-muted">beta</span>
         </div>
         <nav aria-label="Main navigation" className="order-3 flex w-full gap-6 sm:order-0 sm:ml-4 sm:w-auto">
           <NavLink to="/" end className={({ isActive }) => tab(isActive)}>Explore</NavLink>

@@ -110,7 +110,7 @@ export function pages(data: Data, date: string): Page[] {
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours, access, card payments) and what's still missing." }
   const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
-  const credits: Page = { path: '/credits', description: 'Who took the photos of places on grub.cam, and the open licences they share them under.' }
+  const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {

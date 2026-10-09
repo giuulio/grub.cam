@@ -124,7 +124,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     const matchedDishes = days.reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
     kept.set(v.id, { venue: v, status, days, matchedDishes })
   }
-  // Searches see the places left, and only dishes on the date viewed, at the meal and with every diet picked.
+  // Searches see the venues left, and only dishes on the date viewed, at the meal and with every diet picked.
   const hits = searching
     ? searchVenues(venues, f.q, (d) => kept.has(d.venue.id) && (!d.dish || (d.date === f.date && (!f.meal || d.service === f.meal) && dishMatches(d.dish, { q: '', diets: f.diets }))))
     : undefined

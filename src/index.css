@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /*
- * Type: Michelangelus for place names and titles, Chirp (X's interface font) for everything else, when installed.
+ * Type: Michelangelus for venue names and titles, Chirp (X's interface font) for everything else, when installed.
  * These fonts aren't distributed here: Michelangelus's download licence excludes redistribution, and Chirp has no
  * public web-use licence. Source Serif 4 and Public Sans remain self-hosted fallbacks (main.tsx).
  * No font service sees a visitor's IP.
@@ -244,7 +244,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 /* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
 .venue-pin-target.is-shared { width: 30px; }
 
-/* A dot per place, no icon: a ring of its type's colour around white, filled when open now. The white halo keeps it
+/* A dot per venue, no icon: a ring of its type's colour around white, filled when open now. The white halo keeps it
    clear of both basemaps. */
 .venue-pin {
   display: block;
@@ -323,7 +323,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   background: var(--raised);
 }
 
-/* Over the map, a place picked on it and the filters open in one panel down the map's left side (as Google Maps
+/* Over the map, a venue picked on it and the filters open in one panel down the map's left side (as Google Maps
    does), and what sat in that corner moves over beside it. The filters sit in the controls above the map, so they're
    placed from there: 1rem below them is the map's top edge. */
 @media (min-width: 640px) {
