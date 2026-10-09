@@ -2,11 +2,11 @@
 // llms.txt / llms-full.txt. Pure functions of the loaded data; scripts/prerender.ts writes them out at build time.
 import type { Data } from './data.tsx'
 import { ACCESS_LABEL, DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
-import { photoSrc, venuePhoto } from './photos.ts'
+import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
-import { venueTypes, type Day, type DietTag, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
+import { venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
 /** `image`: a photo for link previews (og:image) */
 export type Page = { path: string; description: string; jsonLd?: object; image?: string }
@@ -79,13 +79,13 @@ function venueJsonLd(v: Venue, date: string): object {
   }
 }
 
-/** The venue's photo at the largest width up to 1600px, for link previews and structured data. */
-function venueImage(v: Venue): string | undefined {
-  const p = venuePhoto(v)
+/** A photo at the largest width up to 1600px, for link previews and structured data. */
+function imageOf(p: Photo | undefined): string | undefined {
   const src = p && photoSrc(p, p.widths.filter((w) => w <= 1600).at(-1) ?? p.widths[0])
   // Link previews need an absolute URL; photos are served from the site itself unless VITE_PHOTOS_URL says otherwise
   return src && (src.startsWith('/') ? abs(src) : src)
 }
+const venueImage = (v: Venue) => imageOf(venuePhoto(v))
 
 function dietUrls(tags: DietTag[]): string[] | undefined {
   const urls = tags.flatMap((t) => DIET_SCHEMA[t] ?? [])
@@ -123,7 +123,9 @@ export function pages(data: Data, date: string): Page[] {
         name: siteName(s),
         url: abs(sitePath(s)),
         containsPlace: mine.map((v) => ({ '@type': TYPE_SCHEMA[v.type], name: v.name, url: abs(venuePath(v)) })),
+        ...(imageOf(sitePhoto(s)) ? { image: imageOf(sitePhoto(s)) } : {}),
       },
+      image: imageOf(sitePhoto(s)),
     }
   })
   const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))

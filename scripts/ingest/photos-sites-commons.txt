@@ -1,0 +1,51 @@
+# Each site's photo, from Wikimedia Commons: `npm run ingest:photo -- --list scripts/ingest/photos-sites-commons.txt`.
+# <site> | <Commons file> | <alt text: what the photo shows> [| <credit, when Commons has none>]
+# Mostly the lead image of the site's Wikipedia article (a representative, well-licensed view); where that was a crest,
+# a very old photograph, a photo with people in it or another site, the main court or entrance instead. Same rules as
+# photos-commons.txt: openly licensed, no recognisable people, credited where shown.
+
+adc-theatre | File:ADC Theatre Cambridge.jpg | The ADC Theatre on Park Street | Solipsist
+biomedical-campus | File:Cmglee Cambridge aerial Addenbrookes.jpg | The Biomedical Campus from the air, Addenbrooke's at its centre
+botanic-garden | File:Cambridge University Botanic Garden entrance, England - DSCF2232.JPG | The Botanic Garden's entrance on Bateman Street
+chemistry | File:Chemistry Department - geograph.org.uk - 1614634.jpg | The Department of Chemistry on Lensfield Road
+christs | File:Christ's College First Court, Cambridge, UK - Diliff.jpg | First Court, Christ's College, with its circular lawn
+churchill | File:Cmglee Cambridge Churchill College entrance.jpg | The entrance to Churchill College from Storey's Way
+clare | File:Clare College Old Court - geograph.org.uk - 4233774.jpg | Old Court, Clare College
+clare-hall | File:Main entrance, Clare Hall, Cambridge.jpg | The main entrance of Clare Hall on Herschel Road
+cms | File:CMS Central Core 01.jpg | The Central Core of the Centre for Mathematical Sciences
+corpus-christi | File:Corpus Christi College New Court, Cambridge, UK - Diliff.jpg | New Court, Corpus Christi College
+darwin | File:Darwin College - geograph.org.uk - 1333608.jpg | Darwin College from the river
+downing | File:Downing College Chapel.jpg | The Chapel across the lawns of Downing College
+downing-site | File:University of Cambridge Department of Geography - geograph.org.uk - 831267.jpg | The Department of Geography on the Downing Site
+emmanuel | File:Emmanuel College Front Court, Cambridge, UK - Diliff.jpg | Front Court, Emmanuel College, with the Chapel
+fitzwilliam | File:The Grove at Fitzwilliam College, Cambridge 2017.jpg | The Grove, the Regency house in the grounds of Fitzwilliam College
+fitzwilliam-museum | File:FitzwilliamMuseum.jpg | The Fitzwilliam Museum's portico on Trumpington Street | Solipsist
+girton | File:Girton College, Cambridge university.jpg | Girton College's red brick and gatehouse tower
+gonville-and-caius | File:Exterior South-East Corner of Tree Court, Gonville & Caius (full).jpg | Tree Court, Gonville & Caius, from Trinity Street | Jdforrester
+homerton | File:The Cavendish Building of Homerton College Cambridge, May 2011.jpg | The Cavendish Building, Homerton College
+hughes-hall | File:Margaret Wileman Building, Hughes Hall.jpg | The Margaret Wileman Building, Hughes Hall
+jesus | File:Jesus College Entrance.jpg | The Chimney, the walled walk to Jesus College's gate
+kettles-yard | File:KettlesYard.jpg | Kettle's Yard on Castle Street | Solipsist
+kings | File:Rear of the King's College and the Gibbs' Building.jpg | King's College Chapel and the Gibbs' Building from the Backs
+lucy-cavendish | File:College House and Oldham Hall.jpg | College House and Oldham Hall, Lucy Cavendish College
+madingley-hall | File:Madingley Hall front elevation Aug 2013.jpg | The front of Madingley Hall
+magdalene | File:Magdalene College First Court - geograph.org.uk - 6347813.jpg | First Court, Magdalene College
+murray-edwards | File:Cmglee Cambridge New Hall Fountain Court.jpg | Fountain Court, Murray Edwards College, under the Dome
+new-museums | File:New Museums Site, Cambridge.jpg | The New Museums Site from Free School Lane
+newnham | File:Cmglee Cambridge University Newnham College dining hall.jpg | Newnham College's dining hall, Clough Hall
+old-addenbrookes | File:Old Addenbrooke's Hospital - geograph.org.uk - 6828554.jpg | The old Addenbrooke's Hospital on Trumpington Street, now the Judge Business School
+pembroke | File:The Old Court at Pembroke College - geograph.org.uk - 1518311.jpg | Old Court, Pembroke College
+peterhouse | File:Cambridge Peterhouse OldCourt.JPG | Old Court, Peterhouse
+queens | File:Cambridge Queens' Gatehouse.JPG | The gatehouse of Queens' College on Queens' Lane | Sebastián Arena
+robinson | File:Robinson College Fascade.JPG | Robinson College's brick front on Grange Road
+selwyn | File:Selwyn College Old Court, Cambridge, UK - Diliff.jpg | Old Court, Selwyn College, with the Chapel
+sidgwick | File:Cmglee Cambridge University Faculty of Law.jpg | The Faculty of Law on the Sidgwick Site
+sidney-sussex | File:Cloister Court, Sidney Sussex College.jpg | Cloister Court, Sidney Sussex College
+st-catharines | File:Main Court at St Catharine's College, Cambridge - geograph.org.uk - 3926464.jpg | Main Court, St Catharine's College, open to Trumpington Street
+st-edmunds | File:Main Court, St Edmund's College.jpg | Main Court, St Edmund's College
+st-johns | File:Cambridge - St John College - New Court.jpg | New Court, St John's College, across the river
+trinity | File:Trinity College - Great Court 02.jpg | Great Court, Trinity College
+trinity-hall | File:Front Court Trinity Hall, Cambridge.jpg | Front Court, Trinity Hall
+university-library | File:Main UL building.jpg | The University Library's tower from the west
+west-cambridge | File:West Hub, West Cambridge - geograph.org.uk - 7820140.jpg | The West Hub on JJ Thomson Avenue
+wolfson | File:Bredon House, Wolfson College Cambridge (13760253093).jpg | Bredon House, Wolfson College

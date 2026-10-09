@@ -91,18 +91,20 @@ export function connect() {
       const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
       if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
     },
-    /** Whether the venue already has a photo from `source` (so a list can be run again without doubling up). */
-    async hasPhoto(venue: string, source: string): Promise<boolean> {
-      const { count, error } = await sb.from('venue_photos').select('*', { count: 'exact', head: true }).eq('venue_id', venue).eq('source', source)
-      if (error) throw new Error(`venue_photos ${venue}: ${error.message}`)
+    /** Whether the venue or site (`subject`: "<site>/<venue>" or "<site>") already has a photo from `source`, so a list can be run again without doubling up. */
+    async hasPhoto(subject: string, source: string): Promise<boolean> {
+      const { count, error } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq(subject.includes('/') ? 'venue_id' : 'site', subject).eq('source', source)
+      if (error) throw new Error(`photos ${subject}: ${error.message}`)
       return !!count
     },
-    /** Adds a photo after the venue's others of its kind. */
-    async savePhoto(photo: { venue_id: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean }) {
-      const { count, error: countError } = await sb.from('venue_photos').select('*', { count: 'exact', head: true }).eq('venue_id', photo.venue_id).eq('kind', photo.kind)
-      if (countError) throw new Error(`venue_photos ${photo.venue_id}: ${countError.message}`)
-      const { error } = await sb.from('venue_photos').insert({ ...photo, position: count ?? 0 })
-      if (error) throw new Error(`venue_photos ${photo.venue_id}: ${error.message}`)
+    /** Adds a photo after the subject's others of its kind. */
+    async savePhoto(photo: { subject: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean }) {
+      const { subject, ...rest } = photo
+      const column = subject.includes('/') ? 'venue_id' : 'site'
+      const { count, error: countError } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq(column, subject).eq('kind', photo.kind)
+      if (countError) throw new Error(`photos ${subject}: ${countError.message}`)
+      const { error } = await sb.from('photos').insert({ ...rest, [column]: subject, position: count ?? 0 })
+      if (error) throw new Error(`photos ${subject}: ${error.message}`)
     },
     /** How many services after `date` are saved for this venue. */
     async savedAfter(venue: string, date: string): Promise<number> {

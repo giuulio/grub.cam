@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
+import { Buildings, GraduationCap } from 'reicon-react'
 import { TYPE_LABEL } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
-import { licenceUrl, photoSrc, sourceUrl, venuePhoto } from '../lib/photos.ts'
-import type { Photo, Venue, VenueType } from '../lib/types.ts'
+import { licenceUrl, photoSrc, sitePhoto, sourceUrl, venuePhoto } from '../lib/photos.ts'
+import type { Photo, Site, Venue, VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 
 /**
@@ -66,6 +67,36 @@ export function VenueThumb({ venue, className = 'size-16' }: { venue: Venue; cla
       className={`rounded-lg ${className}`}
       // The photo doesn't say what kind of venue it is: its mark does
       overlay={<TypeMark type={venue.type} className="absolute -right-1 -bottom-1 size-5 ring-2 ring-canvas" label />}
+    />
+  )
+}
+
+/**
+ * A site's picture in a list: its photo, cropped square; or, until it has one, a plain tile with a mortarboard for a
+ * college and a building for a University site. Decorative: the row names the site.
+ */
+export function SiteThumb({ site, className = 'size-16' }: { site: Site; className?: string }) {
+  const photo = sitePhoto(site)
+  const [failed, setFailed] = useState<string>()
+  if (!photo || failed === photo.path)
+    return (
+      <span className={`flex shrink-0 items-center justify-center rounded-lg bg-ink/6 text-muted ${className}`}>
+        <Icon of={site.kind === 'college' ? GraduationCap : Buildings} className="size-[40%]" />
+      </span>
+    )
+  return (
+    <img
+      src={photoSrc(photo, photo.widths.find((w) => w >= 240) ?? photo.widths.at(-1)!)}
+      srcSet={photo.widths.filter((w) => w <= 480).map((w) => `${photoSrc(photo, w)} ${w}w`).join(', ')}
+      sizes="4rem"
+      width={photo.width}
+      height={photo.height}
+      alt=""
+      loading="lazy"
+      ref={(el) => { if (el?.complete && !el.naturalWidth) setFailed(photo.path) }}
+      onError={() => setFailed(photo.path)}
+      style={{ backgroundColor: photo.color ?? undefined }}
+      className={`shrink-0 rounded-lg object-cover ${className}`}
     />
   )
 }

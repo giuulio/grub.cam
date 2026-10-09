@@ -1,4 +1,4 @@
-// Usage: npm run ingest:photo -- <site>/<venue> <photo.jpg | Commons file> --alt "The counter, from the door"
+// Usage: npm run ingest:photo -- <site>/<venue> | <site> <photo.jpg | Commons file> --alt "The counter, from the door"
 //          [--credit "Name"] [--licence "CC BY 4.0"] [--source "own photo"] [--taken 2026-10-09] [--kind venue|menu] [--dry]
 //        npm run ingest:photo -- --list photos.txt [--dry]
 // Makes the sizes a page needs (WebP, 240/480/960/1600 px wide, never wider than the original), writes them to
@@ -84,9 +84,10 @@ export async function fromCommons(title: string): Promise<{ image: Buffer; credi
 /** Where the files go: served by the site itself as /photos (VITE_PHOTOS_URL can move them elsewhere). */
 const PHOTOS_DIR = 'public/photos'
 
+/** `venue` is the subject: "<site>/<venue>", or "<site>" for a photo of the site itself (the college, the campus). */
 type Job = { venue: string; file: string; alt: string; credit?: string; licence?: string; source?: string; taken?: string; kind: 'venue' | 'menu' }
 
-/** `<site>/<venue> | <file> | <alt> [| <credit>]` lines, skipping blanks and # comments. */
+/** `<site>/<venue> | <file> | <alt> [| <credit>]` lines (or `<site> | …` for a site's photo), skipping blanks and # comments. */
 export function parseList(text: string): Job[] {
   return text
     .split('\n')
@@ -94,7 +95,7 @@ export function parseList(text: string): Job[] {
     .filter((l) => l && !l.startsWith('#'))
     .map((l, i) => {
       const [venue, file, alt, credit] = l.split('|').map((p) => p.trim())
-      if (!venue?.includes('/') || !file || !alt) throw new Error(`line ${i + 1}: expected "<site>/<venue> | <file> | <alt> [| <credit>]"`)
+      if (!venue || !file || !alt) throw new Error(`line ${i + 1}: expected "<site>/<venue> | <file> | <alt> [| <credit>]"`)
       return { venue, file, alt, ...(credit ? { credit } : {}), kind: 'venue' as const }
     })
 }
@@ -117,7 +118,8 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   if (values.list) jobs = parseList(readFileSync(values.list, 'utf8'))
   else {
     const [venue, file] = positionals
-    if (!venue?.includes('/') || !file || !values.alt) throw new Error('usage: npm run ingest:photo -- <site>/<venue> <photo.jpg | Commons file> --alt "what it shows" [--credit ...] [--dry]')
+    if (!venue || !file || !values.alt) throw new Error('usage: npm run ingest:photo -- <site>/<venue> | <site> <photo.jpg | Commons file> --alt "what it shows" [--credit ...] [--dry]')
+    if (values.kind === 'menu' && !venue.includes('/')) throw new Error('a menu-board photo belongs to a venue')
     if (values.kind !== 'venue' && values.kind !== 'menu') throw new Error('--kind is venue or menu')
     if (values.taken && !/^\d{4}-\d{2}-\d{2}$/.test(values.taken)) throw new Error('--taken is YYYY-MM-DD')
     jobs = [{ venue, file, alt: values.alt, credit: values.credit, licence: values.licence, source: values.source, taken: values.taken, kind: values.kind }]
@@ -154,7 +156,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
         writeFileSync(file, v.file)
       }
       await db.savePhoto({
-        venue_id: job.venue,
+        subject: job.venue,
         kind: job.kind,
         path,
         widths: variants.map((v) => v.width),

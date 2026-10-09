@@ -37,7 +37,7 @@ export function SitePage() {
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </div>
 
-      <ul className="grid gap-x-10 lg:grid-cols-2">
+      <ul>
         {rows.map((r) => (
           <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={nextService(r)?.items.map((i) => i.name)} showSite={false} />
         ))}

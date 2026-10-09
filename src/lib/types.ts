@@ -27,7 +27,7 @@ export function isFormalOnly(v: { formal?: object; slots: Slot[]; menu_channel?:
 }
 
 /** Where venues belong: a college, or a University site (West Cambridge, Sidgwick, a museum, ...). */
-export type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university'; official_dining_url: string | null; aliases?: string[] }
+export type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university'; official_dining_url: string | null; aliases?: string[]; /** Approved photos of the site, first shown */ photos?: Photo[] }
 
 /**
  * One line of the price list posted at a venue (venue_prices). With a `course`, the price of the day's dishes of that course

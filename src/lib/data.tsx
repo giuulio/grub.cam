@@ -18,7 +18,7 @@ type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal' | 'photos'> & 
   formal: Formal | null
   photos: (Photo & { kind: 'venue' | 'menu'; position: number })[]
 }
-type SiteRow = Site & { venues: VenueRow[] }
+type SiteRow = Omit<Site, 'photos'> & { venues: VenueRow[]; photos: (Photo & { position: number })[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
 const ITEMS = 'items:menu_items(name, tags, price_gbp, price2_gbp, price_text, course, sold_out)'
@@ -31,7 +31,7 @@ export async function load(): Promise<Data> {
   const [c, m] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos:venue_photos(kind, position, path, widths, width, height, color, alt, credit, licence, source), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos(kind, position, path, widths, width, height, color, alt, credit, licence, source), slots:service_slots(meal, days, start:start_time, end:end_time, period)), photos(position, path, widths, width, height, color, alt, credit, licence, source)')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),
@@ -50,7 +50,8 @@ export async function load(): Promise<Data> {
   for (const d of m.data) menus.set(d.venue_id, [...(menus.get(d.venue_id) ?? []), d])
   const sites: Site[] = []
   const venues: Venue[] = []
-  for (const { venues: rows, ...site } of c.data) {
+  for (const { venues: rows, photos: sitePhotos, ...rest } of c.data) {
+    const site: Site = { ...rest, photos: sitePhotos.sort((a, b) => a.position - b.position) }
     sites.push(site)
     for (const v of rows) {
       // Postgres `time` comes back as HH:MM:SS

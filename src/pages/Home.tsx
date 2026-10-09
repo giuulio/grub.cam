@@ -142,7 +142,7 @@ export function Home() {
       {list ? (
         <section aria-label="Matching venues">
           <p className="mb-1 text-sm text-muted">{count}</p>
-          {results.length ? <ul className="grid gap-x-10 lg:grid-cols-2">{results.map((r) => <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={resultDishes(r, f)} showSite={!f.site} date={f.date} showAccess />)}</ul> : <Empty onClear={clear} />}
+          {results.length ? <ul>{results.map((r) => <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={resultDishes(r, f)} showSite={!f.site} date={f.date} showAccess />)}</ul> : <Empty onClear={clear} />}
         </section>
       ) : (
         <section ref={mapShell} className={`explore-map-shell relative isolate overflow-hidden bg-ink/5 sm:rounded-xl sm:border sm:border-ink/10 ${selected || filtersShown ? 'has-panel' : ''}`} aria-label="Map of matching venues" onKeyDown={(e) => { if (e.key === 'Escape') select() }}>
