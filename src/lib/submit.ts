@@ -27,20 +27,21 @@ export async function shrink(file: File): Promise<File> {
   }
 }
 
-async function call(init: RequestInit): Promise<SubmitResult> {
-  const res = await fetch(URL_, { ...init, headers: { authorization: `Bearer ${KEY}`, apikey: KEY, ...(init.headers ?? {}) } })
+/** `token`: the signed-in sender's access token; the function needs a Cambridge account behind every submission. */
+async function call(token: string, init: RequestInit): Promise<SubmitResult> {
+  const res = await fetch(URL_, { ...init, headers: { authorization: `Bearer ${token}`, apikey: KEY, ...(init.headers ?? {}) } })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.error ?? `Something went wrong (${res.status})`)
   return body as SubmitResult
 }
 
-export function send(fields: { venue: string; kind: SubmitKind; date?: string; service?: string; note?: string; contact?: string; website?: string }, photo?: File): Promise<SubmitResult> {
+export function send(token: string, fields: { venue: string; kind: SubmitKind; date?: string; service?: string; note?: string; website?: string }, photo?: File): Promise<SubmitResult> {
   const form = new FormData()
   for (const [k, v] of Object.entries(fields)) if (v) form.set(k, v)
   if (photo) form.set('photo', photo, photo.name)
-  return call({ method: 'POST', body: form })
+  return call(token, { method: 'POST', body: form })
 }
 
-export function confirm(id: string, transcription: string): Promise<SubmitResult> {
-  return call({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'confirm', id, transcription }) })
+export function confirm(token: string, id: string, transcription: string): Promise<SubmitResult> {
+  return call(token, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'confirm', id, transcription }) })
 }

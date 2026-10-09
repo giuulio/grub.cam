@@ -8,6 +8,7 @@ import { useReady } from '../lib/data.tsx'
 import { DINING_MEALS } from '../lib/explore.ts'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
+import { isCamEmail, signIn, signOut, useSession } from '../lib/auth.ts'
 import { confirm, send, shrink, type SubmitKind, type SubmitResult } from '../lib/submit.ts'
 import type { Venue } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -28,6 +29,7 @@ const KINDS: [SubmitKind, string, string][] = [
 export function Send() {
   const { venues } = useReady()
   const now = useNow()
+  const session = useSession()
   const [params, setParams] = useSearchParams()
   const venue = venues.find((v) => v.id === params.get('venue'))
   const kind = (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu') as SubmitKind
@@ -38,7 +40,6 @@ export function Send() {
   const [photo, setPhoto] = useState<File>()
   const [preview, setPreview] = useState<string>()
   const [note, setNote] = useState('')
-  const [contact, setContact] = useState('')
   const [busy, setBusy] = useState<'sending' | 'confirming'>()
   const [error, setError] = useState<string>()
   const [result, setResult] = useState<SubmitResult>()
@@ -56,12 +57,12 @@ export function Send() {
   }
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!venue) return
+    if (!venue || !session) return
     if (!photo && !note.trim()) { setError('Add a photo or some text.'); return }
     setBusy('sending')
     setError(undefined)
     try {
-      const r = await send({ venue: venue.id, kind, date: kind === 'menu' ? date : undefined, service: kind === 'menu' ? service : undefined, note: note.trim(), contact: contact.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value }, photo)
+      const r = await send(session.access_token, { venue: venue.id, kind, date: kind === 'menu' ? date : undefined, service: kind === 'menu' ? service : undefined, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value }, photo)
       setResult(r)
       setText(r.transcription ?? '')
       if (!r.transcription) setDone(r)
@@ -72,11 +73,11 @@ export function Send() {
     }
   }
   const approve = async () => {
-    if (!result) return
+    if (!result || !session) return
     setBusy('confirming')
     setError(undefined)
     try {
-      setDone(await confirm(result.id, text))
+      setDone(await confirm(session.access_token, result.id, text))
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -85,6 +86,8 @@ export function Send() {
   }
 
   const back = venue ? venuePath(venue) : '/'
+  const here = `/send?${params}`
+  const email = session?.user.email
   return (
     <>
       <title>{`Send what you see · ${SITE_NAME}`}</title>
@@ -95,7 +98,17 @@ export function Send() {
           A photo of the menu board, the price list or the opening times, from where you are. We read it, you check what we read, and it goes up once someone has looked.
         </p>
 
-        {done ? (
+        {session === undefined ? null : !session || !isCamEmail(email) ? (
+          <section className="mt-8 space-y-4" aria-labelledby="sign-in">
+            <h2 id="sign-in" className="title text-2xl">Sign in with your Cambridge account</h2>
+            <p className="text-muted">Only University members can send things in, so we know what we're told comes from someone who was there. Microsoft sign-in with your @cam.ac.uk account; we keep your address with what you send and nothing else.</p>
+            {session && !isCamEmail(email) && <p role="alert" className="text-sm text-[var(--type-hall)]">{email} isn't a University account.</p>}
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => (session ? signOut().then(() => signIn(here)) : signIn(here))} className="btn btn-primary">Sign in</button>
+              <Link to="/terms" className="link text-sm text-muted">Terms and privacy</Link>
+            </div>
+          </section>
+        ) : done ? (
           <Thanks result={done} venue={venue ? { path: back, name: venue.name } : undefined} />
         ) : result ? (
           <section className="mt-8 space-y-4" aria-labelledby="check">
@@ -172,9 +185,9 @@ export function Send() {
               <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={5} className="w-full rounded-lg border border-ink/15 bg-canvas p-3 text-base leading-6 text-ink focus:border-ink/50 focus:outline-none sm:text-sm" aria-label="Text" />
             </Field>
 
-            <Field label="Your email (optional)" hint="Only so we can ask if something's unclear. Not shown, not shared.">
-              <input type="email" value={contact} onChange={(e) => setContact(e.target.value)} autoComplete="email" className="filter-select" />
-            </Field>
+            <p className="text-sm text-muted">
+              Sending as {email}. <button type="button" onClick={() => signOut()} className="link cursor-pointer">Not you?</button> Your address stays with what you send and isn't shown.
+            </p>
             {/* Bots fill every field; people never see this one */}
             <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 

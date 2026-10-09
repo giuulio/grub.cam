@@ -15,6 +15,7 @@ export type Submission = {
   note: string | null
   photo_path: string | null
   contact: string | null
+  user_email: string | null
   contributor_id: string | null
   transcription: string | null
   transcribed_by: string | null

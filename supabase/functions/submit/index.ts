@@ -9,6 +9,10 @@
 // the credit; past it, the row waits for a person. Contributors (table `contributors`) post JSON with a
 // X-Contributor-Token header and their own transcription; the ingest Action approves theirs.
 //
+// Every submission from the form has a signed-in sender: a Supabase Auth user (Microsoft sign-in, University tenant) with an
+// @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email. Contributors' token posts
+// don't need one.
+//
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
@@ -98,16 +102,27 @@ async function transcribe(c: Parameters<typeof prompt>[0], photo: { bytes: Uint8
   return null
 }
 
+/** The signed-in sender behind the request's bearer token, when it's a user's (not the anon key) and a University address. */
+async function senderOf(req: Request): Promise<{ id: string; email: string } | { error: string }> {
+  const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
+  if (!jwt || jwt === Deno.env.get('SUPABASE_ANON_KEY')) return { error: 'sign in with your Cambridge account to send things in' }
+  const { data, error } = await sb.auth.getUser(jwt)
+  if (error || !data.user) return { error: 'your sign-in has expired; sign in again' }
+  const email = data.user.email ?? ''
+  if (!/@cam\.ac\.uk$/i.test(email)) return { error: 'only University of Cambridge accounts (@cam.ac.uk) can send things in' }
+  return { id: data.user.id, email }
+}
+
 async function venueOf(id: string): Promise<Venue | null> {
   const { data } = await sb.from('venues').select('id, slug, name, type, site, sites(name, short_name)').eq('id', id).maybeSingle()
   return (data as Venue | null) ?? null
 }
 
 /** A sender confirming (possibly edited) text: it joins the review queue. Only while the row is fresh and unreviewed. */
-async function confirm(body: { id?: string; transcription?: string }): Promise<Response> {
+async function confirm(sender: { id: string }, body: { id?: string; transcription?: string }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
-  const { data: row } = await sb.from('submissions').select('id, status, transcription, created_at').eq('id', body.id).maybeSingle()
-  if (!row) return fail('no such submission', 404)
+  const { data: row } = await sb.from('submissions').select('id, status, transcription, created_at, user_id').eq('id', body.id).maybeSingle()
+  if (!row || row.user_id !== sender.id) return fail('no such submission', 404)
   if (!['received', 'transcribed'].includes(row.status)) return fail('already reviewed', 409)
   if (Date.now() - new Date(row.created_at).getTime() > 24 * 3600 * 1000) return fail('too late to change', 409)
   const text = body.transcription.trim().slice(0, 20000)
@@ -145,10 +160,15 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const token = req.headers.get('x-contributor-token')
     if (token) return contributorPost(token, body)
-    if (body.action === 'confirm') return confirm(body)
+    if (body.action === 'confirm') {
+      const sender = await senderOf(req)
+      return 'error' in sender ? fail(sender.error, 401) : confirm(sender, body)
+    }
     return fail('a photo or text goes as multipart/form-data; JSON is for confirming or for contributors')
   }
   if (!type.includes('multipart/form-data')) return fail('multipart/form-data expected')
+  const sender = await senderOf(req)
+  if ('error' in sender) return fail(sender.error, 401)
 
   const form = await req.formData()
   const field = (k: string) => {
@@ -165,7 +185,6 @@ Deno.serve(async (req) => {
   const service = field('service') || null
   if (service && !MEALS.includes(service)) return fail('unknown meal')
   const note = field('note').slice(0, 4000) || null
-  const contact = field('contact').slice(0, 200) || null
   const file = form.get('photo')
   const photo = file instanceof File && file.size > 0 ? file : null
   if (!photo && !note) return fail('send a photo or some text')
@@ -179,7 +198,7 @@ Deno.serve(async (req) => {
     if ((count ?? 0) >= PER_HOUR) return fail('that is plenty for one hour; thank you', 429)
   }
 
-  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, note, contact, ip_hash: ipHash }).select('id').single()
+  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash }).select('id').single()
   if (error) return fail(error.message, 500)
   const id: string = row.id
 

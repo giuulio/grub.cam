@@ -79,7 +79,7 @@ switch (command) {
     mkdirSync(dir, { recursive: true })
     console.log(line(s))
     if (s.date || s.service) console.log(`for: ${[s.date, s.service].filter(Boolean).join(' ')}`)
-    if (s.contact) console.log(`contact: ${s.contact}`)
+    if (s.user_email ?? s.contact) console.log(`from: ${s.user_email ?? s.contact}`)
     if (s.note) console.log(`\nnote:\n${s.note}`)
     if (s.photo_path) {
       const file = join(dir, s.photo_path)

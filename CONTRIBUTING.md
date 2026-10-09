@@ -4,7 +4,7 @@ Everything on the site is what a college or the University has published, or wha
 
 ## 1. Send what you see
 
-Every venue page has **Send a photo** links, and the footer has **Send a photo or a correction**: [grub.cam/send](https://grub.cam/send). A photo of the menu board, the price list or the opening times, and/or the text typed out. A model reads it into the format we store, you check what it read, and it goes up once a person has approved it. No account needed. This is the way for anything that changes rarely (prices, hours) and for members-only menus the scripts can't reach.
+Every venue page has **Send a photo** links, and the footer has **Send a photo or a correction**: [grub.cam/send](https://grub.cam/send). Sign in with your Cambridge (@cam.ac.uk) Microsoft account, then a photo of the menu board, the price list or the opening times, and/or the text typed out. A model reads it into the format we store, you check what it read, and it goes up once a person has approved it. This is the way for anything that changes rarely (prices, hours) and for members-only menus the scripts can't reach.
 
 ## 2. Post from your own script
 
