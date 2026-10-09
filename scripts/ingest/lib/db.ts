@@ -1,8 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 import type { MenuDay, PriceItem } from '../../schema.ts'
+import type { Hours } from '../hours.ts'
 import type { MenuSource } from './source.ts'
 
-type Method = 'script' | 'manual'
+type Method = 'script' | 'manual' | 'user' | 'contributor'
+
+/** A row of `submissions` as the CLI reads it (service role). */
+export type Submission = {
+  id: string
+  venue_id: string
+  kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other'
+  date: string | null
+  service: string | null
+  note: string | null
+  photo_path: string | null
+  contact: string | null
+  contributor_id: string | null
+  transcription: string | null
+  transcribed_by: string | null
+  model: string | null
+  status: 'received' | 'transcribed' | 'needs_review' | 'approved' | 'rejected'
+  review_note: string | null
+  created_at: string
+}
 
 /** Service-role client from VITE_SUPABASE_URL + SUPABASE_SECRET_KEY (.env is loaded if present). Never run in the browser. */
 export function connect() {
@@ -20,6 +40,51 @@ export function connect() {
     async saveMenu(venue: string, sourceUrl: string, fetchedAt: string, method: Method, days: MenuDay[]) {
       const { error } = await sb.rpc('save_menu', { p_venue_id: venue, p_source_url: sourceUrl, p_fetched_at: fetchedAt, p_method: method, p_days: days })
       if (error) throw new Error(`save_menu ${venue}: ${error.message}`)
+    },
+    /** Saves a venue's hours as slots, replacing its current ones unless `replace` is false. The source goes in each slot's prov. */
+    async saveHours(h: Hours, opts: { replace: boolean; source_kind: 'official' | 'reported'; submission?: string }) {
+      const [site, venue] = h.venue.split('/')
+      if (opts.replace) {
+        const { error } = await sb.from('service_slots').delete().eq('venue_id', h.venue)
+        if (error) throw new Error(`service_slots ${h.venue}: ${error.message}`)
+      }
+      const prov = { confidence: h.confidence, source_kind: opts.source_kind, observed_at: h.observed_on, source: h.source, ...(opts.submission ? { submission: opts.submission } : {}) }
+      const rows = h.slots.map((s) => ({ venue_id: h.venue, site, venue, meal: s.meal, days: s.days, start_time: s.start, end_time: s.end, period: s.period, note: s.note ?? null, prov }))
+      const { error } = await sb.from('service_slots').insert(rows)
+      if (error) throw new Error(`service_slots ${h.venue}: ${error.message}`)
+    },
+    /** A venue with what a transcription prompt needs to say about it. */
+    async venue(id: string) {
+      const { data, error } = await sb.from('venues').select('id, slug, name, type, site, sites(name, short_name)').eq('id', id).single()
+      if (error) throw new Error(`venues ${id}: ${error.message}`)
+      const v = data as unknown as { id: string; slug: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string; sites: { name: string; short_name: string | null } | null }
+      return { ...v, siteName: v.sites?.short_name ?? v.sites?.name ?? v.site }
+    },
+    /** The venue's current slots, for the CLI to show before replacing them. */
+    async slotsOf(venue: string) {
+      const { data, error } = await sb.from('service_slots').select('meal, days, start_time, end_time, period, note').eq('venue_id', venue).order('meal')
+      if (error) throw new Error(`service_slots ${venue}: ${error.message}`)
+      return data as { meal: string; days: string[]; start_time: string; end_time: string; period: string; note: string | null }[]
+    },
+    /** Submissions, newest last; `status` narrows, `trusted` keeps only contributors' rows. */
+    async submissions(filter: { status?: Submission['status'][]; trusted?: boolean; id?: string } = {}): Promise<Submission[]> {
+      let q = sb.from('submissions').select('*').order('created_at')
+      if (filter.id) q = q.eq('id', filter.id)
+      if (filter.status) q = q.in('status', filter.status)
+      if (filter.trusted) q = q.not('contributor_id', 'is', null)
+      const { data, error } = await q
+      if (error) throw new Error(`submissions: ${error.message}`)
+      return data as Submission[]
+    },
+    async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note'>> & { reviewed_at?: string }) {
+      const { error } = await sb.from('submissions').update(patch).eq('id', id)
+      if (error) throw new Error(`submissions ${id}: ${error.message}`)
+    },
+    /** The photo sent with a submission, as bytes. */
+    async submissionPhoto(path: string): Promise<Uint8Array> {
+      const { data, error } = await sb.storage.from('submissions').download(path)
+      if (error || !data) throw new Error(`submissions bucket ${path}: ${error?.message ?? 'no data'}`)
+      return new Uint8Array(await data.arrayBuffer())
     },
     /** Replaces the venue's price list. */
     async savePrices(venue: string, observedOn: string, source: string, items: PriceItem[]) {

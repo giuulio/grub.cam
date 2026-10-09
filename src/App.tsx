@@ -13,6 +13,7 @@ import { VenuePage } from './pages/Venue.tsx'
 import { Directory } from './pages/Directory.tsx'
 import { Terms } from './pages/Terms.tsx'
 import { Credits } from './pages/Credits.tsx'
+import { Send } from './pages/Send.tsx'
 
 function Layout() {
   const data = useData()
@@ -40,6 +41,7 @@ export default function App({ data }: { data: State }) {
           <Route path="terms" element={<Terms />} />
           <Route path="credits" element={<Credits />} />
           <Route path="directory" element={<Directory />} />
+          <Route path="send" element={<Send />} />
           {/* The two directories became one (public/_redirects does the same for links from outside) */}
           <Route path="colleges" element={<Navigate to="/directory?kind=college" replace />} />
           <Route path="university" element={<Navigate to="/directory?kind=university" replace />} />

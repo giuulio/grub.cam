@@ -43,9 +43,13 @@ export function About() {
           .
         </p>
         <p className="text-muted">
-          Something wrong?{' '}
+          In a café, hall or bar?{' '}
+          <Link to="/send" className="link text-ink">
+            Send a photo of its board, price list or opening times
+          </Link>
+          : a model reads it, you check what it read, and it goes up once a person has looked. Something wrong in the code?{' '}
           <a href={ISSUES_URL} target="_blank" rel="noopener" className="link text-ink">
-            Report it on GitHub
+            Open an issue
           </a>
           .
         </p>

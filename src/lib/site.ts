@@ -9,6 +9,9 @@ export const ISSUES_URL = `${REPO_URL}/issues`
 
 export const sitePath = (s: Pick<Site, 'slug'>) => `/${s.slug}`
 export const venuePath = (v: Pick<Venue, 'slug' | 'site'>) => `/${v.site.slug}/${v.slug}`
+/** The way to add what's missing: /send, with the venue and what it is filled in. */
+export const sendPath = (v: Pick<Venue, 'id'>, kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other', more: Record<string, string> = {}) =>
+  `/send?${new URLSearchParams({ venue: v.id, kind, ...more })}`
 
 /** "Jesus" -> "Jesus College"; Peterhouse and the Halls already are names; University sites are as stored. */
 export function siteName(s: Pick<Site, 'name' | 'kind'>): string {

@@ -14,7 +14,7 @@ import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { ACCESS_LABEL, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL } from '../lib/filters.ts'
 import { venuePhoto } from '../lib/photos.ts'
 import { formatGbp, priceGroups } from '../lib/prices.ts'
-import { ISSUES_URL, SITE_NAME, siteName } from '../lib/site.ts'
+import { sendPath, SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus, slotApplies } from '../lib/time/openNow.ts'
@@ -136,7 +136,7 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
     } else
       out.push(
         <Section key={t} title={title}>
-          <FixedMenu type={t} lines={groups[t] ?? []} terms={venue.price_terms} />
+          <FixedMenu venue={venue} type={t} lines={groups[t] ?? []} terms={venue.price_terms} />
         </Section>,
       )
   }
@@ -159,19 +159,19 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-const HelpLink = () => (
-  <Link to="/coverage" className="link text-ink">
-    Help get it here
+const HelpLink = ({ venue, kind, children = 'Send a photo of it' }: { venue: Venue; kind: 'menu' | 'prices' | 'hours'; children?: ReactNode }) => (
+  <Link to={sendPath(venue, kind)} className="link text-ink">
+    {children}
   </Link>
 )
 
 /** A café's or bar's list as posted: the same every day, so no dates. How its prices work, even before there's a list. */
-function FixedMenu({ type, lines, terms }: { type: VenueType; lines: VenuePrice[]; terms?: PriceTerms | null }) {
+function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueType; lines: VenuePrice[]; terms?: PriceTerms | null }) {
   if (!lines.length)
     return (
       <div className="space-y-2">
         <p className="text-muted">
-          {type === 'bar' ? 'No drinks prices here yet.' : 'No menu or prices here yet.'} <HelpLink />
+          {type === 'bar' ? 'No drinks prices here yet.' : 'No menu or prices here yet.'} <HelpLink venue={venue} kind="prices">Send a photo of the list</HelpLink>
         </p>
         {terms?.note && <p>{terms.note}</p>}
       </div>
@@ -268,7 +268,7 @@ function MissingMenu({ venue, published = true }: { venue: Venue; published?: bo
           : status === 'unpublished'
           ? 'The menu isn’t published anywhere we know of.'
           : 'No menu here yet.'}{' '}
-        <HelpLink />
+        <HelpLink venue={venue} kind="menu">{status === 'members' ? 'A member? Send a photo of today’s board' : 'Send a photo of the board'}</HelpLink>
       </p>
       {status === 'online' && venue.menu_url && (
         <div className="mt-2">
@@ -330,8 +330,6 @@ function Details({ venue }: { venue: Venue }) {
   const website = venue.url ?? venue.site.official_dining_url
   const payment = paymentText(venue.payment)
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
-  const report = `${ISSUES_URL}/new?title=${encodeURIComponent(`${venue.name}, ${siteName(venue.site)}: `)}`
-  const sendPhoto = `${ISSUES_URL}/new?title=${encodeURIComponent(`Photo: ${venue.name}, ${siteName(venue.site)}`)}`
   return (
     <ul className="order-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         <Fact icon={Users} known={venue.access.level !== 'unknown'}>
@@ -360,16 +358,16 @@ function Details({ venue }: { venue: Venue }) {
         {!venuePhoto(venue) && (
           <Fact icon={Gallery} known={false}>
             No photo yet.{' '}
-            <a href={sendPhoto} target="_blank" rel="noopener" className="link text-ink">
+            <Link to={sendPath(venue, 'photo')} className="link text-ink">
               Send one
-            </a>
+            </Link>
           </Fact>
         )}
         <li className="border-t border-ink/10 pt-3 sm:col-span-2 md:border-0 md:pt-0">
-          <a href={report} target="_blank" rel="noopener" className="flex items-center gap-3 text-sm text-muted transition-colors hover:text-ink">
+          <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-sm text-muted transition-colors hover:text-ink">
             <Icon of={Flag} />
             Report a change
-          </a>
+          </Link>
         </li>
     </ul>
   )
@@ -423,7 +421,9 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
           </tbody>
         </table>
       ) : (
-        <p className="text-muted">Not published</p>
+        <p className="text-muted">
+          Not published. <HelpLink venue={venue} kind="hours">Send a photo of the times</HelpLink>
+        </p>
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}
     </div>

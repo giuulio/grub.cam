@@ -26,6 +26,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ingest
+      # Contributors' submissions (their own scripts, posted with a token) are trusted: publish what's waiting
+      - if: ${{ !cancelled() }}
+        run: npm run submissions -- approve --trusted
       # Even if one source failed, the others were saved: rebuild anyway. Skipped until the hook exists.
       - if: ${{ !cancelled() }}
         run: '[ -z "$CF_PAGES_DEPLOY_HOOK" ] || curl -fsS -X POST "$CF_PAGES_DEPLOY_HOOK" > /dev/null'

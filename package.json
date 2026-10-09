@@ -10,6 +10,8 @@
     "ingest:manual": "tsx scripts/ingest/manual.ts",
     "ingest:prices": "tsx scripts/ingest/prices.ts",
     "ingest:photo": "tsx scripts/ingest/photo.ts",
+    "ingest:hours": "tsx scripts/ingest/hours.ts",
+    "submissions": "tsx scripts/ingest/submissions.ts",
     "search:snapshot": "tsx scripts/search-snapshot.ts",
     "test": "vitest run",
     "typecheck": "tsc -b && tsc -p tsconfig.scripts.json",

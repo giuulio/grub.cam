@@ -33,7 +33,8 @@ export function Footer() {
         </FooterLinks>
         <FooterLinks title="Project">
           <Link to="/about">About</Link>
-          <a href={ISSUES_URL} target="_blank" rel="noopener">Report an error</a>
+          <Link to="/send">Send a photo or a correction</Link>
+          <a href={ISSUES_URL} target="_blank" rel="noopener">Issues</a>
           <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>
           <Link to="/terms">Terms and privacy</Link>
           <Link to="/credits">Photo credits</Link>

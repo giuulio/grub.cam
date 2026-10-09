@@ -1,15 +1,10 @@
 import { useState } from 'react'
-import { ArrowRightUp } from 'reicon-react'
 import { Link, useSearchParams } from 'react-router'
 import { Segmented } from '../components/Controls.tsx'
-import { Icon } from '../components/Icon.tsx'
 import { CATEGORY_TITLES, coverage, coverageMatrix, menuWindow, type Category, type Cell } from '../lib/coverage.ts'
 import { useReady } from '../lib/data.tsx'
-import { ISSUES_URL, SITE_NAME, sitePath, venuePath } from '../lib/site.ts'
+import { SITE_NAME, sitePath, venuePath } from '../lib/site.ts'
 import type { Site } from '../lib/types.ts'
-
-// Until there's a way to send things in
-const HELP_URL = ISSUES_URL
 
 const SHORT: Record<string, string> = { 'Who can eat there': 'Access', 'Card payments': 'Cards' }
 const KINDS: [Site['kind'], string][] = [['college', 'Colleges'], ['university', 'University']]
@@ -69,10 +64,9 @@ export function CoveragePage() {
               value={order}
               onChange={setOrder}
             />
-            <a href={HELP_URL} target="_blank" rel="noopener" className="btn btn-primary">
+            <Link to="/send" className="btn btn-primary">
               Help fill the gaps
-              <Icon of={ArrowRightUp} className="size-3.5" />
-            </a>
+            </Link>
           </div>
         </div>
         <Legend />
