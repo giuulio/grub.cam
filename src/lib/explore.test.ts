@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { hasLocation, readExploreFilters, resultDishes } from './explore.ts'
 import { applyFilters, DEFAULT_FILTERS } from './filters.ts'
-import { clusterPoints } from './map.ts'
+import { sideBySide } from './map.ts'
 import type { Venue } from './types.ts'
 
 const today = '2026-10-08'
@@ -52,10 +52,13 @@ describe('verified map points', () => {
     expect(hasLocation({ ...venue, latitude: 92, longitude: 0.1 })).toBe(false)
     expect(hasLocation({ ...venue, latitude: 0, longitude: 0 })).toBe(true)
   })
-  it('keeps coincident venues selectable together and separates distant points', () => {
-    const points = [{ id: 'cafe', x: 0, y: 0 }, { id: 'bar', x: 0, y: 0 }, { id: 'hall', x: 100, y: 100 }]
-    expect(clusterPoints(points).map((g) => g.map((p) => p.id))).toEqual([['cafe', 'bar'], ['hall']])
-    expect(clusterPoints([{ x: 0, y: 0 }, { x: 30, y: 30 }])).toHaveLength(2)
-    expect(clusterPoints([])).toEqual([])
+  it('never merges places: those sharing a coordinate sit side by side, the rest stay on their point', () => {
+    const at = (id: string, latitude: number, longitude = 0.1) => ({ id, latitude, longitude })
+    const offsets = sideBySide([at('hall', 52.2), at('cafe', 52.2), at('bar', 52.2), at('near', 52.2001)])
+    expect([...offsets]).toEqual([['hall', [-30, 0]], ['cafe', [0, 0]], ['bar', [30, 0]]]) // 'near' keeps its own point
+    expect([...sideBySide([at('a', 52.2), at('b', 52.2)])]).toEqual([['a', [-15, 0]], ['b', [15, 0]]])
+    // Four or more: a centred grid, the last row centred too
+    expect([...sideBySide(['a', 'b', 'c', 'd', 'e'].map((id) => at(id, 52.2)))].map(([, o]) => o)).toEqual([[-30, -15], [0, -15], [30, -15], [-15, 15], [15, 15]])
+    expect(sideBySide([]).size).toBe(0)
   })
 })

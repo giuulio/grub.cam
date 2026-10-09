@@ -17,7 +17,6 @@ export function Home() {
   const now = useNow()
   const [params, setParams] = useSearchParams()
   const [filtersShown, setFiltersShown] = useState(false)
-  const [selectionGroup, setSelectionGroup] = useState<string[]>([])
   const page = useRef<HTMLDivElement>(null)
   const controls = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -48,7 +47,7 @@ export function Home() {
   }
   const set = (key: string, value?: string) => update((p) => { if (value) p.set(key, value); else p.delete(key) })
   const clear = () => update((p) => { for (const k of ['q', 'type', 'meal', 'diet', 'access', 'site', 'date', 'open', 'guests', 'card', 'more', 'place']) p.delete(k) })
-  const select = (id: string, group?: string[]) => { if (group) setSelectionGroup(group); set('place', id) }
+  const select = (id: string) => set('place', id)
 
   return (
     <div ref={page} className={`explore-page ${!list ? 'is-map' : ''}`}>
@@ -65,7 +64,7 @@ export function Home() {
             <Chip key={type} active={f.type === type} onClick={() => update((p) => {
               if (f.type === type) p.delete('type'); else p.set('type', type)
               p.delete('meal')
-            })}><Icon of={TYPE_ICON[type]} />{label}</Chip>
+            })}><span className="type-swatch" data-type={type}><Icon of={TYPE_ICON[type]} className="size-3" /></span>{label}</Chip>
           ))}
           <span className="mx-1 hidden h-5 border-l border-ink/15 sm:block" aria-hidden="true" />
           <Chip active={f.openNow} onClick={() => update((p) => {
@@ -126,10 +125,10 @@ export function Home() {
             <VenueMap results={results} selected={selected?.venue.id} onSelect={select} snapshot={snapshot} filtered={filtered} />
             {!results.length && <div className="absolute inset-x-4 top-20 z-[500] mx-auto max-w-sm rounded-2xl bg-canvas p-5 shadow-sm"><Empty onClear={clear} /></div>}
             {results.length > 0 && unmapped === results.length && <div className="absolute inset-x-4 top-24 z-[500] mx-auto max-w-sm rounded-2xl bg-canvas p-5 text-center shadow-sm"><p className="font-medium">{results.length === 1 ? 'This place isn’t mapped yet.' : 'These places aren’t mapped yet.'}</p><button type="button" onClick={() => set('view', 'list')} className="mt-3 text-sm underline underline-offset-4">View {results.length === 1 ? 'result' : 'results'}</button></div>}
-            {selected && <SelectedPlace r={selected} dishes={resultDishes(selected, f)} date={f.date} results={results} selectionGroup={selectionGroup} formalSelected={f.meal === 'formal'} onSelect={select} onClose={() => set('place')} />}
+            {selected && <SelectedPlace r={selected} dishes={resultDishes(selected, f)} date={f.date} results={results} formalSelected={f.meal === 'formal'} onSelect={select} onClose={() => set('place')} />}
           </section>
           <div className="explore-map-note mt-3 flex flex-wrap justify-between gap-2 text-xs text-muted">
-            <span>{snapshot ? 'Choose a pin to see a place.' : 'Filled pins include places open now. Choose a pin to explore.'}</span>
+            <span>{snapshot ? 'Choose a pin to see a place.' : 'Filled pins are open now. Choose a pin to explore.'}</span>
             {unmapped > 0 && <button type="button" onClick={() => set('view', 'list')} className="underline underline-offset-4">{unmapped} {unmapped === 1 ? 'place' : 'places'} awaiting a map location · See all results</button>}
           </div>
         </>
@@ -146,13 +145,14 @@ function Empty({ onClear }: { onClear: () => void }) {
   return <div className="py-5 text-center"><p className="font-medium">No places match.</p><button type="button" onClick={onClear} className="mt-2 text-sm text-muted underline underline-offset-4">Clear filters</button></div>
 }
 
-function SelectedPlace({ r, dishes, date, results, selectionGroup, formalSelected, onSelect, onClose }: { r: Ranked; dishes: string[]; date: string; results: Ranked[]; selectionGroup: string[]; formalSelected: boolean; onSelect: (id: string) => void; onClose: () => void }) {
+function SelectedPlace({ r, dishes, date, results, formalSelected, onSelect, onClose }: { r: Ranked; dishes: string[]; date: string; results: Ranked[]; formalSelected: boolean; onSelect: (id: string) => void; onClose: () => void }) {
   const { snapshot } = useReady()
   const now = useNow()
   const v = r.venue
   const close = useRef<HTMLButtonElement>(null)
   useEffect(() => { close.current?.focus({ preventScroll: true }) }, [v.id])
-  const others = results.filter((o) => o.venue.id !== v.id && (selectionGroup.includes(o.venue.id) || hasLocation(v) && hasLocation(o.venue) && Math.abs(v.latitude - o.venue.latitude) < 0.00001 && Math.abs(v.longitude - o.venue.longitude) < 0.00001))
+  // Places in the same building (same point), whose pins sit beside this one
+  const others = results.filter((o) => o.venue.id !== v.id && hasLocation(v) && hasLocation(o.venue) && v.latitude === o.venue.latitude && v.longitude === o.venue.longitude)
   const formal = r.status.kind === 'open' && r.status.slot.meal === 'formal'
   const status = r.status.kind === 'open' ? `${formal ? 'Formal hall' : 'Open'} until ${r.status.slot.end}` : r.status.kind === 'opening' ? `Opens at ${r.status.slot.start}` : r.status.kind === 'unknown' ? 'Hours not published' : r.status.next ? `Opens ${r.status.next.date === now.date ? 'today' : formatISODate(r.status.next.date)} at ${r.status.next.slot.start}` : 'Closed'
   return (
@@ -166,7 +166,7 @@ function SelectedPlace({ r, dishes, date, results, selectionGroup, formalSelecte
       {(formalSelected || formal || v.formal && !v.slots.some((s) => s.meal !== 'formal')) && <p className="mt-1 text-xs text-muted">Booking required for formal hall.</p>}
       {dishes.length > 0 && <div className="mt-4 border-t border-ink/10 pt-3"><p className="text-xs text-muted">{formatISODate(date)}</p><p className="mt-1 text-sm">{dishes.slice(0, 3).join(' · ')}</p></div>}
       <Link to={`${venuePath(v)}?date=${date}`} className="mt-4 inline-flex min-h-10 items-center rounded-full bg-ink px-4 py-2 text-sm font-medium text-canvas">Menus & details <span className="ml-2" aria-hidden="true">→</span></Link>
-      {others.length > 0 && <div className="mt-4 border-t border-ink/10 pt-3"><p className="mb-1 text-xs text-muted">Also at this pin</p>{others.map((o) => <button key={o.venue.id} type="button" onClick={() => onSelect(o.venue.id)} className="block min-h-10 w-full py-2 text-left text-sm underline underline-offset-4">{o.venue.site.slug !== v.site.slug ? `${o.venue.site.short_name ?? o.venue.site.name} · ` : ''}{o.venue.name}</button>)}</div>}
+      {others.length > 0 && <div className="mt-4 border-t border-ink/10 pt-3"><p className="mb-1 text-xs text-muted">Also here</p>{others.map((o) => <button key={o.venue.id} type="button" onClick={() => onSelect(o.venue.id)} className="block min-h-10 w-full py-2 text-left text-sm underline underline-offset-4">{o.venue.site.slug !== v.site.slug ? `${o.venue.site.short_name ?? o.venue.site.name} · ` : ''}{o.venue.name}</button>)}</div>}
     </div>
   )
 }

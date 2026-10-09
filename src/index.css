@@ -80,44 +80,67 @@ select option, select optgroup {
   border: 0;
 }
 
+/* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
+.venue-pin-target.is-shared { width: 30px; }
+
+/* Venue types in the Cambridge palette (cam.ac.uk/brand-resources/guidelines/colour): Dark Crest, Indigo, Dark Cherry,
+   Slate 3. Validated as categorical colours against both basemaps, park green and the white ring; the same in both
+   themes, where the white ring carries contrast on the dark map. The icon repeats the type, so colour is never alone. */
+:root {
+  --type-hall: #dd3025;
+  --type-cafe: #5366e0;
+  --type-bar: #911449;
+  --type-other: #546072;
+}
+
 .venue-pin {
+  --pin: var(--type-other);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--map-ink);
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--pin);
   border-radius: 50%;
-  background: var(--map-canvas);
-  color: var(--map-ink);
-  box-shadow: 0 2px 6px #0003;
+  background: #fff;
+  color: var(--pin);
+  box-shadow: 0 1px 4px #0005;
+  transition: transform 120ms ease-out;
 }
+:is(.venue-pin, .type-swatch)[data-type='hall'] { --pin: var(--type-hall); }
+:is(.venue-pin, .type-swatch)[data-type='cafe'] { --pin: var(--type-cafe); }
+:is(.venue-pin, .type-swatch)[data-type='bar'] { --pin: var(--type-bar); }
 
+/* Open now: filled. */
 .venue-pin.is-open {
-  background: var(--map-ink);
-  color: var(--map-canvas);
+  border-color: #fff;
+  background: var(--pin);
+  color: #fff;
 }
 
+/* Selected: Cambridge Blue on Cambridge Dark Blue, visible on either basemap. */
 .venue-pin.is-selected {
-  border-color: var(--color-accent-ink);
-  background: var(--color-accent);
-  color: var(--color-accent-ink);
-  box-shadow: 0 0 0 5px #8ee8d855;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px #8ee8d8, 0 0 0 5px #133844;
 }
 
-.venue-pin.is-cluster {
-  width: 34px;
-  height: 34px;
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+@media (prefers-reduced-motion: reduce) {
+  .venue-pin { transition: none; }
 }
 
-.venue-pin:not(.is-cluster) > span {
-  width: 5px;
-  height: 5px;
+/* The type filters double as the map's legend: a filled pin in miniature. */
+.type-swatch {
+  --pin: var(--type-other);
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--pin);
+  color: #fff;
+  box-shadow: 0 0 0 1.5px #fff;
 }
 
 .venue-map[data-map-theme='dark'] {
@@ -153,8 +176,8 @@ select option, select optgroup {
   height: 18px;
   border: 3px solid #fff;
   border-radius: 50%;
-  background: #2563eb;
-  box-shadow: 0 0 0 6px #2563eb26;
+  background: #00bdb6; /* Cambridge Warm Blue: no venue type uses it */
+  box-shadow: 0 0 0 1px #133844, 0 0 0 7px #00bdb633;
 }
 
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-icon,
