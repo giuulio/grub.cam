@@ -1,43 +1,91 @@
 @import 'tailwindcss';
 
+/*
+ * Type: Michelangelus for place names and titles, Chirp (X's interface font) for everything else, when installed.
+ * These fonts aren't distributed here: Michelangelus's download licence excludes redistribution, and Chirp has no
+ * public web-use licence. Source Serif 4 and Public Sans remain self-hosted fallbacks (main.tsx).
+ * No font service sees a visitor's IP.
+ *
+ * Colour: the University's palette (cam.ac.uk/brand-resources/guidelines/colour). Slate for text; Cambridge Blue for
+ * what's picked and what's open; Cambridge Dark Blue for the one main action and focus. Dark mode is Dark Blue's hue,
+ * deepened. Pairs follow the guidelines' approved text/background pairs: Dark Blue on Cambridge or Light Blue, white or
+ * Light Blue on Dark Blue.
+ */
 @theme {
+  --font-sans: 'Chirp', 'TwitterChirp', 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Michelangelus', 'Source Serif 4 Variable', ui-serif, Georgia, serif;
   --color-canvas: var(--canvas);
+  --color-raised: var(--raised);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
-  --color-accent: #8ee8d8;
-  --color-accent-ink: #133844;
+  --color-action: var(--action);
+  --color-action-ink: var(--action-ink);
+  --color-accent: #8ee8d8; /* Cambridge Blue */
+  --color-accent-ink: #133844; /* Cambridge Dark Blue */
+  --color-open: var(--open);
+  --color-open-ink: var(--open-ink);
 }
 
 :root {
   color-scheme: light;
   --canvas: #ffffff;
-  --ink: #232830;
-  --muted: #546072;
+  --raised: #ffffff;
+  --ink: #232830; /* Slate 4 */
+  --muted: #546072; /* Slate 3 */
+  --action: #133844; /* Dark Blue, white on it */
+  --action-ink: #ffffff;
+  --open: #d1f9f1; /* Light Blue, Dark Blue on it */
+  --open-ink: #133844;
+  --focus: #133844;
+  --raised-shadow: 0 1px 2px #1338440f, 0 6px 20px #13384424;
+  --raised-border: transparent;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --canvas: #1e1e1e;
-    --ink: #eceef1;
-    --muted: #b5bdc8;
+    --canvas: #0d1c21;
+    --raised: #16282f;
+    --ink: #eceef1; /* Slate 1 */
+    --muted: #b5bdc8; /* Slate 2 */
+    --action: #8ee8d8; /* Cambridge Blue, Dark Blue on it */
+    --action-ink: #133844;
+    --open: #133844;
+    --open-ink: #d1f9f1;
+    --focus: #8ee8d8;
+    --raised-shadow: 0 6px 24px #0008;
+    --raised-border: #ffffff1a;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --canvas: #1e1e1e;
+  --canvas: #0d1c21;
+  --raised: #16282f;
   --ink: #eceef1;
   --muted: #b5bdc8;
+  --action: #8ee8d8;
+  --action-ink: #133844;
+  --open: #133844;
+  --open-ink: #d1f9f1;
+  --focus: #8ee8d8;
+  --raised-shadow: 0 6px 24px #0008;
+  --raised-border: #ffffff1a;
 }
 
-body {
-  @apply bg-canvas font-sans text-ink antialiased;
-}
-
-:focus-visible {
-  outline: 2px solid var(--muted);
-  outline-offset: 4px;
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, h4 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  button, a, input, select, label { touch-action: manipulation; }
+  /* In the base layer, so a component can move the ring (a search box draws it, not the input inside) */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
 }
 
 select option, select optgroup {
@@ -45,8 +93,63 @@ select option, select optgroup {
   color: var(--ink);
 }
 
-.filter-select {
-  @apply block h-11 w-full min-w-0 rounded-xl border border-ink/15 bg-canvas px-3 text-base text-ink sm:h-10 sm:text-sm;
+@layer components {
+  /* A page or section title: the serif, upright, never tracked. */
+  .title {
+    @apply font-display font-semibold text-ink;
+  }
+
+  /* A link in running text: Warm Blue underline, ink on hover. */
+  .link {
+    @apply underline decoration-[#00bdb6] decoration-[1.5px] underline-offset-[3px] transition-colors hover:decoration-current;
+  }
+
+  /* Something that floats over the page or the map: a shadow in light mode, an edge in dark (shadows don't show). */
+  .raised {
+    background: var(--raised);
+    box-shadow: var(--raised-shadow);
+    outline: 1px solid var(--raised-border);
+    outline-offset: -1px;
+  }
+
+  /* Buttons and chips: one height for a row of controls, 44px on a phone, 40px above. */
+  .btn {
+    @apply inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-colors disabled:cursor-default disabled:opacity-60 sm:h-10;
+  }
+  .btn-primary {
+    @apply bg-action text-action-ink hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply border border-ink/15 bg-canvas text-ink hover:border-ink/40;
+  }
+  .chip {
+    @apply inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ink/15 bg-canvas px-3 text-sm whitespace-nowrap text-ink transition-colors hover:border-ink/40 sm:h-10;
+  }
+  /* Picked (a filter that's on): Cambridge Blue. A chip that opens a panel only darkens its edge while open. */
+  .chip[aria-pressed='true'], .chip[data-on] {
+    @apply border-accent bg-accent font-medium text-accent-ink;
+  }
+  .chip[aria-expanded='true']:not([data-on]) {
+    @apply border-ink/60;
+  }
+
+  .icon-btn {
+    @apply flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors hover:bg-ink/8 hover:text-ink disabled:cursor-default disabled:text-ink/30 disabled:hover:bg-transparent;
+  }
+
+  /* A search box: the field draws the focus ring, not the input inside it. */
+  .field {
+    @apply flex h-11 w-full items-center gap-2.5 rounded-lg border border-ink/15 bg-canvas px-3.5 text-muted transition-colors focus-within:border-ink/50 sm:h-10;
+  }
+  .field:has(input:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .field input { @apply w-full min-w-0 bg-transparent text-base text-ink outline-none placeholder:text-muted sm:text-sm; }
+
+  .filter-select {
+    @apply block h-11 w-full min-w-0 rounded-lg border border-ink/15 bg-canvas px-3 text-base text-ink sm:h-10 sm:text-sm;
+  }
 }
 
 /* Safari pins a date field's text to the top of a fixed height: size it by its line instead, centred. 16px text on a
@@ -61,6 +164,55 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   margin: 0;
 }
 
+/* Venue types in the Cambridge palette: Dark Crest, Warm Blue, Dark Cherry. Validated as categorical colours against
+   both basemaps (worst pair Crest/Cherry, ΔE 15.9 under protanopia); the same in both themes, where the white ring
+   carries contrast on the dark map. Warm Blue is light, so what sits on it is Dark Blue. The icon or a label repeats
+   the type, so colour is never alone. */
+:root {
+  --type-hall: #dd3025;
+  --type-cafe: #00bdb6;
+  --type-bar: #911449;
+}
+[data-type='hall'] { --pin: var(--type-hall); --pin-ink: #fff; --tint: #ffe2c8; --tint-ink: #b8231b; }
+[data-type='cafe'] { --pin: var(--type-cafe); --pin-ink: #133844; --tint: #d1f9f1; --tint-ink: #133844; }
+[data-type='bar'] { --pin: var(--type-bar); --pin-ink: #fff; --tint: #f2cad8; --tint-ink: #911449; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) [data-type] { --tint: color-mix(in srgb, var(--pin) 24%, var(--canvas)); --tint-ink: color-mix(in srgb, var(--pin) 45%, #fff); }
+}
+:root[data-theme='dark'] [data-type] { --tint: color-mix(in srgb, var(--pin) 24%, var(--canvas)); --tint-ink: color-mix(in srgb, var(--pin) 45%, #fff); }
+
+/* A type's colour with its icon: the chips, headings and the directory use it, so they read as the map's key. */
+.type-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pin, var(--muted));
+  color: var(--pin-ink, #fff);
+}
+
+/* Where a venue has no photo yet: its type, as a tile the size of one. */
+.type-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tint);
+  color: var(--tint-ink);
+}
+
+/* The map key's dot for a type. */
+.type-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pin, var(--muted));
+}
+
 .venue-map {
   width: 100%;
   --map-canvas: #fff;
@@ -70,10 +222,6 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   background: #f4f1ec;
   font: inherit;
   z-index: 0;
-}
-
-.map-action {
-  @apply min-h-11 cursor-pointer rounded-full border border-ink/15 bg-canvas px-4 text-sm text-ink shadow-sm sm:min-h-9 sm:px-3.5;
 }
 
 /* Above a phone, the map fills the rest of the screen (--map-top is measured by Explore). */
@@ -96,40 +244,17 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 /* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
 .venue-pin-target.is-shared { width: 30px; }
 
-/* Venue types in the Cambridge palette (cam.ac.uk/brand-resources/guidelines/colour): Dark Crest, Indigo, Dark Cherry.
-   Validated as categorical colours against both basemaps, park green and the white ring; the same in both
-   themes, where the white ring carries contrast on the dark map. The icon repeats the type, so colour is never alone. */
-:root {
-  --type-hall: #dd3025;
-  --type-cafe: #5366e0;
-  --type-bar: #911449;
-}
-
 /* A dot per place, no icon: a ring of its type's colour around white, filled when open now. The white halo keeps it
    clear of both basemaps. */
 .venue-pin {
-  --pin: var(--muted);
   display: block;
   width: 16px;
   height: 16px;
-  border: 4px solid var(--pin);
+  border: 4px solid var(--pin, var(--muted));
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 0 0 1.5px #fff, 0 1px 3px #0006;
   transition: transform 120ms ease-out;
-}
-:is(.venue-pin, .type-swatch, .type-dot)[data-type='hall'] { --pin: var(--type-hall); }
-:is(.venue-pin, .type-swatch, .type-dot)[data-type='cafe'] { --pin: var(--type-cafe); }
-:is(.venue-pin, .type-swatch, .type-dot)[data-type='bar'] { --pin: var(--type-bar); }
-
-/* The map key's dot for a type. */
-.type-dot {
-  --pin: var(--muted);
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--pin);
 }
 
 /* Open now: filled. */
@@ -145,25 +270,10 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .venue-pin { transition: none; }
 }
 
-/* The type filters double as the map's legend: a filled pin in miniature. */
-.type-swatch {
-  --pin: var(--muted);
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--pin);
-  color: #fff;
-  box-shadow: 0 0 0 1.5px #fff;
-}
-
 .venue-map[data-map-theme='dark'] {
-  --map-canvas: #242e3d;
-  --map-ink: #f0f4f8;
-  --map-attribution: #242e3ded;
+  --map-canvas: #16282f;
+  --map-ink: #eceef1;
+  --map-attribution: #16282fed;
   background: #242e3d;
 }
 
@@ -171,7 +281,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .venue-map .maplibregl-ctrl-group {
   background: var(--map-canvas);
   color: var(--map-ink);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -188,18 +298,50 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 }
 .venue-map .maplibregl-ctrl-attrib a { color: var(--map-ink); }
 
+/* You are here: Dark Blue in a white ring, haloed in Cambridge Blue; no venue type uses either. */
 .map-user-location {
   width: 18px;
   height: 18px;
   border: 3px solid #fff;
   border-radius: 50%;
-  background: #00bdb6; /* Cambridge Warm Blue: no venue type uses it */
-  box-shadow: 0 0 0 1px #133844, 0 0 0 7px #00bdb633;
+  background: #133844;
+  box-shadow: 0 0 0 7px #8ee8d866, 0 1px 3px #0006;
 }
 
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-icon,
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-attrib-button {
   filter: invert(1);
+}
+
+/* Explore's filters: in the list, a box under the controls that pushes the list down. */
+#explore-filters {
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--canvas);
+}
+.is-map #explore-filters {
+  border: 0;
+  background: var(--raised);
+}
+
+/* Over the map, a place picked on it and the filters open in one panel down the map's left side (as Google Maps
+   does), and what sat in that corner moves over beside it. The filters sit in the controls above the map, so they're
+   placed from there: 1rem below them is the map's top edge. */
+@media (min-width: 640px) {
+  .explore-page { --panel-w: 22rem; }
+  .is-map #explore-filters {
+    position: absolute;
+    top: calc(100% + 1rem + 0.75rem + 1px);
+    left: calc(0.75rem + 1px);
+    width: var(--panel-w);
+    max-height: calc(max(26rem, calc(100svh - var(--map-top, 12rem) - 1.5rem)) - 1.5rem - 2px);
+    margin: 0;
+    overflow-y: auto;
+    box-shadow: var(--raised-shadow);
+    outline: 1px solid var(--raised-border);
+    outline-offset: -1px;
+  }
+  .explore-map-shell.has-panel .map-actions,
+  .explore-map-shell.has-panel .map-key { left: calc(var(--panel-w) + 1.5rem); }
 }
 
 @media (max-width: 639px) {
@@ -247,13 +389,9 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 
   .is-map .explore-clear span { display: none; }
 
-  .is-map .explore-chips button {
-    background: var(--canvas);
+  .is-map .explore-chips .chip:not([aria-pressed='true']):not([data-on]) {
+    background: var(--raised);
     box-shadow: 0 1px 5px #0002;
-  }
-
-  .is-map .explore-chips button[aria-pressed='true'] {
-    background: var(--ink);
   }
 
   .is-map #explore-filters:not([hidden]) {
@@ -262,14 +400,12 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 
   .is-map .explore-controls > p,
   .is-map .explore-controls > [aria-label='Dining meal'] {
-    border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 12px;
-    background: var(--canvas);
+    background: var(--raised);
     box-shadow: 0 2px 8px #0002;
   }
 
   .is-map .map-actions { top: auto; bottom: 64px; left: 12px; }
   .is-map .maplibregl-ctrl-top-right { top: auto; bottom: 64px; }
-  .is-map .selected-place { max-height: min(65%, calc(100% - 220px)); }
 }

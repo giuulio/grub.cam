@@ -15,14 +15,14 @@ export function Footer() {
     <footer className="mt-16 border-t border-ink/10 text-sm">
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="max-w-sm">
-          <p className="font-semibold tracking-tight">{SITE_NAME}</p>
+          <p className="title text-lg">{SITE_NAME}</p>
           <p className="mt-2 text-muted">Menus, opening hours and who can go in, for Cambridge college and University dining halls, cafés and bars.</p>
           {data.status === 'ready' && menus && (
             <p className="mt-4 text-muted">
-              <Link to="/coverage" className="underline decoration-ink/30 underline-offset-4 transition-colors hover:text-ink hover:decoration-ink">
+              <Link to="/coverage" className="link hover:text-ink">
                 Menus for {menuWindow(data, true)} from {menus.have} of {menus.of} colleges
               </Link>
-              {updated && <span> · updated {updated}</span>}
+              {updated && <span>, updated {updated}</span>}
             </p>
           )}
         </div>
@@ -36,6 +36,7 @@ export function Footer() {
           <a href={ISSUES_URL} target="_blank" rel="noopener">Report an error</a>
           <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>
           <Link to="/terms">Terms and privacy</Link>
+          <Link to="/credits">Photo credits</Link>
         </FooterLinks>
       </Container>
       <div className="border-t border-ink/10">

@@ -26,6 +26,12 @@ export function connect() {
       const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
       if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
     },
+    /** Whether the venue already has a photo from `source` (so a list can be run again without doubling up). */
+    async hasPhoto(venue: string, source: string): Promise<boolean> {
+      const { count, error } = await sb.from('venue_photos').select('*', { count: 'exact', head: true }).eq('venue_id', venue).eq('source', source)
+      if (error) throw new Error(`venue_photos ${venue}: ${error.message}`)
+      return !!count
+    },
     /** Adds a photo after the venue's others of its kind. */
     async savePhoto(photo: { venue_id: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean }) {
       const { count, error: countError } = await sb.from('venue_photos').select('*', { count: 'exact', head: true }).eq('venue_id', photo.venue_id).eq('kind', photo.kind)

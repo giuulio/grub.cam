@@ -11,7 +11,10 @@ export type DietTag = z.infer<typeof DietTag>
 export const Dish = z.object({
   name: z.string().min(1),
   tags: z.array(DietTag).default([]),
+  /** The first price posted; whose it is (members', students') is the venue's `price_terms` */
   price_gbp: z.number().optional(),
+  /** The second price posted (non-members', others'), when there is one */
+  price2_gbp: z.number().optional(),
   price_text: z.string().optional(),
   course: z.enum(['soup', 'main', 'side', 'dessert', 'other']).optional(),
   sold_out: z.boolean().optional(),
@@ -34,7 +37,11 @@ export type PriceCourse = z.infer<typeof PriceCourse>
 export const PriceItem = z.object({
   section: z.string().optional(),
   name: z.string().min(1),
-  price_gbp: z.number().nonnegative(),
+  /** The first price posted, or the low end of a range; absent when only the second tier is priced */
+  price_gbp: z.number().nonnegative().optional(),
+  /** The top of a range ("£3.24–£3.96") */
+  price_max_gbp: z.number().nonnegative().optional(),
+  /** The second price posted: the venue's second tier, non-members' by default */
   non_member_gbp: z.number().nonnegative().optional(),
   /** The meals it applies to; every meal when absent */
   services: z.array(Meal).min(1).optional(),

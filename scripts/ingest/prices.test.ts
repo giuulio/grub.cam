@@ -44,3 +44,18 @@ describe('parseGbp', () => {
     expect(() => parseGbp('free')).toThrow()
   })
 })
+
+describe('parseGbp ranges', () => {
+  it('reads a range as posted, and a single price as itself', () => {
+    const p = parsePrices('site: h\nvenue: buttery\nsource: s\nobserved: 2026-01-01\n---\nSandwiches | £3.24-£3.96\nSalad bowl | £2.71\nVegetable side | £0.82–1.11')
+    expect(p.items.map((i) => [i.price_gbp, i.price_max_gbp])).toEqual([[3.24, 3.96], [2.71, undefined], [0.82, 1.11]])
+  })
+})
+
+describe('second tier only', () => {
+  it('takes a line priced for the second tier alone, but not a line with no price', () => {
+    const p = parsePrices("site: c\nvenue: hall\nsource: s\nobserved: 2026-10-09\n---\nStudent's first guest | | £21.00")
+    expect(p.items).toEqual([{ section: undefined, name: "Student's first guest", non_member_gbp: 21 }])
+    expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-09\n---\nSoup | |')).toThrow(/expected/)
+  })
+})

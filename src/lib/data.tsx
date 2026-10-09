@@ -21,7 +21,7 @@ type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal' | 'photos'> & 
 type SiteRow = Site & { venues: VenueRow[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
-const ITEMS = 'items:menu_items(name, tags, price_gbp, price_text, course, sold_out)'
+const ITEMS = 'items:menu_items(name, tags, price_gbp, price2_gbp, price_text, course, sold_out)'
 const MENU_DAYS = 7
 
 /** Everything the pages need up front: sites, venues, hours and the next week of menus. */
@@ -31,7 +31,7 @@ export async function load(): Promise<Data> {
   const [c, m] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, prices:venue_prices(position, section, name, price_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos:venue_photos(kind, position, path, widths, width, height, color, alt, credit), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, access, payment, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos:venue_photos(kind, position, path, widths, width, height, color, alt, credit, licence, source), slots:service_slots(meal, days, start:start_time, end:end_time, period))')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),

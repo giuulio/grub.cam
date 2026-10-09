@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Calendar, Card, Flag, Global, Leaf, Map as MapIcon, Users } from 'reicon-react'
+import { Calendar, Card, Flag, Gallery, Global, Leaf, Map as MapIcon, Users } from 'reicon-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { BackButton } from '../components/BackButton.tsx'
 import { DayMenu } from '../components/DayMenu.tsx'
@@ -7,25 +7,27 @@ import { ExternalLink } from '../components/ExternalLink.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { ListNote, PriceList } from '../components/MenuRows.tsx'
-import { VenuePhoto } from '../components/VenuePhoto.tsx'
+import { Status } from '../components/Status.tsx'
+import { TypeMark, VenueBanner } from '../components/VenuePhoto.tsx'
 import { menuGap } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { ACCESS_LABEL, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL } from '../lib/filters.ts'
-import { TYPE_ICON } from '../lib/icons.ts'
+import { venuePhoto } from '../lib/photos.ts'
 import { formatGbp, priceGroups } from '../lib/prices.ts'
 import { ISSUES_URL, SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
-import { dayLabel, dayOfISO, formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
-import { openStatus, slotApplies, type OpenStatus } from '../lib/time/openNow.ts'
+import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
+import { openStatus, slotApplies } from '../lib/time/openNow.ts'
 import { isFullTerm } from '../lib/time/termDates.ts'
-import { isFormalOnly, venueTypes, type Channel, type DietTag, type Formal, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { isFormalOnly, venueTypes, type Channel, type DietTag, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 /**
- * A venue's page, the same for every kind: name, site and types; a photo and the facts (open now, hours, access,
- * payment, diets, links); then one section per thing it is, each shown even when nothing is known yet. Dining leads
- * with the menu for a date, then formal hall where it's held (first, in a Hall used only for formals); a café or bar
- * leads with its price list, and a café that's a bar by night has both.
+ * A venue's page, the same for every kind: its photo across the top; name, site and types; beside them whether it's
+ * open, its hours, the menu calendar and the facts (access, payment, diets, links); then one section per thing it is,
+ * each shown even when nothing is known yet. Dining leads with the menu for a date, then formal hall where it's held
+ * (first, in a Hall used only for formals); a café or bar leads with its price list, and a café that's a bar by night
+ * has both.
  */
 export function VenuePage() {
   const params = useParams()
@@ -40,23 +42,27 @@ export function VenuePage() {
     <>
       <title>{`${venue.name}, ${siteName(venue.site)}: ${hasMenu ? 'menu and hours' : 'opening hours'} · ${SITE_NAME}`}</title>
       <BackButton up={`/${venue.site.slug}`} />
-      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:grid-rows-[auto_1fr] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-16">
-        <Heading venue={venue} />
-        {/* Beside the sections; on a phone, open now and the hours come first and the details after the sections */}
-        <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:block md:min-w-0 md:space-y-6">
-          <div className="order-2 min-w-0 space-y-6 md:order-none">
-            <VenuePhoto venue={venue} />
-            {showsDatedMenu(venue) && <SideCalendar venue={venue} now={now} />}
-            <div className="rounded-2xl border border-ink/10 p-5">
-              <StatusLine s={openStatus(venue.slots, now)} now={now} />
-              <Hours venue={venue} now={now} />
-            </div>
-          </div>
+      <VenueBanner venue={venue} />
+      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-16">
+        {/* The page scrolls past the name, the facts and the sections, while open now, the hours and the menu calendar
+            stay beside them (as TheFork keeps its booking box); on a phone, the hours come after the name and the facts
+            after the sections */}
+        <div className="contents md:col-start-1 md:row-start-1 md:block md:min-w-0">
+          <Heading venue={venue} />
           <Details venue={venue} />
+          <div className="order-3 min-w-0 space-y-16 md:mt-14">
+            <Sections key={venue.id} venue={venue} now={now} />
+          </div>
         </div>
-        <div className="order-3 min-w-0 space-y-16 md:order-none md:col-start-1">
-          <Sections key={venue.id} venue={venue} now={now} />
-        </div>
+        <aside className="order-2 min-w-0 md:sticky md:top-6 md:col-start-2 md:row-start-1 md:max-h-[calc(100svh-3rem)] md:space-y-7 md:self-start md:overflow-y-auto md:pt-1.5">
+          <section aria-label="Opening hours">
+            <p className="mb-4 text-lg empty:hidden">
+              <Status s={openStatus(venue.slots, now)} now={now} meal={new Set(venue.slots.map((s) => s.meal)).size > 1} />
+            </p>
+            <Hours venue={venue} now={now} />
+          </section>
+          {showsDatedMenu(venue) && <SideCalendar venue={venue} now={now} />}
+        </aside>
       </div>
     </>
   )
@@ -81,7 +87,7 @@ function useMenuDate(venue: Venue, now: LocalNow) {
 function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
   const { date, setDate, dates } = useMenuDate(venue, now)
   return (
-    <div className="hidden rounded-2xl border border-ink/10 p-5 md:block">
+    <div className="hidden border-t border-ink/10 pt-6 md:block">
       <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={setDate} />
     </div>
   )
@@ -89,17 +95,15 @@ function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
 
 function Heading({ venue }: { venue: Venue }) {
   return (
-    <header className="min-w-0">
-      <h1 className="text-4xl font-semibold tracking-tight text-balance">{venue.name}</h1>
+    <header className="order-1 min-w-0">
+      <h1 className="title text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
-        <Link to={`/${venue.site.slug}`} className="transition-colors hover:text-ink">
+        <Link to={`/${venue.site.slug}`} className="link text-ink">
           {venue.site.short_name ?? venue.site.name}
         </Link>
         {venueTypes(venue).map((t) => (
           <span key={t} className="flex items-center gap-2">
-            <span className="type-swatch" data-type={t}>
-              <Icon of={TYPE_ICON[t]} className="size-3" />
-            </span>
+            <TypeMark type={t} label />
             {TYPE_LABEL[t]}
           </span>
         ))}
@@ -132,7 +136,7 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
     } else
       out.push(
         <Section key={t} title={title}>
-          <FixedMenu type={t} lines={groups[t] ?? []} />
+          <FixedMenu type={t} lines={groups[t] ?? []} terms={venue.price_terms} />
         </Section>,
       )
   }
@@ -149,30 +153,33 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="mb-5 text-2xl font-semibold tracking-tight">{title}</h2>
+      <h2 className="title mb-5 text-3xl">{title}</h2>
       {children}
     </section>
   )
 }
 
 const HelpLink = () => (
-  <Link to="/coverage" className="text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+  <Link to="/coverage" className="link text-ink">
     Help get it here
   </Link>
 )
 
-/** A café's or bar's list as posted: the same every day, so no dates. */
-function FixedMenu({ type, lines }: { type: VenueType; lines: VenuePrice[] }) {
+/** A café's or bar's list as posted: the same every day, so no dates. How its prices work, even before there's a list. */
+function FixedMenu({ type, lines, terms }: { type: VenueType; lines: VenuePrice[]; terms?: PriceTerms | null }) {
   if (!lines.length)
     return (
-      <p className="text-muted">
-        {type === 'bar' ? 'No drinks prices here yet.' : 'No menu or prices here yet.'} <HelpLink />
-      </p>
+      <div className="space-y-2">
+        <p className="text-muted">
+          {type === 'bar' ? 'No drinks prices here yet.' : 'No menu or prices here yet.'} <HelpLink />
+        </p>
+        {terms?.note && <p>{terms.note}</p>}
+      </div>
     )
   return (
     <div className="space-y-2">
-      <PriceList lines={lines} />
-      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} />
+      <PriceList lines={lines} terms={terms} />
+      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} note={terms?.note} />
     </div>
   )
 }
@@ -191,8 +198,8 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
       return (
         <div className="space-y-6">
           <MissingMenu venue={venue} published={false} />
-          <PriceList lines={prices} />
-          <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} />
+          <PriceList lines={prices} terms={venue.price_terms} />
+          <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} />
         </div>
       )
     // A build-time page only knows this week; in the browser, wait for the history before saying there's none
@@ -235,7 +242,7 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
       )}
       <div className="mt-6">
         {days?.some((d) => d.items.length) ? (
-          <DayMenu days={days} slots={venue.slots} date={date} prices={prices} />
+          <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} />
         ) : (
           <p className="text-muted">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
         )}
@@ -324,8 +331,9 @@ function Details({ venue }: { venue: Venue }) {
   const payment = paymentText(venue.payment)
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   const report = `${ISSUES_URL}/new?title=${encodeURIComponent(`${venue.name}, ${siteName(venue.site)}: `)}`
+  const sendPhoto = `${ISSUES_URL}/new?title=${encodeURIComponent(`Photo: ${venue.name}, ${siteName(venue.site)}`)}`
   return (
-    <ul className="order-4 space-y-3 px-1 md:order-none">
+    <ul className="order-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         <Fact icon={Users} known={venue.access.level !== 'unknown'}>
           {venue.access.level !== 'unknown' ? ACCESS_LABEL[venue.access.level] : 'Access not known yet'}
         </Fact>
@@ -337,7 +345,7 @@ function Details({ venue }: { venue: Venue }) {
         </Fact>
         <Fact icon={MapIcon} known={mapped}>
           {mapped ? (
-            <Link to={`/?place=${encodeURIComponent(venue.id)}`} className="underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+            <Link to={`/?place=${encodeURIComponent(venue.id)}`} className="link">
               On the map
             </Link>
           ) : (
@@ -349,7 +357,15 @@ function Details({ venue }: { venue: Venue }) {
             <ExternalLink href={website} className="text-base" />
           </Fact>
         )}
-        <li className="border-t border-ink/10 pt-3">
+        {!venuePhoto(venue) && (
+          <Fact icon={Gallery} known={false}>
+            No photo yet.{' '}
+            <a href={sendPhoto} target="_blank" rel="noopener" className="link text-ink">
+              Send one
+            </a>
+          </Fact>
+        )}
+        <li className="border-t border-ink/10 pt-3 sm:col-span-2 md:border-0 md:pt-0">
           <a href={report} target="_blank" rel="noopener" className="flex items-center gap-3 text-sm text-muted transition-colors hover:text-ink">
             <Icon of={Flag} />
             Report a change
@@ -388,7 +404,7 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-3 text-sm text-muted">
-        <h2 className="font-semibold">Hours</h2>
+        <h2 className="font-semibold text-ink">Hours</h2>
         {label && <span>{label}</span>}
       </div>
       {shown.length ? (
@@ -410,28 +426,6 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
         <p className="text-muted">Not published</p>
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}
-    </div>
-  )
-}
-
-/** Open now and until when, or the next service; nothing on a prerendered page, which can't know when it's read. */
-function StatusLine({ s, now }: { s: OpenStatus; now: LocalNow }) {
-  if (useReady().snapshot || s.kind === 'unknown' || (s.kind === 'closed' && !s.next)) return null
-  const { slot, date } = s.kind === 'closed' ? s.next! : s
-  const day = date === now.date ? '' : `${relativeDay(date, now.date)?.toLowerCase() ?? dayLabel(dayOfISO(date))} `
-  // Formal hall is booked, not walked into: say when it is
-  const formal = slot.meal === 'formal'
-  const title = formal
-    ? s.kind === 'open' ? 'Formal hall now' : s.kind === 'opening' ? 'Formal hall today' : 'Next formal hall'
-    : s.kind === 'open' ? 'Open now' : s.kind === 'opening' ? 'Opens soon' : 'Closed'
-  const detail = s.kind === 'open' ? `until ${slot.end}` : formal ? `${day}${slot.start}` : `${day}${slot.start}–${slot.end}`
-  return (
-    <div className="mb-4 border-b border-ink/10 pb-4">
-      <p className="flex items-center gap-2 text-lg font-semibold">
-        {s.kind === 'open' && <span aria-hidden="true" className="size-2.5 rounded-full bg-accent ring-1 ring-accent-ink/20" />}
-        {title}
-      </p>
-      <p className="text-muted tabular-nums">{formal ? detail[0].toUpperCase() + detail.slice(1) : `${MEAL_LABEL[slot.meal]} ${detail}`}</p>
     </div>
   )
 }

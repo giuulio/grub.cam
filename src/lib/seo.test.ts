@@ -29,8 +29,8 @@ const data: Data = { sites: [jesus], venues: [caff], menuFrom: '2026-10-08', men
 const date = '2026-10-08'
 
 describe('seo', () => {
-  it('lists home, the directory, about, coverage, terms, each site and each venue', () => {
-    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/directory', '/about', '/coverage', '/terms', '/jesus', '/jesus/caff'])
+  it('lists home, the directory, about, coverage, terms, photo credits, each site and each venue', () => {
+    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/directory', '/about', '/coverage', '/terms', '/credits', '/jesus', '/jesus/caff'])
   })
 
   it('describes a venue with its hours, and gives schema.org hours and menus by date then meal', () => {
@@ -42,6 +42,13 @@ describe('seo', () => {
     expect(ld.openingHoursSpecification[0]).toMatchObject({ name: 'Lunch', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '12:00', closes: '13:45' })
     expect(ld.hasMenu.hasMenuSection.map((s: { name: string }) => s.name)).toEqual(['Lunch, Thursday 8 October', 'Dinner, Thursday 8 October'])
     expect(ld.hasMenu.hasMenuSection[0].hasMenuItem[0]).toMatchObject({ name: 'Dhal', suitableForDiet: ['https://schema.org/VeganDiet', 'https://schema.org/VegetarianDiet'], offers: { price: '3.30', priceCurrency: 'GBP' } })
+  })
+
+  it('previews a venue with its photo, at an absolute URL on the site', () => {
+    const photo = { path: 'jesus/caff/0a1b2c3d', widths: [240, 480, 960, 1600], width: 1600, height: 1067, color: null, alt: 'The Caff', credit: 'Someone', licence: 'CC BY-SA 4.0', source: null }
+    const withPhoto = { ...data, venues: [{ ...caff, photos: [photo] }] }
+    expect(pages(withPhoto, date).at(-1)!.image).toBe('https://grub.cam/photos/jesus/caff/0a1b2c3d-1600.webp')
+    expect(pages(data, date).at(-1)!.image).toBeUndefined()
   })
 
   it("writes head tags that a dish name can't break out of", () => {

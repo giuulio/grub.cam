@@ -38,7 +38,7 @@ export function CoveragePage() {
       <title>{`Coverage · ${SITE_NAME}`}</title>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Coverage</h1>
+          <h1 className="title text-4xl">Coverage</h1>
           <p className="mt-2 text-muted">
             What we know for each of the {rows.length} {sites}, and what's missing.
           </p>
@@ -46,7 +46,7 @@ export function CoveragePage() {
         <Segmented label="Show" options={KINDS} value={kind} onChange={(k) => setParams(k === 'college' ? {} : { kind: k }, { replace: true })} />
       </div>
 
-      <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-7">
         {categories.map((c) => (
           <Tile key={c.title} category={c} unit={c.unit === 'sites' ? sites : 'places'} dates={dates} />
         ))}
@@ -54,7 +54,7 @@ export function CoveragePage() {
 
       <section className="mt-12" aria-labelledby="by-site">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 id="by-site" className="text-xl font-semibold tracking-tight">
+          <h2 id="by-site" className="title text-2xl">
             {kind === 'college' ? 'College by college' : 'Site by site'}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -67,7 +67,7 @@ export function CoveragePage() {
               value={order}
               onChange={setOrder}
             />
-            <a href={HELP_URL} target="_blank" rel="noopener" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-canvas">
+            <a href={HELP_URL} target="_blank" rel="noopener" className="btn btn-primary">
               Help fill the gaps
               <Icon of={ArrowRightUp} className="size-3.5" />
             </a>
@@ -78,7 +78,7 @@ export function CoveragePage() {
           {detail ?? 'Point at or tab to a square to see what’s missing; squares link to the place.'}
         </p>
 
-        <div className="mt-2 overflow-x-auto rounded-2xl border border-ink/10" onMouseLeave={() => setDetail(undefined)}>
+        <div className="mt-2 overflow-x-auto rounded-xl border border-ink/10" onMouseLeave={() => setDetail(undefined)}>
           <table className="w-full min-w-160 table-fixed border-collapse text-sm">
             <thead>
               <tr className="border-b border-ink/10 text-muted">
@@ -133,9 +133,9 @@ export function CoveragePage() {
 function Tile({ category: c, unit, dates }: { category: Category; unit: string; dates: string }) {
   const share = c.of ? c.have / c.of : 0
   return (
-    <li className="rounded-2xl border border-ink/10 p-4">
+    <li className="border-t border-ink/15 pt-3">
       <p className="text-sm text-muted">{c.title}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">
+      <p className="title mt-1 text-3xl tabular-nums">
         {c.have}
         <span className="text-base font-normal text-muted"> / {c.of}</span>
       </p>
@@ -143,8 +143,8 @@ function Tile({ category: c, unit, dates }: { category: Category; unit: string; 
         {unit}
         {c.dated && `, ${dates}`}
       </p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={c.of} aria-valuenow={c.have} aria-label={`${c.title}: ${c.have} of ${c.of} ${unit}`}>
-        <div className="h-full rounded-full bg-ink" style={{ width: `${Math.round(share * 100)}%` }} />
+      <div className="mt-3 h-1.5 overflow-hidden rounded-sm bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={c.of} aria-valuenow={c.have} aria-label={`${c.title}: ${c.have} of ${c.of} ${unit}`}>
+        <div className="h-full bg-action" style={{ width: `${Math.round(share * 100)}%` }} />
       </div>
     </li>
   )

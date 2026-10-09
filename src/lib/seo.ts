@@ -82,7 +82,9 @@ function venueJsonLd(v: Venue, date: string): object {
 /** The venue's photo at the largest width up to 1600px, for link previews and structured data. */
 function venueImage(v: Venue): string | undefined {
   const p = venuePhoto(v)
-  return p && photoSrc(p, p.widths.filter((w) => w <= 1600).at(-1) ?? p.widths[0])
+  const src = p && photoSrc(p, p.widths.filter((w) => w <= 1600).at(-1) ?? p.widths[0])
+  // Link previews need an absolute URL; photos are served from the site itself unless VITE_PHOTOS_URL says otherwise
+  return src && (src.startsWith('/') ? abs(src) : src)
 }
 
 function dietUrls(tags: DietTag[]): string[] | undefined {
@@ -108,6 +110,7 @@ export function pages(data: Data, date: string): Page[] {
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours, access, card payments) and what's still missing." }
   const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
+  const credits: Page = { path: '/credits', description: 'Who took the photos of places on grub.cam, and the open licences they share them under.' }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {
@@ -123,7 +126,7 @@ export function pages(data: Data, date: string): Page[] {
     }
   })
   const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))
-  return [home, directory, about, coverage, terms, ...sites, ...venues]
+  return [home, directory, about, coverage, terms, credits, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
@@ -173,15 +176,18 @@ export function llmsTxt(data: Data): string {
   ].join('\n\n') + '\n'
 }
 
-/** "£3.75", or "£3.75 (non-members £5.65)" */
-const priceText = (gbp: number, nonMember?: number | null) => `${formatGbp(gbp)}${nonMember != null ? ` (non-members ${formatGbp(nonMember)})` : ''}`
+/** "£3.75", or "£3.75 (non-members £5.65)", the second named as the venue names it; "students £21.00" for a second price alone */
+const priceText = (gbp: number | null | undefined, second?: number | null, tiers?: string[]) => {
+  const other = second != null ? `${(tiers?.[1] ?? 'non-members').toLowerCase()} ${formatGbp(second)}` : ''
+  return gbp == null ? other : `${formatGbp(gbp)}${other ? ` (${other})` : ''}`
+}
 
-function menuLine(d: MenuDay, prices: Venue['prices']): string {
-  const m = mealPrices(prices, d.service)
+function menuLine(d: MenuDay, v: Venue): string {
+  const m = mealPrices(v.prices, d.service)
   const dishes = d.items.map((i) => {
     const tags = dishTags(i.tags).map((t) => DIET_SHORT[t])
     const p = dishPrice(i, m)
-    const price = p?.gbp != null ? ` ${priceText(p.gbp, p.nonMember)}` : p?.text ? ` ${p.text}` : ''
+    const price = p?.gbp != null ? ` ${priceText(p.gbp, p.second, v.price_terms?.tiers)}` : p?.text ? ` ${p.text}` : ''
     return `${i.name}${tags.length ? ` [${tags.join(' ')}]` : ''}${price}`
   })
   return `- ${day(d.date)}, ${MEAL_LABEL[d.service].toLowerCase()}: ${dishes.join('; ')}`
@@ -198,10 +204,10 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
       if (v.access.level !== 'unknown') lines.push(`Access: ${ACCESS_LABEL[v.access.level].toLowerCase()}`)
       if (v.payment.bank_card) lines.push('Bank card accepted')
       const menus = menusOf(v)
-      if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v.prices)).join('\n')}`)
+      if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v)).join('\n')}`)
       if (v.prices?.length) {
         const when = v.prices.map((p) => p.observed_on).sort().at(-1)!
-        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
+        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp, v.price_terms?.tiers)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
         lines.push(`Prices as posted ${day(when)}:\n${list.join('\n')}`)
       }
       out.push(lines.join('\n'))

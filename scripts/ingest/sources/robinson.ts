@@ -40,7 +40,7 @@ export const robinson: Adapter = {
               name,
               tags: tagsFromLabels(alts),
               price_gbp: prices[0],
-              price_text: prices.length === 2 ? `£${prices[0].toFixed(2)} member / £${prices[1].toFixed(2)} non-member` : undefined,
+              price2_gbp: prices[1],
               course: courseFromHeading(category),
             })
           }

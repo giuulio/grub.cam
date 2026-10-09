@@ -8,7 +8,7 @@ export function Terms() {
     <>
       <title>{`Terms and privacy · ${SITE_NAME}`}</title>
       <div className="max-w-2xl leading-relaxed">
-        <h1 className="text-3xl font-semibold tracking-tight">Terms and privacy</h1>
+        <h1 className="title text-4xl">Terms and privacy</h1>
         <p className="mt-3 text-muted">Last updated 9 October 2026.</p>
 
         <Part title="Using grub.cam">
@@ -71,7 +71,7 @@ export function Terms() {
 function Part({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-10 space-y-3">
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+      <h2 className="title text-2xl">{title}</h2>
       <div className="space-y-3 text-muted">{children}</div>
     </section>
   )

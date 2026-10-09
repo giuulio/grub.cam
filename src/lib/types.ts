@@ -36,7 +36,11 @@ export type Site = { slug: string; name: string; short_name: string | null; kind
 export type VenuePrice = {
   section: string | null
   name: string
-  price_gbp: number
+  /** The first price posted; none when only the second tier's is (a student's guest, priced for students only) */
+  price_gbp: number | null
+  /** The top of a range ("£3.24–£3.96") */
+  price_max_gbp?: number | null
+  /** The second price posted: the venue's second tier (`PriceTerms.tiers`), non-members' by default */
   non_member_gbp: number | null
   services: Meal[] | null
   course: PriceCourse | null
@@ -69,7 +73,29 @@ export type Formal = {
 }
 
 /** A photo of the venue (`venue_photos`): files at `<VITE_PHOTOS_URL>/<path>-<width>.webp`, one per width. */
-export type Photo = { path: string; widths: number[]; width: number; height: number; color: string | null; alt: string; credit: string | null }
+export type Photo = {
+  path: string
+  widths: number[]
+  width: number
+  height: number
+  color: string | null
+  alt: string
+  /** Who took it, shown with it */
+  credit: string | null
+  /** "CC BY-SA 2.0", "CC0", "Public domain"; none for our own */
+  licence: string | null
+  /** Where it came from: its Wikimedia Commons page, or "own photo" */
+  source: string | null
+}
+
+/** How a venue posts its prices (`venues.price_terms`), in its own words. */
+export type PriceTerms = {
+  /** Who the first and second posted prices are for, as the venue heads them: ["Members", "Non-members"], ["Senior", "Student"] */
+  tiers?: string[]
+  /** The rule for anyone else, or how its prices work: "Students get 25% off with their University Card." */
+  note?: string
+  source?: string
+}
 
 export type Venue = {
   id: string
@@ -93,6 +119,7 @@ export type Venue = {
   slots: Slot[]
   /** How the venue publishes its menu (scripts/ingest/sources.ts); unset for most cafés and bars. */
   menu_channel?: Channel | null
+  price_terms?: PriceTerms | null
   menu_url?: string | null
   /** Fetched by `npm run ingest`, rather than transcribed by hand */
   menu_scripted?: boolean

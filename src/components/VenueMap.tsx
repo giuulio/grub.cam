@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import type * as MapLibre from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
@@ -9,7 +9,8 @@ import { sideBySide } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import type { VenueType } from '../lib/types.ts'
 
-type Props = { results: Ranked[]; selected?: string; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean }
+/** `panel`: the picked place's panel, which covers part of the map (its left side, or its foot on a phone) */
+type Props = { results: Ranked[]; selected?: string; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean; panel?: RefObject<HTMLElement | null> }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
@@ -27,7 +28,7 @@ const fitPadding = (map: MapLibre.Map) => {
   return { top: Math.min(controlsHeight + 85, container.clientHeight * 0.45), bottom: 90, left: 44, right: 44 }
 }
 
-export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Props) {
+export function VenueMap({ results, selected, onSelect, snapshot, filtered, panel }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -152,14 +153,21 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
   // The selected place's pin sits above its neighbours.
   useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected ? '1' : '' }) }, [anchors, selected])
 
+  // A picked place stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
+  // middle of what the panel leaves free.
   useEffect(() => {
     const e = engine.current
     const row = results.find((r) => r.venue.id === selected)
     if (!e || !row || !hasLocation(row.venue)) return
     const point = e.map.project(position(row))
-    const { clientWidth: width, clientHeight: height } = e.map.getContainer()
-    if (point.x < 75 || point.x > width - 75 || point.y < 75 || point.y > height - 75) e.map.easeTo({ center: position(row), duration: 250 })
-  }, [ready, results, selected])
+    const box = e.map.getContainer().getBoundingClientRect()
+    const cover = panel?.current?.getBoundingClientRect()
+    // Beside the map (narrower than half of it) it covers the left; on a phone, the foot
+    const left = cover && cover.width < box.width / 2 ? cover.right - box.left : 0
+    const bottom = cover && !left ? box.bottom - cover.top : 0
+    if (point.x < left + 75 || point.x > box.width - 75 || point.y < 75 || point.y > box.height - bottom - 75)
+      e.map.easeTo({ center: position(row), offset: [left / 2, -bottom / 2], duration: 250 })
+  }, [ready, results, selected, panel])
 
   const locate = () => {
     if (!navigator.geolocation) { setLocationNote('Your browser doesn’t support location.'); return }
@@ -192,19 +200,19 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered }: Pr
         const el = anchors.get(r.venue.id)
         return el && createPortal(<MapPin r={r} selected={r.venue.id === selected} open={!snapshot && r.status.kind === 'open'} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
       })}
-      {!loaded && !error && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-[400] text-center text-sm text-muted">Loading map…</p>}
-      <div className="map-actions absolute top-4 left-4 z-[500] max-w-[calc(100%-5rem)]">
+      {!loaded && !error && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
+      <div className="map-actions absolute top-4 left-4 z-500 max-w-[calc(100%-5rem)]">
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={!ready || locating} onClick={locate} className="map-action disabled:opacity-60">{locating ? 'Finding you…' : 'Near me'}</button>
+          <button type="button" disabled={!ready || locating} onClick={locate} className="btn raised h-9 px-3.5 font-normal sm:h-9">{locating ? 'Finding you…' : 'Near me'}</button>
           <button type="button" disabled={!ready || !results.some((r) => hasLocation(r.venue))} onClick={() => {
             const e = engine.current
             if (e) {
               const bounds = results.filter((r) => hasLocation(r.venue)).reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds())
               e.map.fitBounds(bounds, { padding: fitPadding(e.map), maxZoom: 15, duration: 300 })
             }
-          }} className="map-action disabled:opacity-60">Show all</button>
+          }} className="btn raised h-9 px-3.5 font-normal sm:h-9">Show all</button>
         </div>
-        {(error || locationNote) && <p role="status" className="mt-2 max-w-xs rounded-xl bg-canvas px-4 py-3 text-sm text-ink shadow-sm">{error || locationNote}</p>}
+        {(error || locationNote) && <p role="status" className="raised mt-2 max-w-xs rounded-lg px-4 py-3 text-sm text-ink">{error || locationNote}</p>}
       </div>
     </>
   )

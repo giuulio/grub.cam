@@ -27,7 +27,7 @@ export function ThemeToggle() {
       localStorage.setItem('grub-theme', next)
     } catch { /* The theme still works when storage is unavailable. */ }
     document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
-      meta.content = next === 'dark' ? '#1e1e1e' : '#ffffff'
+      meta.content = next === 'dark' ? '#0d1c21' : '#ffffff'
     })
   }
 
@@ -37,7 +37,7 @@ export function ThemeToggle() {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       onClick={() => change(theme === 'dark' ? 'light' : 'dark')}
-      className="flex size-9 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+      className="icon-btn"
     >
       <Icon of={theme === 'dark' ? Sun : Moon} className="size-5" />
     </button>

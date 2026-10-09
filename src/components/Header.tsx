@@ -7,19 +7,19 @@ import { ThemeToggle } from './ThemeToggle.tsx'
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /** Pages that aren't part of the directory; anything else under a slug is a site or a venue in it. */
-const NOT_DIRECTORY = ['/', '/about', '/coverage', '/terms']
+const NOT_DIRECTORY = ['/', '/about', '/coverage', '/terms', '/credits']
 
 export function Header() {
   const { pathname } = useLocation()
   const inDirectory = pathname === '/directory' || !NOT_DIRECTORY.includes(pathname)
-  const tab = (active: boolean) => `border-b-2 py-3 text-sm transition-colors sm:py-5 ${active ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink'}`
+  const tab = (active: boolean) => `border-b-2 py-3 text-sm transition-colors sm:py-5 ${active ? 'border-ink font-medium text-ink' : 'border-transparent text-muted hover:text-ink'}`
   return (
     <header className="border-b border-ink/10 bg-canvas">
       <Container className="flex min-h-16 flex-wrap items-center gap-x-6 gap-y-0">
-        <div className="flex items-center gap-2">
-          <Link to="/" className="py-5 font-semibold tracking-tight text-ink">{SITE_NAME}</Link>
+        <div className="flex items-baseline gap-2">
+          <Link to="/" className="title py-4 text-xl">{SITE_NAME}</Link>
           {/* Still being built: say so to anyone who lands here */}
-          <span title="Still being built: some menus, hours and places are missing" className="rounded-full border border-ink/20 px-1.5 text-[10px] leading-4 font-medium tracking-wide text-muted uppercase">Beta</span>
+          <span title="Still being built: some menus, hours and places are missing" className="text-xs text-muted">beta</span>
         </div>
         <nav aria-label="Main navigation" className="order-3 flex w-full gap-6 sm:order-0 sm:ml-4 sm:w-auto">
           <NavLink to="/" end className={({ isActive }) => tab(isActive)}>Explore</NavLink>
@@ -32,7 +32,7 @@ export function Header() {
             rel="noopener"
             aria-label={`grub.cam on GitHub${STARS != null ? `, ${STARS} ${STARS === 1 ? 'star' : 'stars'}` : ''}`}
             title="grub.cam on GitHub"
-            className="flex h-9 items-center gap-2 rounded-full bg-ink/8 px-3.5 text-sm font-medium text-ink transition-colors hover:bg-ink/14"
+            className="flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted transition-colors hover:bg-ink/8 hover:text-ink"
           >
             <GitHubIcon className="size-4.5" />
             {STARS != null && <span>{STARS >= 1000 ? `${(STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : STARS}</span>}

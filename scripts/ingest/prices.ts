@@ -8,10 +8,12 @@
 //   observed: 2026-10-08                   <- the day it was seen
 //   ---
 //   ## Brunch | brunch                     <- section heading for the lines after it, and the meals they're sold at (default: all)
-//   Bacon rashers x 2 | 95p | £1.30        <- name | price | non-member price (optional); £3.75, 3.75 or 95p
+//   Bacon rashers x 2 | 95p | £1.30        <- name | price | second price (optional); £3.75, 3.75 or 95p
+//   Sandwiches | £3.24-£3.96               <- a range, as posted
 //   Main course dish | £3.75 | £5.65 | main   <- a 4th field prices every dish of that course on the day's menu
 //                                             (soup/main/side/dessert/other), or the whole meal (meal); shown on the menu
 //   Soup | £1.75 | | soup                  <- an empty field skips the non-member price
+//   Student's guest | | £21.00             <- or the first, when only the second tier is priced
 //   Hummus wrap (VE, GF) | £4               <- diet codes in brackets after the name become tags (V, VE/VG, GF, DF, H)
 //   # comment
 // Lines without a course are sold at those meals as listed: the menu itself when the meal has no dishes posted (a fixed brunch).
@@ -22,6 +24,13 @@ import { connect } from './lib/db.ts'
 import { tagsFromName } from './lib/tags.ts'
 
 export type PriceList = { venue: string; source: string; observed_on: string; items: PriceItem[] }
+
+/** "£3.24-£3.96" (or with an en dash) as its two ends; a single price as itself. */
+export function parseRange(s: string): { price_gbp: number; price_max_gbp?: number } {
+  const ends = s.split(/[-–]/)
+  if (ends.length === 2) return { price_gbp: parseGbp(ends[0]), price_max_gbp: parseGbp(ends[1]) }
+  return { price_gbp: parseGbp(s) }
+}
 
 /** "£3.75", "3.75" or "95p" in pounds. */
 export function parseGbp(s: string): number {
@@ -55,14 +64,14 @@ export function parsePrices(text: string): PriceList {
       continue
     }
     const [posted, price, nonMember, course, ...rest] = line.split('|').map((p) => p.trim())
-    if (!price || rest.length) throw new Error(`expected "name | price | non-member price | course": "${line}"`)
+    if ((!price && !nonMember) || rest.length) throw new Error(`expected "name | price | non-member price | course": "${line}"`)
     const { name, tags } = tagsFromName(posted)
     items.push(
       PriceItem.parse({
         section,
         name,
         ...(tags.length ? { tags } : {}),
-        price_gbp: parseGbp(price),
+        ...(price ? parseRange(price) : {}),
         ...(nonMember ? { non_member_gbp: parseGbp(nonMember) } : {}),
         ...(services ? { services } : {}),
         ...(course ? { course: PriceCourse.parse(course) } : {}),

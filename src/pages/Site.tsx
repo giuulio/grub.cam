@@ -33,11 +33,11 @@ export function SitePage() {
       <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
       <BackButton up={`/directory?kind=${site.kind}`} />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">{siteName(site)}</h1>
+        <h1 className="title text-4xl leading-tight sm:text-5xl">{siteName(site)}</h1>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </div>
 
-      <ul className="divide-y divide-ink/10 border-t border-ink/10">
+      <ul className="grid gap-x-10 lg:grid-cols-2">
         {rows.map((r) => (
           <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={nextService(r)?.items.map((i) => i.name)} showSite={false} />
         ))}

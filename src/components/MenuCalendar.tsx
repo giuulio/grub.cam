@@ -22,7 +22,7 @@ export function MenuCalendar({ value, today, dates, onChange }: { value: string;
   return (
     <div className="w-full max-w-72">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium">{formatISODate(`${month}-01`, { month: 'long', year: 'numeric' })}</p>
+        <p className="text-sm font-semibold">{formatISODate(`${month}-01`, { month: 'long', year: 'numeric' })}</p>
         <div className="flex">
           <ArrowButton dir="prev" label="Previous month" disabled={month <= first} onClick={() => setMonth(addMonthsYM(month, -1))} />
           <ArrowButton dir="next" label="Next month" disabled={month >= last} onClick={() => setMonth(addMonthsYM(month, 1))} />
@@ -78,7 +78,7 @@ function ArrowButton({ dir, label, disabled, onClick }: { dir: 'prev' | 'next'; 
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex size-8 cursor-pointer items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/10 hover:text-ink disabled:cursor-default disabled:text-ink/30 disabled:hover:bg-transparent"
+      className="icon-btn size-8 rounded-md"
     >
       <Icon of={dir === 'prev' ? ChevronLeft : ChevronRight} />
     </button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dishPrice, mealPrices, postedOn, priceGroups } from './prices.ts'
+import { dishPrice, formatPrice, priceHeads, mealPrices, postedOn, priceGroups } from './prices.ts'
 import type { VenuePrice } from './types.ts'
 
 const line = (name: string, price: number, more: Partial<VenuePrice> = {}): VenuePrice => ({ section: null, name, price_gbp: price, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-08', source: 'noticeboard', ...more })
@@ -22,8 +22,9 @@ describe('mealPrices', () => {
 describe('dishPrice', () => {
   const lunch = mealPrices(list, 'lunch')
   it('prefers the dish’s own price, else its course’s', () => {
-    expect(dishPrice({ name: 'Pie', tags: [], course: 'main', price_gbp: 4 }, lunch)).toEqual({ gbp: 4, text: undefined })
-    expect(dishPrice({ name: 'Pie', tags: [], course: 'main' }, lunch)).toEqual({ gbp: 3.75, nonMember: 5.65 })
+    expect(dishPrice({ name: 'Pie', tags: [], course: 'main', price_gbp: 4 }, lunch)).toEqual({ gbp: 4, second: undefined, text: undefined })
+    expect(dishPrice({ name: 'Pie', tags: [], course: 'main', price_gbp: 3.41, price2_gbp: 4.46 }, lunch)).toEqual({ gbp: 3.41, second: 4.46, text: undefined })
+    expect(dishPrice({ name: 'Pie', tags: [], course: 'main' }, lunch)).toEqual({ gbp: 3.75, max: undefined, second: 5.65 })
     expect(dishPrice({ name: 'Cake', tags: [], course: 'dessert' }, lunch)).toBeUndefined()
     expect(dishPrice({ name: 'Duck', tags: [], course: 'main' }, mealPrices(list, 'formal'))).toBeUndefined()
   })
@@ -50,5 +51,22 @@ describe('postedOn', () => {
   it('is the latest date a line was seen', () => {
     expect(postedOn([line('A', 1), line('B', 1, { observed_on: '2026-10-09' })])).toBe('2026-10-09')
     expect(postedOn([])).toBeUndefined()
+  })
+})
+
+describe('priceHeads', () => {
+  it("heads price columns the venue's way, else members and others", () => {
+    expect(priceHeads(2, { tiers: ['Senior', 'Student'] })).toEqual(['Senior', 'Student'])
+    expect(priceHeads(2, null)).toEqual(['Members', 'Others'])
+    expect(priceHeads(1, { tiers: ['Students and staff'] })).toEqual(['Students and staff'])
+    expect(priceHeads(1, { note: 'Students get 25% off' })).toEqual([])
+  })
+})
+
+describe('formatPrice', () => {
+  it('shows a range as posted', () => {
+    expect(formatPrice({ gbp: 3.24, max: 3.96 })).toBe('£3.24–£3.96')
+    expect(formatPrice({ gbp: 0.95 })).toBe('£0.95')
+    expect(formatPrice({ text: 'market price' })).toBe('market price')
   })
 })

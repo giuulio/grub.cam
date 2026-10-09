@@ -46,7 +46,7 @@ export const wolfson: Adapter = {
             tags,
             course: course === 'other' && /main|dish of the day/i.test(category) ? 'main' : course,
             price_gbp: student,
-            price_text: student !== undefined && others !== undefined ? `£${student.toFixed(2)} student / £${others.toFixed(2)} others` : undefined,
+            price2_gbp: others,
           })
         }
         if (items.length) days.push({ date, service, items })

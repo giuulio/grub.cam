@@ -1,0 +1,78 @@
+# Each venue's photo, from Wikimedia Commons: `npm run ingest:photo -- --list scripts/ingest/photos-commons.txt`.
+# <site>/<venue> | <Commons file> | <alt text: what the photo shows> [| <credit, when Commons has none>]
+# Openly licensed (CC0, public domain, CC BY, CC BY-SA), no recognisable people; the author, licence and file page are
+# read from Commons and shown with the photo. Where no photo of the room itself is free to use, the building or court
+# it's in. A venue with none here shows its type's tile; a photo of our own replaces these (it goes first).
+
+adc-theatre/bar | File:Adc Theatre - geograph.org.uk - 3491971.jpg | The ADC Theatre's front on Park Street
+biomedical-campus/cruk-cafe | File:Cmglee Cambridge Cancer Research.jpg | The Li Ka Shing Centre, home of the Cancer Research UK Cambridge Institute, from Robinson Way
+biomedical-campus/jcbc-cafe | File:Cancer Research UK and the Jeffrey Cheah Biomedical Centre - geograph.org.uk - 7082539.jpg | The Jeffrey Cheah Biomedical Centre, right, beside Cancer Research UK
+botanic-garden/garden-cafe | File:Cambridge University Botanic Garden, approaching the café - geograph.org.uk - 7069756.jpg | The path to the Garden Café, past the lawns of the Botanic Garden
+chemistry/cybercafe | File:Cambridge University Chemistry Laboratories, Lensfield Road - geograph.org.uk - 6666952.jpg | The Chemistry Laboratories on Lensfield Road
+christs/buttery | File:Christ's College, Cambridge - First Court 01.JPG | First Court, Christ's College, round its lawn
+christs/hall | File:Cambridge - Christ's College - 1479.jpg | Christ's College Hall, its tables laid with candles under the portraits
+christs/upper-hall | File:CHRIST COLLEGE CAMBRIDGE SEP 2012 (8035541619).jpg | Second Court, Christ's College, at dusk
+churchill/buttery | File:Central Buildings Churchill College.jpg | Churchill College's Central Buildings, in brick and concrete
+churchill/dining-hall | File:Dining Hall, Churchill College Cambridge - geograph.org.uk - 6067890.jpg | Churchill College's Dining Hall lit up at night, its vaulted roof above the windows
+clare-hall/college-bar | File:Main entrance, Clare Hall, Cambridge.jpg | The main entrance to Clare Hall on Herschel Road, behind hydrangeas
+clare-hall/dining-hall | File:West court.jpg | West Court, Clare Hall, across the lawn
+clare/buttery | File:Inner Court - Clare College - geograph.org.uk - 5137737.jpg | Old Court, Clare College, from the gate
+clare/hall | File:Dining hall outside.jpg | Clare College's Hall at dusk, its door lit, across Old Court
+clare/river-room | File:Cambridge, Clare College and the Cam - geograph.org.uk - 2237286.jpg | Clare College and Clare Bridge from the river, punts on the Cam
+cms/cafe | File:CMS Central Core 01.jpg | The Central Core of the Centre for Mathematical Sciences, under its curved grass roof
+corpus-christi/cafeteria | File:Corpus Christi College New Court, Cambridge, UK - Diliff.jpg | New Court, Corpus Christi College, across its striped lawn
+corpus-christi/pelican-bar | File:The Old Court at the Corpus Christi College (Cambridge).jpg | Old Court, Corpus Christi College
+darwin/cafe | File:Wisteria by the parlour of The Hermitage - geograph.org.uk - 3953156.jpg | Wisteria on The Hermitage, Darwin College, by the garden
+darwin/darbar | File:Silver Street, Darwin College - geograph.org.uk - 6493065.jpg | Darwin College's front on Silver Street
+darwin/servery | File:Darwin Dining Hall.jpg | Darwin College's Dining Hall, laid for a dinner
+downing-site/pathology-cafe | File:University of Cambridge Department of Pathology - geograph.org.uk - 1037543.jpg | The Department of Pathology on Tennis Court Road, in evening light
+downing/lord-butterfield | File:Downing College, Cambridge - Butterfield Building.JPG | The Butterfield Building, Downing College, its porch and columns
+downing/servery-great-hall | File:Downing College, Cambridge - Hall and West Range.JPG | Downing College's Hall, behind its portico, and the West Range
+emmanuel/hall | File:Emmanuel College Front Court, Cambridge, UK - Diliff.jpg | Front Court, Emmanuel College, its colonnade and clock
+fitzwilliam-museum/courtyard-kitchen | File:Fitzwilliam Museum Cambridge 2.jpg | The Fitzwilliam Museum's side and courtyard, from the lawn
+fitzwilliam/buttery | File:2003 0607 170338AA.jpg | Fitzwilliam College's Hall, its scalloped roof above the garden
+girton/hall-cafeteria | File:Girton College Cambridge Great Hall.jpg | Girton College's Great Hall, panelled, under its arched timber roof
+gonville-and-caius/hall | File:Cambridge - Gonville and Caius College - 0927.jpg | Gonville and Caius College Hall, its long tables laid under a hammerbeam roof
+homerton/dining-hall | File:Cmglee Cambridge Homerton College hall hdr.jpg | Homerton College's Great Hall, a rose window under its timber roof
+hughes-hall/fenners-dining-hall | File:Fenner's Building Hughes Hall.JPG | Hughes Hall's Fenner's building behind its gates, in snow
+kettles-yard/garden-kitchen | File:Kettle's Yard, Cambridge - geograph.org.uk - 5905716.jpg | The steps up to Kettle's Yard from Castle Street, under a fig tree
+kings/servery-dining-hall | File:20130808 Kings College Dining Hall 02.jpg | King's College Hall's stained glass and fan-vaulted bay window
+lucy-cavendish/cafe-bar | File:LEP,LCFall2022, 0116.jpg | Lucy Cavendish College's new buildings round their courtyard
+madingley-hall/cafe | File:Madingley Hall front elevation Aug 2013.jpg | Madingley Hall's Tudor front across the park
+magdalene/college-bar | File:First Court, Magdalene College 2024-03-14.jpg | First Court, Magdalene College, in red brick
+magdalene/hall | File:Magdalene College Dining Hall, Cambridge, UK - Diliff - sans lens flares.jpg | Magdalene College's Hall laid for lunch, green panelling and heraldic windows
+murray-edwards/art-cafe | File:Cmglee Cambridge New Hall Fountain Court.jpg | Fountain Court, Murray Edwards College, below the dome
+murray-edwards/dome-dining-hall | File:Dome of Murray Edwards College, Cambridge.jpg | The dome over Murray Edwards College's Dining Hall, from its entrance
+new-museums/whale-cafe | File:Zoology museum, Cambridge.jpg | The Museum of Zoology's building, its whale skeleton behind the glass
+newnham/buttery | File:Clough, Newnham College, Cambridge.JPG | Clough, Newnham College, across the gardens
+newnham/clough-hall | File:Cmglee Cambridge University Newnham College dining hall.jpg | Clough Hall, Newnham College's dining hall
+old-addenbrookes/judge-cafe | File:University of Cambridge - Judge Business School - geograph.org.uk - 6887654.jpg | The Judge Business School's painted front on Trumpington Street
+pembroke/cafe-84 | File:Ray and Dagmar Dolby Court - geograph.org.uk - 8164989.jpg | Ray and Dagmar Dolby Court, Pembroke College, on the Mill Lane site
+pembroke/hall | File:Dining Hall, Pembroke College, Cambridge.jpg | Pembroke College's Hall, laid for dinner under its portraits
+pembroke/servery-trough | File:First Court, Pembroke College, Cambridge.jpg | First Court, Pembroke College, facing the Hall
+peterhouse/hall-servery | File:Peterhouse-Hall.JPG | Peterhouse Hall, panelled, with candles on its tables | OliCAmb
+peterhouse/whittle-building-bar | File:Whittle Building.jpg | The Whittle Building, Peterhouse, on Gisborne Court
+queens/cripps-dining-hall-cafeteria | File:Cripps Court - Mathematical Bridge.jpg | Cripps Court, Queens' College, across the Cam from the Mathematical Bridge
+queens/old-hall | File:Queens-old-hall-1.jpg | The painted roof of Old Hall, Queens' College
+queens/qbar | File:Cripps Court - Mathematical Bridge.jpg | Cripps Court, Queens' College, across the Cam from the Mathematical Bridge
+selwyn/cafe-bar | File:Selwyn College Old Court, Cambridge, UK - Diliff.jpg | Old Court, Selwyn College, with the Chapel on the left
+selwyn/hall-servery | File:Dining Hall, Selwyn College, Cambridge.jpg | Selwyn College's Dining Hall, panelled, its tables laid in blue
+sidgwick/arc-cafe | File:Entrance to the Alison Richard Building, University of Cambridge, June 2018.jpg | The entrance to the Alison Richard Building, 7 West Road
+sidney-sussex/servery-dining-hall | File:Hall Court, Sidney Sussex College.jpg | Hall Court, Sidney Sussex College
+st-catharines/hall-cafeteria | File:St Catharines Main Court 2017.jpg | Main Court, St Catharine's College, in the sun
+st-edmunds/dining-hall | File:St Edmund's College Dining Hall.jpg | St Edmund's College's Dining Hall, its long tables under chandeliers
+st-edmunds/eddies-bar | File:Norfolk Building.jpg | The Norfolk Building, St Edmund's College
+st-johns/buttery | File:First Court, St John's College - geograph.org.uk - 7110293.jpg | First Court, St John's College, from the lawn
+trinity-hall/cafeteria | File:Front Court Trinity Hall, Cambridge.jpg | Front Court, Trinity Hall, lit at night
+trinity/bar | File:Trinity College - Great Court 02.jpg | Great Court, Trinity College, and its fountain
+trinity/hall-servery | File:Cmglee Cambridge Trinity College Great Court.jpg | Great Court, Trinity College, with the Hall on the left
+university-library/tea-room | File:CAMBRIDGE 005.JPG | The University Library and its tower, from West Road
+west-cambridge/blue-and-brew | File:Cambridge Sports Centre - geograph.org.uk - 4756707.jpg | The University Sports Centre across the lake
+west-cambridge/caffiend | File:University of Cambridge Computer Laboratory.jpg | The William Gates Building, home of the Computer Laboratory
+west-cambridge/cavendish-cafe | File:Cavendish III, the Ray Dolby Centre - geograph.org.uk - 7784911.jpg | The Ray Dolby Centre, the new Cavendish Laboratory
+west-cambridge/ceb-cafe | File:Department of Chemical Engineering and Biotechnology, Philippa Fawcett Drive, West Cambridge.jpg | The Department of Chemical Engineering and Biotechnology on Philippa Fawcett Drive
+west-cambridge/greenwich-house-cafe | File:Greenwich House - geograph.org.uk - 2358345.jpg | Greenwich House's glass entrance, Madingley Rise
+west-cambridge/occidente | File:West Hub, West Cambridge - geograph.org.uk - 7820140.jpg | The West Hub on JJ Thomson Avenue, its front garden
+west-cambridge/scholars-brew | File:The Hauser Forum - geograph.org.uk - 2720202.jpg | The Hauser Forum's sign by Charles Babbage Road
+west-cambridge/west-hub-canteen | File:West Hub - geograph.org.uk - 7706199.jpg | The West Hub from its corner
+west-cambridge/west-hub-coffee-bar | File:West Cambridge, West Hub, J J Thomson Avenue - geograph.org.uk - 7300118.jpg | The West Hub's front, tables outside the coffee bar
