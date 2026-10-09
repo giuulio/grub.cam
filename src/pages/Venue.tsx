@@ -46,6 +46,7 @@ export function VenuePage() {
         <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:block md:min-w-0 md:space-y-6">
           <div className="order-2 min-w-0 space-y-6 md:order-none">
             <VenuePhoto venue={venue} />
+            {showsDatedMenu(venue) && <SideCalendar venue={venue} now={now} />}
             <div className="rounded-2xl border border-ink/10 p-5">
               <StatusLine s={openStatus(venue.slots, now)} now={now} />
               <Hours venue={venue} now={now} />
@@ -62,6 +63,29 @@ export function VenuePage() {
 }
 
 const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
+/** Dining, or a café or bar that posts dishes by date: a page with a menu for each date, and its calendar. */
+const showsDatedMenu = (v: Venue) => v.type === 'hall' || v.menu.some((d) => d.items.length)
+
+/** The menu date (?date=, default today), and every date with a menu: loaded ones straight away, the full history once fetched. */
+function useMenuDate(venue: Venue, now: LocalNow) {
+  const [params, setParams] = useSearchParams()
+  const asked = params.get('date') ?? ''
+  const date = isISODate(asked) ? asked : now.date
+  const setDate = (d: string) => setParams(d === now.date ? {} : { date: d }, { replace: true })
+  const fetched = useMenuDates(venue.id)
+  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
+  return { asked, date, setDate, fetched, dates }
+}
+
+/** Beside the menu on wider screens: every date with a menu, always in view. On a phone it opens from the date instead. */
+function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
+  const { date, setDate, dates } = useMenuDate(venue, now)
+  return (
+    <div className="hidden rounded-2xl border border-ink/10 p-5 md:block">
+      <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={setDate} />
+    </div>
+  )
+}
 
 function Heading({ venue }: { venue: Venue }) {
   return (
@@ -159,15 +183,8 @@ function FixedMenu({ type, lines }: { type: VenueType; lines: VenuePrice[] }) {
  */
 function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices?: VenuePrice[] }) {
   const { snapshot } = useReady()
-  const [params, setParams] = useSearchParams()
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const asked = params.get('date') ?? ''
-  const date = isISODate(asked) ? asked : now.date
-  const setDate = (d: string) => setParams(d === now.date ? {} : { date: d }, { replace: true })
-
-  // Dates already loaded show straight away; the full history fills in once fetched.
-  const fetched = useMenuDates(venue.id)
-  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
+  const { asked, date, setDate, fetched, dates } = useMenuDate(venue, now)
   const { days, failed } = useMenuOn(venue, date)
   if (!dates.length && !asked) {
     if (prices?.length)
@@ -193,9 +210,9 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
           onClick={() => setCalendarOpen(!calendarOpen)}
           aria-expanded={calendarOpen}
           aria-label={`${formatISODate(date, { weekday: 'long', ...dayMonth })}: choose another date`}
-          className="-ml-2 flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-ink/5"
+          className="-ml-2 flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-ink/5 md:pointer-events-none md:cursor-auto"
         >
-          <Icon of={Calendar} className="size-5 text-muted" />
+          <Icon of={Calendar} className="size-5 text-muted md:hidden" />
           <span className="min-w-0 truncate text-lg font-medium">
             <span className="sm:hidden">{formatISODate(date, { weekday: 'short', ...dayMonth })}</span>
             <span className="hidden sm:inline">{formatISODate(date, { weekday: 'long', ...dayMonth })}</span>
@@ -212,7 +229,7 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
         </div>
       </div>
       {calendarOpen && (
-        <div className="mt-4">
+        <div className="mt-4 md:hidden">
           <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
         </div>
       )}
