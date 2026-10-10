@@ -147,6 +147,26 @@ select option, select optgroup {
   }
   .field input { @apply w-full min-w-0 bg-transparent text-base text-ink outline-none placeholder:text-muted sm:text-sm; }
 
+  /* The front page's search, one wide rounded box as Tripadvisor's: it draws the focus ring, not the input inside. */
+  .hero-search:has(input:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* A row that scrolls sideways (the front page's cards, its search tabs on a phone): swiped, so no scrollbar. */
+  .card-row {
+    scrollbar-width: none;
+  }
+  .card-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A list's card, as TheFork's: its name's link covers it, so the card draws the focus ring. */
+  .listing-card:has(.card-link:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
   .filter-select {
     @apply block h-11 w-full min-w-0 rounded-lg border border-ink/15 bg-canvas px-3 text-base text-ink sm:h-10 sm:text-sm;
   }
@@ -223,6 +243,9 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   font: inherit;
   z-index: 0;
 }
+
+/* Beside a list (the directory, a site's venues), the map stays in view as tall as the screen, as TheFork's. */
+.listing-map .venue-map { height: max(26rem, calc(100svh - 2rem)); }
 
 /* Above a phone, the map fills the rest of the screen (--map-top is measured by Explore). */
 @media (min-width: 640px) {

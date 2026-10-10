@@ -336,7 +336,7 @@ function Details({ venue }: { venue: Venue }) {
         </Fact>
         <Fact icon={MapIcon} known={mapped}>
           {mapped ? (
-            <Link to={`/?venue=${encodeURIComponent(venue.id)}`} className="link">
+            <Link to={`/explore?venue=${encodeURIComponent(venue.id)}`} className="link">
               On the map
             </Link>
           ) : (

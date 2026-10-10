@@ -6,6 +6,7 @@ import { DataProvider, useData, type State } from './lib/data.tsx'
 import { useScrollMemory } from './lib/useScrollMemory.ts'
 import { About } from './pages/About.tsx'
 import { CoveragePage } from './pages/Coverage.tsx'
+import { Explore } from './pages/Explore.tsx'
 import { Home } from './pages/Home.tsx'
 import { NotFound } from './pages/NotFound.tsx'
 import { SitePage } from './pages/Site.tsx'
@@ -17,12 +18,12 @@ import { Send } from './pages/Send.tsx'
 
 function Layout() {
   const data = useData()
-  const explore = useLocation().pathname === '/'
+  const { pathname } = useLocation()
   useScrollMemory()
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className={`flex-1 ${explore ? 'pt-0 sm:pt-6' : 'pt-10 sm:pt-12'}`}>
+      <main className={`flex-1 ${pathname === '/explore' ? 'pt-0 sm:pt-6' : pathname === '/' ? 'pt-8 sm:pt-14' : 'pt-10 sm:pt-12'}`}>
         <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
       </main>
       <Footer />
@@ -36,6 +37,7 @@ export default function App({ data }: { data: State }) {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="explore" element={<Explore />} />
           <Route path="about" element={<About />} />
           <Route path="coverage" element={<CoveragePage />} />
           <Route path="terms" element={<Terms />} />

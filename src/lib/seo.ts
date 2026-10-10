@@ -100,9 +100,10 @@ export function pages(data: Data, date: string): Page[] {
       name: SITE_NAME,
       url: abs('/'),
       description: SITE_DESCRIPTION,
-      potentialAction: { '@type': 'SearchAction', target: `${abs('/')}?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+      potentialAction: { '@type': 'SearchAction', target: `${abs('/explore')}?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
     },
   }
+  const explore: Page = { path: '/explore', description: "Every Cambridge college and University dining hall, café and bar on a map: what's open now, and menus by date, meal and diet." }
   const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours) and what's still missing." }
   const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
@@ -126,7 +127,7 @@ export function pages(data: Data, date: string): Page[] {
     }
   })
   const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))
-  return [home, directory, about, coverage, terms, credits, sendPage, ...sites, ...venues]
+  return [home, explore, directory, about, coverage, terms, credits, sendPage, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')

@@ -27,8 +27,8 @@ const data: Data = { sites: [jesus], venues: [caff], menuFrom: '2026-10-08', men
 const date = '2026-10-08'
 
 describe('seo', () => {
-  it('lists home, the directory, about, coverage, terms, photo credits, send, each site and each venue', () => {
-    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/directory', '/about', '/coverage', '/terms', '/credits', '/send', '/jesus', '/jesus/caff'])
+  it('lists home, explore, the directory, about, coverage, terms, photo credits, send, each site and each venue', () => {
+    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/explore', '/directory', '/about', '/coverage', '/terms', '/credits', '/send', '/jesus', '/jesus/caff'])
   })
 
   it('describes a venue with its hours, and gives schema.org hours and menus by date then meal', () => {

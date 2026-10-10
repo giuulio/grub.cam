@@ -73,22 +73,23 @@ export function VenueThumb({ venue, className = 'size-16' }: { venue: Venue; cla
 
 /**
  * A site's picture in a list: its photo, cropped square; or, until it has one, a plain tile with a mortarboard for a
- * college and a building for a University site. Decorative: the row names the site.
+ * college and a building for a University site. Decorative: the row names the site. `sizes` when it's shown larger
+ * than a thumbnail. Rounded as `className` says (a list's thumbnail is `rounded-lg`).
  */
-export function SiteThumb({ site, className = 'size-16' }: { site: Site; className?: string }) {
+export function SiteThumb({ site, className = 'size-16 rounded-lg', sizes = '4rem' }: { site: Site; className?: string; sizes?: string }) {
   const photo = sitePhoto(site)
   const [failed, setFailed] = useState<string>()
   if (!photo || failed === photo.path)
     return (
-      <span className={`flex shrink-0 items-center justify-center rounded-lg bg-ink/6 text-muted ${className}`}>
+      <span className={`flex shrink-0 items-center justify-center bg-ink/6 text-muted ${className}`}>
         <Icon of={site.kind === 'college' ? GraduationCap : Buildings} className="size-[40%]" />
       </span>
     )
   return (
     <img
       src={photoSrc(photo, photo.widths.find((w) => w >= 240) ?? photo.widths.at(-1)!)}
-      srcSet={photo.widths.filter((w) => w <= 480).map((w) => `${photoSrc(photo, w)} ${w}w`).join(', ')}
-      sizes="4rem"
+      srcSet={photo.widths.map((w) => `${photoSrc(photo, w)} ${w}w`).join(', ')}
+      sizes={sizes}
       width={photo.width}
       height={photo.height}
       alt=""
@@ -96,7 +97,7 @@ export function SiteThumb({ site, className = 'size-16' }: { site: Site; classNa
       ref={(el) => { if (el?.complete && !el.naturalWidth) setFailed(photo.path) }}
       onError={() => setFailed(photo.path)}
       style={{ backgroundColor: photo.color ?? undefined }}
-      className={`shrink-0 rounded-lg object-cover ${className}`}
+      className={`shrink-0 object-cover ${className}`}
     />
   )
 }
@@ -109,6 +110,21 @@ export function VenueBanner({ venue }: { venue: Venue }) {
       <VenueImage venue={venue} sizes="(min-width: 1280px) 78rem, 100vw" eager icon="size-12" className="block aspect-5/2 w-full sm:rounded-xl lg:aspect-4/1" />
       {photo && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
+  )
+}
+
+/** A photo's credit on the photo, as Tripadvisor credits its members: "Kim Fyson · CC BY-SA 2.0", linking its page and the licence's deed. */
+export function PhotoBadge({ photo, className = '' }: { photo: Photo; className?: string }) {
+  const deed = licenceUrl(photo.licence)
+  const page = sourceUrl(photo)
+  if (!photo.credit && !photo.licence) return null
+  const link = 'underline-offset-2 hover:underline'
+  return (
+    <p className={`absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-ink ${className}`}>
+      {photo.credit && (page ? <a href={page} target="_blank" rel="noopener" className={link}>{photo.credit}</a> : photo.credit)}
+      {photo.credit && photo.licence && ' · '}
+      {photo.licence && (deed ? <a href={deed} target="_blank" rel="noopener license" className={link}>{photo.licence}</a> : photo.licence)}
+    </p>
   )
 }
 

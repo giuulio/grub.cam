@@ -29,7 +29,7 @@ export function Credits() {
           <ul className="mt-4">
             {shownSites.map((s) => (
               <li key={s.slug} className="flex items-start gap-4 border-t border-ink/10 py-4">
-                <SiteThumb site={s} className="size-16" />
+                <SiteThumb site={s} className="size-16 rounded-lg" />
                 <div className="min-w-0">
                   <Link to={sitePath(s)} className="link font-medium">
                     {siteName(s)}

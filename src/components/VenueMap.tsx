@@ -9,8 +9,11 @@ import { sideBySide } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import type { VenueType } from '../lib/types.ts'
 
-/** `panel`: the picked venue's panel, which covers part of the map (its left side, or its foot on a phone) */
-type Props = { results: Ranked[]; selected?: string; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean; panel?: RefObject<HTMLElement | null> }
+/**
+ * `panel`: the picked venue's panel, which covers part of the map (its left side, or its foot on a phone).
+ * `highlight`: venues drawn as picked without being picked, as a list does for the card under the pointer.
+ */
+type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean; panel?: RefObject<HTMLElement | null> }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
@@ -28,7 +31,7 @@ const fitPadding = (map: MapLibre.Map) => {
   return { top: Math.min(controlsHeight + 85, container.clientHeight * 0.45), bottom: 90, left: 44, right: 44 }
 }
 
-export function VenueMap({ results, selected, onSelect, snapshot, filtered, panel }: Props) {
+export function VenueMap({ results, selected, highlight, onSelect, snapshot, filtered, panel }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -150,8 +153,10 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
     if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
   }, [ready, key, filtered]) // refit only when the matching venues change
 
-  // The selected venue's pin sits above its neighbours.
-  useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected ? '1' : '' }) }, [anchors, selected])
+  // The selected venue's pin sits above its neighbours, as do highlighted ones.
+  const lit = (id: string) => id === selected || !!highlight?.includes(id)
+  const litKey = highlight?.join('|')
+  useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected || litKey?.split('|').includes(id) ? '1' : '' }) }, [anchors, selected, litKey])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
   // middle of what the panel leaves free.
@@ -198,7 +203,7 @@ export function VenueMap({ results, selected, onSelect, snapshot, filtered, pane
       <div ref={container} className="venue-map" aria-label="Map of food and drink in Cambridge" />
       {mapped.map((r) => {
         const el = anchors.get(r.venue.id)
-        return el && createPortal(<MapPin r={r} selected={r.venue.id === selected} open={!snapshot && r.status.kind === 'open'} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
+        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} open={!snapshot && r.status.kind === 'open'} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
       })}
       {!loaded && !error && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
       <div className="map-actions absolute top-4 left-4 z-500 max-w-[calc(100%-5rem)]">
