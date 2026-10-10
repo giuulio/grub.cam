@@ -47,7 +47,7 @@ export function VenueImage({ venue, sizes, className = '', icon = 'size-[40%]', 
   )
 }
 
-/** A type's colour with its icon, as on the map: chips, headings and the directory use it, so they read as its key. `label` when its name is already written beside it (or read out by the row it sits in). */
+/** A type's colour with its icon, as on the map: cards and headings use it, so they read as its key. `label` when its name is already written beside it (or read out by the row it sits in). */
 export function TypeMark({ type, className = 'size-5', label = false }: { type: VenueType; className?: string; label?: boolean }) {
   return (
     <span className={`type-mark ${className}`} data-type={type} title={label ? undefined : TYPE_LABEL[type]}>
@@ -110,21 +110,6 @@ export function VenueBanner({ venue }: { venue: Venue }) {
       <VenueImage venue={venue} sizes="(min-width: 1280px) 78rem, 100vw" eager icon="size-12" className="block aspect-5/2 w-full sm:rounded-xl lg:aspect-4/1" />
       {photo && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
-  )
-}
-
-/** A photo's credit on the photo, as Tripadvisor credits its members: "Kim Fyson · CC BY-SA 2.0", linking its page and the licence's deed. */
-export function PhotoBadge({ photo, className = '' }: { photo: Photo; className?: string }) {
-  const deed = licenceUrl(photo.licence)
-  const page = sourceUrl(photo)
-  if (!photo.credit && !photo.licence) return null
-  const link = 'underline-offset-2 hover:underline'
-  return (
-    <p className={`absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-ink ${className}`}>
-      {photo.credit && (page ? <a href={page} target="_blank" rel="noopener" className={link}>{photo.credit}</a> : photo.credit)}
-      {photo.credit && photo.licence && ' · '}
-      {photo.licence && (deed ? <a href={deed} target="_blank" rel="noopener license" className={link}>{photo.licence}</a> : photo.licence)}
-    </p>
   )
 }
 

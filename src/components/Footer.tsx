@@ -2,12 +2,14 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { coverage, menuWindow } from '../lib/coverage.ts'
 import { useData } from '../lib/data.tsx'
+import { SCOPES } from '../lib/finder.ts'
 import { ISSUES_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 
 /**
  * Laid out as Tripadvisor's: columns of links (the site, where to browse, how to help) and how fresh the menus are;
  * then the mark, ©, the terms, and that grub.cam isn't the University's. No GitHub link: the header has it.
+ * The Find column is the front page's tabs.
  */
 export function Footer() {
   const data = useData()
@@ -23,11 +25,8 @@ export function Footer() {
           <Link to="/credits">Photo credits</Link>
           <Link to="/terms">Terms and privacy</Link>
         </FooterLinks>
-        <FooterLinks title="Explore">
-          <Link to="/explore">Map</Link>
-          <Link to="/directory">Directory</Link>
-          <Link to="/directory?kind=college">Colleges</Link>
-          <Link to="/directory?kind=university">University sites</Link>
+        <FooterLinks title="Find">
+          {SCOPES.map((s) => <Link key={s.scope} to={s.path}>{s.scope === 'all' ? 'Everything' : s.label}</Link>)}
         </FooterLinks>
         <FooterLinks title="Help build it">
           <Link to="/send">Send a photo or a correction</Link>

@@ -13,7 +13,8 @@ import { menuGap } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL } from '../lib/filters.ts'
 import { venuePhoto } from '../lib/photos.ts'
-import { formatGbp, priceGroups } from '../lib/prices.ts'
+import { priceGroups } from '../lib/prices.ts'
+import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, SITE_NAME, siteName } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
@@ -279,35 +280,21 @@ function MissingMenu({ venue, published = true }: { venue: Venue; published?: bo
   )
 }
 
-const DRESS: Record<NonNullable<Formal['dress_code']>, string> = { black_tie: 'black tie', formal: 'jacket and tie, or equivalent', smart: 'smart', relaxed: 'relaxed' }
-const sentence = (parts: (string | false | null | undefined)[]) => {
-  const s = parts.filter(Boolean).join(', ')
-  return s ? s[0].toUpperCase() + s.slice(1) : undefined
-}
-
-/** What a member needs to go to formal hall: when, what it costs, guests, dress, how to book. */
+/** What a member needs to go to formal hall: when, what it costs, guests, dress, how to book (in words from lib/formal.ts). */
 function FormalHall({ venue, formal: f }: { venue: Venue; formal: Formal }) {
-  const slots = venue.slots.filter((s) => s.meal === 'formal').sort(slotOrder)
-  const when = slots.length
-    ? slots.map((s) => `${formatDays(s.days)} · ${s.start}${s.period === 'term' ? ', in term' : s.period === 'vacation' ? ', out of term' : ''}`)
-    : f.days?.length
-    ? [`${formatDays(f.days)} · time not published`]
-    : []
-  const price = f.price_gbp != null && (
+  const when = formalWhen(venue, f)
+  const price = formalPrice(f) && (
     <>
-      {formatGbp(f.price_gbp)}
-      {f.guest_gbp != null && ` · guests ${formatGbp(f.guest_gbp)}`}
+      {formalPrice(f)}
       {f.prices_seen && <span className="text-muted"> ({formatISODate(f.prices_seen, { month: 'short', year: 'numeric' })})</span>}
     </>
   )
-  const n = f.book_days_before
-  const deadline = n != null && f.book_by && `by ${f.book_by}${n === 0 ? ' on the day' : n === 1 ? ' the day before' : `, ${n} days before`}`
   const rows: [string, ReactNode][] = [
     ['When', when.length ? when.map((w) => <span key={w} className="block">{w}</span>) : undefined],
     ['Price', price],
-    ['Guests', f.guests_allowed === false ? 'No guests' : f.guests_allowed ? (f.guests_max != null ? `Up to ${f.guests_max} per member` : 'Allowed') : undefined],
-    ['Dress', sentence([f.dress_code && DRESS[f.dress_code], f.gowns === 'required' ? 'gowns for members' : f.gowns === 'optional' && 'gowns optional'])],
-    ['Booking', sentence([f.book_via, deadline])],
+    ['Guests', formalGuests(f)],
+    ['Dress', formalDress(f)],
+    ['Booking', formalBooking(f)],
   ]
   return (
     <div className="space-y-4">
@@ -324,6 +311,11 @@ function FormalHall({ venue, formal: f }: { venue: Venue; formal: Formal }) {
   )
 }
 
+const sentence = (parts: (string | false | null | undefined)[]) => {
+  const s = parts.filter(Boolean).join(', ')
+  return s ? s[0].toUpperCase() + s.slice(1) : undefined
+}
+
 /** Diets, where it is, its website, and how to report a change. */
 function Details({ venue }: { venue: Venue }) {
   const mapped = venue.latitude != null && venue.longitude != null
@@ -336,7 +328,7 @@ function Details({ venue }: { venue: Venue }) {
         </Fact>
         <Fact icon={MapIcon} known={mapped}>
           {mapped ? (
-            <Link to={`/explore?venue=${encodeURIComponent(venue.id)}`} className="link">
+            <Link to={`/?site=${venue.site.slug}&view=map`} className="link">
               On the map
             </Link>
           ) : (

@@ -2,7 +2,7 @@ import type { ReactNode, SelectHTMLAttributes } from 'react'
 import { ChevronDown, Search } from 'reicon-react'
 import { Icon } from './Icon.tsx'
 
-// Form controls shared by Explore, the Directory and Coverage, one height for a row of them: 44px on a phone, 40px
+// Form controls shared by the front page and Coverage, one height for a row of them: 44px on a phone, 40px
 // above (`.btn`, `.chip`, `.field` in index.css).
 
 /** Pick one of a few views or groups: the pressed one sits raised. */

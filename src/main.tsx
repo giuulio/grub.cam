@@ -5,7 +5,7 @@ import App from './App.tsx'
 import { load, type State } from './lib/data.tsx'
 // Self-hosted, so no font service sees a visitor's IP (index.css says what each is for)
 import '@fontsource-variable/public-sans'
-import '@fontsource-variable/source-serif-4/opsz.css'
+import '@fontsource-variable/figtree'
 import './index.css'
 
 // Pages are prerendered at build time; that HTML stays up until live data has loaded, then the app takes over.

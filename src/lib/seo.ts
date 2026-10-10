@@ -2,6 +2,7 @@
 // llms.txt / llms-full.txt. Pure functions of the loaded data; scripts/prerender.ts writes them out at build time.
 import type { Data } from './data.tsx'
 import { DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
+import { SCOPES } from './finder.ts'
 import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
@@ -100,13 +101,19 @@ export function pages(data: Data, date: string): Page[] {
       name: SITE_NAME,
       url: abs('/'),
       description: SITE_DESCRIPTION,
-      potentialAction: { '@type': 'SearchAction', target: `${abs('/explore')}?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+      potentialAction: { '@type': 'SearchAction', target: `${abs('/')}?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
     },
   }
-  const explore: Page = { path: '/explore', description: "Every Cambridge college and University dining hall, café and bar on a map: what's open now, and menus by date, meal and diet." }
+  // The front page's other tabs: Dining, Cafés, Bars, Formal hall
+  const TAB_DESCRIPTIONS: Record<string, string> = {
+    '/dining': "Every Cambridge college and University dining hall and canteen: today's menus dish by dish, meal times, and what's open now.",
+    '/cafes': "Every Cambridge college and University café: opening hours, posted prices, and what's open now.",
+    '/bars': 'Every Cambridge college and University bar: opening hours, posted prices, and what’s open now.',
+    '/formal': 'Formal hall at every Cambridge college that holds it: when, what it costs, dress and how to book.',
+  }
+  const tabs = SCOPES.filter((s) => s.path !== '/').map((s): Page => ({ path: s.path, description: TAB_DESCRIPTIONS[s.path] }))
   const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours) and what's still missing." }
-  const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
   const sendPage: Page = { path: '/send', description: 'Send a photo of a menu board, price list or opening times from a Cambridge college café, hall or bar, to add it to grub.cam.' }
@@ -127,7 +134,7 @@ export function pages(data: Data, date: string): Page[] {
     }
   })
   const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))
-  return [home, explore, directory, about, coverage, terms, credits, sendPage, ...sites, ...venues]
+  return [home, ...tabs, about, coverage, terms, credits, sendPage, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import type * as MapLibre from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { hasLocation } from '../lib/explore.ts'
+import { hasLocation } from '../lib/finder.ts'
 import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
 import { sideBySide } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
@@ -24,12 +24,8 @@ const CAMBRIDGE: [number, number] = [0.117, 52.205]
  */
 const REACH: [[number, number], [number, number]] = [[0.0103, 52.1664], [0.2179, 52.2534]]
 const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.latitude!]
-const fitPadding = (map: MapLibre.Map) => {
-  if (window.innerWidth >= 640) return 60
-  const container = map.getContainer()
-  const controlsHeight = parseFloat(getComputedStyle(container).getPropertyValue('--explore-controls-height')) || 110
-  return { top: Math.min(controlsHeight + 85, container.clientHeight * 0.45), bottom: 90, left: 44, right: 44 }
-}
+// On a phone, clear of Near me and Show all above and the list button below
+const fitPadding = () => (window.innerWidth >= 640 ? 60 : { top: 70, bottom: 90, left: 44, right: 44 })
 
 export function VenueMap({ results, selected, highlight, onSelect, snapshot, filtered, panel }: Props) {
   const container = useRef<HTMLDivElement>(null)
@@ -149,7 +145,7 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
     const fit = `${!!filtered}:${key}`
     if (fit === fitKey.current) return
     fitKey.current = fit
-    if (filtered && mapped.length) e.map.fitBounds(mapped.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(e.map), maxZoom: 15, duration: 0 })
+    if (filtered && mapped.length) e.map.fitBounds(mapped.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(), maxZoom: 15, duration: 0 })
     if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
   }, [ready, key, filtered]) // refit only when the matching venues change
 
@@ -213,7 +209,7 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
             const e = engine.current
             if (e) {
               const bounds = results.filter((r) => hasLocation(r.venue)).reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds())
-              e.map.fitBounds(bounds, { padding: fitPadding(e.map), maxZoom: 15, duration: 300 })
+              e.map.fitBounds(bounds, { padding: fitPadding(), maxZoom: 15, duration: 300 })
             }
           }} className="btn raised h-9 px-3.5 font-normal sm:h-9">Show all</button>
         </div>

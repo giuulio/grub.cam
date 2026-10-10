@@ -1,9 +1,10 @@
 @import 'tailwindcss';
 
 /*
- * Type: Michelangelus for venue names and titles, Chirp (X's interface font) for everything else, when installed.
- * These fonts aren't distributed here: Michelangelus's download licence excludes redistribution, and Chirp has no
- * public web-use licence. Source Serif 4 and Public Sans remain self-hosted fallbacks (main.tsx).
+ * Type: Figtree for venue names and titles, a round, friendly sans as Tripadvisor's Trip Sans and OpenTable's Brandon
+ * Text are (both proprietary; Figtree is OFL). Chirp (X's interface font) for everything else when installed: it isn't
+ * distributed here, having no public web-use licence, so Public Sans is the self-hosted fallback. Both self-hosted
+ * (main.tsx), so no font service sees a visitor's IP.
  * No font service sees a visitor's IP.
  *
  * Colour: the University's palette (cam.ac.uk/brand-resources/guidelines/colour). Slate for text; Cambridge Blue for
@@ -13,7 +14,7 @@
  */
 @theme {
   --font-sans: 'Chirp', 'TwitterChirp', 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Michelangelus', 'Source Serif 4 Variable', ui-serif, Georgia, serif;
+  --font-display: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
   --color-canvas: var(--canvas);
   --color-raised: var(--raised);
   --color-ink: var(--ink);
@@ -94,9 +95,9 @@ select option, select optgroup {
 }
 
 @layer components {
-  /* A page or section title: the serif, upright, never tracked. */
+  /* A page or section title: Figtree, bold, as the titles on Tripadvisor and TheFork; never tracked. */
   .title {
-    @apply font-display font-semibold text-ink;
+    @apply font-display font-bold text-ink;
   }
 
   /* A link in running text: Warm Blue underline, ink on hover. */
@@ -244,13 +245,10 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   z-index: 0;
 }
 
-/* Beside a list (the directory, a site's venues), the map stays in view as tall as the screen, as TheFork's. */
-.listing-map .venue-map { height: max(26rem, calc(100svh - 2rem)); }
-
-/* Above a phone, the map fills the rest of the screen (--map-top is measured by Explore). */
-@media (min-width: 640px) {
-  .is-map .venue-map { height: max(26rem, calc(100svh - var(--map-top, 12rem) - 1.5rem)); }
-}
+/* Beside a list (the front page's tabs, a site's venues), the map stays in view under the header (its height is
+   --header-h while it's sticky) as tall as the screen allows, as TheFork's. On a phone it's the whole view instead. */
+.listing-map.sticky { top: calc(var(--header-h, 0px) + 1rem); }
+.listing-map .venue-map { height: max(26rem, calc(100svh - var(--header-h, 0px) - 2rem)); }
 
 .venue-pin-target {
   display: flex;
@@ -334,101 +332,4 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-icon,
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-attrib-button {
   filter: invert(1);
-}
-
-/* Explore's filters: in the list, a box under the controls that pushes the list down. */
-#explore-filters {
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  background: var(--canvas);
-}
-.is-map #explore-filters {
-  border: 0;
-  background: var(--raised);
-}
-
-/* Over the map, a venue picked on it and the filters open in one panel down the map's left side (as Google Maps
-   does), and what sat in that corner moves over beside it. The filters sit in the controls above the map, so they're
-   placed from there: 1rem below them is the map's top edge. */
-@media (min-width: 640px) {
-  .explore-page { --panel-w: 22rem; }
-  .is-map #explore-filters {
-    position: absolute;
-    top: calc(100% + 1rem + 0.75rem + 1px);
-    left: calc(0.75rem + 1px);
-    width: var(--panel-w);
-    max-height: calc(max(26rem, calc(100svh - var(--map-top, 12rem) - 1.5rem)) - 1.5rem - 2px);
-    margin: 0;
-    overflow-y: auto;
-    box-shadow: var(--raised-shadow);
-    outline: 1px solid var(--raised-border);
-    outline-offset: -1px;
-  }
-  .explore-map-shell.has-panel .map-actions,
-  .explore-map-shell.has-panel .map-key { left: calc(var(--panel-w) + 1.5rem); }
-}
-
-@media (max-width: 639px) {
-  .explore-page:not(.is-map) { padding-top: 1.25rem; }
-
-  .explore-page.is-map {
-    position: relative;
-    margin-inline: -1rem;
-  }
-
-  .is-map .venue-map {
-    height: max(360px, calc(100dvh - var(--explore-top, 112px)));
-  }
-
-  .is-map .explore-controls {
-    position: absolute;
-    inset: 12px 12px auto;
-    z-index: 700;
-    margin: 0;
-    max-height: calc(100dvh - var(--explore-top, 112px) - 80px);
-    overflow-y: auto;
-    scrollbar-width: none;
-    pointer-events: none;
-  }
-
-  .is-map .explore-controls > * { pointer-events: auto; }
-
-  .is-map .explore-search {
-    box-shadow: 0 2px 8px #0002;
-  }
-
-  .is-map .explore-chips {
-    flex-wrap: nowrap;
-  }
-
-  .is-map .explore-quick-chips {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 4px;
-  }
-
-  .is-map .explore-clear span { display: none; }
-
-  .is-map .explore-chips .chip:not([aria-pressed='true']):not([data-on]) {
-    background: var(--raised);
-    box-shadow: 0 1px 5px #0002;
-  }
-
-  .is-map #explore-filters:not([hidden]) {
-    box-shadow: 0 2px 8px #0002;
-  }
-
-  .is-map .explore-controls > p,
-  .is-map .explore-controls > [aria-label='Dining meal'] {
-    border-radius: 12px;
-    padding: 12px;
-    background: var(--raised);
-    box-shadow: 0 2px 8px #0002;
-  }
-
-  .is-map .map-actions { top: auto; bottom: 64px; left: 12px; }
-  .is-map .maplibregl-ctrl-top-right { top: auto; bottom: 64px; }
 }

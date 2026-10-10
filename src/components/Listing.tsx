@@ -2,22 +2,22 @@ import { useSyncExternalStore, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ChevronRight, Home } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { MEAL_LABEL, MEALS, nextService, slotOrder, TYPE_LABEL, TYPES, type Ranked } from '../lib/filters.ts'
+import { MEAL_LABEL, MEALS, nextService, slotOrder, TYPE_LABEL, type Ranked } from '../lib/filters.ts'
+import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList } from '../lib/prices.ts'
 import { siteName, sitePath, venuePath } from '../lib/site.ts'
-import { statusWords } from '../lib/status.ts'
 import { hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
-import { openStatus, slotApplies } from '../lib/time/openNow.ts'
-import { venueTypes, type Site, type Slot, type Venue } from '../lib/types.ts'
+import { slotApplies } from '../lib/time/openNow.ts'
+import { venueTypes, type Slot } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 import { Status } from './Status.tsx'
 import { VenueMap } from './VenueMap.tsx'
-import { SiteThumb, TypeMark, VenueImage } from './VenuePhoto.tsx'
+import { TypeMark, VenueImage } from './VenuePhoto.tsx'
 
-// Lists laid out as TheFork's: where you are, the page's name and how many there are, then a card per site or venue
-// (its photo down the left, what to know beside it) with a map of the same venues beside the list on a wide screen.
+// Lists laid out as TheFork's: where you are, the page's name and how many there are, then a card per venue (its photo
+// down the left, what to know beside it) with a map of the same venues beside the list on a wide screen.
 
-/** Home › Directory › Christ's College: the last is the page itself. */
+/** Home › Jesus College: the last is the page itself. */
 export function Breadcrumbs({ trail }: { trail: [to: string, label: string][] }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-5 text-sm">
@@ -59,33 +59,34 @@ const subscribe = (change: () => void) => {
 }
 
 /**
- * The list, with the map of its venues beside it (sticky, as TheFork's) on a wide screen; narrower, the list alone.
- * A pin opens its venue; `highlight` picks out the pins of the card under the pointer.
+ * The list, with the map of its venues beside it (sticky under the header, as TheFork's) on a wide screen; narrower,
+ * the list alone, or the map alone when `phoneMap`. A pin opens its venue; `highlight` picks out the pins of the card
+ * under the pointer. `empty` stands in for the list when nothing matches.
  */
-export function ListWithMap({ list, results, highlight, children }: { list: ReactNode; results: Ranked[]; highlight?: string[]; children?: ReactNode }) {
+export function ListWithMap({ list, results, highlight, phoneMap = false, empty, children }: { list: ReactNode; results: Ranked[]; highlight?: string[]; phoneMap?: boolean; empty?: ReactNode; children?: ReactNode }) {
   const { snapshot } = useReady()
   const navigate = useNavigate()
-  // The map is only made where it's shown: a phone never loads it
+  // The map is only made where it's shown: a phone loads it only when asked for
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE).matches, () => false)
+  const map = (
+    <VenueMap
+      results={results}
+      highlight={highlight}
+      filtered
+      onSelect={(id) => {
+        const v = results.find((r) => r.venue.id === id)?.venue
+        if (v) navigate(venuePath(v))
+      }}
+    />
+  )
+  if (!wide && phoneMap && !snapshot) return <div className="listing-map relative isolate -mx-4 overflow-hidden sm:mx-0 sm:rounded-xl">{map}</div>
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       <div className="min-w-0">
         {children}
-        <ul className="space-y-5">{list}</ul>
+        {empty ?? <ul className="space-y-5">{list}</ul>}
       </div>
-      {wide && !snapshot && (
-        <div className="listing-map sticky top-4 isolate self-start overflow-hidden rounded-xl border border-ink/10 bg-ink/5">
-          <VenueMap
-            results={results}
-            highlight={highlight}
-            filtered
-            onSelect={(id) => {
-              const v = results.find((r) => r.venue.id === id)?.venue
-              if (v) navigate(venuePath(v))
-            }}
-          />
-        </div>
-      )}
+      {wide && !snapshot && <div className="listing-map sticky isolate self-start overflow-hidden rounded-xl border border-ink/10 bg-ink/5">{map}</div>}
     </div>
   )
 }
@@ -130,9 +131,11 @@ const sentence = (words: string[]) => (words.length < 2 ? words.join('') : `${wo
 
 /**
  * A venue as a card, for the way it's used: a Dining venue leads with its meals today (as TheFork's time slots, "menu"
- * under those with a menu posted) and the next meal's dishes; a café or bar with what its price list says.
+ * under those with a menu posted) and the next meal's dishes; a café or bar with what its price list says; under the
+ * Formal hall tab (`formal`), when it is, its price, dress and how to book. `showSite` names its college first, linked
+ * to its page (many venues share a name); `dishes`, what a search matched; `distance`, how far it is, nearest first.
  */
-export function VenueListing({ r, now, onHover }: { r: Ranked; now: LocalNow; onHover?: (id?: string) => void }) {
+export function VenueListing({ r, now, onHover, showSite = false, dishes, distance, formal = false }: { r: Ranked; now: LocalNow; onHover?: (id?: string) => void; showSite?: boolean; dishes?: string[]; distance?: string; formal?: boolean }) {
   const { snapshot } = useReady()
   const v = r.venue
   // Its meals in the day's order (a café's and a bar's hours are its types)
@@ -140,9 +143,11 @@ export function VenueListing({ r, now, onHover }: { r: Ranked; now: LocalNow; on
   const kinds = venueTypes(v).map((t) => TYPE_LABEL[t])
   const next = nextService(r)
   const prices = (v.prices ?? []).filter((p) => p.price_gbp != null).slice(0, 3)
-  // What's left of today: the meals still to come or being served
-  const today = v.slots.filter((s) => slotApplies(s, now.date) && endMinutes(s) > now.minutes).sort(slotOrder)
+  // What's left of today: the meals still to come or being served (under Formal hall, only formal hall)
+  const today = v.slots.filter((s) => slotApplies(s, now.date) && endMinutes(s) > now.minutes && (!formal || s.meal === 'formal')).sort(slotOrder)
   const menus = new Set(v.menu.filter((d) => d.date === now.date && d.items.length).map((d) => d.service))
+  const booking = v.formal && formalBooking(v.formal)
+  const facts = formal ? [formalWhen(v, v.formal).join('; '), v.formal && formalPrice(v.formal), v.formal && formalDress(v.formal), booking && `Booking: ${booking}`].filter((t): t is string => !!t) : []
   return (
     <Card
       onHover={(on) => onHover?.(on ? v.id : undefined)}
@@ -153,20 +158,34 @@ export function VenueListing({ r, now, onHover }: { r: Ranked; now: LocalNow; on
             <TypeMark type={v.type} className="size-4" label />
             {TYPE_LABEL[v.type]}
           </Badge>
-          {v.formal && v.slots.some((s) => s.meal !== 'formal') && <Badge>Formal hall</Badge>}
+          {!formal && v.formal && v.slots.some((s) => s.meal !== 'formal') && <Badge>Formal hall</Badge>}
         </>
       }
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
+          {showSite && (
+            <Link to={sitePath(v.site)} className="relative z-10 text-sm text-muted hover:text-ink hover:underline">
+              {siteName(v.site)}
+            </Link>
+          )}
           <CardTitle to={venuePath(v)}>{v.name}</CardTitle>
-          <p className="mt-1 text-muted">{[kinds.join(' and '), meals.length ? sentence(meals).replace(/^./, (c) => c.toUpperCase()) : ''].filter(Boolean).join(' · ')}</p>
+          <p className="mt-1 text-muted">{[kinds.join(' and '), !formal && meals.length ? sentence(meals).replace(/^./, (c) => c.toUpperCase()) : ''].filter(Boolean).join(' · ')}</p>
         </div>
         <p className="shrink-0 pt-1 text-right text-sm">
           <Status s={r.status} now={now} />
+          {distance && <span className="mt-1 block text-muted">{distance}</span>}
         </p>
       </div>
-      {next ? (
+      {formal ? (
+        facts.length > 0 && (
+          <ul className="mt-3 space-y-0.5">
+            {facts.map((t) => <li key={t}>{t}</li>)}
+          </ul>
+        )
+      ) : dishes?.length ? (
+        <p className="mt-3 line-clamp-2">{dishes.join(' · ')}</p>
+      ) : next ? (
         <p className="mt-3 line-clamp-2">
           <span className="font-medium">{MEAL_LABEL[next.service]}:</span> {next.items.map((i) => i.name).join(' · ')}
         </p>
@@ -177,72 +196,15 @@ export function VenueListing({ r, now, onHover }: { r: Ranked; now: LocalNow; on
         <ul aria-label="Today" className="mt-auto flex flex-wrap gap-x-2 gap-y-3 pt-4">
           {today.map((s) => (
             <li key={`${s.meal}${s.start}`} className="flex flex-col items-center gap-1">
-              <span className="rounded-md bg-accent-ink px-3 py-2 text-sm font-semibold text-white tabular-nums">
-                {s.start}–{s.end}
-              </span>
+              <span className="rounded-md bg-accent-ink px-3 py-2 text-sm font-semibold text-white tabular-nums">{s.meal === 'formal' ? s.start : `${s.start}–${s.end}`}</span>
               <span className={`rounded px-1.5 text-xs ${menus.has(s.meal) ? 'bg-open font-medium text-open-ink' : 'text-muted'}`}>
-                {MEAL_LABEL[s.meal]}
+                {s.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[s.meal]}
                 {menus.has(s.meal) && ' menu'}
               </span>
             </li>
           ))}
         </ul>
       )}
-    </Card>
-  )
-}
-
-/** A college or University site as a card: its photo, its kinds of venue, how many are open, and its venues as buttons with whether each is open. */
-export function SiteListing({ site, venues, now, onHover }: { site: Site; venues: Venue[]; now: LocalNow; onHover?: (ids?: string[]) => void }) {
-  const { snapshot } = useReady()
-  const statuses = venues.map((v) => ({ v, s: openStatus(v.slots, now) }))
-  const open = snapshot ? 0 : statuses.filter((x) => x.s.kind === 'open').length
-  const menuToday = !snapshot && venues.some((v) => v.menu.some((d) => d.date === now.date && d.items.length))
-  const shown = statuses.slice(0, 4)
-  return (
-    <Card
-      onHover={(on) => onHover?.(on ? venues.map((v) => v.id) : undefined)}
-      photo={<SiteThumb site={site} sizes="(min-width: 640px) 16rem, 100vw" className="absolute inset-0 size-full" />}
-      badges={<Badge>{site.kind === 'college' ? 'College' : 'University'}</Badge>}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <CardTitle to={sitePath(site)}>{siteName(site)}</CardTitle>
-          <p className="mt-1 text-muted">
-            {venues.length} {venues.length === 1 ? 'venue' : 'venues'}
-          </p>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-            {TYPES.filter((t) => venues.some((v) => venueTypes(v).includes(t))).map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <TypeMark type={t} className="size-4.5" label />
-                {TYPE_LABEL[t]}
-              </span>
-            ))}
-          </p>
-        </div>
-        {open > 0 && <span className="shrink-0 rounded bg-open px-2 py-1 text-sm font-medium text-open-ink">{open} open now</span>}
-      </div>
-      {menuToday && (
-        <p className="mt-3">
-          <span className="rounded-full bg-ink/6 px-2.5 py-1 text-xs font-medium">Menu today</span>
-        </p>
-      )}
-      <ul aria-label="Venues" className="relative z-10 mt-auto flex flex-wrap gap-x-2 gap-y-3 pt-4">
-        {shown.map(({ v, s }) => {
-          const w = statusWords(s, now.date)
-          return (
-            <li key={v.id} className="flex max-w-full flex-col items-center gap-1">
-              <Link to={venuePath(v)} className="max-w-full truncate rounded-md bg-accent-ink px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90">
-                {v.name}
-              </Link>
-              {!snapshot && <span className={`rounded px-1.5 text-xs ${w.kind === 'open' ? 'bg-open font-medium text-open-ink' : 'text-muted'}`}>{w.text}</span>}
-            </li>
-          )
-        })}
-        {venues.length > shown.length && (
-          <li className="self-start py-2 text-sm text-muted">+{venues.length - shown.length} more</li>
-        )}
-      </ul>
     </Card>
   )
 }

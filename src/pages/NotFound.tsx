@@ -10,7 +10,7 @@ export function NotFound() {
       <h1 className="title mb-4 text-4xl">Page not found</h1>
       <Link to="/" className="inline-flex items-center gap-2 text-muted hover:text-ink">
         <Icon of={ArrowLeft} />
-        Explore
+        Food and drink
       </Link>
     </>
   )

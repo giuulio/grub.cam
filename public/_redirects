@@ -1,3 +1,6 @@
-# Cloudflare Pages: the college and University directories became one page (/directory).
-/colleges /directory?kind=college 301
-/university /directory?kind=university 301
+# Cloudflare Pages: pages the front page replaced. Its tabs (/, /dining, /cafes, /bars, /formal) list every venue, and
+# the app sends an old /?type=… on to the tab it names.
+/explore / 301
+/directory / 301
+/colleges / 301
+/university / 301

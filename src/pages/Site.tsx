@@ -34,7 +34,7 @@ export function SitePage() {
   return (
     <>
       <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
-      <Breadcrumbs trail={[[`/directory?kind=${site.kind}`, 'Directory'], [sitePath(site), siteName(site)]]} />
+      <Breadcrumbs trail={[[sitePath(site), siteName(site)]]} />
       <ListHeading title={siteName(site)} count={`${mine.length} ${mine.length === 1 ? 'venue' : 'venues'}`}>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </ListHeading>
