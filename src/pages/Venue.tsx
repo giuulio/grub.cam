@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Calendar, Card, Flag, Gallery, Global, Leaf, Map as MapIcon, Users } from 'reicon-react'
+import { Calendar, Flag, Gallery, Global, Leaf, Map as MapIcon } from 'reicon-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { BackButton } from '../components/BackButton.tsx'
 import { DayMenu } from '../components/DayMenu.tsx'
@@ -11,7 +11,7 @@ import { Status } from '../components/Status.tsx'
 import { TypeMark, VenueBanner } from '../components/VenuePhoto.tsx'
 import { menuGap } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
-import { ACCESS_LABEL, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL } from '../lib/filters.ts'
+import { DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL } from '../lib/filters.ts'
 import { venuePhoto } from '../lib/photos.ts'
 import { formatGbp, priceGroups } from '../lib/prices.ts'
 import { sendPath, SITE_NAME, siteName } from '../lib/site.ts'
@@ -24,7 +24,7 @@ import { NotFound } from './NotFound.tsx'
 
 /**
  * A venue's page, the same for every kind: its photo across the top; name, site and types; beside them whether it's
- * open, its hours, the menu calendar and the facts (access, payment, diets, links); then one section per thing it is,
+ * open, its hours, the menu calendar and the facts (diets, map, links); then one section per thing it is,
  * each shown even when nothing is known yet. Dining leads with the menu for a date, then formal hall where it's held
  * (first, in a Hall used only for formals); a café or bar leads with its price list, and a café that's a bar by night
  * has both.
@@ -324,20 +324,13 @@ function FormalHall({ venue, formal: f }: { venue: Venue; formal: Formal }) {
   )
 }
 
-/** Who can go, how to pay, diets, where it is, its website, and how to report a change. */
+/** Diets, where it is, its website, and how to report a change. */
 function Details({ venue }: { venue: Venue }) {
   const mapped = venue.latitude != null && venue.longitude != null
   const website = venue.url ?? venue.site.official_dining_url
-  const payment = paymentText(venue.payment)
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
     <ul className="order-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
-        <Fact icon={Users} known={venue.access.level !== 'unknown'}>
-          {venue.access.level !== 'unknown' ? ACCESS_LABEL[venue.access.level] : 'Access not known yet'}
-        </Fact>
-        <Fact icon={Card} known={!!payment}>
-          {payment ?? 'Payment not known yet'}
-        </Fact>
         <Fact icon={Leaf} known={!!diets}>
           {diets ? `${diets} options` : 'Diet options not known yet'}
         </Fact>
@@ -380,13 +373,6 @@ function Fact({ icon, known, children }: { icon: Parameters<typeof Icon>[0]['of'
       <span className="min-w-0">{children}</span>
     </li>
   )
-}
-
-/** "Bank card, University card · no cash", or undefined when nothing is known. */
-function paymentText(p: Venue['payment']): string | undefined {
-  const yes = [p.bank_card && 'Bank card', p.university_card && 'University card', p.cash && 'Cash'].filter(Boolean)
-  const no = [p.bank_card === false && 'no bank cards', p.cash === false && 'no cash'].filter(Boolean)
-  return [yes.join(', '), sentence(no) && (yes.length ? no.join(', ') : sentence(no))].filter(Boolean).join(' · ') || undefined
 }
 
 /** The hours for the time of year (term or not), today's in full; the other period's when only those are known. */

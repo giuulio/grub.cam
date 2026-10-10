@@ -12,8 +12,6 @@ const caff: Venue = {
   url: null,
   where: null,
   serves: null,
-  access: { level: 'members_only' },
-  payment: {},
   dietary: { tags: [] },
   site: jesus,
   slots: [
@@ -38,7 +36,6 @@ describe('seo', () => {
     expect(venue.description).toBe('Caff, Jesus College, Cambridge: dining. Open Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40. Menu dish by dish.')
     const ld = venue.jsonLd as Record<string, any>
     expect(ld['@type']).toBe('FoodEstablishment')
-    expect(ld.publicAccess).toBe(false)
     expect(ld.openingHoursSpecification[0]).toMatchObject({ name: 'Lunch', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '12:00', closes: '13:45' })
     expect(ld.hasMenu.hasMenuSection.map((s: { name: string }) => s.name)).toEqual(['Lunch, Thursday 8 October', 'Dinner, Thursday 8 October'])
     expect(ld.hasMenu.hasMenuSection[0].hasMenuItem[0]).toMatchObject({ name: 'Dhal', suitableForDiet: ['https://schema.org/VeganDiet', 'https://schema.org/VegetarianDiet'], offers: { price: '3.30', priceCurrency: 'GBP' } })
@@ -64,7 +61,6 @@ describe('seo', () => {
     expect(llmsTxt(data)).toContain('- [Jesus College](https://grub.cam/jesus): Caff')
     const full = llmsFullTxt(data, date, '8 Oct 2026, 14:00')
     expect(full).toContain('Hours: Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40')
-    expect(full).toContain('Access: members only')
     expect(full).toContain('- Thu 8 Oct, lunch: Dhal [VG]')
     expect(hoursText([])).toBe('')
   })

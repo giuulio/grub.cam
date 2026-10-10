@@ -8,7 +8,7 @@ const today = '2026-10-08'
 const site = { slug: 'jesus', name: 'Jesus', short_name: null, kind: 'college' as const, official_dining_url: null }
 const venue: Venue = {
   id: 'jesus/caff', slug: 'caff', name: 'Caff', type: 'hall', url: null, where: null, serves: null,
-  access: { level: 'members_only' }, payment: {}, dietary: { tags: [] }, site,
+  dietary: { tags: [] }, site,
   slots: [{ meal: 'lunch', days: ['thu', 'fri'], start: '12:00', end: '14:00', period: 'all' }],
   menu: [{ date: '2026-10-09', service: 'lunch', items: [{ name: 'Dhal', tags: ['vegan'] }] }],
 }
@@ -16,11 +16,12 @@ const now = { date: today, day: 'thu' as const, minutes: 20 * 60 }
 const read = (q: string) => readExploreFilters(new URLSearchParams(q), today, [site], today, '2026-10-15')
 
 describe('Explore URL filters', () => {
-  it('validates meals, diet, access, sites and dates and ignores retired guest/card filters', () => {
-    expect(read('type=hall&meal=lunch&diet=vegan,halal,vegan,invalid&site=jesus&access=university&date=2026-10-10&guests=1&card=1')).toMatchObject({
-      type: 'hall', meal: 'lunch', diets: ['vegan', 'halal'], site: 'jesus', access: 'university', date: '2026-10-10', nonMemberOk: false, bankCard: false, exactDate: true,
+  it('validates meals, diet, sites and dates and ignores retired access, guest and card filters', () => {
+    expect(read('type=hall&meal=lunch&diet=vegan,halal,vegan,invalid&site=jesus&date=2026-10-10')).toMatchObject({
+      type: 'hall', meal: 'lunch', diets: ['vegan', 'halal'], site: 'jesus', date: '2026-10-10', exactDate: true,
     })
-    expect(read('type=cafe&meal=formal&diet=vegan&site=missing&access=invalid&date=2026-02-30')).toMatchObject({ type: 'cafe', meal: undefined, diets: ['vegan'], site: undefined, access: undefined, date: today })
+    expect(read('type=cafe&meal=formal&diet=vegan&site=missing&date=2026-02-30')).toMatchObject({ type: 'cafe', meal: undefined, diets: ['vegan'], site: undefined, date: today })
+    expect(read('access=public&guests=1&card=1')).toEqual(read(''))
     expect(read('date=2026-10-15').date).toBe(today)
     expect(read('date=2026-10-07').date).toBe(today)
   })
@@ -33,11 +34,6 @@ describe('Explore URL filters', () => {
     expect(applyFilters([venue], filters, now)).toHaveLength(0)
     expect(applyFilters([venue], { ...filters, date: '2026-10-09' }, now)).toHaveLength(1)
     expect(applyFilters([venue], { ...DEFAULT_FILTERS, date: today }, now)[0].days[0].date).toBe('2026-10-09')
-  })
-  it('distinguishes public, University members, invited guests and members-only access', () => {
-    const guests: Venue = { ...venue, id: 'jesus/bar', access: { level: 'members_guests' } }
-    expect(applyFilters([venue, guests], read('access=public'), now)).toHaveLength(0)
-    expect(applyFilters([venue, guests], read('access=members_guests'), now).map((r) => r.venue.id)).toEqual(['jesus/bar'])
   })
   it('still previews the published menu when a venue name, rather than a dish, matched', () => {
     expect(resultDishes({ venue, status: { kind: 'unknown' }, days: venue.menu, matchedDishes: 0, searchMatches: [] }, read('q=jesus'))).toEqual(['Dhal'])

@@ -12,8 +12,6 @@ const base: Venue = {
   serves: null,
   site: { slug: 'c', name: 'C', short_name: null, kind: 'college', official_dining_url: null },
   slots: [{ meal: 'lunch', days: ['wed'], start: '12:00', end: '14:00', period: 'all' }],
-  access: { level: 'public' },
-  payment: { bank_card: true },
   dietary: { tags: ['vegetarian'] },
   menu: [{ date: '2026-10-07', service: 'lunch', items: [{ name: 'Dhal', tags: ['vegan', 'vegetarian'] }, { name: 'Lamb', tags: ['halal'] }] }],
 }
@@ -40,9 +38,8 @@ describe('applyFilters', () => {
     expect(r[0].status.kind).toBe('open')
     expect(r[0].matchedDishes).toBe(2)
   })
-  it('filters by open now, bank card and search', () => {
+  it('filters by open now and search', () => {
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', openNow: true }, { ...now, minutes: 9 * 60 })).toHaveLength(0)
-    expect(applyFilters([{ ...base, payment: {} }], { ...DEFAULT_FILTERS, date: '2026-10-07', bankCard: true }, now)).toHaveLength(0)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'dhal' }, now)).toHaveLength(1)
     expect(applyFilters([base], { ...DEFAULT_FILTERS, date: '2026-10-07', q: 'pizza' }, now)).toHaveLength(0)
   })

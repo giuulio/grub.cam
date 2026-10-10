@@ -2,7 +2,7 @@
 
 **Where can I eat in Cambridge right now, and what's on?**
 
-Grub lists the dining halls, cafés and bars of all 31 Cambridge colleges, and the University's own cafés and canteens (West Cambridge, Sidgwick, the UL, the museums and more), with opening hours, who can get in, how to pay, and the menu dish by dish wherever one is published. What's open now comes first; filter by type, college or site, meal, diet, access or bank card, or search for a dish.
+Grub lists the dining halls, cafés and bars of all 31 Cambridge colleges, and the University's own cafés and canteens (West Cambridge, Sidgwick, the UL, the museums and more), with opening hours and the menu dish by dish wherever one is published. What's open now comes first; filter by type, college or site, meal or diet, or search for a dish.
 
 ## Run it
 

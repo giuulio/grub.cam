@@ -7,8 +7,8 @@ import { VenueCard, VenuePanel } from '../components/VenueCard.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeMark } from '../components/VenuePhoto.tsx'
 import { useReady } from '../lib/data.tsx'
-import { DINING_MEALS, EXPLORE_ACCESS, EXPLORE_DIETS, EXPLORE_TYPES, hasLocation, readExploreFilters, resultDishes } from '../lib/explore.ts'
-import { ACCESS_LABEL, applyFilters, DIET_LABEL, MEAL_LABEL, TYPE_LABEL } from '../lib/filters.ts'
+import { DINING_MEALS, EXPLORE_DIETS, EXPLORE_TYPES, hasLocation, readExploreFilters, resultDishes } from '../lib/explore.ts'
+import { applyFilters, DIET_LABEL, MEAL_LABEL, TYPE_LABEL } from '../lib/filters.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { addDaysISO, formatISODate } from '../lib/time/clock.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -57,7 +57,7 @@ export function Home() {
   // `venue` picks a pin; `place` is the name old links use
   const selected = results.find((r) => r.venue.id === (params.get('venue') ?? params.get('place')))
   const unmapped = results.filter((r) => !hasLocation(r.venue)).length
-  const extras = Number(!!f.access) + f.diets.length + Number(f.date !== now.date) + Number(!!f.site)
+  const extras = f.diets.length + Number(f.date !== now.date) + Number(!!f.site)
   const filtered = !!(f.q || f.type || f.meal || f.openNow || extras)
   const update = (fn: (p: URLSearchParams) => void) => {
     const next = new URLSearchParams(params)
@@ -66,7 +66,7 @@ export function Home() {
   }
   const set = (key: string, value?: string) => update((p) => { if (value) p.set(key, value); else p.delete(key) })
   const clear = () => update((p) => { for (const k of ['q', 'type', 'meal', 'diet', 'access', 'site', 'date', 'open', 'guests', 'card', 'more', 'venue', 'place']) p.delete(k) })
-  const clearMore = () => update((p) => { for (const k of ['diet', 'access', 'site', 'date']) p.delete(k) })
+  const clearMore = () => update((p) => { for (const k of ['diet', 'site', 'date']) p.delete(k) })
   const select = (id?: string) => update((p) => { p.delete('place'); if (id) p.set('venue', id); else p.delete('venue') })
   const count = `${results.length} ${results.length === 1 ? 'venue' : 'venues'}${f.q.trim() ? ' found' : ''}`
   const siteName = (slug: string) => { const s = sites.find((x) => x.slug === slug); return s?.short_name ?? s?.name }
@@ -110,12 +110,6 @@ export function Home() {
         {/* Over the map, the filters open down its left side, where a picked venue opens: the pins stay in view as they change */}
         <div id="explore-filters" hidden={!filtersShown} className="explore-filters @container mt-3 rounded-xl p-4 sm:p-5">
           <div className="grid gap-x-4 gap-y-5 @xl:grid-cols-3">
-            <Field label="Access">
-              <Select value={f.access ?? ''} onChange={(e) => set('access', e.target.value)}>
-                <option value="">Anyone</option>
-                {EXPLORE_ACCESS.map((a) => <option key={a} value={a}>{ACCESS_LABEL[a]}</option>)}
-              </Select>
-            </Field>
             <Field label="Menu date" hint="For menus; open now stays live">
               <input type="date" value={f.date} min={menuFrom} max={addDaysISO(menuTo, -1)} onChange={(e) => update((p) => { p.set('date', e.target.value); if (e.target.value !== now.date) p.delete('open') })} className="filter-select" />
             </Field>
@@ -136,13 +130,13 @@ export function Home() {
             <button type="button" onClick={() => setFiltersShown(false)} className="btn btn-primary ml-auto">{results.length ? `Show ${results.length} ${results.length === 1 ? 'venue' : 'venues'}` : 'No venues match'}</button>
           </div>
         </div>
-        {!filtersShown && extras > 0 && <p className="mt-3 text-sm text-muted">{[f.access && ACCESS_LABEL[f.access], ...f.diets.map((d) => DIET_LABEL[d]), f.date !== now.date && `menus for ${formatISODate(f.date)}`, f.site && siteName(f.site)].filter(Boolean).join(', ')}</p>}
+        {!filtersShown && extras > 0 && <p className="mt-3 text-sm text-muted">{[...f.diets.map((d) => DIET_LABEL[d]), f.date !== now.date && `menus for ${formatISODate(f.date)}`, f.site && siteName(f.site)].filter(Boolean).join(', ')}</p>}
       </div>
 
       {list ? (
         <section aria-label="Matching venues">
           <p className="mb-1 text-sm text-muted">{count}</p>
-          {results.length ? <ul>{results.map((r) => <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={resultDishes(r, f)} showSite={!f.site} date={f.date} showAccess />)}</ul> : <Empty onClear={clear} />}
+          {results.length ? <ul>{results.map((r) => <VenueCard key={r.venue.id} venue={r.venue} status={r.status} now={now} dishes={resultDishes(r, f)} showSite={!f.site} date={f.date} showFormal />)}</ul> : <Empty onClear={clear} />}
         </section>
       ) : (
         <section ref={mapShell} className={`explore-map-shell relative isolate overflow-hidden bg-ink/5 sm:rounded-xl sm:border sm:border-ink/10 ${selected || filtersShown ? 'has-panel' : ''}`} aria-label="Map of matching venues" onKeyDown={(e) => { if (e.key === 'Escape') select() }}>

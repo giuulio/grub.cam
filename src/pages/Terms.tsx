@@ -17,7 +17,7 @@ export function Terms() {
             sign up to.
           </p>
           <p>
-            Menus, hours, prices and access come from what each venue publishes, transcriptions of its notices, and people who send corrections. They can be
+            Menus, hours and prices come from what each venue publishes, transcriptions of its notices, and people who send corrections. They can be
             wrong, incomplete or out of date, and venues change them at short notice. Check with the venue before relying on anything here; it's provided as is,
             without any promise that it's accurate or available.
           </p>

@@ -1,7 +1,7 @@
 // What search engines and AI agents read: each page's description and schema.org data, the sitemap, and
 // llms.txt / llms-full.txt. Pure functions of the loaded data; scripts/prerender.ts writes them out at build time.
 import type { Data } from './data.tsx'
-import { ACCESS_LABEL, DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
+import { DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from './filters.ts'
 import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
@@ -46,7 +46,6 @@ function venueDescription(v: Venue, date: string): string {
 }
 
 function venueJsonLd(v: Venue, date: string): object {
-  const level = v.access.level
   const dates = [...new Set(menusOf(v).map((d) => d.date))].slice(0, MENU_DAYS_IN_JSONLD)
   const sections = menusOf(v).filter((d) => dates.includes(d.date))
   return {
@@ -59,8 +58,6 @@ function venueJsonLd(v: Venue, date: string): object {
     address: { '@type': 'PostalAddress', streetAddress: [v.where, siteName(v.site)].filter(Boolean).join(', '), addressLocality: 'Cambridge', addressCountry: 'GB' },
     openingHoursSpecification: periodSlots(v.slots, date).map((s) => ({ '@type': 'OpeningHoursSpecification', name: MEAL_LABEL[s.meal], dayOfWeek: s.days.map((d) => DAY_SCHEMA[d]), opens: s.start, closes: s.end })),
     image: venueImage(v),
-    publicAccess: level === 'public' ? true : level === 'members_only' || level === 'university' ? false : undefined,
-    paymentAccepted: v.payment.bank_card ? 'Credit card, Debit card' : undefined,
     hasMenu: sections.length
       ? {
           '@type': 'Menu',
@@ -107,7 +104,7 @@ export function pages(data: Data, date: string): Page[] {
     },
   }
   const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
-  const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours, access, card payments) and what's still missing." }
+  const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours) and what's still missing." }
   const directory: Page = { path: '/directory', description: 'Every Cambridge college and University site, museum and garden, with its dining halls, cafés and bars, opening hours and published menus.' }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
@@ -116,7 +113,7 @@ export function pages(data: Data, date: string): Page[] {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {
       path: sitePath(s),
-      description: clip(`${siteName(s)}, Cambridge: ${mine.map((v) => v.name).join(', ')}. Opening hours, who can get in, and menus.`),
+      description: clip(`${siteName(s)}, Cambridge: ${mine.map((v) => v.name).join(', ')}. Opening hours and menus.`),
       jsonLd: {
         '@context': 'https://schema.org',
         '@type': siteType(s),
@@ -175,7 +172,7 @@ export function llmsTxt(data: Data): string {
     NOTES.map((n) => `- ${n}`).join('\n'),
     `## Colleges\n\n${list('college')}`,
     `## University\n\n${list('university')}`,
-    `## Optional\n\n- [Everything as text](${abs('/llms-full.txt')}): every venue's hours, access and published menus for the coming week`,
+    `## Optional\n\n- [Everything as text](${abs('/llms-full.txt')}): every venue's hours and published menus for the coming week`,
   ].join('\n\n') + '\n'
 }
 
@@ -196,7 +193,7 @@ function menuLine(d: MenuDay, v: Venue): string {
   return `- ${day(d.date)}, ${MEAL_LABEL[d.service].toLowerCase()}: ${dishes.join('; ')}`
 }
 
-/** llms-full.txt: every venue with its hours, access and the menus loaded at build time, as plain text. */
+/** llms-full.txt: every venue with its hours and the menus loaded at build time, as plain text. */
 export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
   const out = [`# ${SITE_NAME}: every venue, its hours and menus`, `Built ${builtAt} (Europe/London) from ${abs('/')}. Diet codes: ${(Object.keys(DIET_SHORT) as DietTag[]).map((t) => `${DIET_SHORT[t]} ${t.replace('_', '-')}`).join(', ')}.`, NOTES.join(' ')]
   for (const s of data.sites) {
@@ -204,8 +201,6 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
     for (const v of data.venues.filter((x) => x.site.slug === s.slug)) {
       const hours = hoursText(periodSlots(v.slots, date))
       const lines = [`### ${v.name} (${venueTypes(v).map((t) => TYPE_LABEL[t].toLowerCase()).join(', ')})`, abs(venuePath(v)), `Hours: ${hours || 'not published'}`]
-      if (v.access.level !== 'unknown') lines.push(`Access: ${ACCESS_LABEL[v.access.level].toLowerCase()}`)
-      if (v.payment.bank_card) lines.push('Bank card accepted')
       const menus = menusOf(v)
       if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v)).join('\n')}`)
       if (v.prices?.length) {

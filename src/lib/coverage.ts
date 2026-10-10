@@ -49,8 +49,6 @@ const CATEGORIES: { title: string; dated?: boolean; unit: Category['unit']; appl
   { title: 'Café prices', unit: 'sites', applies: ofType('cafe'), has: hasPrices },
   { title: 'Bar prices', unit: 'sites', applies: ofType('bar'), has: hasPrices },
   { title: 'Hours', unit: 'venues', applies: () => true, has: (v) => v.slots.length > 0 },
-  { title: 'Who can eat there', unit: 'venues', applies: () => true, has: (v) => v.access.level !== 'unknown' },
-  { title: 'Card payments', unit: 'venues', applies: () => true, has: (v) => v.payment.bank_card != null },
 ]
 export const CATEGORY_TITLES = CATEGORIES.map((c) => c.title)
 

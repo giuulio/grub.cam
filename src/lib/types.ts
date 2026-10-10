@@ -6,7 +6,6 @@ export type { Channel, DietTag, Dish, Meal, MenuDay, PriceCourse } from '../../s
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
-export type AccessLevel = 'public' | 'university' | 'members_guests' | 'members_only' | 'unknown'
 export type VenueType = 'hall' | 'cafe' | 'bar'
 
 export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all' }
@@ -111,9 +110,6 @@ export type Venue = {
   latitude?: number | null
   longitude?: number | null
   location_source?: string | null
-  access: { level: AccessLevel }
-  /** true or false where known: a bank card, the University (or college) card, cash */
-  payment: { bank_card?: boolean; university_card?: boolean; cash?: boolean }
   dietary: { tags: DietTag[] }
   site: Site
   slots: Slot[]

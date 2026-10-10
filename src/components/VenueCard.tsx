@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { Xmark } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
 import { hasLocation } from '../lib/explore.ts'
-import { ACCESS_LABEL, TYPE_LABEL, type Ranked } from '../lib/filters.ts'
+import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
 import { venuePhoto } from '../lib/photos.ts'
 import { venuePath } from '../lib/site.ts'
 import { formatISODate, type LocalNow } from '../lib/time/clock.ts'
@@ -21,7 +21,7 @@ const siteOf = (v: Venue) => v.site.short_name ?? v.site.name
  * dishes that matched. Search leads with the site (college, West Cambridge, ...), since many venues share a name
  * (Buttery, Servery); a site page with the venue alone.
  */
-export function VenueCard({ venue, status, now, dishes = [], showSite = true, date, showAccess = false }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean; date?: string; showAccess?: boolean }) {
+export function VenueCard({ venue, status, now, dishes = [], showSite = true, date, showFormal = false }: { venue: Venue; status: OpenStatus; now: LocalNow; dishes?: string[]; showSite?: boolean; date?: string; showFormal?: boolean }) {
   const site = siteOf(venue)
   return (
     <li className="border-t border-ink/10">
@@ -33,19 +33,13 @@ export function VenueCard({ venue, status, now, dishes = [], showSite = true, da
           <p className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
             <span className="sr-only">{TYPE_LABEL[venue.type]}</span>
             <Status s={status} now={now} />
-            {showAccess && <AccessLine venue={venue} />}
+            {showFormal && isFormalOnly(venue) && <span className="text-muted">Formal hall, booking required</span>}
           </p>
           {dishes.length > 0 && <p className="mt-1.5 truncate text-sm text-muted">{dishes.slice(0, 3).join(' · ')}</p>}
         </div>
       </Link>
     </li>
   )
-}
-
-/** Who can go, when known, and that formal hall is booked where it's all a Hall holds. */
-function AccessLine({ venue }: { venue: Venue }) {
-  const parts = [venue.access.level !== 'unknown' && ACCESS_LABEL[venue.access.level], isFormalOnly(venue) && 'Formal hall, booking required'].filter(Boolean)
-  return parts.length ? <span className="text-muted">{parts.join(', ')}</span> : null
 }
 
 /**
@@ -79,7 +73,6 @@ export function VenuePanel({ r, dishes, date, results, formalSelected, onSelect,
               {TYPE_LABEL[t]}
             </span>
           ))}
-          {v.access.level !== 'unknown' && <span className="text-muted">{ACCESS_LABEL[v.access.level]}</span>}
         </p>
         {!snapshot && (
           <p className="mt-3">

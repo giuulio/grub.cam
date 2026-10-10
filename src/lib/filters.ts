@@ -1,4 +1,4 @@
-import { DAYS, venueTypes, type AccessLevel, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
+import { DAYS, venueTypes, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
@@ -32,8 +32,6 @@ export function dishTags(tags: DietTag[]): DietTag[] {
   return DIET_ORDER.filter((t) => has(t) && !hidden.has(t))
 }
 
-export const ACCESS_LABEL: Record<AccessLevel, string> = { public: 'Open to all', university: 'University members', members_guests: 'Members + guests', members_only: 'Members only', unknown: 'Access unknown' }
-
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar']
 
 /** Meal by meal, then by first day. */
@@ -51,17 +49,14 @@ export type Filters = {
   date: string // ISO date being viewed
   type?: VenueType
   site?: string // site slug
-  access?: AccessLevel
   /** Explore pins menus to the selected date; venue/site browsing can preview the next service. */
   exactDate?: boolean
   diets: DietTag[]
-  nonMemberOk: boolean
-  bankCard: boolean
   openNow: boolean
   q: string
 }
 
-export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], nonMemberOk: false, bankCard: false, openNow: false, q: '' }
+export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], openNow: false, q: '' }
 
 export function menuDaysFor(v: Venue, date: string, meal?: Meal): MenuDay[] {
   return v.menu.filter((d) => d.date === date && (!meal || d.service === meal))
@@ -107,9 +102,6 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   for (const v of venues) {
     if (f.type && !venueTypes(v).includes(f.type)) continue
     if (f.site && v.site.slug !== f.site) continue
-    if (f.access && v.access.level !== f.access) continue
-    if (f.nonMemberOk && !(v.access.level === 'public' || v.access.level === 'members_guests')) continue
-    if (f.bankCard && v.payment.bank_card !== true) continue
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
     // Site browsing can preview the next service; Explore and searches keep the explicit menu date.

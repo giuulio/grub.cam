@@ -119,7 +119,7 @@ function venue(id: string, name: string, site: string, items: Dish[] = []): Venu
     id, slug: id.split('/')[1], name, type: 'hall', url: null, where: null, serves: null,
     site: { slug: id.split('/')[0], name: site, short_name: null, kind: 'college', official_dining_url: null, aliases: [] },
     slots: [{ meal: 'lunch', days: ['thu'], start: '12:00', end: '14:00', period: 'all' }],
-    access: { level: 'public' }, payment: { bank_card: true }, dietary: { tags: [] },
+    dietary: { tags: [] },
     menu: [{ date: at.date, service: 'lunch', items }],
   }
 }
@@ -143,12 +143,10 @@ describe('rules', () => {
     expect(find('lentil', { diets: ['vegan', 'halal'] }).flatMap(dishNames)).toEqual(['Lentil soup'])
     expect(find('chicken', { diets: ['halal'] }).map((r) => r.venue.id)).toEqual([jesus.id])
   })
-  it('respects meal, type, site, payment and access filters', () => {
+  it('respects meal, type, site and open-now filters', () => {
     expect(find('chicken', { meal: 'dinner' })).toEqual([])
     expect(find('jesus', { type: 'bar' })).toEqual([])
     expect(find('jesus', { site: 'homerton' })).toEqual([])
-    expect(find('jesus', { bankCard: true }, [{ ...jesus, payment: {} }])).toEqual([])
-    expect(find('jesus', { nonMemberOk: true }, [{ ...jesus, access: { level: 'members_only' } }])).toEqual([])
     expect(find('homerton', { openNow: true }, [{ ...homerton, slots: [] }])).toEqual([])
   })
   it('searches only the requested date, including for dietary evidence', () => {

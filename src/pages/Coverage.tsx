@@ -6,7 +6,6 @@ import { useReady } from '../lib/data.tsx'
 import { SITE_NAME, sitePath, venuePath } from '../lib/site.ts'
 import type { Site } from '../lib/types.ts'
 
-const SHORT: Record<string, string> = { 'Who can eat there': 'Access', 'Card payments': 'Cards' }
 const KINDS: [Site['kind'], string][] = [['college', 'Colleges'], ['university', 'University']]
 type Order = 'name' | 'missing'
 
@@ -43,7 +42,7 @@ export function CoveragePage() {
         <Segmented label="Show" options={KINDS} value={kind} onChange={(k) => setParams(k === 'college' ? {} : { kind: k }, { replace: true })} />
       </div>
 
-      <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-7">
+      <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
         {categories.map((c) => (
           <Tile key={c.title} category={c} unit={c.unit === 'sites' ? sites : venues} dates={dates} />
         ))}
@@ -83,7 +82,7 @@ export function CoveragePage() {
                 </th>
                 {CATEGORY_TITLES.map((t) => (
                   <th key={t} scope="col" className="px-2 py-3 text-center text-xs leading-4 font-medium">
-                    {SHORT[t] ?? t}
+                    {t}
                   </th>
                 ))}
               </tr>

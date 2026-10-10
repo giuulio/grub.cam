@@ -1,12 +1,11 @@
 import { DEFAULT_FILTERS, dishMatches, MEAL_LABEL, nextService, type Filters, type Ranked } from './filters.ts'
 import { isISODate } from './time/clock.ts'
-import type { AccessLevel, DietTag, Meal, Site, Venue, VenueType } from './types.ts'
+import type { DietTag, Meal, Site, Venue, VenueType } from './types.ts'
 import { normalizeSearch } from './search.ts'
 
 export const EXPLORE_TYPES: [VenueType, string][] = [['hall', 'Dining'], ['cafe', 'Cafés'], ['bar', 'Bars']]
 export const DINING_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 export const EXPLORE_DIETS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free', 'dairy_free', 'kosher', 'pescatarian']
-export const EXPLORE_ACCESS: AccessLevel[] = ['public', 'university', 'members_guests', 'members_only', 'unknown']
 
 /** URL state is validated against the loaded menu window and live site list. */
 export function readExploreFilters(p: URLSearchParams, today: string, sites: Site[], menuFrom: string, menuTo: string): Filters {
@@ -22,7 +21,6 @@ export function readExploreFilters(p: URLSearchParams, today: string, sites: Sit
     site: sites.find((s) => s.slug === p.get('site'))?.slug,
     meal: type === 'hall' ? DINING_MEALS.find((m) => m === p.get('meal')) : undefined,
     diets: [...new Set((p.get('diet')?.split(',') ?? []).filter((d): d is DietTag => EXPLORE_DIETS.includes(d as DietTag)))],
-    access: EXPLORE_ACCESS.find((a) => a === p.get('access')),
     openNow: date === today && p.has('open'),
   }
 }
