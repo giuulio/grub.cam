@@ -52,3 +52,24 @@ export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSe
     </span>
   )
 }
+
+/**
+ * A native select drawn as a chip, as Google Maps' "Price ▾": the picked option's name, Cambridge Blue once it isn't
+ * the first (the "any" choice). The select itself sits invisibly over the chip, so it opens as the platform's own.
+ */
+export function ChipSelect({ label, value, options, onChange }: { label: string; value: string; options: [value: string, text: string][]; onChange: (v: string) => void }) {
+  const current = options.find(([v]) => v === value) ?? options[0]
+  return (
+    <label className="chip relative" data-on={current[0] !== options[0][0] || undefined}>
+      {current[1]}
+      <Icon of={ChevronDown} className="size-4" />
+      <select aria-label={label} value={current[0]} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0">
+        {options.map(([v, text]) => (
+          <option key={v} value={v}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}

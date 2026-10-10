@@ -50,8 +50,9 @@ describe('applyFilters', () => {
     expect(ids({})).toEqual(['c/hall', 'c/bar', 'd/hall'])
     expect(ids({ type: 'bar' })).toEqual(['c/bar'])
     expect(ids({ type: 'cafe' })).toEqual([])
-    expect(ids({ site: 'd' })).toEqual(['d/hall'])
-    expect(ids({ type: 'hall', site: 'c' })).toEqual(['c/hall'])
+    expect(ids({ sites: ['d'] })).toEqual(['d/hall'])
+    expect(ids({ type: 'hall', sites: ['c'] })).toEqual(['c/hall'])
+    expect(ids({ sites: ['c', 'd'] })).toEqual(['c/hall', 'c/bar', 'd/hall'])
   })
   it('lists a café that is a bar by night under both, by its hours', () => {
     const cafeBar: Venue = { ...base, id: 'c/cafe-bar', slug: 'cafe-bar', type: 'cafe', menu: [], slots: [{ ...base.slots[0], meal: 'snacks' }, { ...base.slots[0], meal: 'bar', start: '18:00', end: '23:00' }] }

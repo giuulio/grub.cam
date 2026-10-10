@@ -5,15 +5,19 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/finder.ts'
 import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
-import { sideBySide } from '../lib/map.ts'
+import { metresBetween, sideBySide, type Point } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
-import type { VenueType } from '../lib/types.ts'
+import { venueTypes, type VenueType } from '../lib/types.ts'
 
 /**
- * `panel`: the picked venue's panel, which covers part of the map (its left side, or its foot on a phone).
- * `highlight`: venues drawn as picked without being picked, as a list does for the card under the pointer.
+ * `panel`: what covers part of the map (a list down its left side, or a sheet at its foot on a phone): a picked pin is
+ * moved clear of it. `highlight`: venues drawn as picked without being picked, as a list does for the row under the
+ * pointer. `inset`: what sits over the map's edges (a list on the left, filters along the top), kept clear when it fits
+ * the venues in. `here`: where you are, when you've asked for nearest first, shown and moved to. `controls`: its own
+ * Near me and Show all, for a map with nothing else to do that. `core`: fit the main cluster (central Cambridge: the
+ * venues within 1.5 km of the middle of them all) rather than every outlier, for a list nothing has narrowed yet.
  */
-type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; snapshot?: boolean; filtered?: boolean; panel?: RefObject<HTMLElement | null> }
+type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
@@ -24,10 +28,10 @@ const CAMBRIDGE: [number, number] = [0.117, 52.205]
  */
 const REACH: [[number, number], [number, number]] = [[0.0103, 52.1664], [0.2179, 52.2534]]
 const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.latitude!]
-// On a phone, clear of Near me and Show all above and the list button below
-const fitPadding = () => (window.innerWidth >= 640 ? 60 : { top: 70, bottom: 90, left: 44, right: 44 })
+// On a phone, clear of Near me and Show all above and the list button below; wider, clear of what sits over the map
+const fitPadding = (inset: Props['inset'] = {}) => (window.innerWidth >= 640 ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 } : { top: 70, bottom: 90, left: 44, right: 44 })
 
-export function VenueMap({ results, selected, highlight, onSelect, snapshot, filtered, panel }: Props) {
+export function VenueMap({ results, selected, highlight, onSelect, filtered, panel, inset, here, controls = true, core = false }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -142,12 +146,13 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
     const e = engine.current
     if (!ready || !e) return
     const { mapped } = pins.current
-    const fit = `${!!filtered}:${key}`
+    const fit = `${!!filtered}:${core}:${key}`
     if (fit === fitKey.current) return
     fitKey.current = fit
-    if (filtered && mapped.length) e.map.fitBounds(mapped.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(), maxZoom: 15, duration: 0 })
+    const framed = core ? mainCluster(mapped) : mapped
+    if (filtered && framed.length) e.map.fitBounds(framed.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(inset), maxZoom: 15, duration: 0 })
     if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
-  }, [ready, key, filtered]) // refit only when the matching venues change
+  }, [ready, key, filtered, core, inset]) // refit only when the matching venues change (fitKey ignores the rest)
 
   // The selected venue's pin sits above its neighbours, as do highlighted ones.
   const lit = (id: string) => id === selected || !!highlight?.includes(id)
@@ -170,6 +175,14 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
       e.map.easeTo({ center: position(row), offset: [left / 2, -bottom / 2], duration: 250 })
   }, [ready, results, selected, panel])
 
+  // Nearest first, asked for by the page: you on the map, and the map on you
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e) return
+    if (here) showHere(e, here)
+    else e.user?.remove()
+  }, [ready, here])
+
   const locate = () => {
     if (!navigator.geolocation) { setLocationNote('Your browser doesn’t support location.'); return }
     setLocating(true)
@@ -182,12 +195,7 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
         setLocationNote('You’re outside Cambridge. Move the map to explore venues here.')
         return
       }
-      e.user?.remove()
-      const dot = document.createElement('span')
-      dot.className = 'map-user-location'
-      dot.setAttribute('aria-label', 'Your location')
-      e.user = new e.M.Marker({ element: dot }).setLngLat([coords.longitude, coords.latitude]).addTo(e.map)
-      e.map.easeTo({ center: [coords.longitude, coords.latitude], zoom: 15, duration: 300 })
+      showHere(e, { latitude: coords.latitude, longitude: coords.longitude })
     }, (err) => {
       setLocating(false)
       setLocationNote(err.code === 1 ? 'Location access was denied. You can move the map instead.' : 'Couldn’t find your location. Try again or move the map.')
@@ -199,34 +207,62 @@ export function VenueMap({ results, selected, highlight, onSelect, snapshot, fil
       <div ref={container} className="venue-map" aria-label="Map of food and drink in Cambridge" />
       {mapped.map((r) => {
         const el = anchors.get(r.venue.id)
-        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} open={!snapshot && r.status.kind === 'open'} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
+        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
       })}
       {!loaded && !error && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
       <div className="map-actions absolute top-4 left-4 z-500 max-w-[calc(100%-5rem)]">
-        <div className="flex flex-wrap gap-2">
+        {controls && <div className="flex flex-wrap gap-2">
           <button type="button" disabled={!ready || locating} onClick={locate} className="btn raised h-9 px-3.5 font-normal sm:h-9">{locating ? 'Finding you…' : 'Near me'}</button>
           <button type="button" disabled={!ready || !results.some((r) => hasLocation(r.venue))} onClick={() => {
             const e = engine.current
             if (e) {
               const bounds = results.filter((r) => hasLocation(r.venue)).reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds())
-              e.map.fitBounds(bounds, { padding: fitPadding(), maxZoom: 15, duration: 300 })
+              e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom: 15, duration: 300 })
             }
           }} className="btn raised h-9 px-3.5 font-normal sm:h-9">Show all</button>
-        </div>
+        </div>}
         {(error || locationNote) && <p role="status" className="raised mt-2 max-w-xs rounded-lg px-4 py-3 text-sm text-ink">{error || locationNote}</p>}
       </div>
     </>
   )
 }
 
-/** A venue's pin: a dot in its type's colour, filled while it's open now. Venues side by side get narrower targets so none overlap. */
-function MapPin({ r, selected, open, shared, onSelect }: { r: Ranked; selected: boolean; open: boolean; shared: boolean; onSelect: (id: string) => void }) {
+/** The venues within 1.5 km of the middle of them all (the median point): central Cambridge; all of them when that's under three. */
+function mainCluster(rows: Ranked[]): Ranked[] {
+  const median = (xs: number[]) => xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)]
+  const middle = { latitude: median(rows.map((r) => r.venue.latitude!)), longitude: median(rows.map((r) => r.venue.longitude!)) }
+  const near = rows.filter((r) => metresBetween(middle, { latitude: r.venue.latitude!, longitude: r.venue.longitude! }) <= 1500)
+  return near.length >= 3 ? near : rows
+}
+
+/** You, as a dot, with the map moved to you. */
+function showHere(e: Engine, p: Point) {
+  e.user?.remove()
+  const dot = document.createElement('span')
+  dot.className = 'map-user-location'
+  dot.setAttribute('aria-label', 'Your location')
+  e.user = new e.M.Marker({ element: dot }).setLngLat([p.longitude, p.latitude]).addTo(e.map)
+  e.map.easeTo({ center: [p.longitude, p.latitude], zoom: 15, duration: 300 })
+}
+
+/**
+ * A pin's fill: its type's colour; a venue that's two things (a café that's a bar by night) is both, split diagonally,
+ * its own type top left. Open or not, every pin looks the same: the list says what's open.
+ */
+export function pinFill(types: VenueType[]): string {
+  const [a, b = a] = types.map((t) => `var(--type-${t})`)
+  return a === b ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`
+}
+
+/** A venue's pin: a disc in its type's colour (or its two types'). Venues side by side get narrower targets so none overlap. */
+function MapPin({ r, selected, shared, onSelect }: { r: Ranked; selected: boolean; shared: boolean; onSelect: (id: string) => void }) {
   const v = r.venue
-  const label = `${v.site.short_name ?? v.site.name}: ${v.name} (${TYPE_LABEL[v.type]}${open ? ', open now' : ''})`
+  const types = venueTypes(v)
+  const label = `${v.site.short_name ?? v.site.name}: ${v.name} (${types.map((t) => TYPE_LABEL[t]).join(' and ')}${r.status.kind === 'open' ? ', open now' : ''})`
   return (
     <button type="button" className={`venue-pin-target ${shared ? 'is-shared' : ''}`} title={label} aria-label={label} aria-pressed={selected}
       onClick={(event) => { event.stopPropagation(); onSelect(v.id) }}>
-      <span className={`venue-pin ${selected ? 'is-selected' : ''} ${open ? 'is-open' : ''}`} data-type={v.type} />
+      <span className={`venue-pin ${selected ? 'is-selected' : ''}`} style={{ background: pinFill(types) }} />
     </button>
   )
 }

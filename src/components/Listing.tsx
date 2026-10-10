@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ChevronRight, Home } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
@@ -9,6 +9,7 @@ import { siteName, sitePath, venuePath } from '../lib/site.ts'
 import { hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { slotApplies } from '../lib/time/openNow.ts'
 import { venueTypes, type Slot } from '../lib/types.ts'
+import { useMedia } from '../lib/useMedia.ts'
 import { Icon } from './Icon.tsx'
 import { Status } from './Status.tsx'
 import { VenueMap } from './VenueMap.tsx'
@@ -51,13 +52,6 @@ export function ListHeading({ title, count, children }: { title: string; count: 
   )
 }
 
-const WIDE = '(min-width: 1024px)'
-const subscribe = (change: () => void) => {
-  const media = window.matchMedia(WIDE)
-  media.addEventListener('change', change)
-  return () => media.removeEventListener('change', change)
-}
-
 /**
  * The list, with the map of its venues beside it (sticky under the header, as TheFork's) on a wide screen; narrower,
  * the list alone, or the map alone when `phoneMap`. A pin opens its venue; `highlight` picks out the pins of the card
@@ -67,7 +61,7 @@ export function ListWithMap({ list, results, highlight, phoneMap = false, empty,
   const { snapshot } = useReady()
   const navigate = useNavigate()
   // The map is only made where it's shown: a phone loads it only when asked for
-  const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE).matches, () => false)
+  const wide = useMedia('(min-width: 1024px)')
   const map = (
     <VenueMap
       results={results}
@@ -130,6 +124,86 @@ const endMinutes = (s: Slot) => hhmmToMinutes(s.end) + (hhmmToMinutes(s.end) <= 
 const sentence = (words: string[]) => (words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`)
 
 /**
+ * What a venue's card or row says under the tab it's in: what it is and its meals; under Formal hall, when, the price,
+ * dress and booking (`facts`); otherwise one `line`: what a search matched, else the next meal's dishes today, else the
+ * first lines of its price list; and today's meals still to come (`today`), with those whose menu is posted (`menus`).
+ */
+function venueFacts(r: Ranked, now: LocalNow, formal: boolean, dishes?: string[]) {
+  const v = r.venue
+  // Its meals in the day's order (a café's and a bar's hours are its types)
+  const meals = MEALS.filter((m) => m !== 'snacks' && m !== 'bar' && v.slots.some((s) => s.meal === m)).map((m) => (m === 'formal' ? 'formal hall' : MEAL_LABEL[m].toLowerCase()))
+  const summary = [venueTypes(v).map((t) => TYPE_LABEL[t]).join(' and '), !formal && meals.length ? sentence(meals).replace(/^./, (c) => c.toUpperCase()) : ''].filter(Boolean).join(' · ')
+  const next = nextService(r)
+  const prices = (v.prices ?? []).filter((p) => p.price_gbp != null).slice(0, 3)
+  const booking = v.formal && formalBooking(v.formal)
+  const facts = formal ? [formalWhen(v, v.formal).join('; '), v.formal && formalPrice(v.formal), v.formal && formalDress(v.formal), booking && `Booking: ${booking}`].filter((t): t is string => !!t) : []
+  const line: ReactNode = formal ? undefined : dishes?.length ? dishes.join(' · ') : next ? (
+    <>
+      <span className="font-medium">{MEAL_LABEL[next.service]}:</span> {next.items.map((i) => i.name).join(' · ')}
+    </>
+  ) : prices.length ? prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ') : undefined
+  // What's left of today: the meals still to come or being served (under Formal hall, only formal hall)
+  const today = v.slots.filter((s) => slotApplies(s, now.date) && endMinutes(s) > now.minutes && (!formal || s.meal === 'formal')).sort(slotOrder)
+  const menus = new Set(v.menu.filter((d) => d.date === now.date && d.items.length).map((d) => d.service))
+  return { summary, facts, line, today, menus }
+}
+
+/**
+ * A venue as a row of the list down the map's side, as Google Maps lists places: its college (linked to its page),
+ * its name (its link covers the row), what it is, whether it's open and how far (nearest first), then the dishes,
+ * prices or formal hall, and today's times; its photo to the left. `selected` when its pin was picked.
+ */
+export function VenueRow({ r, now, selected = false, onHover, dishes, distance, formal = false }: { r: Ranked; now: LocalNow; selected?: boolean; onHover?: (id?: string) => void; dishes?: string[]; distance?: string; formal?: boolean }) {
+  const { snapshot } = useReady()
+  const v = r.venue
+  const { summary, facts, line, today } = venueFacts(r, now, formal, dishes)
+  return (
+    <li
+      id={`venue-${v.id}`}
+      onMouseEnter={() => onHover?.(v.id)}
+      onMouseLeave={() => onHover?.(undefined)}
+      onFocus={() => onHover?.(v.id)}
+      onBlur={() => onHover?.(undefined)}
+      className={`venue-row relative border-b border-ink/10 px-4 py-4 transition-colors ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}
+    >
+      <div className="flex gap-3.5">
+        <VenueImage venue={v} sizes="5.5rem" decorative icon="size-8" className="size-22 shrink-0 rounded-lg" />
+        <div className="min-w-0 flex-1">
+          <Link to={sitePath(v.site)} className="relative z-10 text-sm text-muted hover:text-ink hover:underline">
+            {siteName(v.site)}
+          </Link>
+          <h3 className="title text-lg leading-snug">
+            <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
+              {v.name}
+            </Link>
+          </h3>
+          <p className="text-sm text-muted">{summary}</p>
+          <p className="mt-1 text-sm">
+            <Status s={r.status} now={now} />
+            {distance && <span className="text-muted"> · {distance}</span>}
+          </p>
+          {facts.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-sm">
+              {facts.map((t) => <li key={t}>{t}</li>)}
+            </ul>
+          )}
+          {line && <p className="mt-2 line-clamp-2 text-sm">{line}</p>}
+          {!snapshot && today.length > 0 && (
+            <ul aria-label="Today" className="mt-2.5 flex flex-wrap gap-1.5">
+              {today.map((s) => (
+                <li key={`${s.meal}${s.start}`} className="rounded-md bg-accent-ink px-2 py-1 text-xs font-medium text-white tabular-nums">
+                  {s.meal === 'formal' ? `Formal hall ${s.start}` : `${MEAL_LABEL[s.meal]} ${s.start}–${s.end}`}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/**
  * A venue as a card, for the way it's used: a Dining venue leads with its meals today (as TheFork's time slots, "menu"
  * under those with a menu posted) and the next meal's dishes; a café or bar with what its price list says; under the
  * Formal hall tab (`formal`), when it is, its price, dress and how to book. `showSite` names its college first, linked
@@ -138,16 +212,7 @@ const sentence = (words: string[]) => (words.length < 2 ? words.join('') : `${wo
 export function VenueListing({ r, now, onHover, showSite = false, dishes, distance, formal = false }: { r: Ranked; now: LocalNow; onHover?: (id?: string) => void; showSite?: boolean; dishes?: string[]; distance?: string; formal?: boolean }) {
   const { snapshot } = useReady()
   const v = r.venue
-  // Its meals in the day's order (a café's and a bar's hours are its types)
-  const meals = MEALS.filter((m) => m !== 'snacks' && m !== 'bar' && v.slots.some((s) => s.meal === m)).map((m) => (m === 'formal' ? 'formal hall' : MEAL_LABEL[m].toLowerCase()))
-  const kinds = venueTypes(v).map((t) => TYPE_LABEL[t])
-  const next = nextService(r)
-  const prices = (v.prices ?? []).filter((p) => p.price_gbp != null).slice(0, 3)
-  // What's left of today: the meals still to come or being served (under Formal hall, only formal hall)
-  const today = v.slots.filter((s) => slotApplies(s, now.date) && endMinutes(s) > now.minutes && (!formal || s.meal === 'formal')).sort(slotOrder)
-  const menus = new Set(v.menu.filter((d) => d.date === now.date && d.items.length).map((d) => d.service))
-  const booking = v.formal && formalBooking(v.formal)
-  const facts = formal ? [formalWhen(v, v.formal).join('; '), v.formal && formalPrice(v.formal), v.formal && formalDress(v.formal), booking && `Booking: ${booking}`].filter((t): t is string => !!t) : []
+  const { summary, facts, line, today, menus } = venueFacts(r, now, formal, dishes)
   return (
     <Card
       onHover={(on) => onHover?.(on ? v.id : undefined)}
@@ -170,28 +235,19 @@ export function VenueListing({ r, now, onHover, showSite = false, dishes, distan
             </Link>
           )}
           <CardTitle to={venuePath(v)}>{v.name}</CardTitle>
-          <p className="mt-1 text-muted">{[kinds.join(' and '), !formal && meals.length ? sentence(meals).replace(/^./, (c) => c.toUpperCase()) : ''].filter(Boolean).join(' · ')}</p>
+          <p className="mt-1 text-muted">{summary}</p>
         </div>
         <p className="shrink-0 pt-1 text-right text-sm">
           <Status s={r.status} now={now} />
           {distance && <span className="mt-1 block text-muted">{distance}</span>}
         </p>
       </div>
-      {formal ? (
-        facts.length > 0 && (
-          <ul className="mt-3 space-y-0.5">
-            {facts.map((t) => <li key={t}>{t}</li>)}
-          </ul>
-        )
-      ) : dishes?.length ? (
-        <p className="mt-3 line-clamp-2">{dishes.join(' · ')}</p>
-      ) : next ? (
-        <p className="mt-3 line-clamp-2">
-          <span className="font-medium">{MEAL_LABEL[next.service]}:</span> {next.items.map((i) => i.name).join(' · ')}
-        </p>
-      ) : (
-        prices.length > 0 && <p className="mt-3 line-clamp-2">{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
+      {facts.length > 0 && (
+        <ul className="mt-3 space-y-0.5">
+          {facts.map((t) => <li key={t}>{t}</li>)}
+        </ul>
       )}
+      {line && <p className="mt-3 line-clamp-2">{line}</p>}
       {!snapshot && today.length > 0 && (
         <ul aria-label="Today" className="mt-auto flex flex-wrap gap-x-2 gap-y-3 pt-4">
           {today.map((s) => (

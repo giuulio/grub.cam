@@ -18,14 +18,16 @@ const read = (q: string, scope: Scope = 'all') => readFilters(new URLSearchParam
 describe('front page tabs', () => {
   it("reads Dining's meal, diet and date there and nowhere else", () => {
     expect(read('meal=lunch&diet=vegan,halal,vegan,invalid&site=jesus&date=2026-10-10', 'hall')).toMatchObject({
-      type: 'hall', meal: 'lunch', diets: ['vegan', 'halal'], site: 'jesus', date: '2026-10-10', exactDate: true,
+      type: 'hall', meal: 'lunch', diets: ['vegan', 'halal'], sites: ['jesus'], date: '2026-10-10', exactDate: true,
     })
-    expect(read('meal=lunch&diet=vegan&date=2026-10-10&site=jesus', 'cafe')).toMatchObject({ type: 'cafe', meal: undefined, diets: [], date: today, site: 'jesus' })
+    expect(read('meal=lunch&diet=vegan&date=2026-10-10&site=jesus', 'cafe')).toMatchObject({ type: 'cafe', meal: undefined, diets: [], date: today, sites: ['jesus'] })
     expect(read('', 'all').type).toBeUndefined()
     // Formal hall has its own tab: Dining's meal filter doesn't offer it, the Formal hall tab is nothing else
     expect(read('meal=formal', 'hall').meal).toBeUndefined()
     expect(read('', 'formal')).toMatchObject({ type: 'hall', meal: 'formal' })
-    expect(read('site=missing&date=2026-02-30', 'hall')).toMatchObject({ site: undefined, date: today })
+    expect(read('site=missing&date=2026-02-30', 'hall')).toMatchObject({ sites: [], date: today })
+    // Several colleges at once; unknown ones and repeats dropped
+    expect(read('site=jesus,missing,jesus').sites).toEqual(['jesus'])
     expect(read('date=2026-10-15', 'hall').date).toBe(today)
     expect(read('date=2026-10-07', 'hall').date).toBe(today)
   })

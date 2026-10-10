@@ -26,8 +26,8 @@ export const FILTER_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
 export const FILTER_DIETS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_free', 'dairy_free', 'kosher', 'pescatarian']
 
 /**
- * A tab's filters from its URL, validated against the loaded menu window and the sites: `q` and `site` and `open`
- * everywhere; Dining's `meal`, `diet` and `date` (menus are by date) only there. Formal hall is Dining at the formal meal.
+ * A tab's filters from its URL, validated against the loaded menu window and the sites: `q`, `site` (one or more,
+ * comma-separated) and `open` everywhere; Dining's `meal`, `diet` and `date` (menus are by date) only there. Formal hall is Dining at the formal meal.
  */
 export function readFilters(p: URLSearchParams, scope: Scope, today: string, sites: Site[], menuFrom: string, menuTo: string): Filters {
   const dining = scope === 'hall'
@@ -39,7 +39,7 @@ export function readFilters(p: URLSearchParams, scope: Scope, today: string, sit
     date,
     exactDate: true,
     type: scope === 'all' ? undefined : scope === 'formal' ? 'hall' : scope,
-    site: sites.find((s) => s.slug === p.get('site'))?.slug,
+    sites: [...new Set(p.get('site')?.split(',') ?? [])].filter((slug) => sites.some((s) => s.slug === slug)),
     meal: scope === 'formal' ? 'formal' : dining ? FILTER_MEALS.find((m) => m === p.get('meal')) : undefined,
     diets: dining ? [...new Set((p.get('diet')?.split(',') ?? []).filter((d): d is DietTag => FILTER_DIETS.includes(d as DietTag)))] : [],
     openNow: date === today && p.has('open'),

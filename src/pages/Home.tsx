@@ -1,18 +1,21 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Navigate, NavLink, useSearchParams } from 'react-router'
+import { Navigate, NavLink, useNavigate, useSearchParams } from 'react-router'
 import { CloseCircle, List as ListIcon, Map as MapIcon, Search } from 'reicon-react'
-import { Chip, Select } from '../components/Controls.tsx'
+import { Chip, ChipSelect } from '../components/Controls.tsx'
 import { Icon } from '../components/Icon.tsx'
-import { ListWithMap, VenueListing } from '../components/Listing.tsx'
+import { VenueRow } from '../components/Listing.tsx'
+import { SitePicker } from '../components/SitePicker.tsx'
+import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
 import { applyFilters, DIET_LABEL, MEAL_LABEL } from '../lib/filters.ts'
 import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, type Scope } from '../lib/finder.ts'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
-import { SITE_NAME } from '../lib/site.ts'
+import { SITE_NAME, venuePath } from '../lib/site.ts'
 import { addDaysISO, formatISODate, relativeDay } from '../lib/time/clock.ts'
 import { isFormalOnly, type Venue } from '../lib/types.ts'
+import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 
 /** What a tab keeps when another is picked: the search, the college and open now (the rest is Dining's own). */
@@ -20,8 +23,8 @@ const SHARED = ['q', 'site', 'open']
 
 /**
  * The front page, and the one place to find somewhere: what the site is, a tab per kind of venue (each its own address:
- * /, /dining, /cafes, /bars, /formal), one search box; then that tab's venues as cards beside the map, with the
- * filters that matter for it. The heading and search are laid out as Tripadvisor's; the list as TheFork's.
+ * /, /dining, /cafes, /bars, /formal), one search box; then the map, as Google Maps': that tab's venues listed down
+ * its left side and the filters that matter for it along its top. The heading and search are laid out as Tripadvisor's.
  */
 export function Home({ scope }: { scope: Scope }) {
   const [params] = useSearchParams()
@@ -41,6 +44,13 @@ function Finder({ scope }: { scope: Scope }) {
   const now = useNow()
   const [params, setParams] = useSearchParams()
   const results = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLElement>(null)
+  const navigate = useNavigate()
+  // Above a phone the list lies over the map's left side; on one, the list or the map
+  const overlay = useMedia('(min-width: 768px)')
+  const wide = useMedia('(min-width: 1024px)')
+  // The venue whose pin was picked: its row is marked and scrolled to
+  const [selected, setSelected] = useState<string>()
   // The card under the pointer, picked out on the map
   const [hover, setHover] = useState<string>()
   // Nearest first: where you are, asked for only on the click and kept in memory
@@ -62,7 +72,9 @@ function Finder({ scope }: { scope: Scope }) {
     setParams(next, { replace: true })
   }
   const set = (key: string, value?: string) => update((p) => (value ? p.set(key, value) : p.delete(key)))
-  const filtered = !!(f.q || f.openNow || f.site || (scope === 'hall' && f.meal) || f.diets.length || f.date !== now.date || here)
+  // Narrowed past the tab: the map then frames every venue left, not just central Cambridge
+  const narrowed = !!(f.q || f.openNow || f.sites?.length || (scope === 'hall' && f.meal) || f.diets.length)
+  const filtered = narrowed || f.date !== now.date || !!here
   const clear = () => {
     update((p) => { for (const k of ['q', 'open', 'site', 'meal', 'diet', 'date']) p.delete(k) })
     setHere(undefined)
@@ -99,6 +111,16 @@ function Finder({ scope }: { scope: Scope }) {
   const dates = Array.from({ length: Math.max(0, (Date.parse(menuTo) - Date.parse(menuFrom)) / 86400000) }, (_, i) => addDaysISO(menuFrom, i))
   const count = `${ranked.length} ${ranked.length === 1 ? info.noun[0] : info.noun[1]}`
   const mapView = params.get('view') === 'map'
+  // The map is only made where it's shown: a phone loads it only when asked for
+  const showMap = !snapshot && (overlay || mapView)
+  const pick = (id: string) => {
+    const v = ranked.find((r) => r.venue.id === id)?.venue
+    if (!v) return
+    // On a phone's map there's no list to show it in: open the venue
+    if (!overlay) return navigate(venuePath(v))
+    setSelected(id)
+    document.getElementById(`venue-${id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
 
   return (
     <>
@@ -135,61 +157,62 @@ function Finder({ scope }: { scope: Scope }) {
         </form>
       </section>
 
-      {/* The filters that matter for this tab, as TheFork's row of them above its list */}
-      <div ref={results} className="mt-12 scroll-mt-32 border-t border-ink/10 pt-6">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* The map with the list down its left side and the filters along its top, as Google Maps; on a phone, the
+          filters, then the list or the map */}
+      <div ref={results} className="finder mt-12">
+        {showMap && (
+          <div className="finder-map">
+            <VenueMap
+              results={ranked}
+              selected={selected}
+              highlight={hover ? [hover] : undefined}
+              onSelect={pick}
+              filtered
+              panel={overlay ? panel : undefined}
+              inset={overlay ? { left: (wide ? 400 : 352) + 12, top: 52 } : undefined}
+              here={here}
+              controls={false}
+              core={!narrowed}
+            />
+          </div>
+        )}
+        <div className="finder-filters flex flex-wrap items-center gap-2">
           {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
           {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
-          <Select value={f.site ?? ''} onChange={(e) => set('site', e.target.value)} aria-label="College or site" className="w-56">
-            <option value="">Every college and site</option>
-            {(['college', 'university'] as const).map((kind) => (
-              <optgroup key={kind} label={kind === 'college' ? 'Colleges' : 'University'}>
-                {sites.filter((s) => s.kind === kind).map((s) => <option key={s.slug} value={s.slug}>{s.short_name ?? s.name}</option>)}
-              </optgroup>
-            ))}
-          </Select>
+          <SitePicker sites={sites} value={f.sites ?? []} onChange={(slugs) => set('site', slugs.join(','))} />
           {scope === 'hall' && (
             <>
-              <Select value={f.date} onChange={(e) => set('date', e.target.value === now.date ? undefined : e.target.value)} aria-label="Menus for" className="w-40">
-                {dates.map((d) => <option key={d} value={d}>{relativeDay(d, now.date) ?? formatISODate(d)}</option>)}
-              </Select>
-              <Select value={f.meal ?? ''} onChange={(e) => set('meal', e.target.value)} aria-label="Meal" className="w-36">
-                <option value="">Any meal</option>
-                {FILTER_MEALS.map((m) => <option key={m} value={m}>{MEAL_LABEL[m]}</option>)}
-              </Select>
-              <Select value={f.diets[0] ?? ''} onChange={(e) => set('diet', e.target.value)} aria-label="Diet" className="w-40">
-                <option value="">Any diet</option>
-                {FILTER_DIETS.map((t) => <option key={t} value={t}>{DIET_LABEL[t]}</option>)}
-              </Select>
+              <ChipSelect label="Menus for" value={f.date} onChange={(d) => set('date', d === now.date ? undefined : d)} options={dates.map((d) => [d, relativeDay(d, now.date) ?? formatISODate(d)])} />
+              <ChipSelect label="Meal" value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+              <ChipSelect label="Diet" value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
             </>
           )}
-          <span className="ml-auto flex items-center gap-3 text-sm text-muted">
-            {count}
+        </div>
+        {note && <p role="status" className="finder-note mt-2 text-sm text-muted">{note}</p>}
+        <section ref={panel} aria-label={`${info.label} venues`} className={`finder-list mt-4 ${mapView ? 'max-md:hidden' : ''}`}>
+          <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
+            <h2 className="font-semibold">{count}</h2>
             {filtered && (
-              <button type="button" onClick={clear} className="flex cursor-pointer items-center gap-1 hover:text-ink">
+              <button type="button" onClick={clear} className="flex cursor-pointer items-center gap-1 text-sm text-muted hover:text-ink">
                 <Icon of={CloseCircle} />
                 Clear
               </button>
             )}
-          </span>
-        </div>
-        {note && <p role="status" className="mt-2 text-sm text-muted">{note}</p>}
+          </div>
+          {ranked.length ? (
+            <ul className="finder-rows">
+              {ranked.map((r) => {
+                const m = metres(r.venue)
+                return <VenueRow key={r.venue.id} r={r} now={now} selected={r.venue.id === selected} onHover={setHover} dishes={searching || f.diets.length ? resultDishes(r, f) : undefined} distance={m != null ? formatDistance(m) : undefined} formal={scope === 'formal'} />
+              })}
+            </ul>
+          ) : (
+            <Empty onClear={clear}>No {info.noun[1]} match.</Empty>
+          )}
+        </section>
       </div>
 
-      <div className="mt-6">
-        <ListWithMap
-          results={ranked}
-          highlight={hover ? [hover] : undefined}
-          phoneMap={mapView}
-          empty={ranked.length ? undefined : <Empty onClear={clear}>No {info.noun[1]} match.</Empty>}
-          list={ranked.map((r) => {
-            const m = metres(r.venue)
-            return <VenueListing key={r.venue.id} r={r} now={now} onHover={setHover} showSite dishes={searching || f.diets.length ? resultDishes(r, f) : undefined} distance={m != null ? formatDistance(m) : undefined} formal={scope === 'formal'} />
-          })}
-        />
-      </div>
-
-      {/* On a phone, one button switches between the list and the map */}
+      {/* On a phone, one button switches between the list and the map (wider, both show) */}
       {!snapshot && ranked.length > 0 && (
         <button
           type="button"
@@ -197,7 +220,7 @@ function Finder({ scope }: { scope: Scope }) {
             set('view', mapView ? undefined : 'map')
             results.current?.scrollIntoView({ block: 'start' })
           }}
-          className="btn btn-primary fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full shadow-lg lg:hidden">
+          className="btn btn-primary fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full shadow-lg md:hidden">
           <Icon of={mapView ? ListIcon : MapIcon} />
           {mapView ? `List · ${ranked.length}` : 'Map'}
         </button>

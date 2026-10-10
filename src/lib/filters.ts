@@ -48,7 +48,8 @@ export type Filters = {
   meal?: Meal
   date: string // ISO date being viewed
   type?: VenueType
-  site?: string // site slug
+  /** Site slugs: any of them */
+  sites?: string[]
   /** Explore pins menus to the selected date; venue/site browsing can preview the next service. */
   exactDate?: boolean
   diets: DietTag[]
@@ -101,7 +102,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   const kept = new Map<string, Omit<Ranked, 'searchMatches'>>()
   for (const v of venues) {
     if (f.type && !venueTypes(v).includes(f.type)) continue
-    if (f.site && v.site.slug !== f.site) continue
+    if (f.sites?.length && !f.sites.includes(v.site.slug)) continue
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
     // Site browsing can preview the next service; Explore and searches keep the explicit menu date.

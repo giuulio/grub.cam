@@ -146,7 +146,7 @@ describe('rules', () => {
   it('respects meal, type, site and open-now filters', () => {
     expect(find('chicken', { meal: 'dinner' })).toEqual([])
     expect(find('jesus', { type: 'bar' })).toEqual([])
-    expect(find('jesus', { site: 'homerton' })).toEqual([])
+    expect(find('jesus', { sites: ['homerton'] })).toEqual([])
     expect(find('homerton', { openNow: true }, [{ ...homerton, slots: [] }])).toEqual([])
   })
   it('searches only the requested date, including for dietary evidence', () => {
