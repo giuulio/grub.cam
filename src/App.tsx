@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
+import { SignInError } from './components/Account.tsx'
 import { Container } from './components/Container.tsx'
 import { DataProvider, useData, type State } from './lib/data.tsx'
 import { SCOPES } from './lib/finder.ts'
@@ -28,7 +29,13 @@ function Layout() {
       {/* A list beside a map (.finder) runs from the header to the footer, and sets its own space */}
       <main className="flex-1 pt-10 sm:pt-12 has-[.finder]:pt-0">
         <Container>
-          <div className={full ? '' : 'mx-auto max-w-[76rem]'}>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</div>
+          <div className={full ? '' : 'mx-auto max-w-[76rem]'}>
+            {/* A sign-in that came back refused says why, on whatever page it returned to */}
+            <div className="mb-6 empty:hidden">
+              <SignInError />
+            </div>
+            {data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}
+          </div>
         </Container>
       </main>
       <Footer />

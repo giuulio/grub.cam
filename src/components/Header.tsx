@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
 import { REPO_URL, SITE_NAME } from '../lib/site.ts'
+import { AccountButton } from './Account.tsx'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
 import { SCOPE_ICON } from '../lib/icons.ts'
@@ -12,8 +13,8 @@ import { useMedia } from '../lib/useMedia.ts'
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The same bar on every page, as Airbnb's compact one: the name (no mark), the search with the tabs inside it, GitHub
- * and the theme; one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
+ * The same bar on every page, as Airbnb's compact one: the name (no mark), the search with the tabs inside it, GitHub,
+ * the theme and your account (signing in with a Cambridge account, `AccountButton`); one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
  * front page the search is over the map instead (the Finder draws it there), so the bar is one row and the map starts
  * right under it. It stays at the top above a phone; its height (`--header-h`) keeps what else stays in view (a map
  * beside a list, a venue page's rail) clear of it. On the front page's tabs the search is the page's own; elsewhere it
@@ -62,6 +63,7 @@ export function Header() {
             {STARS != null && <span>{STARS >= 1000 ? `${(STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : STARS}</span>}
           </a>
           <ThemeToggle className="size-11 rounded-full bg-ink/5 text-ink hover:bg-ink/10 sm:size-12" />
+          <AccountButton />
         </div>
       </Container>
     </header>
