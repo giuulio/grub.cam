@@ -4,7 +4,7 @@ import { Icon } from './Icon.tsx'
 
 type Theme = 'light' | 'dark'
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = '' }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof document === 'undefined') return 'light'
     const saved = document.documentElement.dataset.theme
@@ -37,9 +37,9 @@ export function ThemeToggle() {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       onClick={() => change(theme === 'dark' ? 'light' : 'dark')}
-      className="icon-btn"
+      className={`icon-btn ${className}`}
     >
-      <Icon of={theme === 'dark' ? Sun : Moon} className="size-5" />
+      <Icon of={theme === 'dark' ? Moon : Sun} className="size-5" />
     </button>
   )
 }

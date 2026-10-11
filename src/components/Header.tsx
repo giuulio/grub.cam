@@ -6,6 +6,7 @@ import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
 import { REPO_URL, SITE_NAME, venuePath } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
+import { Logo } from './Logo.tsx'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
 
@@ -13,10 +14,11 @@ import { ThemeToggle } from './ThemeToggle.tsx'
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The name, a search box, GitHub, the theme, and sending a photo in. On the front page's tabs it stays at the top and
- * spans the window, as Airbnb's does: from a tablet up it holds the page's search and the tabs (on a phone they're the
- * page's own, and it gains them once they've scrolled away), and its height (`--header-h`) keeps the map beside the
- * list clear of it. Elsewhere the search box opens the front page.
+ * The mark and name, a search box, GitHub, the theme, and sending a photo in. On the front page's tabs it stays at the
+ * top and spans the window, as Airbnb's does: from a tablet up it holds the tabs (in its top row between the name and
+ * the rest, under the search when that's too narrow) and the page's search, wide and glowing Cambridge Blue (on a phone
+ * they're the page's own, and it gains the tabs once they've scrolled away); its height (`--header-h`) keeps the map
+ * beside the list clear of it. Elsewhere the search box opens the front page.
  */
 export function Header() {
   const { pathname } = useLocation()
@@ -50,48 +52,57 @@ export function Header() {
   }, [finder])
   const [params] = useSearchParams()
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k))).toString()
+  const tabs = (className: string) => (
+    <nav aria-label="Kinds of venue" className={`card-row gap-8 overflow-x-auto text-base font-medium xl:gap-11 ${className}`}>
+      {SCOPES.map((s) => (
+        <NavLink key={s.scope} to={`${s.path}${keep ? `?${keep}` : ''}`} end className={({ isActive }) => `flex shrink-0 items-center gap-3 border-b-[3px] py-3 whitespace-nowrap transition-colors ${isActive ? 'border-ink text-ink' : 'border-transparent text-muted hover:border-ink/25 hover:text-ink'}`}>
+          <Icon of={SCOPE_ICON[s.scope]} className="size-8" />
+          {s.label}
+        </NavLink>
+      ))}
+    </nav>
+  )
   return (
-    <header ref={header} className={`bg-canvas ${finder ? 'sm:sticky sm:top-0 sm:z-40' : ''}`}>
-      {/* On the front page's tabs, as Airbnb's: the name, the search in the middle, the rest at the right */}
-      <Container wide={finder} className={`flex min-h-18 items-center gap-x-6 ${finder ? 'md:grid md:min-h-22 md:grid-cols-[1fr_minmax(0,36rem)_1fr]' : ''}`}>
-        <div className="flex items-baseline gap-2">
-          <Link to="/" className="title py-5 text-xl">{SITE_NAME}</Link>
+    <header ref={header} className={finder ? 'header-wash border-b border-ink/10 sm:sticky sm:top-0 sm:z-40' : 'bg-canvas'}>
+      {/* On the front page's tabs, as Airbnb's: the name, the tabs in the middle, the rest at the right; the search
+          under them. Elsewhere the search sits in the one row. */}
+      <Container wide={finder} className={`flex min-h-18 items-center gap-x-6 ${finder ? 'md:min-h-24 md:pt-2 lg:grid lg:grid-cols-[1fr_auto_1fr]' : ''}`}>
+        <div className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5 py-4">
+            <Logo className={`size-9 shrink-0 ${finder ? 'md:size-10' : ''}`} />
+            <span className={`title text-2xl ${finder ? 'md:text-[1.75rem]' : ''}`}>{SITE_NAME}</span>
+          </Link>
           {/* Still being built: say so to anyone who lands here */}
-          <span title="Still being built: some menus, hours and venues are missing" className="text-xs text-muted">beta</span>
+          <span title="Still being built: some menus, hours and venues are missing" className="self-end pb-5 text-xs text-muted">beta</span>
         </div>
-        <HeaderSearch finder={finder} />
-        <div className="ml-auto flex items-center gap-2 md:justify-self-end">
+        {finder ? tabs('hidden justify-center lg:flex') : <HeaderSearch finder={false} />}
+        <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
           <a
             href={REPO_URL}
             target="_blank"
             rel="noopener"
             aria-label={`grub.cam on GitHub${STARS != null ? `, ${STARS} ${STARS === 1 ? 'star' : 'stars'}` : ''}`}
             title="grub.cam on GitHub"
-            className="flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted transition-colors hover:bg-ink/8 hover:text-ink"
+            className="flex h-11 items-center gap-2 rounded-full bg-ink/5 px-4 text-[15px] font-medium text-ink transition-colors hover:bg-ink/10"
           >
-            <GitHubIcon className="size-4.5" />
+            <GitHubIcon className="size-5" />
             {STARS != null && <span>{STARS >= 1000 ? `${(STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : STARS}</span>}
           </a>
-          <ThemeToggle />
+          <ThemeToggle className="size-11 rounded-full bg-ink/5 text-ink hover:bg-ink/10" />
           {pathname !== '/send' && (
-            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden rounded-full px-5 sm:inline-flex">
+            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden h-11 rounded-full px-5 text-[15px] font-semibold sm:inline-flex sm:h-11">
               Send a photo
             </Link>
           )}
         </div>
       </Container>
       {finder && (
-        <Container wide className={`border-b border-ink/10 ${heroGone ? 'hidden sm:block' : 'hidden md:block'}`}>
-          <nav aria-label="Kinds of venue" className="card-row flex gap-8 overflow-x-auto text-base font-medium md:justify-center lg:gap-12">
-            {SCOPES.map((s) => (
-              <NavLink key={s.scope} to={`${s.path}${keep ? `?${keep}` : ''}`} end className={({ isActive }) => `-mb-px flex shrink-0 items-center gap-2.5 border-b-2 pt-2 pb-4 whitespace-nowrap transition-colors ${isActive ? 'border-ink text-ink' : 'border-transparent text-muted hover:border-ink/25 hover:text-ink'}`}>
-                <Icon of={SCOPE_ICON[s.scope]} className="size-6" />
-                {s.label}
-              </NavLink>
-            ))}
-          </nav>
+        <Container wide className="hidden pt-3 pb-8 md:block">
+          <HeaderSearch finder />
         </Container>
       )}
+      {/* Narrower, the tabs go under the search (on a phone, once the page's own have scrolled away) */}
+      {finder && <Container wide className={heroGone ? 'hidden sm:block lg:hidden' : 'hidden md:block lg:hidden'}>{tabs('flex justify-center')}</Container>}
     </header>
   )
 }
@@ -121,10 +132,16 @@ function HeaderSearch({ finder }: { finder: boolean }) {
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className={`field hidden rounded-full md:flex ${finder ? 'h-14 w-full px-5 text-base shadow-[0_4px_18px_rgb(19_56_68/0.1)]' : 'md:w-64 lg:w-96'}`}
+      className={`field hidden rounded-full md:flex ${finder ? 'search-glow mx-auto h-16 max-w-[53rem] pr-2 pl-7 text-base sm:h-16' : 'md:w-64 lg:w-96'}`}
     >
-      <Icon of={Search} />
+      {!finder && <Icon of={Search} />}
       <input type="search" value={value} onChange={(e) => change(e.target.value)} placeholder={SCOPES.find((s) => s.path === pathname)?.placeholder ?? 'Search'} aria-label="Search venues, colleges and dishes" />
+      {/* As Airbnb's: a round button at the end of the search */}
+      {finder && (
+        <button type="submit" aria-label="Search" className="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-action text-action-ink transition-opacity hover:opacity-90">
+          <Icon of={Search} className="size-5" />
+        </button>
+      )}
     </form>
   )
 }

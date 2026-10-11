@@ -5,6 +5,7 @@ import { useData } from '../lib/data.tsx'
 import { SCOPES } from '../lib/finder.ts'
 import { ISSUES_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
+import { Logo } from './Logo.tsx'
 
 /**
  * Laid out as Tripadvisor's: columns of links (the site, where to browse, how to help) and how fresh the menus are;
@@ -48,7 +49,7 @@ export function Footer({ wide = false }: { wide?: boolean }) {
       {/* GitHub is linked once, in the header */}
       <Container wide={wide} className="pb-10">
         <div className="flex gap-4">
-          <img src="/favicon.svg" alt="" width={36} height={36} className="size-9 shrink-0" />
+          <Logo className="size-9 shrink-0" />
           <div className="min-w-0">
             <p className="text-sm text-muted">© {new Date().getFullYear()} {SITE_NAME}</p>
             <p className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 font-medium">

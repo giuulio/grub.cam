@@ -183,7 +183,7 @@ function Finder({ scope }: { scope: Scope }) {
             </NavLink>
           ))}
         </nav>
-        <form id="hero-search" role="search" onSubmit={submit} className="hero-search mx-auto mt-3 flex max-w-200 items-center gap-2 rounded-full border border-ink/25 bg-canvas px-5 py-1.5 text-left shadow-[0_4px_18px_rgb(19_56_68/0.08)]">
+        <form id="hero-search" role="search" onSubmit={submit} className="hero-search search-glow mx-auto mt-3 flex max-w-200 items-center gap-2 rounded-full border bg-canvas px-5 py-1.5 text-left">
           <Icon of={Search} className="size-5 text-ink" />
           <input
             type="search"
@@ -196,10 +196,10 @@ function Finder({ scope }: { scope: Scope }) {
         </form>
       </section>
 
-      {/* As Airbnb's: the filters in a row across the top, then the list down the left (scrolling on its own) and the
-          map beside it; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
+      {/* As Airbnb's: the heading and the list down the left, scrolling on their own, and the map beside them, the
+          filters over its top; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
           over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
-      <div ref={results} className={`finder mt-3 md:mt-0 ${listView ? 'is-list' : 'is-map'}`}>
+      <div ref={results} className={`finder mt-3 ${listView ? 'is-list' : 'is-map'}`}>
         <div className="finder-filters card-row flex items-center gap-2">
           {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
           {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
@@ -224,9 +224,9 @@ function Finder({ scope }: { scope: Scope }) {
         </div>
         {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
         <div className="finder-side">
-          {/* What the site is for this tab, over its list as Airbnb's "Over 1,000 homes"; over a phone's map, read
+          {/* What the site is for this tab, at the top of its list (it scrolls away with it); over a phone's map, read
               out but not shown, so the map has the screen */}
-          <h1 className={`title text-2xl leading-tight max-md:mt-4 ${listView ? '' : 'max-md:sr-only'}`}>{info.heading}</h1>
+          <h1 className={`finder-title title text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
           <section aria-label={`${info.label} venues`} className="finder-list">
             <div className="flex items-center justify-between gap-3 py-1 text-[15px]">
               <h2 className="font-medium">{count}</h2>
@@ -265,6 +265,7 @@ function Finder({ scope }: { scope: Scope }) {
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
+                inset={split ? { top: 52 } : undefined}
                 here={here}
                 controls={false}
                 core={!narrowed}

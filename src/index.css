@@ -147,6 +147,17 @@ select option, select optgroup {
   .field {
     @apply flex h-11 w-full items-center gap-2.5 rounded-lg border border-ink/15 bg-canvas px-3.5 text-muted transition-colors focus-within:border-ink/50 sm:h-10;
   }
+  /* The front page's header, as Airbnb's: a faint wash towards its foot. */
+  .header-wash { background: linear-gradient(var(--canvas), color-mix(in srgb, var(--ink) 3%, var(--canvas))); }
+  /* The front page's search, as its one main control: a soft Cambridge Blue glow, stronger while typing in it. */
+  .search-glow {
+    border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+    box-shadow: 0 1px 3px #1338440f, 0 6px 30px color-mix(in srgb, #8ee8d8 60%, transparent);
+  }
+  .search-glow:focus-within {
+    border-color: #5fcfbd;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #8ee8d8 55%, transparent), 0 8px 36px color-mix(in srgb, #8ee8d8 70%, transparent);
+  }
   .field:has(input:focus-visible) {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
@@ -313,30 +324,38 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .finder .maplibregl-ctrl-top-right { display: none; }
 }
 /* From a tablet up, as Airbnb's: a box as tall as the screen allows under the header, a little short of its foot so the
-   page carries on to the footer: the filters in a row across its top, then the list down its left scrolling on its own
-   and the map beside it, a little wider, 20px corners, no frame. Past the end of the list, the page scrolls. */
+   page carries on to the footer: the tab's heading and its list down its left, scrolling on their own, and the map
+   beside them from the top of the heading down, a little wider, 20px corners, no frame, with the filters over its top
+   as chips. Past the end of the list, the page scrolls. */
 @media (min-width: 768px) {
   .finder {
     display: grid;
     grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     column-gap: 1.5rem;
-    height: max(32rem, calc(100svh - var(--header-h, 0px) - 40px));
-    scroll-margin-top: var(--header-h, 0px);
+    margin-top: 24px;
+    height: max(32rem, calc(100svh - var(--header-h, 0px) - 48px));
+    scroll-margin-top: calc(var(--header-h, 0px) + 24px);
   }
-  .finder-filters { grid-column: 1 / -1; grid-row: 1; flex-wrap: wrap; padding-block: 16px; }
-  .finder-note { grid-column: 1 / -1; grid-row: 2; margin-bottom: 12px; }
+  .finder-title { padding-bottom: 8px; }
+  .finder-map { grid-column: 2; grid-row: 1; height: 100%; overflow: hidden; border-radius: 20px; }
+  /* Over the map but under the sticky header (z-40), so they leave with the map as the page scrolls on: the map is
+     isolated, so a low z-index is enough to sit over it */
+  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: 12px; pointer-events: none; }
+  .finder-filters > * { pointer-events: auto; }
+  .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
+  .finder-note { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; margin: 64px 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder-side {
-    grid-row: 3;
+    grid-column: 1;
+    grid-row: 1;
     min-height: 0;
     overflow-y: auto;
     margin-left: -12px;
-    padding: 4px 12px 0;
+    padding: 0 12px;
     scrollbar-width: none;
   }
   .finder-side::-webkit-scrollbar { display: none; }
   .finder-side .venue-row { scroll-margin-top: 12px; }
-  .finder-map { grid-row: 3; height: 100%; overflow: hidden; border-radius: 20px; }
 }
 @media (min-width: 1024px) {
   .finder { column-gap: 2rem; }
