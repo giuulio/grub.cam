@@ -6,7 +6,10 @@ name: Ingest menus
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 5,11,17 * * *' # 05:15, 11:15 and 17:15 UTC: menus change, so check often
+    # Every two hours from 04:37 to 18:37 UTC, off the quarter-hour: GitHub delays or drops runs scheduled at busy minutes
+    # (with '15 5,11,17' nothing ran before 11:10 UTC for four days, and the evening run came 3–5 hours late), so schedule
+    # more often than needed and a late or missing run matters little.
+    - cron: '37 4,6,8,10,12,14,16,18 * * *'
 
 permissions:
   contents: read

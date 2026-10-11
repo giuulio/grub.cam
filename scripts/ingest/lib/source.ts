@@ -24,6 +24,8 @@ export type MenuSource = {
   notes?: string
   /** Scripted sources only; the rest are transcribed (`npm run ingest:manual`) or need a collaborator. */
   adapter?: Adapter
+  /** How many weeks ahead to ask for (default 9, a Full Term); a source that publishes a whole term's dates at once can look further. */
+  weeksAhead?: number
 }
 
 export function mergeDays(days: MenuDay[]): MenuDay[] {

@@ -7,7 +7,7 @@ import { darwin } from './sources/darwin.ts'
 import { downing } from './sources/downing.ts'
 import { homerton } from './sources/homerton.ts'
 import { jesus } from './sources/jesus.ts'
-import { magdalene } from './sources/magdalene.ts'
+import { magdalene, magdaleneFormal } from './sources/magdalene.ts'
 import { peterhouse } from './sources/peterhouse.ts'
 import { robinson } from './sources/robinson.ts'
 import { selwyn } from './sources/selwyn.ts'
@@ -57,17 +57,26 @@ export const SOURCES: MenuSource[] = [
     venue: 'magdalene/ramsay-hall',
     channel: 'html',
     url: 'https://viewthe.menu/lyzv',
-    cadence: 'weekly',
+    cadence: 'weekly, about 2 weeks ahead',
     notes: 'Menus are not listed in date order; pick by the "Com DD/MM/YY" label.',
     adapter: magdalene,
+  },
+  {
+    venue: 'magdalene/hall',
+    channel: 'html',
+    url: 'https://viewthe.menu/lyzv',
+    cadence: 'weekly',
+    notes: 'Formal Hall\'s menu ("Formal Hall WK Com DD/MM/YY"), on the same page as Ramsay Hall\'s: a starter, two mains and a dessert each night.',
+    adapter: magdaleneFormal,
   },
   {
     venue: 'peterhouse/hall-servery',
     channel: 'json',
     url: 'https://petmenu.co.uk/',
-    cadence: 'whole term',
+    cadence: 'whole term, from the week before Full Term to the week after',
     notes: 'Student-run, built from College PDFs; "not guaranteed complete or correct".',
     adapter: peterhouse,
+    weeksAhead: 13,
   },
   {
     venue: 'robinson/garden-restaurant',
@@ -79,7 +88,7 @@ export const SOURCES: MenuSource[] = [
   },
   { venue: 'selwyn/hall-servery', channel: 'html', url: 'https://www.sel.cam.ac.uk/current-members/hall-menu', cadence: 'daily, about 4 weeks ahead', adapter: selwyn },
   { venue: 'st-johns/buttery', channel: 'html', url: 'https://menu.joh.cam/', cadence: 'rolling 7 days', adapter: stJohns },
-  { venue: 'wolfson/buttery-dining-hall', channel: 'html', url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus', cadence: 'current week only', adapter: wolfson },
+  { venue: 'wolfson/buttery-dining-hall', channel: 'html', url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus', cadence: 'rolling, about 2 days back and 3 ahead; a day is filled in meal by meal', adapter: wolfson },
   ucs('west-cambridge/west-hub-canteen', 'https://www.catering.admin.cam.ac.uk/cafes/west-hub-canteen'),
   ucs('west-cambridge/greenwich-house-cafe', 'https://www.catering.admin.cam.ac.uk/cafes/greenwich-house-cafe', 'Hot dishes from the West Hub kitchen.'),
   ucs('west-cambridge/scholars-brew', 'https://www.catering.admin.cam.ac.uk/cafes/scholars-brew'),
