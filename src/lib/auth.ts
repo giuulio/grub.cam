@@ -3,7 +3,15 @@
 import { createClient, type Session } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 
-export const auth = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce' } }).auth
+const client = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce' } })
+export const auth = client.auth
+
+/** Your own review of a venue (RLS lets a member read theirs, whatever its status), or null. */
+export async function ownReview(venueId: string): Promise<{ rating: number; body: string | null; status: 'published' | 'needs_review' | 'hidden' } | null> {
+  const { data, error } = await client.from('reviews').select('rating, body, status').eq('venue_id', venueId).maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
 
 /** Only University accounts get in: the database refuses any other address, this is the same rule up front. */
 export const isCamEmail = (email: string | undefined) => !!email && /@cam\.ac\.uk$/i.test(email)

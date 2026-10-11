@@ -46,6 +46,15 @@ export function send(token: string, fields: { venue: string; kind: SubmitKind; d
   return call(token, { method: 'POST', body: form })
 }
 
+/** A review's status once saved: published, waiting for a person to read its words, hidden by one, or taken back. */
+export type ReviewStatus = 'published' | 'needs_review' | 'hidden' | 'removed'
+
+/** Writes, changes or (`remove`) takes back your review of a venue. */
+export async function saveReview(token: string, review: { venue: string; rating?: number; body?: string; remove?: boolean }): Promise<ReviewStatus> {
+  const r = (await call(token, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'review', ...review }) })) as unknown as { status: ReviewStatus }
+  return r.status
+}
+
 export function confirm(token: string, id: string, transcription: string): Promise<SubmitResult> {
   return call(token, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'confirm', id, transcription }) })
 }

@@ -129,4 +129,9 @@ export type Venue = {
   prices?: VenuePrice[]
   /** Menu days from today for the next week (`useMenuOn` reaches beyond it). */
   menu: MenuDay[]
+  /** Members' reviews, once there are at least 5 published (`venue_ratings`): how many and their average out of 5. */
+  rating?: { reviews: number; average: number }
 }
+
+/** A member's published review, as the site shows it: anonymous (`venue_reviews`). */
+export type Review = { id: string; rating: number; body: string | null; created_at: string; updated_at: string }

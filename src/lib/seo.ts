@@ -57,6 +57,8 @@ function venueJsonLd(v: Venue, date: string): object {
     sameAs: v.url ?? undefined,
     containedInPlace: { '@type': siteType(v.site), name: siteName(v.site), url: abs(sitePath(v.site)) },
     address: { '@type': 'PostalAddress', streetAddress: [v.where, siteName(v.site)].filter(Boolean).join(', '), addressLocality: 'Cambridge', addressCountry: 'GB' },
+    // Members' rating, once there are 5 reviews (the same rule as the page)
+    aggregateRating: v.rating ? { '@type': 'AggregateRating', ratingValue: v.rating.average.toFixed(1), reviewCount: v.rating.reviews, bestRating: 5, worstRating: 1 } : undefined,
     openingHoursSpecification: periodSlots(v.slots, date).map((s) => ({ '@type': 'OpeningHoursSpecification', name: MEAL_LABEL[s.meal], dayOfWeek: s.days.map((d) => DAY_SCHEMA[d]), opens: s.start, closes: s.end })),
     image: venueImage(v),
     hasMenu: sections.length

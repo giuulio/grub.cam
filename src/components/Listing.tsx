@@ -11,6 +11,7 @@ import { slotApplies } from '../lib/time/openNow.ts'
 import { isFormalOnly, venueTypes, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 import { Status } from './Status.tsx'
+import { RatingSummary } from './Reviews.tsx'
 import { TypeLabel, VenueImage, VenueThumb } from './VenuePhoto.tsx'
 
 // The venues as Airbnb lists homes, a row each (its photo down the left, what to know beside it), beside a map of them:
@@ -68,11 +69,15 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             {siteName(v.site)}
           </Link>
         )}
-        <h3 className={`title leading-tight ${card ? 'text-base' : 'mt-0.5 text-xl sm:text-[1.625rem]'}`}>
-          <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
-            {v.name}
-          </Link>
-        </h3>
+        {/* Its rating beside its name, as Airbnb's, once 5 members have rated it */}
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'mt-0.5 text-xl sm:text-[1.625rem]'}`}>
+            <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
+              {v.name}
+            </Link>
+          </h3>
+          <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
+        </div>
         <p className={card ? 'mt-1' : 'mt-2'}>
           <Status s={r.status} now={now} meal={v.type === 'hall' || types.length > 1} />
           {then && <span className="text-muted"> · {then}</span>}

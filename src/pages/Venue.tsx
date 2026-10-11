@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
 import { GapCard, SEND_EITHER } from '../components/GapCard.tsx'
+import { RatingSummary, Reviews } from '../components/Reviews.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { ListNote, PriceList } from '../components/MenuRows.tsx'
@@ -66,6 +67,9 @@ export function VenuePage() {
           <Details venue={venue} />
           <div className="order-3 min-w-0 space-y-16 md:mt-14">
             <Sections key={venue.id} venue={venue} now={now} />
+            <Section id="reviews" title="Reviews" aside={<RatingSummary venue={venue} className="text-lg" />}>
+              <Reviews key={venue.id} venue={venue} />
+            </Section>
           </div>
           {!wide && <div className="order-5 space-y-5">{tail}</div>}
         </div>
@@ -204,6 +208,11 @@ function Heading({ venue }: { venue: Venue }) {
         </Link>
         {venueTypes(venue).map((t) => <TypeLabel key={t} type={t} className="gap-2" />)}
         {holdsFormal(venue) && <span>Formal hall</span>}
+        {venue.rating && (
+          <a href="#reviews" className="text-ink hover:underline">
+            <RatingSummary venue={venue} />
+          </a>
+        )}
       </div>
     </header>
   )
@@ -239,9 +248,9 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
 }
 
 /** A section of the page: its title, with what controls it beside it (a menu's date), then what it holds. */
-function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+function Section({ id, title, aside, children }: { id?: string; title: string; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section>
+    <section id={id} className={id ? 'scroll-mt-[calc(var(--header-h,0px)+1.5rem)]' : undefined}>
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         <h2 className="title flex-1 text-3xl">{title}</h2>
         {aside}

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
 import { servedService } from './time/openNow.ts'
-import type { Formal, MenuDay, Photo, Site, Venue, VenuePrice } from './types.ts'
+import type { Formal, MenuDay, Photo, Review, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
@@ -28,7 +28,7 @@ const MENU_DAYS = 7
 export async function load(): Promise<Data> {
   const today = toLocalNow().date
   const menuTo = addDaysISO(today, MENU_DAYS)
-  const [c, m] = await Promise.all([
+  const [c, m, r] = await Promise.all([
     sb
       .from('sites')
       .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos(kind, position, path, widths, width, height, color, alt, credit, licence, source, submission_id), slots:service_slots(meal, days, start:start_time, end:end_time, period)), photos(position, path, widths, width, height, color, alt, credit, licence, source)')
@@ -42,9 +42,12 @@ export async function load(): Promise<Data> {
       .lt('date', menuTo)
       .order('position', { referencedTable: 'menu_items' })
       .returns<MenuDayRow[]>(),
+    // Venues with at least 5 published reviews; the site still loads without them (before migration 0030, say)
+    sb.from('venue_ratings').select('venue_id, reviews, average').returns<{ venue_id: string; reviews: number; average: number }[]>(),
   ])
   if (c.error) throw new Error(c.error.message)
   if (m.error) throw new Error(m.error.message)
+  const ratings = new Map((r.error ? [] : r.data).map((x) => [x.venue_id, { reviews: x.reviews, average: x.average }]))
 
   const menus = new Map<string, MenuDay[]>()
   for (const d of m.data) menus.set(d.venue_id, [...(menus.get(d.venue_id) ?? []), d])
@@ -59,7 +62,7 @@ export async function load(): Promise<Data> {
       // Only approved photos are readable (RLS); menu-board photos are sources, not shown
       const photos = v.photos.filter((p) => p.kind === 'venue').sort((a, b) => a.position - b.position)
       const formal = v.formal ? { ...v.formal, book_by: v.formal.book_by?.slice(0, 5) ?? null } : undefined
-      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal, photos, menu: servedService(menus.get(v.id) ?? [], slots) })
+      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal, photos, menu: servedService(menus.get(v.id) ?? [], slots), rating: ratings.get(v.id) })
     }
   }
   // Freshness = latest menu fetch, not page-load time.
@@ -134,4 +137,14 @@ export function useMenuOn(venue: Venue, date: string): { days?: MenuDay[]; faile
     return servedService(q.data, venue.slots)
   })
   return loaded ? { days: venue.menu.filter((d) => d.date === date), failed: false } : { days: r.data, failed: r.failed }
+}
+
+/** A venue's published reviews, newest first: fetched when its page shows them, only for a venue with a rating (5 or more). */
+export function useReviews(venue: Venue): { reviews?: Review[]; failed: boolean } {
+  const r = useFetched(venue.rating ? `reviews:${venue.id}` : undefined, async () => {
+    const q = await sb.from('venue_reviews').select('id, rating, body, created_at, updated_at').eq('venue_id', venue.id).order('updated_at', { ascending: false }).returns<Review[]>()
+    if (q.error) throw new Error(q.error.message)
+    return q.data
+  })
+  return { reviews: r.data, failed: r.failed }
 }
