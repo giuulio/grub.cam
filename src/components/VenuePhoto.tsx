@@ -115,7 +115,7 @@ export function SiteThumb({ site, className = 'size-16 rounded-lg', sizes = '4re
 }
 
 // A page's banner, venue's or site's: across the page's column (76rem), as wide as Luma's against its height
-const BANNER = 'block aspect-5/2 w-full sm:rounded-[20px] lg:aspect-7/2'
+const BANNER = 'block aspect-5/2 w-full sm:rounded-[1.25rem] lg:aspect-7/2'
 const BANNER_SIZES = '(min-width: 1312px) 76rem, 100vw'
 
 /**

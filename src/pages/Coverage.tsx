@@ -74,7 +74,7 @@ export function CoveragePage() {
           {scopeName ? `${scopeName}: ` : ''}
           {rows.length} {rows.length === 1 ? 'venue' : 'venues'} with something missing
         </h2>
-        <p className="mt-2 max-w-3xl text-base text-muted sm:text-[17px]">
+        <p className="mt-2 max-w-3xl text-base text-muted sm:text-[1.0625rem]">
           {gapCount} {gapCount === 1 ? 'thing' : 'things'} to send in, most worth having first. Each is a link: from where you are, with your Cambridge account, send a photo of it or type out what it says, and it goes up once someone has checked it.
         </p>
 
@@ -133,7 +133,7 @@ function Count({ c, dates, gap }: { c: Counter; dates?: string; gap: Gap['kind']
         {c.have}
         <span className="text-xl font-normal text-muted sm:text-2xl"> of {c.of}</span>
       </p>
-      <p className="mt-2 text-base font-medium sm:text-[17px]">
+      <p className="mt-2 text-base font-medium sm:text-[1.0625rem]">
         {c.have < c.of ? (
           <Link to={`?missing=${gap}`} replace className="hover:underline" aria-label={`${c.what}: see the ${c.of - c.have} ${c.noun} missing ${gap === 'menu' ? 'theirs' : 'them'}`}>
             {c.what}
@@ -142,7 +142,7 @@ function Count({ c, dates, gap }: { c: Counter; dates?: string; gap: Gap['kind']
           c.what
         )}
       </p>
-      <p className="text-[15px] text-muted">
+      <p className="text-[0.9375rem] text-muted">
         {c.noun}
         {dates && `, ${dates}`}
       </p>
@@ -160,7 +160,7 @@ function Count({ c, dates, gap }: { c: Counter; dates?: string; gap: Gap['kind']
 function GapRow({ venue: v, gaps }: { venue: Venue; gaps: Gap[] }) {
   const note = gaps.some((g) => g.kind === 'menu') ? menuNote(v) : undefined
   return (
-    <li className="flex gap-4 py-5 text-base sm:gap-6 sm:text-[17px]">
+    <li className="flex gap-4 py-5 text-base sm:gap-6 sm:text-[1.0625rem]">
       <Link to={venuePath(v)} aria-hidden="true" tabIndex={-1} className="shrink-0">
         <VenueThumb venue={v} className="size-20 rounded-xl sm:size-24" />
       </Link>
@@ -184,7 +184,7 @@ function GapRow({ venue: v, gaps }: { venue: Venue; gaps: Gap[] }) {
           ))}
         </ul>
         {note && (
-          <p className="mt-2 text-[15px] text-muted">
+          <p className="mt-2 text-[0.9375rem] text-muted">
             {note.text}
             {note.script && (
               <>

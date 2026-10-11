@@ -45,11 +45,11 @@ export function AccountButton() {
   const name = memberName(session)
   return (
     <div ref={box} className="relative">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label={`Your account: ${name ?? email}`} title={name ?? email} className={`${round} w-11 text-[15px] font-bold sm:w-12`}>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label={`Your account: ${name ?? email}`} title={name ?? email} className={`${round} w-11 text-[0.9375rem] font-bold sm:w-12`}>
         {initials(name ?? email)}
       </button>
       {open && (
-        <div role="menu" className="raised absolute top-[calc(100%+8px)] right-0 z-50 w-72 rounded-xl p-2">
+        <div role="menu" className="raised absolute top-[calc(100%+0.5rem)] right-0 z-50 w-72 rounded-xl p-2">
           <div className="px-3 pt-2 pb-3">
             {name && <p className="font-semibold">{name}</p>}
             <p className="truncate text-sm text-muted">{email}</p>

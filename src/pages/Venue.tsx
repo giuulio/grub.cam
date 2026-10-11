@@ -160,7 +160,7 @@ function HelpCard({ venue }: { venue: Venue }) {
   return (
     <RailCard>
       <h2 className="text-lg font-semibold">Help fill this in</h2>
-      <p className="mt-1 text-[15px] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
+      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
       <ul className="mt-3 space-y-2">
         {missing.map(([label, kind]) => (
           <li key={label} className="flex items-start gap-3">
@@ -431,7 +431,7 @@ function Details({ venue }: { venue: Venue }) {
   const website = venue.url ?? venue.site.official_dining_url
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
-    <ul className="order-4 grid gap-x-8 gap-y-3 text-[17px] sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
+    <ul className="order-4 grid gap-x-8 gap-y-3 text-[1.0625rem] sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         <Fact icon={Leaf} known={!!diets}>
           {diets ? `${diets} options` : 'Diet options not known yet'}
         </Fact>
@@ -441,7 +441,7 @@ function Details({ venue }: { venue: Venue }) {
           </Fact>
         )}
         <li className="border-t border-ink/10 pt-3 sm:col-span-2 md:border-0 md:pt-0">
-          <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-[15px] text-muted transition-colors hover:text-ink">
+          <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-[0.9375rem] text-muted transition-colors hover:text-ink">
             <Icon of={Flag} />
             Report a change
           </Link>
@@ -453,7 +453,7 @@ function Details({ venue }: { venue: Venue }) {
 function Fact({ icon, known, children }: { icon: Parameters<typeof Icon>[0]['of']; known: boolean; children: ReactNode }) {
   return (
     <li className={`flex items-start gap-3 ${known ? 'text-ink' : 'text-muted'}`}>
-      <Icon of={icon} className="mt-1 size-[18px] text-muted" />
+      <Icon of={icon} className="mt-1 size-[1.125rem] text-muted" />
       <span className="min-w-0">{children}</span>
     </li>
   )
@@ -476,7 +476,7 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   const label = seasonal && ((current.length ? inTerm : !inTerm) ? 'In term' : 'Out of term')
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between gap-3 text-[15px] text-muted">
+      <div className="mb-2 flex items-baseline justify-between gap-3 text-[0.9375rem] text-muted">
         <h2 className="font-semibold text-ink">{walkIn.length ? 'Hours' : 'Formal hall'}</h2>
         {label && <span>{label}</span>}
       </div>

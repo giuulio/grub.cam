@@ -137,7 +137,7 @@ export function HeaderSearch({ finder, className = '' }: { finder: boolean; clas
         enterKeyHint="search"
         placeholder={wide ? scope.placeholder : 'Search'}
         aria-label={scope.scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${scope.label.toLowerCase()}`}
-        className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-ink sm:text-lg outline-none placeholder:text-muted"
+        className="h-full min-w-0 flex-1 bg-transparent text-[1.0625rem] text-ink sm:text-lg outline-none placeholder:text-muted"
       />
       <ScopeTabs />
     </form>

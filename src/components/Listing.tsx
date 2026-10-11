@@ -46,13 +46,13 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[20px] p-3 text-[15px]' : `-mx-3 flex-col gap-3 rounded-[28px] p-3 text-base sm:flex-row sm:gap-6 sm:text-[17px] ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 flex-col gap-3 rounded-[1.75rem] p-3 text-base sm:flex-row sm:gap-6 sm:text-[1.0625rem] ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
         <VenueThumb venue={v} className="size-24 rounded-xl" />
       ) : (
         // Airbnb's photo: 4:3, 20px corners, its label 14px in; across the top on a phone, as Airbnb's there
-        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[20px] max-sm:aspect-[16/9] sm:w-[42%] sm:max-w-80">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[1.25rem] max-sm:aspect-[16/9] sm:w-[42%] sm:max-w-80">
           <VenueImage venue={v} sizes="(min-width: 640px) 20rem, 100vw" decorative icon="size-12" className="absolute inset-0 size-full" />
           <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
             {types.map((t) => (

@@ -253,7 +253,7 @@ function Finder({ scope }: { scope: Scope }) {
               out but not shown, so the map has the screen */}
           <h1 className={`finder-title title text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
           <section aria-label={`${info.label} venues`} className="finder-list">
-            <div className="flex items-center justify-between gap-3 py-1 text-[15px]">
+            <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
               {alone ? (
                 <button type="button" onClick={() => pick(undefined)} className="flex cursor-pointer items-center gap-1.5 font-medium hover:underline">
                   <Icon of={CloseCircle} className="size-4.5" />

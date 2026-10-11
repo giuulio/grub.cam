@@ -17,7 +17,7 @@ export function Footer() {
   const updated = data.status === 'ready' && data.updated ? new Date(data.updated).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short' }) : undefined
 
   return (
-    <footer className="site-footer mt-20 bg-ink/[0.035] text-[15px]">
+    <footer className="site-footer mt-20 bg-ink/[0.035] text-[0.9375rem]">
       <Container className="grid gap-x-8 gap-y-10 pt-12 pb-10 sm:grid-cols-2 lg:grid-cols-4">
         <FooterLinks title={`About ${SITE_NAME}`}>
           <Link to="/about">About</Link>

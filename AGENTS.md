@@ -81,6 +81,8 @@ Files live in the repo, `public/photos/<site>/<venue>/<id>-<width>.webp` (240/48
 
 ## Page alignment
 
+The page is drawn at 90% of the browser's text size (`html { font-size: 90% }` in `index.css`, decided Oct 2026: it had been designed in a browser zoomed out, and 90% was the look wanted). Sizes are rem throughout, Tailwind's included, and the px quoted in these notes and the code's comments are at 16px to the rem, so they show at 90% (the 48px gutter is 43.2px); px only for hairlines, focus rings, shadows and the map's pins and labels, which are sized against the basemap's own. Breakpoints are unaffected (a media query's rem is the browser's).
+
 `Container` gives the header and footer the same edges on every page (decided Oct 2026, so the header never moves): the whole window, as Airbnb's, 16/24/48px gutters, up to 1920px (`max-w-[120rem]`). The front page's tabs use those edges too: the list beside the map (`.finder`) runs from the header to the footer and sets its own space (`main:has(.finder)`). Every other page reads in a centred column 76rem wide inside them, a 22rem rail beside the main column on venue and site pages (`Layout` in `App.tsx`, decided Oct 2026 after Luma's and Airbnb's listing pages), its banner across it. Lists are always one column (the front page's venues, a site's venues, the credits), a map beside them on a wide screen; only the coverage tiles and a day's meals sit side by side. Prose, hours and menu details keep readable inner widths aligned to the column's left edge.
 
 ## Map

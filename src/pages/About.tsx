@@ -24,7 +24,7 @@ export function About() {
   return (
     <>
       <title>{`About · ${SITE_NAME}`}</title>
-      <article className="max-w-3xl text-base leading-relaxed sm:text-[17px]">
+      <article className="max-w-3xl text-base leading-relaxed sm:text-[1.0625rem]">
         <h1 className="title text-4xl leading-[1.1] sm:text-5xl">About {SITE_NAME}</h1>
         <p className="mt-5 text-xl leading-snug text-muted sm:text-2xl">
           Every Cambridge college and University dining hall, café and bar: when it’s open, what’s on and what it costs, as each one publishes it.

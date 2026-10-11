@@ -98,6 +98,12 @@
 }
 
 @layer base {
+  /* The page is drawn at 90% of the browser's text size (14.4px to the rem at the default 16px), so everything sized
+     in rem, Tailwind's spacing and type included, comes out at 90%. Sizes are rem throughout (written as the px they
+     are at 16px to the rem in the comments and AGENTS.md); px only for hairlines, focus rings, shadows and the map's
+     pins and labels, which are sized against the basemap's own. Media queries are unaffected: their rem is always the
+     browser's. */
+  html { font-size: 90%; }
   body {
     @apply bg-canvas font-sans text-ink antialiased;
     -webkit-tap-highlight-color: transparent;
@@ -151,7 +157,7 @@ select option, select optgroup {
   }
   /* Beta, beside the name, as maps.apple.com marks its own: a grey pill, in capitals, centred on the name's letters. */
   .beta-pill {
-    @apply inline-flex h-[22px] items-center rounded-full px-2 text-xs leading-none font-semibold tracking-[0.04em] uppercase;
+    @apply inline-flex h-[1.375rem] items-center rounded-full px-2 text-xs leading-none font-semibold tracking-[0.04em] uppercase;
     background: var(--pill-bg);
     color: var(--pill-ink);
   }
@@ -214,7 +220,7 @@ select option, select optgroup {
 /* Safari pins a date field's text to the top of a fixed height: size it by its line instead, centred. 16px text on a
    phone, so iOS doesn't zoom in on focus. */
 input[type='date'].filter-select {
-  @apply h-auto py-[9px] leading-6 sm:py-[7px];
+  @apply h-auto py-[0.5625rem] leading-6 sm:py-[0.4375rem];
   -webkit-appearance: none;
   appearance: none;
 }
@@ -249,8 +255,8 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 50%;
   background: var(--sheen), var(--pin, var(--muted));
   color: var(--pin-ink, #fff);
@@ -268,8 +274,8 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 /* The map key's dot for a type. */
 .type-dot {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background: var(--pin, var(--muted));
 }
@@ -279,7 +285,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   --map-canvas: #fff;
   --map-ink: #232830;
   --map-attribution: #ffffffed;
-  height: clamp(440px, 68svh, 740px);
+  height: clamp(27.5rem, 68svh, 46.25rem);
   background: #f4f1ec;
   font: inherit;
   z-index: 0;
@@ -291,9 +297,9 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
    (--finder-top, measured), edge to edge, the filters over its top; .is-list shows the list instead. Over the map's
    foot (.finder-sheet): the picked venue's card, and on a phone the button to the list. */
 /* The page's side edge, as Container's padding */
-.finder { --gutter: 16px; scroll-margin-top: 1rem; }
-@media (min-width: 640px) { .finder { --gutter: 24px; } }
-@media (min-width: 1024px) { .finder { --gutter: 48px; } }
+.finder { --gutter: 1rem; scroll-margin-top: 1rem; }
+@media (min-width: 640px) { .finder { --gutter: 1.5rem; } }
+@media (min-width: 1024px) { .finder { --gutter: 3rem; } }
 .finder-map { position: relative; isolation: isolate; background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .finder-map .venue-map { height: 100%; }
 .finder-sheet {
@@ -304,8 +310,8 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  gap: 0.75rem;
+  padding: 0.75rem 0.75rem max(0.75rem, env(safe-area-inset-bottom));
   pointer-events: none;
 }
 .finder-sheet:empty { display: none; }
@@ -318,13 +324,13 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 /* A phone's cards over the map: one to a screen, the next peeking, snapping to the middle. */
 .map-cards {
   display: flex;
-  gap: 8px;
-  width: calc(100% + 24px);
-  margin-inline: -12px;
-  padding-inline: 20px;
+  gap: 0.5rem;
+  width: calc(100% + 1.5rem);
+  margin-inline: -0.75rem;
+  padding-inline: 1.25rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: 20px;
+  scroll-padding-inline: 1.25rem;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
@@ -332,13 +338,13 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .map-cards > li { flex: 0 0 100%; scroll-snap-align: center; }
 @media (max-width: 767px) {
   /* The search, at the top of the list, or over the map's top with the filters under it */
-  .finder-search { margin-top: 12px; }
-  .finder.is-map .finder-search { position: absolute; top: 12px; inset-inline: 12px; z-index: 11; margin: 0; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
-  .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 4px var(--gutter); overflow-x: auto; }
+  .finder-search { margin-top: 0.75rem; }
+  .finder.is-map .finder-search { position: absolute; top: 0.75rem; inset-inline: 0.75rem; z-index: 11; margin: 0; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
+  .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 0.25rem var(--gutter); overflow-x: auto; }
   .finder-filters > * { flex-shrink: 0; }
   /* The list asked for on a phone (view=list): the list alone */
   .finder.is-list .finder-map { display: none; }
-  .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 8px; }
+  .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 0.5rem; }
   .finder.is-map {
     position: relative;
     height: max(26rem, calc(100svh - var(--finder-top, 13.5rem)));
@@ -347,14 +353,14 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   }
   .finder.is-map .finder-map { position: absolute; inset: 0; }
   /* Over the map (it's isolated, so 10 is enough) but under the header, sticky from 640px */
-  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 56px; z-index: 10; margin: 0; padding: 12px; }
+  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 3.5rem; z-index: 10; margin: 0; padding: 0.75rem; }
   .finder.is-map .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder.is-map .finder-note { position: absolute; top: 124px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder.is-map .finder-note { position: absolute; top: 7.75rem; left: 0.75rem; right: 0.75rem; z-index: 10; margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder.is-map .finder-list { display: none; }
   /* Clear of the map's attribution along its foot; while the keyboard is up, just above it (--keyboard: how much of the
      map it covers, measured) */
-  .finder.is-map .finder-sheet { bottom: var(--keyboard, 0px); padding-bottom: max(32px, env(safe-area-inset-bottom)); }
-  .finder.is-map[data-keyboard] .finder-sheet { padding-bottom: 12px; }
+  .finder.is-map .finder-sheet { bottom: var(--keyboard, 0px); padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+  .finder.is-map[data-keyboard] .finder-sheet { padding-bottom: 0.75rem; }
   /* Pinch to zoom: the buttons would sit under the filters */
   .finder .maplibregl-ctrl-top-right { display: none; }
 }
@@ -372,25 +378,25 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
     height: max(32rem, calc(100svh - var(--header-h, 0px) - var(--gutter)));
     scroll-margin-top: var(--header-h, 0px);
   }
-  .finder-title { padding-bottom: 8px; }
-  .finder-map { grid-column: 2; grid-row: 1; height: calc(100% - var(--gutter)); margin-top: var(--gutter); overflow: hidden; border-radius: 20px; }
+  .finder-title { padding-bottom: 0.5rem; }
+  .finder-map { grid-column: 2; grid-row: 1; height: calc(100% - var(--gutter)); margin-top: var(--gutter); overflow: hidden; border-radius: 1.25rem; }
   /* Over the map but under the sticky header (z-40), so they leave with the map as the page scrolls on: the map is
      isolated, so a low z-index is enough to sit over it */
-  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: calc(var(--gutter) + 12px) 12px 12px; pointer-events: none; }
+  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: calc(var(--gutter) + 0.75rem) 0.75rem 0.75rem; pointer-events: none; }
   .finder-filters > * { pointer-events: auto; }
   .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 24px); z-index: 10; margin: calc(var(--gutter) + 64px) 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 1.5rem); z-index: 10; margin: calc(var(--gutter) + 4rem) 0.75rem 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder-side {
     grid-column: 1;
     grid-row: 1;
     min-height: 0;
     overflow-y: auto;
-    margin-left: -12px;
-    padding: var(--gutter) 12px 12px;
+    margin-left: -0.75rem;
+    padding: var(--gutter) 0.75rem 0.75rem;
     scrollbar-width: none;
   }
   .finder-side::-webkit-scrollbar { display: none; }
-  .finder-side .venue-row { scroll-margin-top: 12px; }
+  .finder-side .venue-row { scroll-margin-top: 0.75rem; }
 }
 @media (min-width: 1024px) {
   .finder { column-gap: 2rem; }

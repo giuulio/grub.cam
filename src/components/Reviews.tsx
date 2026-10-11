@@ -57,11 +57,11 @@ export function Reviews({ venue }: { venue: Venue }) {
               <li key={r.id}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Stars value={r.rating} />
-                  <span className="text-[15px] text-muted">
+                  <span className="text-[0.9375rem] text-muted">
                     Cambridge member · {new Date(r.updated_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                   </span>
                 </div>
-                {r.body && <p className="mt-2 text-[17px] leading-relaxed whitespace-pre-line">{r.body}</p>}
+                {r.body && <p className="mt-2 text-[1.0625rem] leading-relaxed whitespace-pre-line">{r.body}</p>}
               </li>
             ))}
           </ul>
@@ -107,7 +107,7 @@ function YourReview({ venue }: { venue: Venue }) {
   if (!session)
     return (
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl bg-cta-bg p-5">
-        <p className="min-w-0 flex-1 text-[17px]">Been here? Rate it out of 5, with a few words if you like. Your name isn’t shown.</p>
+        <p className="min-w-0 flex-1 text-[1.0625rem]">Been here? Rate it out of 5, with a few words if you like. Your name isn’t shown.</p>
         <button type="button" onClick={() => signIn(`${location.pathname}#reviews`)} className="btn btn-primary h-12 rounded-full px-6 text-base font-bold sm:h-12">
           Sign in to rate it
         </button>
