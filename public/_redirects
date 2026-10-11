@@ -1,4 +1,4 @@
-# Cloudflare Pages: pages the front page replaced. Its tabs (/, /dining, /cafes, /bars, /formal) list every venue, and
+# Cloudflare (Workers static assets, as Pages before): pages the front page replaced. Its tabs (/, /dining, /cafes, /bars, /formal) list every venue, and
 # the app sends an old /?type=… on to the tab it names.
 /explore / 301
 /directory / 301

@@ -1,0 +1,12 @@
+// Cloudflare Workers with static assets: the prerendered site in dist/ (npm run build), no script. Workers Builds runs
+// the build, then `npx wrangler deploy`. Every page is a file (/jesus/caff is jesus/caff.html), a missing one is the
+// real 404.html, and public/_headers and _redirects apply as they did on Pages.
+{
+  "name": "grub-cam",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

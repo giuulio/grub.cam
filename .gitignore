@@ -29,5 +29,8 @@ dist-ssr
 # Supabase CLI link state
 supabase/.temp
 
+# Wrangler's local state (wrangler dev)
+.wrangler
+
 # Agent worktrees
 .claude/worktrees
