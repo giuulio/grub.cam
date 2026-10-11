@@ -14,6 +14,7 @@ Cambridge college and University menus and hours, live. Vite + React 19 + TypeSc
 | `npm run ingest:hours -- hours.txt [...] [--dry] [--keep]` | Save a venue's opening hours → `service_slots`, replacing its slots unless `--keep` (format at the top of `scripts/ingest/hours.ts`) |
 | `npm run submissions -- list \| show <id> \| transcribe <id> file.txt \| approve <id> \| approve --trusted \| reject <id> "why"` | The queue of what people sent in from `/send` (see Submissions) |
 | `npm run models:compare -- <dir> --model a=in/out [...]` | Which OpenAI model transcribes boards best: each model on each photo in `<dir>` against its hand-checked `.txt`, scored per line, with cost (format at the top of `scripts/ingest/compare-models.ts`) |
+| `npm run submissions -- digest` | What waits for you, as Markdown (no personal data): the queue Action (`.github/workflows/queue.yml`, 07:00 and 18:00 UTC) keeps it as the body of the open "Review queue" issue, commenting when it changes so GitHub emails you |
 | `npm test` | Vitest (time logic, filters, search against a real-data snapshot, SEO output, adapters against saved pages) |
 | `npm run search:snapshot` | Save what the app loads today to `src/lib/fixtures/snapshot.json` for the search tests (then re-check their dish examples) |
 | `npm run typecheck` / `npm run lint` | `tsc -b` + scripts tsconfig / oxlint |

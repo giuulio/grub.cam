@@ -124,6 +124,12 @@ export function connect() {
       const { error } = await sb.from('photos').insert({ ...rest, [column]: subject, position })
       if (error) throw new Error(`photos ${subject}: ${error.message}`)
     },
+    /** What the model calls since `iso` cost, in dollars (calls whose price wasn't known count as nothing), and how many there were. */
+    async modelSpend(iso: string): Promise<{ usd: number; calls: number }> {
+      const { data, error } = await sb.from('model_calls').select('cost_usd').gte('at', iso)
+      if (error) throw new Error(`model_calls: ${error.message}`)
+      return { usd: (data ?? []).reduce((n, c) => n + Number(c.cost_usd ?? 0), 0), calls: data?.length ?? 0 }
+    },
     /** Takes down the photo a submission put up, so the venue's one before it shows again. How many were hidden. */
     async hideSubmissionPhoto(submission: string): Promise<number> {
       const { data, error } = await sb.from('photos').update({ approved: false }).eq('submission_id', submission).select('path')

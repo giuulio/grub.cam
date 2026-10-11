@@ -6,6 +6,7 @@
 //        npm run submissions -- photos [--dry]                              <- every member's photo queued (the photos Action runs this)
 //        npm run submissions -- menus [--dry]                               <- every member's menu queued, checked and published (the same Action)
 //        npm run submissions -- reject <id> "why"                           <- a published photo or menu is taken down again
+//        npm run submissions -- digest                                      <- what's waiting, as Markdown for the review issue (the queue Action)
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
@@ -40,7 +41,7 @@ const db = connect()
 
 const short = (id: string) => id.slice(0, 8)
 const line = (s: Submission) =>
-  `${short(s.id)}  ${s.status.padEnd(12)} ${s.kind.padEnd(6)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${s.photo_path ? '  photo' : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}`
+  `${short(s.id)}  ${s.status.padEnd(12)} ${s.kind.padEnd(6)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${s.photo_path ? '  photo' : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
 
 async function one(id: string): Promise<Submission> {
   const rows = await db.submissions({})
@@ -135,6 +136,34 @@ async function menuHold(s: Submission): Promise<string | null> {
   if (off) return `it's for ${off.date}, outside yesterday to a week ahead`
   if ((await db.venue(s.venue_id)).menu_scripted) return 'a script fetches this venue’s menu'
   return null
+}
+
+const KIND_WORD: Record<Submission['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'photo of the venue', other: 'note' }
+
+/**
+ * What's waiting for a person, as Markdown for the review issue: no email addresses, notes or photos (the repo, and
+ * so the issue, is public), just what, where, how long and why, and the commands to act on each; then yesterday's
+ * model spend.
+ */
+async function digest(): Promise<string> {
+  const rows = await db.submissions({ status: ['received', 'transcribed', 'needs_review'] })
+  const out = ['The queue of what members sent in that waits for a person. Updated by the queue Action; act with `npm run submissions -- show <id>`, then `approve <id>` or `reject <id> "why"`.', '']
+  if (!rows.length) out.push('**Nothing waiting.**')
+  else {
+    const counts = Object.entries(rows.reduce<Record<string, number>>((n, s) => ({ ...n, [KIND_WORD[s.kind]]: (n[KIND_WORD[s.kind]] ?? 0) + 1 }), {}))
+    out.push(`**${rows.length} waiting:** ${counts.map(([k, n]) => `${n} ${k}${n > 1 && !k.endsWith('s') ? 's' : ''}`).join(', ')}`, '')
+    out.push('| id | what | venue | waiting | why |', '|---|---|---|---|---|')
+    for (const s of rows) {
+      const v = await db.venue(s.venue_id).catch(() => null)
+      const days = Math.floor((Date.now() - Date.parse(s.created_at)) / 86400000)
+      const why = s.review_note ?? (s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
+      const where = v ? `[${v.name}, ${v.siteName}](https://grub.cam/${s.venue_id})` : s.venue_id
+      out.push(`| \`${short(s.id)}\` | ${KIND_WORD[s.kind]}${s.photo_path ? ' (photo)' : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
+    }
+  }
+  const spend = await db.modelSpend(new Date(Date.now() - 86400000).toISOString()).catch(() => null)
+  out.push('', spend ? `Model calls in the last day: ${spend.calls}, $${spend.usd.toFixed(2)}.` : 'Model spend unknown (model_calls unreadable).')
+  return out.join('\n')
 }
 
 switch (command) {
@@ -232,7 +261,10 @@ switch (command) {
     console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}${menus ? `; ${menus} of its menus taken down` : ''}`)
     break
   }
+  case 'digest':
+    console.log(await digest())
+    break
   default:
-    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | menus | reject <id> "why"')
+    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | menus | reject <id> "why" | digest')
     process.exitCode = 1
 }
