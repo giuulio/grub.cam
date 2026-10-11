@@ -25,10 +25,15 @@
 // @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email. Contributors' token posts
 // don't need one.
 //
+// A review (action "review": venue, rating 1–5, optional words; or remove) is a signed-in member's, one per venue. A
+// rating alone is published; words are checked first (OpenAI's moderation, free, then OPENAI_REVIEW_MODEL, default
+// gpt-5.4-nano, asking whether they're about the venue and name no one) and wait for a person when they don't pass or
+// no model can look. Venues show reviews only with 5 or more published (the views in migration 0030).
+//
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
-import { base64, costOf, readPrice, respond, TRANSCRIPTION, VERDICT, type Image, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
+import { base64, costOf, moderate, readPrice, respond, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
@@ -39,6 +44,10 @@ const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
 const DAILY_USD = Number(Deno.env.get('LLM_DAILY_USD') ?? 2)
 const MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-5.4-mini'
 const PRICE = readPrice(Deno.env.get('OPENAI_PRICE'))
+// Checking a review's words is an easier question: a smaller model (OPENAI_REVIEW_PRICE its price, as OPENAI_PRICE)
+const REVIEW_MODEL = Deno.env.get('OPENAI_REVIEW_MODEL') ?? 'gpt-5.4-nano'
+const REVIEW_PRICE = readPrice(Deno.env.get('OPENAI_REVIEW_PRICE'))
+const REVIEWS_PER_DAY = 20 // reviews one member can write or change in a day
 // A call whose cost isn't known (no OPENAI_PRICE) counts as this against the day's budget
 const UNPRICED_USD = 0.01
 
@@ -71,15 +80,17 @@ async function underBudget(): Promise<boolean> {
 type Purpose = 'transcribe' | 'vet_photo' | 'review'
 
 /**
- * One call to the model, logged with its tokens and cost; its parsed answer, or null when it can't be asked (no key,
- * over budget) or the call fails. `good` says whether the answer was of use, for the log.
+ * One call to the model, logged with its tokens and cost against what it was for (`ref`); its parsed answer, or null
+ * when it can't be asked (no key, over budget) or the call fails. `good` says whether the answer was of use, for the
+ * log. A review's check uses the smaller REVIEW_MODEL.
  */
-async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Image | null, submission: string | null, good: (v: T) => boolean = () => true): Promise<T | null> {
+async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Image | null, ref: { submission_id?: string; review_id?: string }, good: (v: T) => boolean = () => true): Promise<T | null> {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key || !(await underBudget())) return null
+  const [model, price] = purpose === 'review' ? [REVIEW_MODEL, REVIEW_PRICE] : [MODEL, PRICE]
   try {
-    const { value, usage } = await respond<T>({ key, model: MODEL, text, image: image ?? undefined, schema, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
-    await sb.from('model_calls').insert({ purpose, model: MODEL, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, PRICE) ?? null, ok: good(value), submission_id: submission })
+    const { value, usage } = await respond<T>({ key, model, text, image: image ?? undefined, schema, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
+    await sb.from('model_calls').insert({ purpose, model, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, price) ?? null, ok: good(value), ...ref })
     return value
   } catch (e) {
     console.warn(`${purpose}: ${(e as Error).message}`)
@@ -90,7 +101,7 @@ async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Ima
 /** The model's body for the photo and/or text, or null when it couldn't (no key, over budget, failed, saw nothing). */
 async function transcribe(id: string, c: Parameters<typeof prompt>[0], photo: Image | null): Promise<{ body: string; unsure: string } | null> {
   if (!photo && !c.note) return null
-  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, photo, id, (t) => t.readable && !!t.body.trim())
+  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, photo, { submission_id: id }, (t) => t.readable && !!t.body.trim())
   const body = got?.readable ? cleanBody(got.body) : ''
   return body ? { body, unsure: got!.unsure.trim() } : null
 }
@@ -107,7 +118,7 @@ async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | nu
     `It can go up (ok: true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows a dining hall, café, bar, servery, counter, seating or the building one is in; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
     `The alt text says what the photo shows, e.g. "The servery counter with the day's hot dishes, from the queue".`,
   ].join('\n\n')
-  const v = await ask<Verdict>('vet_photo', text, VERDICT, photo, id)
+  const v = await ask<Verdict>('vet_photo', text, VERDICT, photo, { submission_id: id })
   return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
 }
 
@@ -195,6 +206,64 @@ async function menuCanGoUp(venueId: string, userId: string): Promise<boolean> {
   return (count ?? 0) < MENUS_PER_DAY
 }
 
+/**
+ * Whether a review's words can be shown: OpenAI's moderation flags nothing, and the small model finds them about the
+ * venue, naming or attacking no one. Null when no model could look (no key, over budget, failed): the review waits.
+ */
+async function checkReview(id: string, venue: Venue, rating: number, text: string): Promise<ReviewCheck | null> {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return null
+  try {
+    const flagged = await moderate(key, text)
+    if (flagged.length) return { ok: false, reason: `moderation flagged it: ${flagged.join(', ')}` }
+  } catch (e) {
+    console.warn(`review moderation: ${(e as Error).message}`)
+    return null
+  }
+  const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
+  const prompt = [
+    `A member of the University of Cambridge wrote this review of ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}, rating it ${rating} out of 5. It will be shown on the venue's page without their name.`,
+    `It can be shown (ok: true) when it is about the venue: its food, drink, prices, service, queues, space or hours, praise or criticism, however blunt. Not when it names, describes or attacks a particular person (staff or anyone else), gives anyone's personal details, advertises something, is about something else entirely, or is gibberish.`,
+    `The review:\n"""\n${text}\n"""`,
+  ].join('\n\n')
+  return ask<ReviewCheck>('review', prompt, REVIEW_CHECK, null, { review_id: id })
+}
+
+/**
+ * A member's review of a venue: written, changed or (`remove`) taken back. A rating alone is published; words are
+ * published when checkReview() passes them, and wait for a person otherwise. One a person hid stays hidden.
+ */
+async function review(sender: { id: string }, body: { venue?: string; rating?: number; body?: string; remove?: boolean }): Promise<Response> {
+  const venue = body.venue ? await venueOf(body.venue) : null
+  if (!venue) return fail('no such venue', 404)
+  if (body.remove) {
+    await sb.from('reviews').delete().eq('venue_id', venue.id).eq('user_id', sender.id)
+    return json({ status: 'removed' })
+  }
+  const rating = Number(body.rating)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail('a rating from 1 to 5')
+  const text = typeof body.body === 'string' ? body.body.trim().slice(0, 1000) || null : null
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  const { count } = await sb.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).gte('updated_at', day)
+  const { data: before } = await sb.from('reviews').select('id, status, body').eq('venue_id', venue.id).eq('user_id', sender.id).maybeSingle()
+  if (!before && (count ?? 0) >= REVIEWS_PER_DAY) return fail('that is plenty of reviews for one day; thank you', 429)
+  // Words already passed stay passed; new words wait until they're checked
+  const unchanged = !!before && before.status === 'published' && (before.body ?? null) === text
+  const status = before?.status === 'hidden' ? 'hidden' : !text || unchanged ? 'published' : 'needs_review'
+  const { data: row, error } = await sb
+    .from('reviews')
+    .upsert({ venue_id: venue.id, user_id: sender.id, rating, body: text, status, review_note: null, updated_at: new Date().toISOString() }, { onConflict: 'venue_id,user_id' })
+    .select('id')
+    .single()
+  if (error) return fail(error.message, 500)
+  if (status !== 'needs_review') return json({ id: row.id, status })
+  const check = await checkReview(row.id, venue, rating, text!)
+  const next = check?.ok ? 'published' : 'needs_review'
+  const note = check ? (check.ok ? null : check.reason.slice(0, 300) || 'the check held it back') : 'no model could check it'
+  await sb.from('reviews').update({ status: next, review_note: note }).eq('id', row.id)
+  return json({ id: row.id, status: next })
+}
+
 /** A contributor's own transcription, from their script: queued as trusted. */
 async function contributorPost(token: string, body: { venue?: string; kind?: string; transcription?: string; note?: string }): Promise<Response> {
   const { data: c } = await sb.from('contributors').select('id, sites, active').eq('token_hash', await sha256(token)).maybeSingle()
@@ -223,11 +292,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const token = req.headers.get('x-contributor-token')
     if (token) return contributorPost(token, body)
-    if (body.action === 'confirm') {
+    if (body.action === 'confirm' || body.action === 'review') {
       const sender = await senderOf(req)
-      return 'error' in sender ? fail(sender.error, 401) : confirm(sender, body)
+      if ('error' in sender) return fail(sender.error, 401)
+      return body.action === 'confirm' ? confirm(sender, body) : review(sender, body)
     }
-    return fail('a photo or text goes as multipart/form-data; JSON is for confirming or for contributors')
+    return fail('a photo or text goes as multipart/form-data; JSON is for confirming, reviews, or contributors')
   }
   if (!type.includes('multipart/form-data')) return fail('multipart/form-data expected')
   const sender = await senderOf(req)

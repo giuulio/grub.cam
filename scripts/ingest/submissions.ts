@@ -161,6 +161,13 @@ async function digest(): Promise<string> {
       out.push(`| \`${short(s.id)}\` | ${KIND_WORD[s.kind]}${s.photo_path ? ' (photo)' : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
     }
   }
+  // Reviews held back: which venue, the stars and why, never the words (they're held back for a reason) or who
+  const reviews = await db.reviews({ status: ['needs_review'] }).catch(() => [])
+  if (reviews.length) {
+    out.push('', `**${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'} held back.** Read them with \`npm run reviews -- list\`, then \`approve <id>\` or \`hide <id> "why"\`.`, '')
+    out.push('| id | venue | stars | why |', '|---|---|---|---|')
+    for (const r of reviews) out.push(`| \`${short(r.id)}\` | ${r.venue_id} | ${r.rating} | ${(r.review_note ?? '').replace(/\|/g, '/')} |`)
+  }
   const spend = await db.modelSpend(new Date(Date.now() - 86400000).toISOString()).catch(() => null)
   out.push('', spend ? `Model calls in the last day: ${spend.calls}, $${spend.usd.toFixed(2)}.` : 'Model spend unknown (model_calls unreadable).')
   return out.join('\n')

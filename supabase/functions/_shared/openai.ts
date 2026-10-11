@@ -82,6 +82,37 @@ export const VERDICT: Schema = {
   },
 }
 
+/** Whether a review's words can be shown (see checkReview() in the submit function). */
+export type ReviewCheck = { ok: boolean; reason: string }
+export const REVIEW_CHECK: Schema = {
+  name: 'review_check',
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['ok', 'reason'],
+    properties: {
+      ok: { type: 'boolean' },
+      reason: { type: 'string', description: 'when not ok, one short sentence saying why, for the person who looks; else empty' },
+    },
+  },
+}
+
+/**
+ * OpenAI's moderation (free, not counted against the budget): the categories it flags `text` for, empty when none.
+ * Throws when the call fails.
+ */
+export async function moderate(key: string, text: string): Promise<string[]> {
+  const res = await fetch('https://api.openai.com/v1/moderations', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'omni-moderation-latest', input: text }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(`moderation ${res.status}: ${data?.error?.message ?? 'no message'}`)
+  const r = data.results?.[0]
+  return r?.flagged ? Object.entries(r.categories ?? {}).filter(([, on]) => on).map(([k]) => k) : []
+}
+
 export function base64(bytes: Uint8Array): string {
   let s = ''
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000))

@@ -37,5 +37,5 @@ jobs:
           before=$(gh issue view "$number" --json body --jq .body | grep -v '^Model ')
           after=$(grep -v '^Model ' digest.md)
           gh issue edit "$number" --body-file digest.md
-          waiting=$(grep -m1 -E '^\*\*[0-9]+ waiting' digest.md || true)
+          waiting=$(grep -oE '^\*\*[0-9]+ (waiting|reviews? held back)[^*]*\*\*' digest.md | sed -E 's/\*\*//g; s/[.:]$//' | paste -sd ',' - | sed 's/,/, /g' || true)
           if [ "$before" != "$after" ] && [ -n "$waiting" ]; then gh issue comment "$number" --body "$waiting. The list is in the issue."; fi

@@ -30,6 +30,19 @@ export type Submission = {
   created_at: string
 }
 
+/** A member's review of a venue (`reviews`, 0030); `user_email` joined in for the person reviewing it, never shown. */
+export type Review = {
+  id: string
+  venue_id: string
+  user_id: string
+  rating: number
+  body: string | null
+  status: 'published' | 'needs_review' | 'hidden'
+  review_note: string | null
+  created_at: string
+  updated_at: string
+}
+
 /** Service-role client from VITE_SUPABASE_URL + SUPABASE_SECRET_KEY (.env is loaded if present). Never run in the browser. */
 export function connect() {
   try {
@@ -123,6 +136,22 @@ export function connect() {
       const position = !positions.length ? 0 : opts.first ? Math.min(...positions) - 1 : Math.max(...positions) + 1
       const { error } = await sb.from('photos').insert({ ...rest, [column]: subject, position })
       if (error) throw new Error(`photos ${subject}: ${error.message}`)
+    },
+    async reviews(filter: { status?: Review['status'][] } = {}): Promise<Review[]> {
+      let q = sb.from('reviews').select('*').order('updated_at')
+      if (filter.status) q = q.in('status', filter.status)
+      const { data, error } = await q
+      if (error) throw new Error(`reviews: ${error.message}`)
+      return data as Review[]
+    },
+    async updateReview(id: string, patch: Partial<Pick<Review, 'status' | 'review_note'>>) {
+      const { error } = await sb.from('reviews').update(patch).eq('id', id)
+      if (error) throw new Error(`reviews ${id}: ${error.message}`)
+    },
+    /** A review's author's address, for the person deciding on it (auth.users, through the admin API). */
+    async userEmail(id: string): Promise<string | null> {
+      const { data } = await sb.auth.admin.getUserById(id)
+      return data.user?.email ?? null
     },
     /** What the model calls since `iso` cost, in dollars (calls whose price wasn't known count as nothing), and how many there were. */
     async modelSpend(iso: string): Promise<{ usd: number; calls: number }> {
