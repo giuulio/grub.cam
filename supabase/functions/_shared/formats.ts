@@ -50,8 +50,11 @@ export type Context = { kind: Transcribable; venue: { name: string; type: 'hall'
 
 const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
 
-/** The instruction given with the photo (and/or the sender's text). */
-export function prompt(c: Context): string {
+/**
+ * The instruction given with the photo (and/or the sender's text). `structured`: asked through the API, whose answer's
+ * shape (openai.ts, TRANSCRIPTION) says when there's nothing to read; else, pasted into a chat, it's told to say NOTHING.
+ */
+export function prompt(c: Context, structured = false): string {
   const what = c.kind === 'menu' ? 'the menu' : c.kind === 'prices' ? 'the price list' : 'the opening hours'
   const lines = [
     `You transcribe what a photo of a board or notice says, exactly as printed, for a database of Cambridge college dining.`,
@@ -59,7 +62,8 @@ export function prompt(c: Context): string {
   ]
   if (c.kind === 'menu' && c.date) lines.push(`The sender says it is for ${c.date}${c.service ? ` ${c.service}` : ''}; use that date and meal unless the board clearly shows another.`)
   if (c.note) lines.push(`The sender also wrote: "${c.note.replace(/"/g, "'")}" — it may be the text itself, typed, or a note about the photo.`)
-  lines.push('', BODY_SPEC[c.kind], '', 'If the image shows none of this, reply with exactly: NOTHING')
+  lines.push('', BODY_SPEC[c.kind])
+  if (!structured) lines.push('', 'If the image shows none of this, reply with exactly: NOTHING')
   return lines.join('\n')
 }
 

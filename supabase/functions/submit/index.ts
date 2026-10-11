@@ -4,10 +4,12 @@
 // text (action "confirm"), which queues it for review. Nothing is published from here: `npm run submissions -- approve`
 // does that, after a person has looked (or, for a member's photo of the venue, the photos Action: see below).
 //
-// Models, in order, each skipped when its key is unset or it fails: OpenAI (OPENAI_API_KEY, OPENAI_MODEL), then Gemini
-// (GEMINI_API_KEY, GEMINI_MODEL). LLM_DAILY_CAP (default 25) transcriptions a day across both, so a burst can't spend
-// the credit; past it, the row waits for a person. Contributors (table `contributors`) post JSON with a
-// X-Contributor-Token header and their own transcription; the ingest Action approves theirs.
+// The model is OpenAI's (OPENAI_API_KEY, OPENAI_MODEL; OPENAI_PRICE "0.75/4.50", its dollars per million input and
+// output tokens; OPENAI_REASONING, the effort for a reasoning model), through the Responses API with answers in a fixed
+// shape (_shared/openai.ts). Every call is logged in `model_calls` with its tokens and cost, and once today's calls
+// have cost LLM_DAILY_USD (default 2) no more are made, so a burst can't spend the credit: past it, a row waits for a
+// person. No key: the same. Contributors (table `contributors`) post JSON with a X-Contributor-Token header and their
+// own transcription; the ingest Action approves theirs.
 //
 // A photo of the venue (kind "photo", the "Have a better photo?" on its page) is the one thing that goes up without a
 // person: a model checks it (vet()) and, when it passes and the sender's daily allowance has room, the row is `queued`
@@ -22,13 +24,18 @@
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
+import { base64, costOf, readPrice, respond, TRANSCRIPTION, VERDICT, type Image, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
 const MAX_PHOTO = 5 * 1024 * 1024
 const PER_HOUR = 12 // submissions from one address
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
-const CAP = Number(Deno.env.get('LLM_DAILY_CAP') ?? 25)
+const DAILY_USD = Number(Deno.env.get('LLM_DAILY_USD') ?? 2)
+const MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-5.4-mini'
+const PRICE = readPrice(Deno.env.get('OPENAI_PRICE'))
+// A call whose cost isn't known (no OPENAI_PRICE) counts as this against the day's budget
+const UNPRICED_USD = 0.01
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -49,94 +56,54 @@ async function sha256(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-function base64(bytes: Uint8Array): string {
-  let s = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(s)
+/** Whether today's calls (London time) have left room in the budget for one more. */
+async function underBudget(): Promise<boolean> {
+  const { data } = await sb.from('model_calls').select('cost_usd').gte('at', `${today()}T00:00:00Z`)
+  const spent = (data ?? []).reduce((n, c) => n + (c.cost_usd == null ? UNPRICED_USD : Number(c.cost_usd)), 0)
+  return spent < DAILY_USD
 }
 
-/** Whether today's model budget has room for one more call. */
-async function underCap(): Promise<boolean> {
-  const since = `${today()}T00:00:00Z`
-  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).in('transcribed_by', ['openai', 'gemini']).gte('created_at', since)
-  return (count ?? 0) < CAP
-}
+type Purpose = 'transcribe' | 'vet_photo' | 'review'
 
-/** One model's answer to `text` about the photo, or null when none could (no key, over budget, failed). */
-async function ask(text: string, photo: { bytes: Uint8Array; mime: string } | null): Promise<{ out: string; by: 'openai' | 'gemini'; model: string } | null> {
-  if (!(await underCap())) return null
-  const openai = Deno.env.get('OPENAI_API_KEY')
-  if (openai) {
-    const model = Deno.env.get('OPENAI_MODEL') ?? 'gpt-4o-mini'
-    try {
-      const content: unknown[] = [{ type: 'text', text }]
-      if (photo) content.push({ type: 'image_url', image_url: { url: `data:${photo.mime};base64,${base64(photo.bytes)}`, detail: 'high' } })
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${openai}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ model, temperature: 0, max_tokens: 2000, messages: [{ role: 'user', content }] }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return { out: data.choices?.[0]?.message?.content ?? '', by: 'openai', model }
-      }
-      console.warn(`openai ${res.status}: ${(await res.text()).slice(0, 300)}`)
-    } catch (e) {
-      console.warn(`openai: ${(e as Error).message}`)
-    }
+/**
+ * One call to the model, logged with its tokens and cost; its parsed answer, or null when it can't be asked (no key,
+ * over budget) or the call fails. `good` says whether the answer was of use, for the log.
+ */
+async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Image | null, submission: string | null, good: (v: T) => boolean = () => true): Promise<T | null> {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key || !(await underBudget())) return null
+  try {
+    const { value, usage } = await respond<T>({ key, model: MODEL, text, image: image ?? undefined, schema, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
+    await sb.from('model_calls').insert({ purpose, model: MODEL, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, PRICE) ?? null, ok: good(value), submission_id: submission })
+    return value
+  } catch (e) {
+    console.warn(`${purpose}: ${(e as Error).message}`)
+    return null
   }
-  const gemini = Deno.env.get('GEMINI_API_KEY')
-  if (gemini) {
-    const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash'
-    try {
-      const parts: unknown[] = [{ text }]
-      if (photo) parts.push({ inline_data: { mime_type: photo.mime, data: base64(photo.bytes) } })
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${gemini}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0, maxOutputTokens: 2000 } }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return { out: data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '', by: 'gemini', model }
-      }
-      console.warn(`gemini ${res.status}: ${(await res.text()).slice(0, 300)}`)
-    } catch (e) {
-      console.warn(`gemini: ${(e as Error).message}`)
-    }
-  }
-  return null
 }
 
-/** The model's body for the photo and/or text, or null when no model could (no key, over budget, failed, saw nothing). */
-async function transcribe(c: Parameters<typeof prompt>[0], photo: { bytes: Uint8Array; mime: string } | null): Promise<{ body: string; by: 'openai' | 'gemini'; model: string } | null> {
+/** The model's body for the photo and/or text, or null when it couldn't (no key, over budget, failed, saw nothing). */
+async function transcribe(id: string, c: Parameters<typeof prompt>[0], photo: Image | null): Promise<{ body: string; unsure: string } | null> {
   if (!photo && !c.note) return null
-  const got = await ask(prompt(c), photo)
-  const body = got && cleanBody(got.out)
-  return got && body && body !== 'NOTHING' ? { body, by: got.by, model: got.model } : null
+  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, photo, id, (t) => t.readable && !!t.body.trim())
+  const body = got?.readable ? cleanBody(got.body) : ''
+  return body ? { body, unsure: got!.unsure.trim() } : null
 }
 
 /**
- * Whether a member's photo of a venue can go up without a person looking: a model's verdict, a reason the sender can
- * act on when it can't, and alt text. Null when no model could look (or its answer wasn't the JSON asked for).
+ * Whether a member's photo of a venue can go up without a person looking: the model's verdict, a reason the sender can
+ * act on when it can't, and alt text. Null when no model could look.
  */
-async function vet(venue: Venue, photo: { bytes: Uint8Array; mime: string }): Promise<{ ok: boolean; reason: string; alt: string; by: 'openai' | 'gemini'; model: string } | null> {
+async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | null> {
   const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
   const text = [
     `You check photos that members of the University of Cambridge send for the page of a place to eat or drink, before they replace its photo without anyone else looking.`,
     `This one is meant to show ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}.`,
-    `It can go up ("ok": true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows a dining hall, café, bar, servery, counter, seating or the building one is in; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
-    `Answer with JSON only, no markdown: {"ok": true or false, "reason": "when not ok, one short sentence to the sender saying what to change", "alt": "what the photo shows, for screen readers, under 120 characters, e.g. The servery counter with the day's hot dishes, from the queue"}`,
+    `It can go up (ok: true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows a dining hall, café, bar, servery, counter, seating or the building one is in; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
+    `The alt text says what the photo shows, e.g. "The servery counter with the day's hot dishes, from the queue".`,
   ].join('\n\n')
-  const got = await ask(text, photo)
-  if (!got) return null
-  try {
-    const v = JSON.parse(got.out.replace(/^```(json)?|```$/gm, '').trim())
-    if (typeof v.ok !== 'boolean') return null
-    return { ok: v.ok, reason: String(v.reason ?? '').slice(0, 300), alt: String(v.alt ?? '').slice(0, 200), by: got.by, model: got.model }
-  } catch {
-    return null
-  }
+  const v = await ask<Verdict>('vet_photo', text, VERDICT, photo, id)
+  return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
 }
 
 /** Starts the photos Action, which publishes what's queued; its hourly run catches anything this misses. */
@@ -156,14 +123,14 @@ async function dispatchPhotos() {
  * A member's photo of the venue: up within minutes when a model passes it and nothing says to wait (the sender's
  * daily allowance, another member's photo of the venue in the last day), else queued for a person.
  */
-async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: { bytes: Uint8Array; mime: string }): Promise<Response> {
+async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: Image): Promise<Response> {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
   const { count: mine } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).eq('kind', 'photo').in('status', ['queued', 'approved']).gte('created_at', day)
   // Two members swapping a venue's photo back and forth: the second waits for a person
   const { count: recent } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq('venue_id', venue.id).not('submission_id', 'is', null).gte('created_at', day)
   const waitFor = (mine ?? 0) >= PHOTOS_PER_DAY ? 'you have sent a few today' : (recent ?? 0) > 0 ? 'this venue had a new photo today' : null
-  const verdict = await vet(venue, photo)
-  const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: verdict.by, model: verdict.model } : {}) }
+  const verdict = await vet(id, venue, photo)
+  const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: MODEL } : {}) }
   if (verdict?.ok && !waitFor) {
     await sb.from('submissions').update({ ...patch, status: 'queued' }).eq('id', id)
     await dispatchPhotos()
@@ -292,13 +259,14 @@ Deno.serve(async (req) => {
   }
 
   if (kind === 'photo' && !stored) return fail('the photo did not save; try again', 500)
-  if (kind === 'photo' && bytes && photo) return photoOf(id, venue, sender, { bytes, mime: photo.type })
+  const image: Image | null = bytes && photo ? { base64: base64(bytes), mime: photo.type } : null
+  if (kind === 'photo' && image) return photoOf(id, venue, sender, image)
   if (!['menu', 'prices', 'hours'].includes(kind)) return json({ id, status: 'received', transcription: null })
   const t = kind as Transcribable
   const siteName = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
-  const got = await transcribe({ kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, note: note ?? undefined }, bytes && photo ? { bytes, mime: photo.type } : null)
+  const got = await transcribe(id, { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, note: note ?? undefined }, image)
   if (!got) return json({ id, status: 'received', transcription: null, spec: BODY_SPEC[t] })
   const text = header(t, { site: venue.site, venue: venue.slug, source: `submission ${id}: ${photo ? 'photo' : 'text'} sent from the venue's page on grub.cam`, observed: today() }) + got.body + '\n'
-  await sb.from('submissions').update({ transcription: text, transcribed_by: got.by, model: got.model, status: 'transcribed' }).eq('id', id)
-  return json({ id, status: 'transcribed', transcription: text, by: got.by })
+  await sb.from('submissions').update({ transcription: text, transcribed_by: 'openai', model: MODEL, unsure: got.unsure || null, status: 'transcribed' }).eq('id', id)
+  return json({ id, status: 'transcribed', transcription: text, by: 'openai', unsure: got.unsure || null })
 })

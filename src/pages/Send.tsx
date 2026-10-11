@@ -116,6 +116,7 @@ export function Send() {
           <section className="mt-8 space-y-4" aria-labelledby="check">
             <h2 id="check" className="title text-2xl">Here's what we read</h2>
             <p className="text-sm text-muted">Fix anything that's wrong (one line per item, as on the board), then send it.</p>
+            {result.unsure && <p className="rounded-lg bg-cta-bg px-4 py-3 text-sm text-ink">Worth checking: {result.unsure}</p>}
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={Math.min(30, Math.max(8, text.split('\n').length + 1))} spellCheck={false} className="w-full rounded-lg border border-ink/15 bg-canvas p-3 font-mono text-sm leading-6 text-ink focus:border-ink/50 focus:outline-none" aria-label="Transcription" />
             {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-3">

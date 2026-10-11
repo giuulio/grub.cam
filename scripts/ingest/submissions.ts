@@ -128,6 +128,7 @@ switch (command) {
       writeFileSync(file, await db.submissionPhoto(s.photo_path))
       console.log(`\nphoto saved to ${file}`)
     }
+    if (s.unsure) console.log(`\nthe model wasn't sure: ${s.unsure}`)
     if (s.transcription) console.log(`\ntranscription (${s.transcribed_by}${s.model ? `, ${s.model}` : ''}):\n${s.transcription}`)
     else if (['menu', 'prices', 'hours'].includes(s.kind)) {
       const v = await db.venue(s.venue_id)

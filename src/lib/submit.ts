@@ -2,8 +2,8 @@
 // and costs the model little) and/or text, then confirming the transcription it comes back with.
 
 export type SubmitKind = 'menu' | 'prices' | 'hours' | 'photo' | 'other'
-/** `queued`: a member's photo that passed its check, going up within minutes; `reason`: why one waits for a person instead. */
-export type SubmitResult = { id: string; status: 'received' | 'transcribed' | 'needs_review' | 'queued'; transcription: string | null; by?: 'openai' | 'gemini'; spec?: string; reason?: string | null }
+/** `queued`: a member's photo that passed its check, going up within minutes; `reason`: why one waits for a person instead; `unsure`: what the model couldn't read. */
+export type SubmitResult = { id: string; status: 'received' | 'transcribed' | 'needs_review' | 'queued'; transcription: string | null; by?: 'openai'; spec?: string; reason?: string | null; unsure?: string | null }
 
 const URL_ = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit`
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string

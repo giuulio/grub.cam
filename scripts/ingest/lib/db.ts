@@ -20,6 +20,8 @@ export type Submission = {
   transcription: string | null
   transcribed_by: string | null
   model: string | null
+  /** what the model couldn't read or guessed */
+  unsure: string | null
   status: 'received' | 'transcribed' | 'needs_review' | 'queued' | 'approved' | 'rejected'
   review_note: string | null
   /** kind photo: the sender's name, which it's credited to, and the model's description of it */
