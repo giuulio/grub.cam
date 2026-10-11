@@ -1,8 +1,9 @@
-name: Members' photos
+name: Members' photos and menus
 
-# Publishes the photos members send from a venue's page ("Have a better photo?") once the submit function's model has
-# passed them: makes each one's sizes into public/photos, adds it to Supabase ahead of the venue's others, and commits
-# the files to main, which Workers Builds deploys like any other push. The submit function starts this as soon as a
+# Publishes what members send that goes up without a person: menus whose text the sender confirmed (checked, then saved
+# to Supabase, where the site reads them live), and photos of a venue the submit function's model has passed (each
+# one's sizes made into public/photos, added to Supabase ahead of the venue's others, and the files committed to main,
+# which Workers Builds deploys like any other push). The submit function starts this as soon as a menu or
 # photo is queued (workflow_dispatch, through GITHUB_DISPATCH_TOKEN, a Supabase secret); the hourly run catches any it
 # missed. Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY, as the ingest does.
 on:
@@ -31,8 +32,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # Even when one photo fails, commit the others it saved
-      - run: npm run submissions -- photos
+      - run: npm run submissions -- menus
+      # Even when a menu or one photo fails, publish and commit the others
+      - if: ${{ !cancelled() }}
+        run: npm run submissions -- photos
       - if: ${{ !cancelled() }}
         run: |
           git add public/photos

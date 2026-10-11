@@ -11,7 +11,11 @@
 // person. No key: the same. Contributors (table `contributors`) post JSON with a X-Contributor-Token header and their
 // own transcription; the ingest Action approves theirs.
 //
-// A photo of the venue (kind "photo", the "Have a better photo?" on its page) is the one thing that goes up without a
+// A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
+// menu or the sender has sent MENUS_PER_DAY today: it's `queued`, and the photos Action (`submissions -- menus`) checks
+// it parses, is for its venue and is dated yesterday to a week ahead, then publishes it; one that isn't waits for a person.
+//
+// A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a
 // person: a model checks it (vet()) and, when it passes and the sender's daily allowance has room, the row is `queued`
 // and the photos Action (.github/workflows/photos.yml) is started (GITHUB_DISPATCH_TOKEN: a fine-grained token with
 // Actions read and write on the repo; GITHUB_REPO, default giuulio/grub.cam). That Action makes its sizes, commits them
@@ -31,6 +35,7 @@ const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'ba
 const MAX_PHOTO = 5 * 1024 * 1024
 const PER_HOUR = 12 // submissions from one address
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
+const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
 const DAILY_USD = Number(Deno.env.get('LLM_DAILY_USD') ?? 2)
 const MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-5.4-mini'
 const PRICE = readPrice(Deno.env.get('OPENAI_PRICE'))
@@ -106,8 +111,8 @@ async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | nu
   return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
 }
 
-/** Starts the photos Action, which publishes what's queued; its hourly run catches anything this misses. */
-async function dispatchPhotos() {
+/** Starts the photos Action, which publishes what's queued (photos and menus); its hourly run catches anything this misses. */
+async function dispatchPublish() {
   const token = Deno.env.get('GITHUB_DISPATCH_TOKEN')
   if (!token) return
   const repo = Deno.env.get('GITHUB_REPO') ?? 'giuulio/grub.cam'
@@ -133,7 +138,7 @@ async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: 
   const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: MODEL } : {}) }
   if (verdict?.ok && !waitFor) {
     await sb.from('submissions').update({ ...patch, status: 'queued' }).eq('id', id)
-    await dispatchPhotos()
+    await dispatchPublish()
     return json({ id, status: 'queued', transcription: null })
   }
   const reason = verdict && !verdict.ok ? verdict.reason : waitFor
@@ -160,18 +165,34 @@ async function venueOf(id: string): Promise<Venue | null> {
   return (data as Venue | null) ?? null
 }
 
-/** A sender confirming (possibly edited) text: it joins the review queue. Only while the row is fresh and unreviewed. */
+/**
+ * A sender confirming (possibly edited) text. A menu goes up without a person when the venue's menu isn't a script's
+ * and the sender's day has room (`queued`: the photos Action checks it reads and is for a sensible day, and publishes
+ * it); anything else joins the review queue. Only while the row is fresh and unreviewed.
+ */
 async function confirm(sender: { id: string }, body: { id?: string; transcription?: string }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
-  const { data: row } = await sb.from('submissions').select('id, status, transcription, created_at, user_id').eq('id', body.id).maybeSingle()
+  const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, created_at, user_id').eq('id', body.id).maybeSingle()
   if (!row || row.user_id !== sender.id) return fail('no such submission', 404)
   if (!['received', 'transcribed'].includes(row.status)) return fail('already reviewed', 409)
   if (Date.now() - new Date(row.created_at).getTime() > 24 * 3600 * 1000) return fail('too late to change', 409)
   const text = body.transcription.trim().slice(0, 20000)
   if (!text.includes('\n---\n')) return fail('the text needs its header and a --- line')
   const edited = text !== (row.transcription ?? '').trim()
-  await sb.from('submissions').update({ transcription: text, status: 'needs_review', ...(edited ? { transcribed_by: 'sender' } : {}) }).eq('id', body.id)
-  return json({ id: body.id, status: 'needs_review' })
+  const auto = row.kind === 'menu' && (await menuCanGoUp(row.venue_id, sender.id))
+  const status = auto ? 'queued' : 'needs_review'
+  await sb.from('submissions').update({ transcription: text, status, ...(edited ? { transcribed_by: 'sender' } : {}) }).eq('id', body.id)
+  if (auto) await dispatchPublish()
+  return json({ id: body.id, status })
+}
+
+/** Whether a member's menu for this venue can go up without a person: no script fetches the venue's, and they've sent fewer than MENUS_PER_DAY today. */
+async function menuCanGoUp(venueId: string, userId: string): Promise<boolean> {
+  const { data: v } = await sb.from('venues').select('menu_scripted').eq('id', venueId).maybeSingle()
+  if (!v || v.menu_scripted) return false
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', 'menu').in('status', ['queued', 'approved']).gte('created_at', day)
+  return (count ?? 0) < MENUS_PER_DAY
 }
 
 /** A contributor's own transcription, from their script: queued as trusted. */

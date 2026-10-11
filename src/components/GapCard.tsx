@@ -26,5 +26,5 @@ export function GapCard({ title, body, to, action, icon = NoteAdd, children }: {
   )
 }
 
-/** How anything gets in, said once: a photo or the text, checked before it goes up. */
-export const SEND_EITHER = 'Send a photo of it, or type out what it says. It goes up once someone has checked it.'
+/** How anything gets in, said once: a photo or the text, either does. */
+export const SEND_EITHER = 'Send a photo of it, or type out what it says.'

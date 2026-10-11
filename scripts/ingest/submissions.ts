@@ -4,10 +4,15 @@
 //        npm run submissions -- approve <id> [--keep-hours] [--dry]         <- parses the text and saves it; replaces the venue's hours unless --keep-hours
 //        npm run submissions -- approve --trusted [--dry]                   <- every contributor's row waiting (the ingest Action runs this)
 //        npm run submissions -- photos [--dry]                              <- every member's photo queued (the photos Action runs this)
-//        npm run submissions -- reject <id> "why"                           <- a published photo is taken down again
+//        npm run submissions -- menus [--dry]                               <- every member's menu queued, checked and published (the same Action)
+//        npm run submissions -- reject <id> "why"                           <- a published photo or menu is taken down again
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
+//
+// A member's menu (kind menu), once they've confirmed its text, is queued by the submit function and published by the
+// photos Action without a person (`menus`), when it reads, is for the venue it was sent for, its days run from yesterday
+// to a week ahead, and the venue's menu isn't fetched by a script; otherwise it waits for a person, saying why.
 //
 // A member's photo of the venue (kind photo) is published as ingest:photo would: its sizes written to public/photos
 // (commit them; the photos Action does) and its row added ahead of the venue's others, credited to the sender's name
@@ -108,6 +113,30 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
   throw new Error(`a ${s.kind} submission is not published from here: act on the note`)
 }
 
+/** London's date, `days` from today. */
+const londonDate = (days = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + days * 86400000))
+
+/**
+ * Why a member's menu can't go up without a person, or null when it can: it must parse, be for its venue, cover only
+ * yesterday to a week ahead, and be for a venue no script fetches (a script's menu is the source's own).
+ */
+async function menuHold(s: Submission): Promise<string | null> {
+  if (!s.transcription) return 'no text to publish'
+  let m: ReturnType<typeof parseManual>
+  try {
+    m = parseManual(s.transcription)
+  } catch (e) {
+    return `it doesn't read: ${(e as Error).message}`
+  }
+  if (m.venue !== s.venue_id) return `the text is for ${m.venue}`
+  if (!m.days.some((d) => d.items.length)) return 'no dishes in it'
+  const [from, to] = [londonDate(-1), londonDate(7)]
+  const off = m.days.find((d) => d.date < from || d.date > to)
+  if (off) return `it's for ${off.date}, outside yesterday to a week ahead`
+  if ((await db.venue(s.venue_id)).menu_scripted) return 'a script fetches this venue’s menu'
+  return null
+}
+
 switch (command) {
   case 'list': {
     const rows = await db.submissions(values.all ? {} : { status: ['received', 'transcribed', 'needs_review', 'queued'] })
@@ -152,6 +181,27 @@ switch (command) {
     console.log(`✓ ${short(s.id)} transcribed (${text.split('\n').length} lines); approve it when it reads right`)
     break
   }
+  case 'menus': {
+    const rows = (await db.submissions({ status: ['queued'] })).filter((s) => s.kind === 'menu')
+    if (!rows.length) console.log('no menus queued')
+    for (const s of rows) {
+      try {
+        const hold = await menuHold(s)
+        if (hold) {
+          if (!values.dry) await db.updateSubmission(s.id, { status: 'needs_review', review_note: hold })
+          console.log(`… ${short(s.id)} ${s.venue_id}: waits for a person: ${hold}`)
+          continue
+        }
+        const what = await publish(s, !!values.dry)
+        if (!values.dry) await db.updateSubmission(s.id, { status: 'approved', reviewed_at: new Date().toISOString() })
+        console.log(`✓ ${short(s.id)} ${s.venue_id} menu: ${what}${values.dry ? ' (dry)' : ''}`)
+      } catch (e) {
+        process.exitCode = 1
+        console.error(`✗ ${short(s.id)} ${s.venue_id}: ${(e as Error).message}`)
+      }
+    }
+    break
+  }
   case 'approve':
   case 'photos': {
     const rows =
@@ -176,11 +226,13 @@ switch (command) {
   case 'reject': {
     const s = await one(args[0] ?? '')
     const hidden = s.kind === 'photo' ? await db.hideSubmissionPhoto(s.id) : 0
+    // A member's published menu: its days come down (only theirs: a script's or a hand-copied menu for the same day stays)
+    const menus = s.kind === 'menu' && s.status === 'approved' && s.transcription ? await db.deleteMenuDays(s.venue_id, parseManual(s.transcription).days, s.contributor_id ? 'contributor' : 'user') : 0
     await db.updateSubmission(s.id, { status: 'rejected', review_note: args[1] ?? null, reviewed_at: new Date().toISOString() })
-    console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}`)
+    console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}${menus ? `; ${menus} of its menus taken down` : ''}`)
     break
   }
   default:
-    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | reject <id> "why"')
+    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | menus | reject <id> "why"')
     process.exitCode = 1
 }

@@ -47,6 +47,16 @@ export function connect() {
       const { error } = await sb.rpc('save_menu', { p_venue_id: venue, p_source_url: sourceUrl, p_fetched_at: fetchedAt, p_method: method, p_days: days })
       if (error) throw new Error(`save_menu ${venue}: ${error.message}`)
     },
+    /** Takes down a venue's menus for these days and meals, only those saved by `method` (a member's, say). Returns how many went. */
+    async deleteMenuDays(venue: string, days: { date: string; service: string }[], method: Method): Promise<number> {
+      let gone = 0
+      for (const d of days) {
+        const { count, error } = await sb.from('menu_days').delete({ count: 'exact' }).eq('venue_id', venue).eq('date', d.date).eq('service', d.service).eq('method', method)
+        if (error) throw new Error(`menu_days ${venue} ${d.date} ${d.service}: ${error.message}`)
+        gone += count ?? 0
+      }
+      return gone
+    },
     /** Saves a venue's hours as slots, replacing its current ones unless `replace` is false. The source goes in each slot's prov. */
     async saveHours(h: Hours, opts: { replace: boolean; source_kind: 'official' | 'reported'; submission?: string }) {
       const [site, venue] = h.venue.split('/')
@@ -61,9 +71,9 @@ export function connect() {
     },
     /** A venue with what a transcription prompt needs to say about it. */
     async venue(id: string) {
-      const { data, error } = await sb.from('venues').select('id, slug, name, type, site, sites(name, short_name)').eq('id', id).single()
+      const { data, error } = await sb.from('venues').select('id, slug, name, type, site, menu_scripted, sites(name, short_name)').eq('id', id).single()
       if (error) throw new Error(`venues ${id}: ${error.message}`)
-      const v = data as unknown as { id: string; slug: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string; sites: { name: string; short_name: string | null } | null }
+      const v = data as unknown as { id: string; slug: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string; menu_scripted: boolean | null; sites: { name: string; short_name: string | null } | null }
       return { ...v, siteName: v.sites?.short_name ?? v.sites?.name ?? v.site }
     },
     /** The venue's current slots, for the CLI to show before replacing them. */

@@ -97,7 +97,7 @@ export function Send() {
         <BackButton up={back} />
         <h1 className="title text-4xl">Send what you see</h1>
         <p className="mt-3 leading-relaxed text-muted">
-          A photo of the menu board, the price list or the opening times, or what it says typed out, from where you are. We read it, you check what we read, and it goes up once someone has looked.
+          A photo of the menu board, the price list or the opening times, or what it says typed out, from where you are. We read it and you check what we read: a menu then goes up within minutes, prices and hours once someone has looked.
         </p>
 
         {session === undefined ? null : !session || !isCamEmail(email) ? (
@@ -111,7 +111,7 @@ export function Send() {
             </div>
           </section>
         ) : done ? (
-          <Thanks result={done} credit={name} venue={venue ? { path: back, name: venue.name } : undefined} />
+          <Thanks result={done} kind={kind} credit={name} venue={venue ? { path: back, name: venue.name } : undefined} />
         ) : result ? (
           <section className="mt-8 space-y-4" aria-labelledby="check">
             <h2 id="check" className="title text-2xl">Here's what we read</h2>
@@ -215,7 +215,7 @@ export function Send() {
             {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-4">
               <button type="submit" disabled={!venue || busy === 'sending'} className="btn btn-primary">{busy === 'sending' ? 'Reading…' : 'Send'}</button>
-              <span className="text-sm text-muted">Someone checks everything before it appears. <Link to="/terms" className="link">Terms</Link></span>
+              <span className="text-sm text-muted">Menus go up once you confirm them; anything else once someone has checked it. <Link to="/terms" className="link">Terms</Link></span>
             </div>
           </form>
         )}
@@ -244,13 +244,15 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-function Thanks({ result, credit, venue }: { result: SubmitResult; credit: string | null; venue?: { path: string; name: string } }) {
+function Thanks({ result, kind, credit, venue }: { result: SubmitResult; kind: SubmitKind; credit: string | null; venue?: { path: string; name: string } }) {
   return (
     <section className="mt-8 space-y-3" aria-live="polite">
       <h2 className="title text-2xl">Thank you</h2>
       <p className="text-muted">
         {result.status === 'queued'
-          ? `It's going up: the venue's page shows it within a few minutes, credited to ${credit ?? 'you'}.`
+          ? kind === 'menu'
+            ? 'It’s going up: the venue’s page shows this menu within a few minutes.'
+            : `It's going up: the venue's page shows it within a few minutes, credited to ${credit ?? 'you'}.`
           : result.reason
             ? `A person will look at it before it goes up, usually within a day: ${result.reason.replace(/\.?$/, '.')}`
             : result.status === 'needs_review'
