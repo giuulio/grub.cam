@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type
 import { Link, Navigate, useSearchParams } from 'react-router'
 import { CloseCircle, List as ListIcon, Map as MapIcon } from 'reicon-react'
 import { Chip, ChipSelect } from '../components/Controls.tsx'
+import { HeaderSearch } from '../components/Header.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { VenueRow } from '../components/Listing.tsx'
 import { SitePicker } from '../components/SitePicker.tsx'
@@ -49,7 +50,7 @@ function Finder({ scope }: { scope: Scope }) {
   const sheet = useRef<HTMLDivElement>(null)
   // From a tablet up, the list and the map side by side; on a phone, the map (or, asked for, the list)
   const split = useMedia('(min-width: 768px)')
-  // The venue whose pin was picked: its card shows over the map and its row is marked
+  // The venue whose pin was picked: beside the map, its row alone is the list; on a phone, its card shows over the map
   const [selected, setSelected] = useState<string>()
   // The row under the pointer, picked out on the map
   const [hover, setHover] = useState<string>()
@@ -83,6 +84,13 @@ function Finder({ scope }: { scope: Scope }) {
   const metres = (v: Venue) => (here && hasLocation(v) ? metresBetween(here, v) : undefined)
   const ranked = here ? [...found].sort((a, b) => (metres(a.venue) ?? Infinity) - (metres(b.venue) ?? Infinity)) : found
   const searching = !!normalizeSearch(f.q)
+  // On a phone's map, a search shows its first result's card straight away, the others either side of it (and the map
+  // names its pin); clearing the search puts the cards away
+  const [searchedFor, setSearchedFor] = useState(f.q)
+  if (f.q !== searchedFor) {
+    setSearchedFor(f.q)
+    if (!split) setSelected(searching ? ranked[0]?.venue.id : undefined)
+  }
 
   const update = (fn: (p: URLSearchParams) => void) => {
     const next = new URLSearchParams(params)
@@ -128,15 +136,27 @@ function Finder({ scope }: { scope: Scope }) {
   // The map is only made where it's shown (on a prerendered page, its frame holds the place)
   const showMap = !snapshot && (split || !listView)
   const picked = ranked.find((r) => r.venue.id === selected)
+  // Beside the map, a picked pin's venue is the list, alone, until it's let go
+  const alone = split && !snapshot ? picked : undefined
   // A prerendered page lists every venue, for whoever reads it without the script
-  const rows = snapshot ? ranked : ranked.slice(0, shown)
+  const rows = alone ? [alone] : snapshot ? ranked : ranked.slice(0, shown)
   const pick = (id?: string) => {
     setSelected(id)
-    if (!id || !split) return
-    // Beside the map, its row is brought into the list's view (shown first, if it's further down than the list has got)
-    const at = ranked.findIndex((r) => r.venue.id === id)
-    if (at >= shown) setShown(Math.ceil((at + 1) / PAGE) * PAGE)
-    requestAnimationFrame(() => document.getElementById(`venue-${id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
+    // The row under the pointer may be about to go
+    setHover(undefined)
+  }
+  // The list comes back where it was left: kept as a pin is picked, the venue alone shown from the top
+  const listAt = useRef(0)
+  const aloneId = alone?.venue.id
+  useLayoutEffect(() => {
+    const el = side.current
+    if (!el) return
+    if (aloneId) el.scrollTo({ top: 0 })
+    else el.scrollTo({ top: listAt.current })
+  }, [aloneId])
+  const pickPin = (id?: string) => {
+    if (split && !selected && side.current) listAt.current = side.current.scrollTop
+    pick(id)
   }
   const rowProps = (r: Ranked) => {
     const m = metres(r.venue)
@@ -147,6 +167,30 @@ function Finder({ scope }: { scope: Scope }) {
     if (listView) window.scrollTo({ top: 0 })
     else requestAnimationFrame(() => results.current?.scrollIntoView({ block: 'start' }))
   }
+
+  // On a phone's map, what's over its foot (the picked venue's cards, the list button) rides above the keyboard while
+  // it's up: the keyboard only shrinks what's visible (the visual viewport), not the page
+  useEffect(() => {
+    const el = results.current
+    const vv = window.visualViewport
+    if (split || listView || !el || !vv) return
+    const place = () => {
+      const covered = Math.max(0, Math.round(el.getBoundingClientRect().bottom - (vv.offsetTop + vv.height)))
+      el.style.setProperty('--keyboard', `${covered}px`)
+      el.toggleAttribute('data-keyboard', covered > 0)
+    }
+    place()
+    vv.addEventListener('resize', place)
+    vv.addEventListener('scroll', place)
+    window.addEventListener('scroll', place, { passive: true })
+    return () => {
+      vv.removeEventListener('resize', place)
+      vv.removeEventListener('scroll', place)
+      window.removeEventListener('scroll', place)
+      el.style.removeProperty('--keyboard')
+      el.removeAttribute('data-keyboard')
+    }
+  }, [split, listView])
 
   // On a phone's map, the map fills the screen below the header: measured from the top of the page
   useLayoutEffect(() => {
@@ -179,6 +223,8 @@ function Finder({ scope }: { scope: Scope }) {
           filters over its top; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
           over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
       <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
+        {/* On a phone, the search is the map's (or the list's), not the header's */}
+        <HeaderSearch finder className="finder-search md:hidden" />
         <div className="finder-filters card-row flex items-center gap-2">
           {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
           {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
@@ -208,7 +254,14 @@ function Finder({ scope }: { scope: Scope }) {
           <h1 className={`finder-title title text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
           <section aria-label={`${info.label} venues`} className="finder-list">
             <div className="flex items-center justify-between gap-3 py-1 text-[15px]">
-              <h2 className="font-medium">{count}</h2>
+              {alone ? (
+                <button type="button" onClick={() => pick(undefined)} className="flex cursor-pointer items-center gap-1.5 font-medium hover:underline">
+                  <Icon of={CloseCircle} className="size-4.5" />
+                  Show all {count}
+                </button>
+              ) : (
+                <h2 className="font-medium">{count}</h2>
+              )}
               {filtered && (
                 <button type="button" onClick={clear} className="flex cursor-pointer items-center gap-1 text-sm text-muted hover:text-ink">
                   <Icon of={CloseCircle} />
@@ -216,15 +269,15 @@ function Finder({ scope }: { scope: Scope }) {
                 </button>
               )}
             </div>
-            <CoverageLine scope={scope} />
+            {!alone && <CoverageLine scope={scope} />}
             {ranked.length ? (
               <ul className="mt-3 space-y-3">
-                {rows.map((r) => <VenueRow key={r.venue.id} {...rowProps(r)} selected={r.venue.id === selected} onHover={setHover} />)}
+                {rows.map((r) => <VenueRow key={r.venue.id} {...rowProps(r)} selected={!alone && r.venue.id === selected} onHover={setHover} />)}
               </ul>
             ) : (
               <Empty onClear={clear}>No {info.noun[1]} match.</Empty>
             )}
-            {rows.length < ranked.length && (
+            {!alone && rows.length < ranked.length && (
               <div className="flex justify-center py-6">
                 <button type="button" onClick={() => setShown(shown + PAGE)} className="btn btn-secondary">
                   Show {Math.min(PAGE, ranked.length - rows.length)} more
@@ -240,11 +293,11 @@ function Finder({ scope }: { scope: Scope }) {
                 results={ranked}
                 selected={selected}
                 highlight={hover ? [hover] : undefined}
-                onSelect={pick}
+                onSelect={pickPin}
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
-                inset={split ? { top: 52 } : undefined}
+                inset={split ? { top: 52 } : { top: 58, bottom: picked ? 130 : 0 }}
                 here={here}
                 controls={false}
                 core={!narrowed}
@@ -254,7 +307,7 @@ function Finder({ scope }: { scope: Scope }) {
             )}
             <div ref={sheet} className="finder-sheet">
               {!split && !listView && ranked.length > 0 && toggle}
-              {/* Wider, the list beside the map marks the picked venue's row and brings it into view: no card */}
+              {/* Wider, the list beside the map is the picked venue's row alone: no card */}
               {picked && !split && <MapCards rows={ranked} selected={picked.venue.id} onSelect={pick} card={rowProps} />}
             </div>
           </div>

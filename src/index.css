@@ -8,7 +8,7 @@
  * No font service sees a visitor's IP.
  *
  * Colour: the University's palette (cam.ac.uk/brand-resources/guidelines/colour). Slate for text; Cambridge Blue for
- * what's picked and what's open; Cambridge Dark Blue for the one main action and focus. Dark mode is Dark Blue's hue,
+ * what's picked; Green for what's open; Dark Cherry for a venue's college; Cambridge Dark Blue for the one main action and focus. Dark mode is Dark Blue's hue,
  * deepened. Pairs follow the guidelines' approved text/background pairs: Dark Blue on Cambridge or Light Blue, white or
  * Light Blue on Dark Blue.
  */
@@ -25,6 +25,10 @@
   --color-accent-ink: #133844; /* Cambridge Dark Blue */
   --color-open: var(--open);
   --color-open-ink: var(--open-ink);
+  --color-site-ink: var(--site-ink);
+  --color-cta: var(--cta);
+  --color-cta-bg: var(--cta-bg);
+  --color-error: var(--error);
 }
 
 :root {
@@ -35,11 +39,18 @@
   --muted: #546072; /* Slate 3 */
   --action: #133844; /* Dark Blue, white on it */
   --action-ink: #ffffff;
-  --open: #d1f9f1; /* Light Blue, Dark Blue on it */
-  --open-ink: #133844;
+  --open: #4db78c; /* Green, a dot before the word */
+  --open-ink: #13553a; /* Dark Green */
+  --site-ink: #911449; /* Dark Cherry: a venue's college, over its name */
   --focus: #133844;
   --raised-shadow: 0 1px 2px #1338440f, 0 6px 20px #13384424;
   --raised-border: transparent;
+  /* What's missing and how to send it in: Warm Blue, deepened to read as text on white, on Light Blue */
+  --cta: #00807a;
+  --cta-bg: #d1f9f1;
+  --error: #dd3025; /* Dark Crest */
+  --pill-bg: #eceef1; /* Slate 1, Slate 3 on it */
+  --pill-ink: #546072;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,11 +62,17 @@
     --muted: #b5bdc8; /* Slate 2 */
     --action: #8ee8d8; /* Cambridge Blue, Dark Blue on it */
     --action-ink: #133844;
-    --open: #133844;
-    --open-ink: #d1f9f1;
+    --open: #4db78c;
+    --open-ink: #afdfcb; /* Warm Green */
+    --site-ink: #e18aac; /* Warm Cherry */
     --focus: #8ee8d8;
     --raised-shadow: 0 6px 24px #0008;
     --raised-border: #ffffff1a;
+    --cta: #8ee8d8;
+    --cta-bg: #133844;
+    --error: #ffc392; /* Warm Crest */
+    --pill-bg: #546072; /* Slate 3, Slate 1 on it */
+    --pill-ink: #eceef1;
   }
 }
 
@@ -67,11 +84,17 @@
   --muted: #b5bdc8;
   --action: #8ee8d8;
   --action-ink: #133844;
-  --open: #133844;
-  --open-ink: #d1f9f1;
+  --open: #4db78c;
+  --open-ink: #afdfcb;
+  --site-ink: #e18aac;
   --focus: #8ee8d8;
   --raised-shadow: 0 6px 24px #0008;
   --raised-border: #ffffff1a;
+  --cta: #8ee8d8;
+  --cta-bg: #133844;
+  --error: #ffc392;
+  --pill-bg: #546072;
+  --pill-ink: #eceef1;
 }
 
 @layer base {
@@ -126,6 +149,13 @@ select option, select optgroup {
   .chip {
     @apply inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ink/15 bg-canvas px-3 text-sm whitespace-nowrap text-ink transition-colors hover:border-ink/40 sm:h-10;
   }
+  /* Beta, beside the name, as maps.apple.com marks its own: a grey pill, in capitals, centred on the name's letters. */
+  .beta-pill {
+    @apply inline-flex h-[22px] items-center rounded-full px-2 text-xs leading-none font-semibold tracking-[0.04em] uppercase;
+    background: var(--pill-bg);
+    color: var(--pill-ink);
+  }
+
   /* Picked (a filter that's on): Cambridge Blue. A chip that opens a panel only darkens its edge while open. */
   .chip[aria-pressed='true'], .chip[data-on] {
     @apply border-accent bg-accent font-medium text-accent-ink;
@@ -193,18 +223,20 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   margin: 0;
 }
 
-/* Venue types in the Cambridge palette: Dark Crest, Warm Blue, Dark Cherry. Validated as categorical colours against
-   both basemaps (worst pair Crest/Cherry, ΔE 15.9 under protanopia); the same in both themes, where the white ring
-   carries contrast on the dark map. Warm Blue is light, so what sits on it is Dark Blue. The icon or a label repeats
-   the type, so colour is never alone. */
+/* Venue types in the Cambridge palette's vivid secondaries: Crest, Green, Indigo, each with its glyph in white, as
+   Apple's places are drawn. The three differ in hue far more than in lightness, so the glyph or a label always repeats
+   the type: colour is never alone. Tiles and their ink are each colour's Light and Dark shades. `--sheen` lights a
+   disc from above and shades its foot, as Apple's markers are (a layer over its colour, so a split pin gets it too). */
 :root {
-  --type-hall: #dd3025;
-  --type-cafe: #00bdb6;
-  --type-bar: #911449;
+  --type-hall: #fd8153; /* Crest */
+  --type-cafe: #4db78c; /* Green */
+  --type-bar: #5366e0; /* Indigo */
+  --sheen: linear-gradient(180deg, #ffffff4d 0%, #ffffff00 55%, #00000026 100%);
 }
-[data-type='hall'] { --pin: var(--type-hall); --pin-ink: #fff; --tint: #ffe2c8; --tint-ink: #b8231b; }
-[data-type='cafe'] { --pin: var(--type-cafe); --pin-ink: #133844; --tint: #d1f9f1; --tint-ink: #133844; }
-[data-type='bar'] { --pin: var(--type-bar); --pin-ink: #fff; --tint: #f2cad8; --tint-ink: #911449; }
+[data-type] { --pin-ink: #fff; }
+[data-type='hall'] { --pin: var(--type-hall); --tint: #ffe2c8; --tint-ink: #dd3025; }
+[data-type='cafe'] { --pin: var(--type-cafe); --tint: #dff2ea; --tint-ink: #13553a; }
+[data-type='bar'] { --pin: var(--type-bar); --tint: #ebedfb; --tint-ink: #29347a; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) [data-type] { --tint: color-mix(in srgb, var(--pin) 24%, var(--canvas)); --tint-ink: color-mix(in srgb, var(--pin) 45%, #fff); }
@@ -220,7 +252,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--pin, var(--muted));
+  background: var(--sheen), var(--pin, var(--muted));
   color: var(--pin-ink, #fff);
 }
 
@@ -299,6 +331,9 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .map-cards::-webkit-scrollbar { display: none; }
 .map-cards > li { flex: 0 0 100%; scroll-snap-align: center; }
 @media (max-width: 767px) {
+  /* The search, at the top of the list, or over the map's top with the filters under it */
+  .finder-search { margin-top: 12px; }
+  .finder.is-map .finder-search { position: absolute; top: 12px; inset-inline: 12px; z-index: 11; margin: 0; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
   .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 4px var(--gutter); overflow-x: auto; }
   .finder-filters > * { flex-shrink: 0; }
   /* A site's list on a phone: the list alone */
@@ -312,12 +347,14 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   }
   .finder.is-map .finder-map { position: absolute; inset: 0; }
   /* Over the map (it's isolated, so 10 is enough) but under the header, sticky from 640px */
-  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 0; z-index: 10; margin: 0; padding: 12px; }
+  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 56px; z-index: 10; margin: 0; padding: 12px; }
   .finder.is-map .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder.is-map .finder-note { position: absolute; top: 68px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder.is-map .finder-note { position: absolute; top: 124px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder.is-map .finder-list { display: none; }
-  /* Clear of the map's attribution along its foot */
-  .finder.is-map .finder-sheet { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+  /* Clear of the map's attribution along its foot; while the keyboard is up, just above it (--keyboard: how much of the
+     map it covers, measured) */
+  .finder.is-map .finder-sheet { bottom: var(--keyboard, 0px); padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+  .finder.is-map[data-keyboard] .finder-sheet { padding-bottom: 12px; }
   /* Pinch to zoom: the buttons would sit under the filters */
   .finder .maplibregl-ctrl-top-right { display: none; }
 }
@@ -379,19 +416,20 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
   border: 0;
 }
 
-/* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
-.venue-pin-target.is-shared { width: 30px; }
+/* Side by side (one building), pins sit 30px apart, across and down: targets that size never overlap. */
+.venue-pin-target.is-shared { width: 30px; height: 30px; }
 
 /* A pin hangs from a point of no size, its centre on it (see MapPin) */
 .venue-pin-anchor, .venue-pin-origin { display: block; width: 0; height: 0; }
 .venue-pin-origin { position: relative; }
 .venue-pin-origin > .venue-pin-target { position: absolute; top: -22px; left: -22px; }
-.venue-pin-origin > .venue-pin-target.is-shared { left: -15px; }
+.venue-pin-origin > .venue-pin-target.is-shared { top: -15px; left: -15px; }
 
 /* As Apple marks its own places: a disc in its type's colour, or split diagonally between its two (its fill is set
-   inline, pinFill() in lib/mapView.ts), with the type's glyph, ringed in the map's paper with a soft shadow; open or
-   not, the same. */
+   inline, pinFill() in lib/mapView.ts), lit from above, with the type's glyph in white, ringed in the map's paper with
+   a soft shadow; open or not, the same. */
 .venue-pin {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -401,8 +439,10 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
   box-shadow: 0 0 0 1.5px var(--pin-ring, #fff), 0 1px 4px #00000047;
   transition: transform 120ms ease-out;
 }
+/* Lit from above (see --sheen), over the fill set inline */
+.venue-pin::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--sheen); }
 .venue-map[data-map-theme='dark'] .venue-pin { --pin-ring: #2b3a40; }
-.venue-pin-glyph { width: 14px; height: 14px; color: var(--pin-ink, #fff); }
+.venue-pin-glyph { position: relative; width: 14px; height: 14px; color: #fff; filter: drop-shadow(0 0.5px 0.5px #0000004d); }
 
 /* Selected: larger, ringed in Cambridge Dark Blue (Cambridge Blue on the dark basemap). */
 .venue-pin.is-selected {
@@ -437,13 +477,13 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
 [data-label] .venue-pin-label { visibility: visible; }
 [data-label='left'] .venue-pin-label { left: auto; right: calc(50% + 16px); text-align: right; }
 .venue-pin-target { --pin-halo: #fff; }
-.venue-pin-target[data-type='hall'] { --pin-label: #b8231b; }
-.venue-pin-target[data-type='cafe'] { --pin-label: #0a6f6b; }
-.venue-pin-target[data-type='bar'] { --pin-label: #911449; }
+.venue-pin-target[data-type='hall'] { --pin-label: #d0391f; }
+.venue-pin-target[data-type='cafe'] { --pin-label: #1d7a55; }
+.venue-pin-target[data-type='bar'] { --pin-label: #3d4fc7; }
 .venue-map[data-map-theme='dark'] .venue-pin-target { --pin-halo: #1b2a30; }
-.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='hall'] { --pin-label: #ff8f86; }
-.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='cafe'] { --pin-label: #5fe0d6; }
-.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='bar'] { --pin-label: #f394bd; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='hall'] { --pin-label: #ffc392; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='cafe'] { --pin-label: #afdfcb; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='bar'] { --pin-label: #b0b9f1; }
 
 @media (prefers-reduced-motion: reduce) {
   .venue-pin { transition: none; }
@@ -477,8 +517,14 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
 }
 .venue-map .maplibregl-ctrl-attrib a { color: var(--map-ink); }
 
-/* You are here: Dark Blue in a white ring, haloed in Cambridge Blue; no venue type uses either. */
+/* You are here: Dark Blue in a white ring, haloed in Cambridge Blue; no venue type uses either. Centred on a point of
+   no size (userDot() in lib/mapView.ts), as a pin is. */
+.map-user-origin { position: relative; display: block; width: 0; height: 0; }
 .map-user-location {
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  display: block;
   width: 18px;
   height: 18px;
   border: 3px solid #fff;

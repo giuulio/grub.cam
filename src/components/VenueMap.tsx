@@ -4,7 +4,7 @@ import type * as MapLibre from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/finder.ts'
-import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH, userDot } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import { AppleMap } from './AppleMap.tsx'
@@ -254,9 +254,6 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
 /** You, as a dot, with the map moved to you. */
 function showHere(e: Engine, p: Point) {
   e.user?.remove()
-  const dot = document.createElement('span')
-  dot.className = 'map-user-location'
-  dot.setAttribute('aria-label', 'Your location')
-  e.user = new e.M.Marker({ element: dot }).setLngLat([p.longitude, p.latitude]).addTo(e.map)
+  e.user = new e.M.Marker({ element: userDot() }).setLngLat([p.longitude, p.latitude]).addTo(e.map)
   e.map.easeTo({ center: [p.longitude, p.latitude], zoom: 15, duration: 300 })
 }

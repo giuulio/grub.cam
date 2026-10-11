@@ -2,21 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { hasLocation } from '../lib/finder.ts'
 import type { Ranked } from '../lib/filters.ts'
-import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH, zoomFor } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH, userDot, zoomFor } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import { MapActions, MapPin, type MapProps } from './MapParts.tsx'
 
 declare global {
   interface Window { grubMapKitLoaded?: () => void }
 }
-
-/**
- * Apple's own places kept on the map: landmarks to find your way by (parks, museums, libraries, stations, the
- * hospital). The rest would compete with the venues' pins and names: its restaurants, cafés, bars, shops and hotels,
- * and its colleges, whose labels would sit under the venues' (which name the college where the venue's own name
- * doesn't).
- */
-const SHOWN_PLACES = ['Park', 'Museum', 'Library', 'PublicTransport', 'Hospital'] as const
 
 // MapKit JS loads once, from Apple, the first time a map shows; a refused token or a failed load is reported to every
 // map showing, which then falls back to OpenFreeMap's.
@@ -97,13 +89,26 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
         // Pinch on a touch screen; the buttons elsewhere
         showsZoomControl: !window.matchMedia('(pointer: coarse)').matches,
         isRotationEnabled: false,
-        pointOfInterestFilter: mapkit.PointOfInterestFilter.including(SHOWN_PLACES.map((c) => mapkit.PointOfInterestCategory[c])),
+        // None of Apple's own places: their icons and names (parks, stations, its restaurants and colleges) would
+        // compete with the venues' pins and names (MapKit names it `excludingAllCategories`; its published types don't)
+        pointOfInterestFilter: (mapkit.PointOfInterestFilter as unknown as { excludingAllCategories: mapkit.PointOfInterestFilter }).excludingAllCategories,
         region: regionAt({ latitude: CAMBRIDGE[1], longitude: CAMBRIDGE[0] }, 13, el),
       })
-      // Never wander, or zoom out, far past REACH
-      // (MapKit takes the region itself, whatever its published types say)
-      map.cameraBoundary = new mapkit.CoordinateRegion(new mapkit.Coordinate((north + south) / 2, (east + west) / 2), new mapkit.CoordinateSpan(north - south, east - west)) as unknown as mapkit.CameraBoundaryDescription
-      map.cameraZoomRange = new mapkit.CameraZoomRange(100, 16000)
+      // Never wander past REACH (MapKit takes the region itself, whatever its published types say), nor zoom out past
+      // fitting it at the map's size. MapKit limits the camera's height, and what a map shows grows with it, so the
+      // height that fits REACH is read off what the map shows now (moving the map to measure it raced its own moves)
+      const reach = new mapkit.CoordinateRegion(new mapkit.Coordinate((north + south) / 2, (east + west) / 2), new mapkit.CoordinateSpan(north - south, east - west))
+      map.cameraBoundary = reach as unknown as mapkit.CameraBoundaryDescription
+      const limitZoom = () => {
+        const { span } = map.region
+        if (!el.clientWidth || !el.clientHeight || !span.latitudeDelta || !span.longitudeDelta) return
+        const widest = map.cameraDistance * Math.max((east - west) / span.longitudeDelta, (north - south) / span.latitudeDelta)
+        map.cameraZoomRange = new mapkit.CameraZoomRange(100, widest)
+      }
+      limitZoom()
+      const resized = new ResizeObserver(limitZoom)
+      resized.observe(el)
+      cleanups.push(() => resized.disconnect())
       el.dataset.mapTheme = mapTheme()
       cleanups.push(onThemeChange(() => {
         map.colorScheme = scheme()
@@ -309,11 +314,9 @@ function showItems(e: Engine, items: mapkit.Annotation[], el: HTMLElement, inset
 /** You, as a dot, with the map moved to you. */
 function showHere(e: Engine, p: Point, el: HTMLElement) {
   if (e.user) e.map.removeAnnotation(e.user)
-  const dot = document.createElement('span')
-  dot.className = 'map-user-location'
-  dot.setAttribute('aria-label', 'Your location')
-  // An 18px dot, hung by MapKit from its bottom centre: raised half its height to centre it
-  e.user = new mapkit.Annotation(coordinate(p), () => dot, { calloutEnabled: false, enabled: false, anchorOffset: new DOMPoint(0, -9) })
+  // Hung from a point of no size, as the pins are, so MapKit always places it the same
+  const dot = userDot()
+  e.user = new mapkit.Annotation(coordinate(p), () => dot, { calloutEnabled: false, enabled: false, anchorOffset: new DOMPoint(0, 0), displayPriority: 1000 })
   e.map.addAnnotation(e.user)
   e.map.setRegionAnimated(regionAt(p, 15, el), true)
 }

@@ -84,7 +84,8 @@ describe('verified map points', () => {
   it('never merges venues: those sharing a coordinate sit side by side, the rest stay on their point', () => {
     const at = (id: string, latitude: number, longitude = 0.1) => ({ id, latitude, longitude })
     const offsets = sideBySide([at('hall', 52.2), at('cafe', 52.2), at('bar', 52.2), at('near', 52.2001)])
-    expect([...offsets]).toEqual([['hall', [-30, 0]], ['cafe', [0, 0]], ['bar', [30, 0]]]) // 'near' keeps its own point
+    // Three: a triangle, two over one, so each has room for its name ('near' keeps its own point)
+    expect([...offsets]).toEqual([['hall', [-15, -15]], ['cafe', [15, -15]], ['bar', [0, 15]]])
     expect([...sideBySide([at('a', 52.2), at('b', 52.2)])]).toEqual([['a', [-15, 0]], ['b', [15, 0]]])
     // Four or more: a centred grid, the last row centred too
     expect([...sideBySide(['a', 'b', 'c', 'd', 'e'].map((id) => at(id, 52.2)))].map(([, o]) => o)).toEqual([[-30, -15], [0, -15], [30, -15], [-15, 15], [15, 15]])

@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, Home } from 'reicon-react'
+import { CameraAdd, ChevronRight, Home, NoteAdd, type IconComponent } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
 import { mainDishes, MEAL_LABEL, nextService, slotOrder, type Ranked } from '../lib/filters.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
@@ -66,7 +66,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative flex text-[15px] leading-snug transition-colors ${card ? 'raised gap-3 rounded-[20px] p-3' : `-mx-3 flex-col gap-3 rounded-[28px] p-3 sm:flex-row sm:gap-5 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[20px] p-3 text-[15px]' : `-mx-3 flex-col gap-3 rounded-[28px] p-3 text-base sm:flex-row sm:gap-6 sm:text-[17px] ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
         <VenueThumb venue={v} className="size-24 rounded-xl" />
@@ -83,29 +83,29 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
           </div>
         </div>
       )}
-      <div className={`min-w-0 flex-1 ${card ? '' : 'sm:pt-1'}`}>
+      <div className={`min-w-0 flex-1 ${card ? '' : 'sm:pt-2'}`}>
         {showSite && (
-          <Link to={sitePath(v.site)} className="relative z-10 text-sm text-muted hover:text-ink hover:underline">
+          <Link to={sitePath(v.site)} className={`relative z-10 font-semibold text-site-ink hover:underline ${card ? 'text-sm' : 'text-base sm:text-lg'}`}>
             {siteName(v.site)}
           </Link>
         )}
-        <h3 className={`title leading-snug ${card ? 'text-base' : 'text-lg sm:text-xl'}`}>
+        <h3 className={`title leading-tight ${card ? 'text-base' : 'mt-0.5 text-xl sm:text-[1.625rem]'}`}>
           <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
             {v.name}
           </Link>
         </h3>
-        <p className="mt-1">
+        <p className={card ? 'mt-1' : 'mt-2'}>
           <Status s={r.status} now={now} meal={v.type === 'hall' || types.length > 1} />
           {then && <span className="text-muted"> · {then}</span>}
           {distance && <span className="text-muted"> · {distance}</span>}
           {!snapshot && r.status.kind === 'unknown' && (
             <>
               {' · '}
-              <Link to={sendPath(v, 'hours')} className="link relative z-10 text-muted hover:text-ink">Send them</Link>
+              <Link to={sendPath(v, 'hours')} className="relative z-10 font-semibold text-cta hover:underline">Send them</Link>
             </>
           )}
         </p>
-        <div className={`mt-2 ${card ? 'line-clamp-2' : ''}`}>
+        <div className={card ? 'mt-2 line-clamp-2' : 'mt-4'}>
           <RowPreview r={r} now={now} types={types} dishes={dishes} formal={formal} compact={card} />
         </div>
       </div>
@@ -136,10 +136,10 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
   if (formal) {
     const facts: [string, string | undefined][] = [['When', formalWhen(v, v.formal).join('; ')], ['Price', v.formal && formalPrice(v.formal)], ['Dress', v.formal && formalDress(v.formal)], ['Booking', v.formal && formalBooking(v.formal)]]
     const known = facts.filter((f): f is [string, string] => !!f[1])
-    if (!known.length) return <Gap to={sendPath(v, 'other')} send="Tell us">Times and price not known yet.</Gap>
+    if (!known.length) return <Gap to={sendPath(v, 'other')} send="Tell us" icon={NoteAdd} compact={compact}>Times and price not known yet.</Gap>
     if (compact) return <p>{known.map((f) => f[1]).join(' · ')}</p>
     return (
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
         {known.map(([k, t]) => (
           <Fragment key={k}>
             <dt className="text-muted">{k}</dt>
@@ -162,7 +162,7 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
     return compact ? (
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
     ) : (
-      <ul className="max-w-sm space-y-1">
+      <ul className="max-w-md space-y-1.5">
         {prices.map((p, n) => (
           <li key={n} className="flex items-baseline justify-between gap-4">
             <span className="truncate">{p.name}</span>
@@ -171,8 +171,8 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
         ))}
       </ul>
     )
-  if (v.type === 'hall' && !isFormalOnly(v)) return <Gap to={sendPath(v, 'menu')} send="Send a photo of the board">No menu here yet.</Gap>
-  return <Gap to={sendPath(v, 'prices')} send="Send a photo of the list">No prices here yet.</Gap>
+  if (v.type === 'hall' && !isFormalOnly(v)) return <Gap to={sendPath(v, 'menu')} send="Send a photo of the board" compact={compact}>No menu here yet.</Gap>
+  return <Gap to={sendPath(v, 'prices')} send="Send a photo of the list" compact={compact}>No prices here yet.</Gap>
 }
 
 /** Dishes as a list, one to a line, with how many more; or, `compact`, on one line. */
@@ -186,8 +186,8 @@ function Lines({ title, items, max, compact }: { title?: string; items: string[]
     )
   return (
     <div>
-      {title && <p className="mb-1 font-semibold">{title}</p>}
-      <ul className="space-y-1">
+      {title && <p className="mb-1.5 font-semibold">{title}</p>}
+      <ul className="space-y-1.5">
         {items.slice(0, max).map((t, n) => (
           <li key={n} className="flex gap-2.5">
             <span aria-hidden="true" className="mt-[0.55em] size-1.5 shrink-0 rounded-full bg-ink/30" />
@@ -200,12 +200,28 @@ function Lines({ title, items, max, compact }: { title?: string; items: string[]
   )
 }
 
-/** What a row doesn't know yet, and how to send it in. */
-function Gap({ to, send, children }: { to: string; send: string; children: ReactNode }) {
+/**
+ * What a row doesn't know yet, and how to send it in: what it would take (a camera, by default) in a Light Blue disc,
+ * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
+ */
+function Gap({ to, send, icon = CameraAdd, compact = false, children }: { to: string; send: string; icon?: IconComponent; compact?: boolean; children: ReactNode }) {
+  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
+  if (compact)
+    return (
+      <p className="text-muted">
+        {children} {action}
+      </p>
+    )
   return (
-    <p className="text-muted">
-      {children}{' '}
-      <Link to={to} className="link relative z-10 text-ink">{send}</Link>
-    </p>
+    <div className="flex items-center gap-3">
+      {/* Not beside a map on a tablet, where the row's text has little room */}
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cta-bg text-cta md:max-lg:hidden">
+        <Icon of={icon} className="size-6" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-muted">{children}</p>
+        {action}
+      </div>
+    </div>
   )
 }

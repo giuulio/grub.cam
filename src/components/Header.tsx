@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
-import { Search } from 'reicon-react'
-import { useData } from '../lib/data.tsx'
 import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
-import { REPO_URL, SITE_NAME, venuePath } from '../lib/site.ts'
+import { REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
 import { Logo } from './Logo.tsx'
@@ -15,18 +13,16 @@ import { useMedia } from '../lib/useMedia.ts'
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it, GitHub,
- * the theme, and sending a photo in; one row on a wide screen, the search on a row of its own under the rest below that,
- * so the front page's map starts right under it on a phone. It stays at the top above a phone; its height
- * (`--header-h`) keeps what else stays in view (a map beside a list, a venue page's rail) clear of it. On the front
- * page's tabs the search is the page's own; elsewhere it opens the front page.
+ * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it, GitHub
+ * and the theme; one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
+ * front page the search is over the map instead (the Finder draws it there), so the bar is one row and the map starts
+ * right under it. It stays at the top above a phone; its height (`--header-h`) keeps what else stays in view (a map
+ * beside a list, a venue page's rail) clear of it. On the front page's tabs the search is the page's own; elsewhere it
+ * opens the front page.
  */
 export function Header() {
   const { pathname } = useLocation()
-  const data = useData()
   const finder = SCOPES.some((s) => s.path === pathname)
-  // On a venue's page, sending a photo is about that venue
-  const venue = data.status === 'ready' ? data.venues.find((v) => venuePath(v) === pathname) : undefined
   const header = useRef<HTMLElement>(null)
   useEffect(() => {
     const el = header.current
@@ -43,17 +39,19 @@ export function Header() {
   }, [])
   return (
     <header ref={header} className="border-b border-ink/10 bg-canvas sm:sticky sm:top-0 sm:z-40">
-      <Container className="flex flex-wrap items-center gap-x-4 gap-y-3 py-3 sm:py-4 xl:h-24 xl:flex-nowrap xl:gap-x-8 xl:py-0">
-        <div className="flex shrink-0 items-end gap-2.5">
+      {/* From 1280px, three columns, so the search sits in the middle of the page whatever is either side of it */}
+      <Container className="flex flex-wrap items-center gap-x-4 gap-y-3.5 py-3.5 sm:py-5 xl:grid xl:h-28 xl:grid-cols-[1fr_minmax(0,46rem)_1fr] xl:gap-x-8 xl:py-0">
+        <div className="flex shrink-0 items-center gap-3">
           <Link to="/" className="flex items-center gap-2.5">
             <Logo className="size-9 shrink-0 sm:size-11" />
             <span className="title text-2xl sm:text-[1.875rem]">{SITE_NAME}</span>
           </Link>
           {/* Still being built: say so to anyone who lands here */}
-          <span title="Still being built: some menus, hours and venues are missing" className="pb-1 text-xs text-muted">beta</span>
+          <span title="Still being built: some menus, hours and venues are missing" className="beta-pill">Beta</span>
         </div>
-        <HeaderSearch finder={finder} />
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        {/* On a phone's front page, the search is over the map */}
+        <HeaderSearch finder={finder} className={`order-last w-full xl:order-none ${finder ? 'max-md:hidden' : ''}`} />
+        <div className="ml-auto flex shrink-0 items-center gap-2 xl:justify-self-end">
           <a
             href={REPO_URL}
             target="_blank"
@@ -66,11 +64,6 @@ export function Header() {
             {STARS != null && <span>{STARS >= 1000 ? `${(STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : STARS}</span>}
           </a>
           <ThemeToggle className="size-11 rounded-full bg-ink/5 text-ink hover:bg-ink/10 sm:size-12" />
-          {pathname !== '/send' && (
-            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden h-12 rounded-full px-6 text-base font-bold sm:inline-flex sm:h-12">
-              Send a photo
-            </Link>
-          )}
         </div>
       </Container>
     </header>
@@ -93,7 +86,7 @@ function ScopeTabs() {
           end
           aria-label={s.label}
           title={s.label}
-          className={({ isActive }) => `flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-sm sm:h-11 sm:min-w-11 sm:gap-2 sm:px-2.5 sm:text-base sm:font-bold font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-2.5 text-accent-ink sm:pr-4' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+          className={({ isActive }) => `flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-sm sm:h-11 sm:min-w-11 sm:gap-2 sm:px-2.5 sm:text-base sm:font-bold xl:h-12 xl:min-w-12 font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-2.5 text-accent-ink sm:pr-4' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
         >
           {({ isActive }) => (
             <>
@@ -108,11 +101,11 @@ function ScopeTabs() {
 }
 
 /**
- * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, the tabs, and a round button at its
- * end (above a phone). On the front page's tabs it's the page's own search (the list under it follows as you type); elsewhere it opens
- * the front page with it.
+ * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, then the tabs; the keyboard's key
+ * searches. On the front page's tabs it's the page's own search (the list and map follow as you type); elsewhere it
+ * opens the front page with it. `className` places it: in the header, or over a phone's map.
  */
-function HeaderSearch({ finder }: { finder: boolean }) {
+export function HeaderSearch({ finder, className = '' }: { finder: boolean; className?: string }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [params, setParams] = useSearchParams()
@@ -135,7 +128,7 @@ function HeaderSearch({ finder }: { finder: boolean }) {
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className="search-box search-glow order-last flex h-12 w-full items-center gap-1.5 rounded-full border bg-canvas pr-1 pl-4 sm:h-14 sm:gap-2 sm:pr-1.5 sm:pl-6 xl:order-none xl:w-auto xl:max-w-3xl xl:min-w-0 xl:flex-1"
+      className={`search-box search-glow flex h-12 items-center gap-1.5 rounded-full border bg-canvas pr-1.5 pl-4 sm:h-14 sm:gap-2 sm:pl-6 xl:h-16 xl:pr-2 ${className}`}
     >
       <input
         type="search"
@@ -147,9 +140,6 @@ function HeaderSearch({ finder }: { finder: boolean }) {
         className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-ink sm:text-lg outline-none placeholder:text-muted"
       />
       <ScopeTabs />
-      <button type="submit" aria-label="Search" className="hidden size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-action text-action-ink transition-opacity hover:opacity-90 sm:flex">
-        <Icon of={Search} className="size-5" />
-      </button>
     </form>
   )
 }

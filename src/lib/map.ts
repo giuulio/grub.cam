@@ -1,6 +1,7 @@
 /**
  * Pixel offsets that set venues sharing a point (several venues in one building, or points a few metres apart, `near`,
- * that would draw on top of each other) side by side around it: one row of up to three, a centred grid beyond that.
+ * that would draw on top of each other) side by side around it: a pair in a row, three as a triangle (two over one, so
+ * each keeps room for its name beside it: a middle one of three in a row had none), a centred grid beyond that.
  * Only those venues are listed; every other one stays exactly on its point, and nothing is ever merged.
  */
 export function sideBySide<T extends { id: string; latitude: number; longitude: number }>(points: T[], spacing = 30, near = 8): Map<string, [number, number]> {
@@ -13,7 +14,7 @@ export function sideBySide<T extends { id: string; latitude: number; longitude: 
   const offsets = new Map<string, [number, number]>()
   for (const group of groups) {
     if (group.length < 2) continue
-    const cols = group.length <= 3 ? group.length : Math.ceil(Math.sqrt(group.length))
+    const cols = group.length === 2 ? 2 : Math.ceil(Math.sqrt(group.length))
     const rows = Math.ceil(group.length / cols)
     group.forEach((p, i) => {
       const row = Math.floor(i / cols)

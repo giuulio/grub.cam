@@ -11,7 +11,7 @@ import { venueTypes } from '../lib/types.ts'
 /**
  * `panel`: what covers part of the map (a list down its left side, or a sheet at its foot on a phone): a picked pin is
  * moved clear of it. `highlight`: venues drawn as picked without being picked, as a list does for the row under the
- * pointer. `inset`: what sits over the map's edges (a list on the left, filters along the top), kept clear when it fits
+ * pointer. `inset`: what sits over the map's edges (a list on the left, a search and filters along the top, a card at the foot), kept clear when it fits
  * the venues in. `here`: where you are, when you've asked for nearest first, shown and moved to. `controls`: its own
  * Near me and Show all, for a map with nothing else to do that. `core`: fit the main cluster (central Cambridge: the
  * venues within 1.5 km of the middle of them all) rather than every outlier, for a list nothing has narrowed yet.
@@ -21,7 +21,7 @@ import { venueTypes } from '../lib/types.ts'
  * page, not the map (the zoom buttons and pinching still zoom). `onBackground`: a click on the map itself, not a pin
  * (to let go of the picked one).
  */
-export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
+export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number; bottom?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
 
 /**
  * A venue's pin, as Apple marks its own places: a disc in its type's colour (or its two types') with the type's glyph,

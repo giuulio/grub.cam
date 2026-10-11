@@ -102,7 +102,7 @@ export function Send() {
           <section className="mt-8 space-y-4" aria-labelledby="sign-in">
             <h2 id="sign-in" className="title text-2xl">Sign in with your Cambridge account</h2>
             <p className="text-muted">Only University members can send things in, so we know what we're told comes from someone who was there. Microsoft sign-in with your @cam.ac.uk account; we keep your address with what you send and nothing else.</p>
-            {session && !isCamEmail(email) && <p role="alert" className="text-sm text-[var(--type-hall)]">{email} isn't a University account.</p>}
+            {session && !isCamEmail(email) && <p role="alert" className="text-sm text-error">{email} isn't a University account.</p>}
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={() => (session ? signOut().then(() => signIn(here)) : signIn(here))} className="btn btn-primary">Sign in</button>
               <Link to="/terms" className="link text-sm text-muted">Terms and privacy</Link>
@@ -115,7 +115,7 @@ export function Send() {
             <h2 id="check" className="title text-2xl">Here's what we read</h2>
             <p className="text-sm text-muted">Fix anything that's wrong (one line per item, as on the board), then send it.</p>
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={Math.min(30, Math.max(8, text.split('\n').length + 1))} spellCheck={false} className="w-full rounded-lg border border-ink/15 bg-canvas p-3 font-mono text-sm leading-6 text-ink focus:border-ink/50 focus:outline-none" aria-label="Transcription" />
-            {error && <p role="alert" className="text-sm text-[var(--type-hall)]">{error}</p>}
+            {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={approve} disabled={busy === 'confirming'} className="btn btn-primary">{busy === 'confirming' ? 'Sending…' : 'Send it'}</button>
               <button type="button" onClick={() => setDone(result)} className="btn btn-secondary">It's wrong, send the photo as it is</button>
@@ -191,7 +191,7 @@ export function Send() {
             {/* Bots fill every field; people never see this one */}
             <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
-            {error && <p role="alert" className="text-sm text-[var(--type-hall)]">{error}</p>}
+            {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-4">
               <button type="submit" disabled={!venue || busy === 'sending'} className="btn btn-primary">{busy === 'sending' ? 'Reading…' : 'Send'}</button>
               <span className="text-sm text-muted">Someone checks everything before it appears. <Link to="/terms" className="link">Terms</Link></span>

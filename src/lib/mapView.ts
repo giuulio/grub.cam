@@ -30,13 +30,28 @@ export const MAPKIT_TOKEN: string | undefined = typeof window === 'undefined' ? 
 
 export const CAMBRIDGE: [lng: number, lat: number] = [0.117, 52.205]
 /**
- * The widest view: Dry Drayton to Teversham, Histon to Trumpington, every venue well inside. The map never zooms out
- * past fitting it (the minimum zoom follows the map's size), so a phone still sees all of it across.
+ * The widest view: the venues and about 600 m round them, Madingley Hall to the Biomedical Campus, Girton to
+ * Addenbrooke's. Neither map zooms out past fitting it (at the map's size, so a phone still sees all of it across), and
+ * Apple's keeps its middle inside it. A venue further out needs this widened.
  */
-export const REACH: [[number, number], [number, number]] = [[0.0103, 52.1664], [0.2179, 52.2534]]
+export const REACH: [[number, number], [number, number]] = [[0.028, 52.17], [0.151, 52.235]]
 export const position = (r: Ranked): [lng: number, lat: number] => [r.venue.longitude!, r.venue.latitude!]
-// On a phone, clear of Near me and Show all above and the list button below; wider, clear of what sits over the map
-export const fitPadding = (inset: { top?: number; left?: number } = {}) => (window.innerWidth >= 640 ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 } : { top: 70, bottom: 90, left: 44, right: 44 })
+// On a phone, clear of Near me and Show all above and the list button below; wider, clear of what sits over the map;
+// both, clear of what else the page puts over it (`inset`: the search and filters above, a card below)
+export const fitPadding = (inset: { top?: number; left?: number; bottom?: number } = {}) =>
+  window.innerWidth >= 640
+    ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 + (inset.bottom ?? 0) }
+    : { top: 70 + (inset.top ?? 0), bottom: 90 + (inset.bottom ?? 0), left: 44, right: 44 }
+
+/** You are here: a dot hung from a point of no size (`.map-user-origin`), as a pin is, so either map places it the same. */
+export function userDot(): HTMLElement {
+  const origin = document.createElement('div')
+  origin.className = 'map-user-origin'
+  origin.setAttribute('role', 'img')
+  origin.setAttribute('aria-label', 'Your location')
+  origin.append(Object.assign(document.createElement('span'), { className: 'map-user-location' }))
+  return origin
+}
 
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
 /** The venues with a point, in a fixed order (so venues sharing one sit side by side the same way every time). */
