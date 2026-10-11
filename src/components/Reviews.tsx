@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Star } from 'reicon-react'
-import { ownReview, signIn, useSession } from '../lib/auth.ts'
+import { ownReview, signIn, useSession, useSignInEnabled } from '../lib/auth.ts'
 import { useReviews } from '../lib/data.tsx'
 import { saveReview, type ReviewStatus } from '../lib/submit.ts'
 import type { Venue } from '../lib/types.ts'
@@ -80,6 +80,7 @@ export function Reviews({ venue }: { venue: Venue }) {
 /** Your review: the way in when signed out; else five stars to pick, words if you like, save, and take it back. */
 function YourReview({ venue }: { venue: Venue }) {
   const session = useSession()
+  const canSignIn = useSignInEnabled()
   const [rating, setRating] = useState(0)
   const [body, setBody] = useState('')
   const [saved, setSaved] = useState<{ rating: number; body: string } | null>(null)
@@ -104,6 +105,8 @@ function YourReview({ venue }: { venue: Venue }) {
   }, [user, venue.id])
 
   if (session === undefined) return null
+  // Microsoft sign-in not switched on yet: no way in to offer
+  if (!session && !canSignIn) return null
   if (!session)
     return (
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl bg-cta-bg p-5">

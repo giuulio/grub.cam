@@ -23,6 +23,27 @@ export function signIn(returnTo: string) {
 
 export const signOut = () => auth.signOut()
 
+// Whether Microsoft sign-in is switched on in the dashboard (Authentication → Providers → Azure), read once from
+// Supabase's public auth settings: until it is, the ways to sign in stay hidden rather than leading to an error, and
+// they appear by themselves once it's on.
+let enabled: Promise<boolean> | undefined
+const signInEnabled = () =>
+  (enabled ??= fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } })
+    .then((r) => r.json())
+    .then((s: { external?: Record<string, boolean> }) => !!s.external?.azure)
+    .catch(() => false))
+
+/** Whether signing in works yet (see above); `undefined` until known. */
+export function useSignInEnabled(): boolean | undefined {
+  const [on, setOn] = useState<boolean>()
+  useEffect(() => {
+    let live = true
+    void signInEnabled().then((v) => live && setOn(v))
+    return () => { live = false }
+  }, [])
+  return on
+}
+
 /** The account's name as Microsoft gives it: what a member's photo is credited to (the submit function reads the same). */
 export const memberName = (session: Session | null | undefined): string | null => {
   const meta = session?.user.user_metadata ?? {}

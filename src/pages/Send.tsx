@@ -8,7 +8,7 @@ import { useReady } from '../lib/data.tsx'
 import { DINING_MEALS } from '../lib/finder.ts'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
-import { isCamEmail, memberName, signIn, signOut, useSession } from '../lib/auth.ts'
+import { isCamEmail, memberName, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
 import { confirm, send, shrink, type SubmitKind, type SubmitResult } from '../lib/submit.ts'
 import type { Venue } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -30,6 +30,7 @@ export function Send() {
   const { venues } = useReady()
   const now = useNow()
   const session = useSession()
+  const canSignIn = useSignInEnabled()
   const [params, setParams] = useSearchParams()
   const venue = venues.find((v) => v.id === params.get('venue'))
   const kind = (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu') as SubmitKind
@@ -105,10 +106,15 @@ export function Send() {
             <h2 id="sign-in" className="title text-2xl">Sign in with your Cambridge account</h2>
             <p className="text-muted">Only University members can send things in, so we know what we're told comes from someone who was there. Microsoft sign-in with your @cam.ac.uk account; we keep your address with what you send and nothing else.</p>
             {session && !isCamEmail(email) && <p role="alert" className="text-sm text-error">{email} isn't a University account.</p>}
-            <div className="flex flex-wrap items-center gap-3">
-              <button type="button" onClick={() => (session ? signOut().then(() => signIn(here)) : signIn(here))} className="btn btn-primary">Sign in</button>
-              <Link to="/terms" className="link text-sm text-muted">Terms and privacy</Link>
-            </div>
+            {canSignIn === false ? (
+              // Microsoft sign-in isn't switched on in the dashboard yet
+              <p className="rounded-lg bg-cta-bg px-4 py-3 text-ink">Signing in opens in the next few days. Until then, nothing can be sent from here.</p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" disabled={!canSignIn} onClick={() => (session ? signOut().then(() => signIn(here)) : signIn(here))} className="btn btn-primary">Sign in</button>
+                <Link to="/terms" className="link text-sm text-muted">Terms and privacy</Link>
+              </div>
+            )}
           </section>
         ) : done ? (
           <Thanks result={done} kind={kind} credit={name} venue={venue ? { path: back, name: venue.name } : undefined} />

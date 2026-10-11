@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { CloseCircle, Logout, NoteAdd, User } from 'reicon-react'
-import { memberName, signIn, signOut, useSession } from '../lib/auth.ts'
+import { memberName, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
 import { Icon } from './Icon.tsx'
 
 /**
@@ -33,7 +33,10 @@ export function AccountButton() {
   }
 
   const round = 'flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink/5 text-ink transition-colors hover:bg-ink/10 sm:h-12'
+  const canSignIn = useSignInEnabled()
   if (session === undefined) return <span aria-hidden="true" className="size-11 sm:size-12" />
+  // Microsoft sign-in not switched on yet: nothing to offer
+  if (!session && !canSignIn) return null
   if (!session)
     return (
       <button type="button" onClick={() => signIn(pathname + search)} aria-label="Sign in with your Cambridge account" title="Sign in with your Cambridge account" className={`${round} gap-2 px-3 text-base font-bold sm:px-5`}>
