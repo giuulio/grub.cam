@@ -112,8 +112,8 @@ export function pages(data: Data, date: string): Page[] {
     '/formal': 'Formal hall at every Cambridge college that holds it: when, what it costs, dress and how to book.',
   }
   const tabs = SCOPES.filter((s) => s.path !== '/').map((s): Page => ({ path: s.path, description: TAB_DESCRIPTIONS[s.path] }))
-  const about: Page = { path: '/about', description: "What grub.cam is, and where its opening hours and menus come from." }
-  const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours) and what's still missing." }
+  const about: Page = { path: '/about', description: 'What grub.cam is, where its opening hours and menus come from, and how to help build it.' }
+  const coverage: Page = { path: '/coverage', description: "What grub.cam has for Cambridge's college and University venues (menus this week, price lists, hours, photos), and every venue still missing something, with the way to send it in." }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
   const sendPage: Page = { path: '/send', description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }

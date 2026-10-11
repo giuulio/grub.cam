@@ -1,6 +1,8 @@
 // What grub.cam knows about each college (or University site), and what's missing: the /coverage page, the footer
-// count, and the note on a venue page that has never had a menu.
+// count, the "Help fill this in" card on a venue's page, and the note on one that has never had a menu.
 import type { Data } from './data.tsx'
+import { venuePhoto } from './photos.ts'
+import type { sendPath } from './site.ts'
 import { addDaysISO, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Channel, type Site, type Venue, type VenueType } from './types.ts'
 
@@ -31,16 +33,13 @@ export type Category = {
   missing: Missing[]
 }
 
-/** One site and one category: whether all, some or none of the site's venues of that kind have it ('na': it has none). */
-export type Cell = { state: 'all' | 'some' | 'none' | 'na'; have: number; of: number; missing: Venue[] }
-export type CoverageRow = { site: Site; cells: Cell[] }
-
 const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
 /** A posted price list, or prices on the loaded menus */
 const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items.some((i) => i.price_gbp != null || i.price_text))
 const ofType = (t: VenueType) => (v: Venue) => venueTypes(v).includes(t)
 /** Where a daily menu is expected: Dining, but not a Hall used only for formal hall */
 const servesMeals = (v: Venue) => v.type === 'hall' && !isFormalOnly(v)
+const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
 
 /** What's tracked: which venues it applies to, and what having it means. */
 const CATEGORIES: { title: string; dated?: boolean; unit: Category['unit']; applies: (v: Venue) => boolean; has: (v: Venue) => boolean }[] = [
@@ -50,7 +49,6 @@ const CATEGORIES: { title: string; dated?: boolean; unit: Category['unit']; appl
   { title: 'Bar prices', unit: 'sites', applies: ofType('bar'), has: hasPrices },
   { title: 'Hours', unit: 'venues', applies: () => true, has: (v) => v.slots.length > 0 },
 ]
-export const CATEGORY_TITLES = CATEGORIES.map((c) => c.title)
 
 const sitesOf = ({ sites, venues }: Pick<Data, 'sites' | 'venues'>, kind: Site['kind']) =>
   sites.filter((s) => s.kind === kind).map((site) => ({ site, venues: venues.filter((v) => v.site.slug === site.slug) }))
@@ -70,19 +68,6 @@ export function coverage(data: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'
   })
 }
 
-/** Site by site, each category (in CATEGORY_TITLES order) as a cell: all, some or none of its venues, or none that apply. */
-export function coverageMatrix(data: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'] = 'college'): CoverageRow[] {
-  return sitesOf(data, kind).map(({ site, venues }) => ({
-    site,
-    cells: CATEGORIES.map(({ applies, has }) => {
-      const mine = venues.filter(applies)
-      const missing = mine.filter((v) => !has(v))
-      const have = mine.length - missing.length
-      return { state: !mine.length ? 'na' : !missing.length ? 'all' : have ? 'some' : 'none', have, of: mine.length, missing }
-    }),
-  }))
-}
-
 /** The loaded menu dates, `menuTo` exclusive: "Thu 8 – Wed 14 Oct", or "8–14 Oct" when `short`. */
 export function menuWindow({ menuFrom, menuTo }: Pick<Data, 'menuFrom' | 'menuTo'>, short = false): string {
   const last = addDaysISO(menuTo, -1)
@@ -92,18 +77,61 @@ export function menuWindow({ menuFrom, menuTo }: Pick<Data, 'menuFrom' | 'menuTo
   return `${from}${short && sameMonth ? '–' : ' – '}${formatISODate(last, { ...weekday, day: 'numeric', month: 'short' })}`
 }
 
-/** What the front page says is still missing under a tab: how many of its venues have what matters most there. */
-export type TabCoverage = { what: string; have: number; of: number; noun: string }
+/** How many venues have something, out of those it applies to: a line on the front page, a count on /coverage. */
+export type Counter = { what: string; have: number; of: number; noun: string }
 
-const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
+const counter = (venues: Venue[], what: string, noun: string, applies: (v: Venue) => boolean, has: (v: Venue) => boolean): Counter => {
+  const mine = venues.filter(applies)
+  return { what, noun, have: mine.filter(has).length, of: mine.length }
+}
+
+/** What the front page says is still missing under a tab: how many of its venues have what matters most there. */
+export type TabCoverage = Counter
 
 /** Menus this week for Dining (and everything, where they're what people come for); price lists for cafés and bars; formal hall's price. */
 export function tabCoverage(venues: Venue[], scope: 'all' | VenueType | 'formal'): TabCoverage {
-  const [what, noun, applies, has]: [string, string, (v: Venue) => boolean, (v: Venue) => boolean] =
-    scope === 'cafe' ? ['Price lists', 'cafés', ofType('cafe'), hasPrices]
-    : scope === 'bar' ? ['Price lists', 'bars', ofType('bar'), hasPrices]
-    : scope === 'formal' ? ['Prices', 'formal halls', holdsFormal, (v) => v.formal?.price_gbp != null]
-    : ['Menus this week', 'dining venues', servesMeals, hasMenu]
-  const mine = venues.filter(applies)
-  return { what, noun, have: mine.filter(has).length, of: mine.length }
+  if (scope === 'cafe') return counter(venues, 'Price lists', 'cafés', ofType('cafe'), hasPrices)
+  if (scope === 'bar') return counter(venues, 'Price lists', 'bars', ofType('bar'), hasPrices)
+  if (scope === 'formal') return counter(venues, 'Prices', 'formal halls', holdsFormal, (v) => v.formal?.price_gbp != null)
+  return counter(venues, 'Menus this week', 'dining venues', servesMeals, hasMenu)
+}
+
+/** The four counts /coverage leads with, each `dated` when it's about the loaded week. */
+export function overallCoverage(venues: Venue[]): (Counter & { dated: boolean })[] {
+  return [
+    { ...counter(venues, 'Menus this week', 'dining halls', servesMeals, hasMenu), dated: true },
+    { ...counter(venues, 'Price lists', 'cafés and bars', (v) => ofType('cafe')(v) || ofType('bar')(v), hasPrices), dated: false },
+    { ...counter(venues, 'Opening hours', 'venues', () => true, (v) => v.slots.length > 0), dated: false },
+    { ...counter(venues, 'Photos', 'venues', () => true, (v) => !!venuePhoto(v)), dated: false },
+  ]
+}
+
+/** Something a venue's page is missing, and the way to send it in: /send's `kind`, and how much the site gains by it. */
+export type Gap = { kind: 'menu' | 'prices' | 'hours' | 'formal' | 'photo'; label: string; send: Parameters<typeof sendPath>[1]; weight: number }
+
+/**
+ * What a venue is still missing, most worth having first: a dining hall's menu (the thing people come for; not asked
+ * where a script fetches it), a café's or bar's price list and any venue's hours (what "open now" rests on), then a
+ * hall's price list, formal hall's price or time, and a photo. Empty when it's all here.
+ */
+export function venueGaps(v: Venue): Gap[] {
+  const gaps: Gap[] = []
+  if (servesMeals(v) && !v.menu_scripted && !hasMenu(v)) gaps.push({ kind: 'menu', label: 'The menu board', send: 'menu', weight: 4 })
+  if (!v.prices?.length) gaps.push({ kind: 'prices', label: v.type === 'bar' ? 'The drinks list' : 'The price list', send: 'prices', weight: v.type === 'hall' ? 1 : 3 })
+  if (!v.slots.length) gaps.push({ kind: 'hours', label: 'The opening times', send: 'hours', weight: 3 })
+  if (holdsFormal(v) && (v.formal?.price_gbp == null || !v.slots.some((s) => s.meal === 'formal'))) gaps.push({ kind: 'formal', label: 'Formal hall: the price or the time', send: 'other', weight: 1 })
+  if (!venuePhoto(v)) gaps.push({ kind: 'photo', label: 'A photo of the venue', send: 'photo', weight: 1 })
+  return gaps.sort((a, b) => b.weight - a.weight)
+}
+
+/**
+ * Why a dining venue's menu isn't here, for whoever could change that: for members only (a photo of the board is the
+ * only way in), online but copied by hand (a script would keep it current), or not published anywhere known.
+ */
+export function menuNote(v: Venue): { text: string; script?: boolean } | undefined {
+  const gap = menuGap(v)
+  if (!gap || v.menu_scripted) return undefined
+  if (gap === 'members') return { text: 'Its menu is for members only, so a photo of the board is the only way it gets here.' }
+  if (gap === 'unpublished') return { text: 'Its menu isn’t published anywhere we know of: a photo of the board is the only way.' }
+  return { text: 'Its menu is online, but copied here by hand each week; a script would keep it current.', script: true }
 }

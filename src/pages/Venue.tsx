@@ -10,10 +10,9 @@ import { ListNote, PriceList } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
-import { menuGap } from '../lib/coverage.ts'
+import { menuGap, venueGaps } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
-import { venuePhoto } from '../lib/photos.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, SITE_NAME, siteName, venuePath } from '../lib/site.ts'
@@ -151,12 +150,8 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
  * members who can fill them. Nothing when it's all here.
  */
 function HelpCard({ venue }: { venue: Venue }) {
-  const missing: [label: string, kind: Parameters<typeof sendPath>[1]][] = []
-  if (venue.type === 'hall' && !venue.menu_scripted && !venue.menu.some((d) => d.items.length)) missing.push(['The menu board', 'menu'])
-  if (!venue.prices?.length) missing.push([venue.type === 'bar' ? 'The drinks list' : 'The price list', 'prices'])
-  if (!venue.slots.length) missing.push(['The opening times', 'hours'])
-  if (holdsFormal(venue) && (venue.formal?.price_gbp == null || !venue.slots.some((s) => s.meal === 'formal'))) missing.push(['Formal hall: the price or the time', 'other'])
-  if (!venuePhoto(venue)) missing.push(['A photo of the venue', 'photo'])
+  // The same list /coverage shows for it, so the two never disagree
+  const missing = venueGaps(venue).map((g): [label: string, kind: Parameters<typeof sendPath>[1]] => [g.label, g.send])
   if (!missing.length) return null
   return (
     <RailCard>

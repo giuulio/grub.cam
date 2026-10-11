@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coverage, coverageMatrix, menuGap, menuWindow, tabCoverage } from './coverage.ts'
+import { coverage, menuGap, menuNote, menuWindow, overallCoverage, tabCoverage, venueGaps } from './coverage.ts'
 import type { Site, Venue } from './types.ts'
 
 const site: Site = { slug: 'c', name: 'C', short_name: null, kind: 'college', official_dining_url: null }
@@ -72,16 +72,57 @@ describe('coverage', () => {
   })
 })
 
-describe('coverageMatrix', () => {
-  const cafe = { ...hall, id: 'c/cafe', slug: 'cafe', type: 'cafe' as const, slots: [{ meal: 'snacks' as const, days: ['mon' as const], start: '09:00', end: '17:00', period: 'all' as const }] }
-  const [row] = coverageMatrix({ sites: [site], venues: [hall, cafe] })
-  const cell = (title: string) => row.cells[['Menus', 'Dining prices', 'Café prices', 'Bar prices', 'Hours'].indexOf(title)]
-  it('says whether all, some or none of a site’s venues have each thing', () => {
-    expect(cell('Hours')).toMatchObject({ state: 'some', have: 1, of: 2 })
-    expect(cell('Hours').missing.map((v) => v.slug)).toEqual(['hall'])
-    expect(cell('Menus')).toMatchObject({ state: 'none', have: 0, of: 1 })
-    expect(cell('Bar prices')).toMatchObject({ state: 'na', of: 0 })
-    expect(coverageMatrix({ sites: [site], venues: [cafe] })[0].cells[4].state).toBe('all')
+describe('venueGaps', () => {
+  const slot = { meal: 'lunch' as const, days: ['mon' as const], start: '12:00', end: '14:00', period: 'all' as const }
+  const photo = { path: 'c/hall/1', widths: [480], width: 480, height: 360, color: '#000', alt: '', credit: null, licence: null, source: null }
+  it('lists what a dining hall is missing, most worth having first', () => {
+    expect(venueGaps(hall).map((g) => [g.kind, g.send])).toEqual([
+      ['menu', 'menu'],
+      ['hours', 'hours'],
+      ['prices', 'prices'],
+      ['photo', 'photo'],
+    ])
+  })
+  it('does not ask for a menu that a script fetches, nor from a Hall used only for formal hall', () => {
+    expect(venueGaps({ ...hall, menu_scripted: true }).map((g) => g.kind)).toEqual(['hours', 'prices', 'photo'])
+    const formalHall = { ...hall, formal: { price_gbp: 20 }, slots: [{ ...slot, meal: 'formal' as const }] }
+    expect(venueGaps(formalHall).map((g) => g.kind)).toEqual(['prices', 'photo'])
+  })
+  it('asks a café for its price list before anything else, and nothing once it is all here', () => {
+    const cafe = { ...hall, type: 'cafe' as const, menu_channel: null, slots: [slot] }
+    expect(venueGaps(cafe).map((g) => [g.kind, g.label])).toEqual([
+      ['prices', 'The price list'],
+      ['photo', 'A photo of the venue'],
+    ])
+    expect(venueGaps({ ...cafe, type: 'bar' })[0].label).toBe('The drinks list')
+    expect(venueGaps({ ...cafe, prices: [{ section: null, name: 'Flat white', price_gbp: 3, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-08', source: 'board' }], photos: [photo] })).toEqual([])
+  })
+  it('asks for formal hall’s price or time when one is unknown', () => {
+    const withFormal = { ...hall, formal: {}, slots: [slot] }
+    expect(venueGaps(withFormal).some((g) => g.kind === 'formal' && g.send === 'other')).toBe(true)
+    expect(venueGaps({ ...withFormal, formal: { price_gbp: 15 }, slots: [slot, { ...slot, meal: 'formal' as const }] }).some((g) => g.kind === 'formal')).toBe(false)
+  })
+})
+
+describe('menuNote', () => {
+  it('says why a menu is missing, and when a script would help', () => {
+    expect(menuNote(hall)?.text).toMatch(/members only/)
+    expect(menuNote({ ...hall, menu_channel: 'pdf' })).toMatchObject({ script: true })
+    expect(menuNote({ ...hall, menu_channel: 'none' })?.text).toMatch(/isn’t published/)
+    expect(menuNote({ ...hall, menu_channel: 'html', menu_scripted: true })).toBeUndefined()
+    expect(menuNote({ ...hall, menu_channel: null })).toBeUndefined()
+  })
+})
+
+describe('overallCoverage', () => {
+  it('counts menus for dining halls, price lists for cafés and bars, hours and photos for every venue', () => {
+    const menu = [{ date: '2026-10-08', service: 'lunch' as const, items: [dish] }]
+    const cafe = { ...hall, id: 'c/cafe', type: 'cafe' as const, menu_channel: null, prices: [{ section: null, name: 'Tea', price_gbp: 2, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-08', source: 'board' }] }
+    const [menus, prices, hours, photos] = overallCoverage([hall, { ...hall, id: 'c/other', menu }, cafe])
+    expect(menus).toMatchObject({ what: 'Menus this week', have: 1, of: 2, dated: true })
+    expect(prices).toMatchObject({ what: 'Price lists', have: 1, of: 1 })
+    expect(hours).toMatchObject({ have: 0, of: 3 })
+    expect(photos).toMatchObject({ have: 0, of: 3, noun: 'venues' })
   })
 })
 
