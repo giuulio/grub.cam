@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, dishTags, matchesDiet, nextService, sectionOf, type Filters } from './filters.ts'
-import type { Venue, VenueType } from './types.ts'
+import { applyFilters, DEFAULT_FILTERS, dishTags, mainDishes, matchesDiet, nextService, sectionOf, weekHours, type Filters } from './filters.ts'
+import type { Slot, Venue, VenueType } from './types.ts'
 
 const base: Venue = {
   id: 'c/hall',
@@ -94,6 +94,34 @@ describe('nextService', () => {
     expect(at(12 * 60 + 30)).toBe('lunch')
     expect(at(15 * 60)).toBe('dinner')
     expect(nextService({ status: { kind: 'unknown' }, days: v.menu })?.service).toBe('lunch')
+  })
+})
+
+describe('weekHours', () => {
+  it('runs days with the same times together, each day’s times in order', () => {
+    // Homerton's Dining Hall
+    const slot = (meal: Slot['meal'], days: Slot['days'], start: string, end: string): Slot => ({ meal, days, start, end, period: 'all' })
+    const slots = [
+      slot('lunch', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'], '12:00', '14:00'),
+      slot('breakfast', ['mon', 'tue', 'wed', 'thu', 'fri'], '07:30', '09:00'),
+      slot('breakfast', ['sat'], '08:00', '10:00'),
+      slot('brunch', ['sun'], '11:00', '14:00'),
+      slot('dinner', ['mon', 'tue', 'wed', 'thu', 'fri'], '17:30', '19:00'),
+    ]
+    expect(weekHours(slots).map((r) => [r.days.join(','), r.times.map((s) => `${s.start}–${s.end}`).join(' ')])).toEqual([
+      ['mon,tue,wed,thu,fri', '07:30–09:00 12:00–14:00 17:30–19:00'],
+      ['sat', '08:00–10:00 12:00–14:00'],
+      ['sun', '11:00–14:00'],
+    ])
+    expect(weekHours([])).toEqual([])
+  })
+})
+
+describe('mainDishes', () => {
+  it('keeps the mains, or every dish where the source marks no courses', () => {
+    const items = [{ name: 'Soup', tags: [], course: 'soup' as const }, { name: 'Pie', tags: [], course: 'main' as const }, { name: 'Chips', tags: [], course: 'side' as const }, { name: 'Curry', tags: [], course: 'main' as const }]
+    expect(mainDishes(items).map((i) => i.name)).toEqual(['Pie', 'Curry'])
+    expect(mainDishes(base.menu[0].items)).toBe(base.menu[0].items)
   })
 })
 

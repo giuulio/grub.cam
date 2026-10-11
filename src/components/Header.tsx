@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { Search } from 'reicon-react'
 import { useData } from '../lib/data.tsx'
 import { SCOPES } from '../lib/finder.ts'
-import { REPO_URL, SITE_NAME } from '../lib/site.ts'
+import { REPO_URL, SITE_NAME, venuePath } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
 import { ThemeToggle } from './ThemeToggle.tsx'
@@ -18,8 +18,11 @@ const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
  */
 export function Header() {
   const { pathname } = useLocation()
-  const status = useData().status
+  const data = useData()
+  const status = data.status
   const finder = SCOPES.some((s) => s.path === pathname)
+  // On a venue's page, sending a photo is about that venue
+  const venue = data.status === 'ready' ? data.venues.find((v) => venuePath(v) === pathname) : undefined
   const header = useRef<HTMLElement>(null)
   const [heroGone, setHeroGone] = useState(false)
   useEffect(() => {
@@ -47,7 +50,7 @@ export function Header() {
   const [params] = useSearchParams()
   const keep = new URLSearchParams([...params].filter(([k]) => ['q', 'site', 'open'].includes(k))).toString()
   return (
-    <header ref={header} className={`border-b border-ink/10 bg-canvas ${finder ? 'sm:sticky sm:top-0 sm:z-40' : ''}`}>
+    <header ref={header} className={`bg-canvas ${finder ? 'sm:sticky sm:top-0 sm:z-40' : ''}`}>
       <Container className="flex min-h-18 items-center gap-x-6">
         <div className="flex items-baseline gap-2">
           <Link to="/" className="title py-5 text-xl">{SITE_NAME}</Link>
@@ -69,7 +72,7 @@ export function Header() {
           </a>
           <ThemeToggle />
           {pathname !== '/send' && (
-            <Link to="/send" className="btn btn-primary ml-1 hidden rounded-full px-5 sm:inline-flex">
+            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden rounded-full px-5 sm:inline-flex">
               Send a photo
             </Link>
           )}

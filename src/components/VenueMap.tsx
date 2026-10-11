@@ -16,8 +16,12 @@ import { venueTypes, type VenueType } from '../lib/types.ts'
  * the venues in. `here`: where you are, when you've asked for nearest first, shown and moved to. `controls`: its own
  * Near me and Show all, for a map with nothing else to do that. `core`: fit the main cluster (central Cambridge: the
  * venues within 1.5 km of the middle of them all) rather than every outlier, for a list nothing has narrowed yet.
+ * `maxZoom`: the closest fitting the venues zooms in: streets around a city-wide list (15), a college's grounds for a
+ * site's few venues (17). `focus`: a venue to centre on at `maxZoom` instead of fitting them all, for a venue's own
+ * page, where the others are context. `embedded`: a small map inside a page that scrolls, so the wheel scrolls the
+ * page, not the map (the zoom buttons and pinching still zoom).
  */
-type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean }
+type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
@@ -31,7 +35,7 @@ const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.l
 // On a phone, clear of Near me and Show all above and the list button below; wider, clear of what sits over the map
 const fitPadding = (inset: Props['inset'] = {}) => (window.innerWidth >= 640 ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 } : { top: 70, bottom: 90, left: 44, right: 44 })
 
-export function VenueMap({ results, selected, highlight, onSelect, filtered, panel, inset, here, controls = true, core = false }: Props) {
+export function VenueMap({ results, selected, highlight, onSelect, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -117,6 +121,14 @@ export function VenueMap({ results, selected, highlight, onSelect, filtered, pan
     }
   }, [])
 
+  // Inside a page that scrolls, the wheel scrolls the page
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e) return
+    if (embedded) e.map.scrollZoom.disable()
+    else e.map.scrollZoom.enable()
+  }, [ready, embedded])
+
   // One marker per venue, kept while it stays in the results; venues sharing a coordinate sit side by side.
   const mapped = results.filter((r) => hasLocation(r.venue)).sort((a, b) => TYPE_ORDER.indexOf(a.venue.type) - TYPE_ORDER.indexOf(b.venue.type) || a.venue.name.localeCompare(b.venue.name) || a.venue.id.localeCompare(b.venue.id))
   const offsets = sideBySide(mapped.map((r) => ({ id: r.venue.id, latitude: r.venue.latitude!, longitude: r.venue.longitude! })))
@@ -146,13 +158,15 @@ export function VenueMap({ results, selected, highlight, onSelect, filtered, pan
     const e = engine.current
     if (!ready || !e) return
     const { mapped } = pins.current
-    const fit = `${!!filtered}:${core}:${key}`
+    const fit = `${!!filtered}:${core}:${maxZoom}:${focus}:${key}`
     if (fit === fitKey.current) return
     fitKey.current = fit
+    const focused = focus ? mapped.find((r) => r.venue.id === focus) : undefined
     const framed = core ? mainCluster(mapped) : mapped
-    if (filtered && framed.length) e.map.fitBounds(framed.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(inset), maxZoom: 15, duration: 0 })
-    if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
-  }, [ready, key, filtered, core, inset]) // refit only when the matching venues change (fitKey ignores the rest)
+    if (focused) e.map.jumpTo({ center: position(focused), zoom: maxZoom })
+    else if (filtered && framed.length) e.map.fitBounds(framed.reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds()), { padding: fitPadding(inset), maxZoom, duration: 0 })
+    else if (!filtered) e.map.jumpTo({ center: CAMBRIDGE, zoom: 13 })
+  }, [ready, key, filtered, core, inset, maxZoom, focus]) // refit only when the matching venues change (fitKey ignores the rest)
 
   // The selected venue's pin sits above its neighbours, as do highlighted ones.
   const lit = (id: string) => id === selected || !!highlight?.includes(id)
@@ -217,7 +231,7 @@ export function VenueMap({ results, selected, highlight, onSelect, filtered, pan
             const e = engine.current
             if (e) {
               const bounds = results.filter((r) => hasLocation(r.venue)).reduce((b, r) => b.extend(position(r)), new e.M.LngLatBounds())
-              e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom: 15, duration: 300 })
+              e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom, duration: 300 })
             }
           }} className="btn raised h-9 px-3.5 font-normal sm:h-9">Show all</button>
         </div>}

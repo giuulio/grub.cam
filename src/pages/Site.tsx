@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router'
 import { ExternalLink } from '../components/ExternalLink.tsx'
 import { Breadcrumbs, ListHeading, ListWithMap, VenueListing } from '../components/Listing.tsx'
+import { SiteBanner } from '../components/VenuePhoto.tsx'
 import { useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, TYPES } from '../lib/filters.ts'
 import { SITE_NAME, siteName, sitePath, venuePath } from '../lib/site.ts'
 import { useNow } from '../lib/useNow.ts'
 import { NotFound } from './NotFound.tsx'
 
-/** A college or University site (West Cambridge, Sidgwick, ...): its venues as TheFork lists restaurants, a card each beside the map. */
+/**
+ * A college or University site (West Cambridge, Sidgwick, ...): its photo across the top, then its venues as TheFork
+ * lists restaurants, a card each beside a map zoomed to them.
+ */
 export function SitePage() {
   const { slug } = useParams()
   const { hash } = useLocation()
@@ -35,6 +39,7 @@ export function SitePage() {
     <>
       <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
       <Breadcrumbs trail={[[sitePath(site), siteName(site)]]} />
+      <SiteBanner site={site} />
       <ListHeading title={siteName(site)} count={`${mine.length} ${mine.length === 1 ? 'venue' : 'venues'}`}>
         {site.official_dining_url && <ExternalLink href={site.official_dining_url} />}
       </ListHeading>

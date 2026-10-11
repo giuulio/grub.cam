@@ -55,10 +55,10 @@ export function ListNote({ tags, prices, note }: { tags: DietTag[]; prices?: Ven
 export function GroupHead({ label, heads }: { label?: string; heads: string[] }) {
   if (!label && !heads.length) return null
   return (
-    <div className="mb-1 flex items-baseline gap-4 text-sm text-muted">
-      <h4 className="flex-1 font-semibold">{label}</h4>
+    <div className="mb-1 flex items-baseline gap-4">
+      <h4 className="flex-1 font-semibold text-ink">{label}</h4>
       {heads.map((h) => (
-        <span key={h} className={`${PRICE_COL} text-xs whitespace-nowrap`}>
+        <span key={h} className={`${PRICE_COL} text-xs whitespace-nowrap text-muted`}>
           {h}
         </span>
       ))}
@@ -66,11 +66,12 @@ export function GroupHead({ label, heads }: { label?: string; heads: string[] })
   )
 }
 
+/** A dish or a line of a price list: its name leads, in a medium weight, its price lined up at the right, as TheFork's menus. */
 export function Row({ name, tags = [], soldOut, price, columns }: { name: string; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
-    <li className="flex items-baseline gap-4 py-1.5">
+    <li className="flex items-baseline gap-4 py-2">
       <span className="min-w-0 flex-1">
-        <span className={soldOut ? 'text-muted line-through' : 'text-ink'}>{name}</span>
+        <span className={soldOut ? 'text-muted line-through' : 'font-medium text-ink'}>{name}</span>
         {tags.map((t) => (
           <Code key={t} tag={t} className="ml-1.5" />
         ))}

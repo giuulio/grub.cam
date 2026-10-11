@@ -1,6 +1,6 @@
 // A venue's posted price list (venue_prices): split between the venue's sections (its Dining menu, café, bar), and
 // applied to a day's dishes: the price beside each dish, one price for a whole meal, and what else is sold at a meal.
-import type { Dish, Meal, PriceTerms, VenuePrice, VenueType } from './types.ts'
+import type { Dish, Meal, PriceCourse, PriceTerms, VenuePrice, VenueType } from './types.ts'
 
 /** A price as posted: the first price (`max` when it's a range), the second (the venue's second tier), or words. */
 export type Price = { gbp?: number; max?: number; second?: number; text?: string }
@@ -51,6 +51,64 @@ export function priceGroups(prices: VenuePrice[] | undefined, types: VenueType[]
     else if (p.services?.every((m) => DINING.includes(m))) t = 'hall'
     else if (!p.services && own === 'hall' && types.includes('cafe')) t = 'cafe'
     ;(out[types.includes(t) ? t : own] ??= []).push(p)
+  }
+  return out
+}
+
+/** One thing people order, as it might be written on a list: by its course, or its name, or failing that its section; `avoid` rules out lookalikes. */
+type Order = { course?: PriceCourse; name?: RegExp; section?: RegExp; avoid?: RegExp }
+
+const COFFEES: Order[] = [{ name: /\bflat white\b/i }, { name: /\blatte\b/i, avoid: /chai|matcha|caramel|mocha|primo|iced|dirty|turmeric/i }, { name: /\bcappuccino\b/i }, { name: /\bamericano\b/i }]
+
+/**
+ * What people most often ask a venue of each kind the price of, in the order a card shows them: at a café an espresso
+ * (else another coffee), a second coffee, a tea and something to eat; at a bar a pint, a glass of wine, a spirit and a
+ * soft drink; at a Dining venue a main course, a set meal, soup and a dessert. Each order is its alternatives: the
+ * first with a line on the list stands for it.
+ */
+const ORDERS: Record<VenueType, Order[][]> = {
+  cafe: [
+    [{ name: /\bespresso\b/i, avoid: /martini|extra|shot|syrup|decaf|tonic/i }, ...COFFEES, { name: /\bcoffee\b/i, avoid: /iced|cake|liqueur/i }, { name: /\bhot drinks?\b/i }],
+    COFFEES,
+    [{ name: /\b(breakfast|english|black) tea\b|^tea\b/i }, { section: /\btea\b/i }, { name: /\btea\b/i, avoid: /iced|chai|matcha|bubble/i }],
+    [{ name: /\bsoup\b/i }, { name: /\b(sandwich|toastie|panini|wrap|ciabatta|baguette|bagel|focaccia)/i }, { section: /sandwich|toastie|panini/i }, { name: /\b(croissant|cake|pastr|scone|brownie)/i }, { section: /cake|pastr/i }],
+  ],
+  bar: [
+    [{ name: /\bpint\b/i, avoid: /half|soft/i }, { name: /\b(lagers?|ales?|beers?|ipa|stout)\b/i, avoid: /ginger|root|zero|alcohol[- ]free|low alcohol/i }, { section: /draught|\bbeers?\b|lager|on tap/i }],
+    [{ name: /\bwine\b/i, avoid: /bottle|jug|ginger|mulled|gums?\b/i }, { section: /\bwine\b/i, avoid: /bottle|jug|port|prosecco|champagne|sparkling/i }, { name: /\bprosecco\b/i, avoid: /bottle|jug/i }],
+    [{ name: /\b(gin|vodka|rum|whisky|whiskey)\b/i }, { section: /spirit/i }, { name: /\bcider\b/i }, { section: /cocktail/i }],
+    [{ name: /\b(soft drinks?|cola|coke|lemonade)\b/i, avoid: /mixer|vodka|rum|gin\b/i }, { section: /\bsoft\b/i }],
+  ],
+  hall: [
+    [{ course: 'main' }, { name: /\bmain\b/i, avoid: /deal/i }],
+    [{ name: /meal deal|\bcourses?\b/i }, { course: 'meal' }],
+    [{ course: 'soup' }, { name: /\bsoup\b/i }],
+    [{ course: 'dessert' }, { name: /\bdesserts?\b/i }],
+  ],
+}
+
+/**
+ * Up to `n` of a list's lines for a card to lead with: one for each of `ORDERS[type]` that the list has, as posted (an
+ * "Espresso, single" before an "Espresso, double"), then the first lines left, so an unusual list still shows something.
+ * Only lines with a first price: one priced for the second tier alone says nothing to most people.
+ */
+export function headlinePrices(lines: VenuePrice[], type: VenueType, n = 3): VenuePrice[] {
+  const priced = lines.filter((p) => p.price_gbp != null)
+  const out: VenuePrice[] = []
+  const find = (o: Order, by: (p: VenuePrice) => boolean) => priced.find((p) => !out.includes(p) && by(p) && !o.avoid?.test(p.name))
+  for (const order of ORDERS[type]) {
+    if (out.length >= n) break
+    for (const o of order) {
+      const hit = (o.course && find(o, (p) => p.course === o.course)) || (o.name && find(o, (p) => o.name!.test(p.name))) || (o.section && find(o, (p) => !!p.section && o.section!.test(p.section)))
+      if (hit) {
+        out.push(hit)
+        break
+      }
+    }
+  }
+  for (const p of priced) {
+    if (out.length >= n) break
+    if (!out.includes(p)) out.push(p)
   }
   return out
 }

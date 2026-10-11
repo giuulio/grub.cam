@@ -141,7 +141,7 @@ function Finder({ scope }: { scope: Scope }) {
             </NavLink>
           ))}
         </nav>
-        <form id="hero-search" role="search" onSubmit={submit} className="hero-search mx-auto mt-6 flex max-w-200 items-center gap-2 rounded-full border border-ink/25 bg-canvas p-1.5 pl-5 text-left shadow-[0_4px_18px_rgb(19_56_68/0.08)]">
+        <form id="hero-search" role="search" onSubmit={submit} className="hero-search mx-auto mt-6 flex max-w-200 items-center gap-2 rounded-full border border-ink/25 bg-canvas px-5 py-1.5 text-left shadow-[0_4px_18px_rgb(19_56_68/0.08)]">
           <Icon of={Search} className="size-5 text-ink" />
           <input
             type="search"
@@ -151,9 +151,6 @@ function Finder({ scope }: { scope: Scope }) {
             aria-label={scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${info.label.toLowerCase()}`}
             className="h-11 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted"
           />
-          <button type="submit" className="h-11 shrink-0 cursor-pointer rounded-full bg-accent px-6 text-sm font-semibold text-accent-ink transition-[filter] hover:brightness-95">
-            Search
-          </button>
         </form>
       </section>
 

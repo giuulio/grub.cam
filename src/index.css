@@ -325,10 +325,14 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .finder { --panel-w: 25rem; }
 }
 
-/* Beside a list (the front page's tabs, a site's venues), the map stays in view under the header (its height is
-   --header-h while it's sticky) as tall as the screen allows, as TheFork's. On a phone it's the whole view instead. */
+/* Beside a site's venues, the map stays in view under the header (its height is --header-h while it's sticky) as a
+   landscape card, 4:3, never taller than the screen allows: a site has a few venues, so a map the height of the screen
+   would dwarf its list. */
 .listing-map.sticky { top: calc(var(--header-h, 0px) + 1rem); }
-.listing-map .venue-map { height: max(26rem, calc(100svh - var(--header-h, 0px) - 2rem)); }
+.listing-map .venue-map { height: auto; aspect-ratio: 4 / 3; min-height: 18rem; max-height: calc(100svh - var(--header-h, 0px) - 2rem); }
+
+/* A venue page's map, square in its rail card, centred on the venue (no taller than that on a phone, where the card is the screen's width). */
+.rail-map .venue-map { height: auto; aspect-ratio: 1; max-height: 22rem; }
 
 .venue-pin-target {
   display: flex;

@@ -1,4 +1,4 @@
-import { DAYS, venueTypes, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
+import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
@@ -42,6 +42,23 @@ export function periodSlots(slots: Slot[], date: string): Slot[] {
   const period = isFullTerm(date) ? 'term' : 'vacation'
   return slots.filter((s) => s.period === 'all' || s.period === period).sort(slotOrder)
 }
+/**
+ * The week's hours as a short table: each day's times in order, days with the same times run together ("Mon–Fri
+ * 07:30–09:00, 12:00–14:00, 17:30–19:00; Sat …; Sun …"), rows by first day. A day with no slot isn't a row.
+ */
+export function weekHours(slots: Slot[]): { days: Day[]; times: Slot[] }[] {
+  const rows = new Map<string, { days: Day[]; times: Slot[] }>()
+  for (const day of DAYS) {
+    const times = slots.filter((s) => s.days.includes(day)).sort((a, b) => a.start.localeCompare(b.start) || MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal))
+    if (!times.length) continue
+    const key = times.map((s) => `${s.meal} ${s.start}–${s.end}`).join('|')
+    const row = rows.get(key)
+    if (row) row.days.push(day)
+    else rows.set(key, { days: [day], times })
+  }
+  return [...rows.values()]
+}
+
 export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar' }
 
 export type Filters = {
@@ -95,6 +112,12 @@ export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>
   const slot = s.kind === 'open' || s.kind === 'opening' ? s.slot : s.kind === 'closed' ? s.next?.slot : undefined
   const withItems = days.filter((d) => d.items.length)
   return withItems.find((d) => d.service === slot?.meal) ?? withItems[0]
+}
+
+/** A menu's main dishes, what a card leads with; every dish where the source marks no courses (Homerton, Downing). */
+export function mainDishes(items: Dish[]): Dish[] {
+  const mains = items.filter((i) => i.course === 'main')
+  return mains.length ? mains : items
 }
 
 export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked[] {
