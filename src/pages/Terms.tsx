@@ -43,7 +43,7 @@ export function Terms() {
             <li>Your light or dark theme is remembered in your own browser.</li>
             <li>“Near me” asks your browser for your location only when you press it, uses it to centre the map, and never sends it to us.</li>
             <li>
-              Pages come from Cloudflare, venue data from Supabase (our database) and map tiles from OpenFreeMap. Like any web service, they receive your IP address
+              Pages come from Cloudflare, venue data from Supabase (our database) and maps from Apple (or, if Apple's can't load, OpenFreeMap). Like any web service, they receive your IP address
               when your browser asks them for something.
             </li>
             <li>Reports go to GitHub, under GitHub's own terms and privacy statement.</li>
