@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coverage, coverageMatrix, menuGap, menuWindow } from './coverage.ts'
+import { coverage, coverageMatrix, menuGap, menuWindow, tabCoverage } from './coverage.ts'
 import type { Site, Venue } from './types.ts'
 
 const site: Site = { slug: 'c', name: 'C', short_name: null, kind: 'college', official_dining_url: null }
@@ -91,5 +91,15 @@ describe('menuWindow', () => {
     expect(menuWindow({ menuFrom: '2026-10-08', menuTo: '2026-10-15' }, true)).toBe('8–14 Oct')
     expect(menuWindow({ menuFrom: '2026-10-28', menuTo: '2026-11-04' })).toBe('Wed 28 Oct – Tue 3 Nov')
     expect(menuWindow({ menuFrom: '2026-10-28', menuTo: '2026-11-04' }, true)).toBe('28 Oct – 3 Nov')
+  })
+})
+
+describe('tabCoverage', () => {
+  const menu = [{ date: '2026-10-08', service: 'lunch' as const, items: [dish] }]
+  const cafe = { ...hall, id: 'c/cafe', type: 'cafe' as const, prices: [] }
+  it('counts what matters most under each tab', () => {
+    expect(tabCoverage([hall, { ...hall, id: 'c/other', menu }, cafe], 'hall')).toEqual({ what: 'Menus this week', noun: 'dining venues', have: 1, of: 2 })
+    expect(tabCoverage([hall, cafe], 'cafe')).toMatchObject({ have: 0, of: 1 })
+    expect(tabCoverage([{ ...hall, formal: { price_gbp: 12 } }, hall], 'formal')).toMatchObject({ have: 1, of: 1 })
   })
 })

@@ -2,19 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Search } from 'reicon-react'
 import { useData } from '../lib/data.tsx'
-import { SCOPES } from '../lib/finder.ts'
+import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
 import { REPO_URL, SITE_NAME, venuePath } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
+import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
 
 /** Read at build time (vite.config.ts); null when GitHub couldn't be reached. */
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The name, a search box, GitHub, the theme, and sending a photo in. On the front page's tabs it stays at the top, as
- * Tripadvisor's does: once the page's own search has scrolled away it gains a search box and the tabs, and its height
- * (`--header-h`) keeps the map beside the list clear of it. Elsewhere the search box opens the front page.
+ * The name, a search box, GitHub, the theme, and sending a photo in. On the front page's tabs it stays at the top and
+ * spans the window, as Airbnb's does: from a tablet up it holds the page's search and the tabs (on a phone they're the
+ * page's own, and it gains them once they've scrolled away), and its height (`--header-h`) keeps the map beside the
+ * list clear of it. Elsewhere the search box opens the front page.
  */
 export function Header() {
   const { pathname } = useLocation()
@@ -46,19 +48,19 @@ export function Header() {
       window.removeEventListener('resize', measure)
     }
   }, [finder])
-  const compact = finder && heroGone
   const [params] = useSearchParams()
-  const keep = new URLSearchParams([...params].filter(([k]) => ['q', 'site', 'open'].includes(k))).toString()
+  const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k))).toString()
   return (
     <header ref={header} className={`bg-canvas ${finder ? 'sm:sticky sm:top-0 sm:z-40' : ''}`}>
-      <Container className="flex min-h-18 items-center gap-x-6">
+      {/* On the front page's tabs, as Airbnb's: the name, the search in the middle, the rest at the right */}
+      <Container wide={finder} className={`flex min-h-18 items-center gap-x-6 ${finder ? 'md:grid md:min-h-22 md:grid-cols-[1fr_minmax(0,36rem)_1fr]' : ''}`}>
         <div className="flex items-baseline gap-2">
           <Link to="/" className="title py-5 text-xl">{SITE_NAME}</Link>
           {/* Still being built: say so to anyone who lands here */}
           <span title="Still being built: some menus, hours and venues are missing" className="text-xs text-muted">beta</span>
         </div>
-        {(!finder || heroGone) && <HeaderSearch finder={finder} />}
-        <div className="ml-auto flex items-center gap-2">
+        <HeaderSearch finder={finder} />
+        <div className="ml-auto flex items-center gap-2 md:justify-self-end">
           <a
             href={REPO_URL}
             target="_blank"
@@ -78,11 +80,12 @@ export function Header() {
           )}
         </div>
       </Container>
-      {compact && (
-        <Container className="hidden sm:block">
-          <nav aria-label="Kinds of venue" className="card-row flex gap-7 overflow-x-auto pb-3 text-[15px] font-medium">
+      {finder && (
+        <Container wide className={`border-b border-ink/10 ${heroGone ? 'hidden sm:block' : 'hidden md:block'}`}>
+          <nav aria-label="Kinds of venue" className="card-row flex gap-8 overflow-x-auto text-base font-medium md:justify-center lg:gap-12">
             {SCOPES.map((s) => (
-              <NavLink key={s.scope} to={`${s.path}${keep ? `?${keep}` : ''}`} end className={({ isActive }) => `shrink-0 whitespace-nowrap underline-offset-[6px] ${isActive ? 'underline decoration-2' : 'hover:underline'}`}>
+              <NavLink key={s.scope} to={`${s.path}${keep ? `?${keep}` : ''}`} end className={({ isActive }) => `-mb-px flex shrink-0 items-center gap-2.5 border-b-2 pt-2 pb-4 whitespace-nowrap transition-colors ${isActive ? 'border-ink text-ink' : 'border-transparent text-muted hover:border-ink/25 hover:text-ink'}`}>
+                <Icon of={SCOPE_ICON[s.scope]} className="size-6" />
                 {s.label}
               </NavLink>
             ))}
@@ -99,6 +102,7 @@ export function Header() {
  */
 function HeaderSearch({ finder }: { finder: boolean }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [params, setParams] = useSearchParams()
   const [draft, setDraft] = useState('')
   const value = finder ? (params.get('q') ?? '') : draft
@@ -117,10 +121,10 @@ function HeaderSearch({ finder }: { finder: boolean }) {
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className="field hidden rounded-full md:flex md:w-64 lg:w-96"
+      className={`field hidden rounded-full md:flex ${finder ? 'h-14 w-full px-5 text-base shadow-[0_4px_18px_rgb(19_56_68/0.1)]' : 'md:w-64 lg:w-96'}`}
     >
       <Icon of={Search} />
-      <input type="search" value={value} onChange={(e) => change(e.target.value)} placeholder="Search" aria-label="Search venues, colleges and dishes" />
+      <input type="search" value={value} onChange={(e) => change(e.target.value)} placeholder={SCOPES.find((s) => s.path === pathname)?.placeholder ?? 'Search'} aria-label="Search venues, colleges and dishes" />
     </form>
   )
 }

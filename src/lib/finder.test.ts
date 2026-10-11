@@ -28,6 +28,9 @@ describe('front page tabs', () => {
     expect(read('site=missing&date=2026-02-30', 'hall')).toMatchObject({ sites: [], date: today })
     // Several colleges at once; unknown ones and repeats dropped
     expect(read('site=jesus,missing,jesus').sites).toEqual(['jesus'])
+    // Colleges only, or University sites only
+    expect(read('kind=college').kind).toBe('college')
+    expect(read('kind=museum').kind).toBeUndefined()
     expect(read('date=2026-10-15', 'hall').date).toBe(today)
     expect(read('date=2026-10-07', 'hall').date).toBe(today)
   })
@@ -40,6 +43,10 @@ describe('front page tabs', () => {
     expect(applyFilters([venue], filters, now)).toHaveLength(0)
     expect(applyFilters([venue], { ...filters, date: '2026-10-09' }, now)).toHaveLength(1)
     expect(applyFilters([venue], { ...DEFAULT_FILTERS, date: today }, now)[0].days[0].date).toBe('2026-10-09')
+  })
+  it('keeps colleges only, or University sites only', () => {
+    expect(applyFilters([venue], read('kind=college'), now)).toHaveLength(1)
+    expect(applyFilters([venue], read('kind=university'), now)).toHaveLength(0)
   })
   it('sends a link from before the tabs to the tab it names, a picked venue to its page', () => {
     const from = (q: string) => legacyPath(new URLSearchParams(q))

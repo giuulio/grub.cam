@@ -11,14 +11,14 @@ import { Container } from './Container.tsx'
  * then the mark, ©, the terms, and that grub.cam isn't the University's. No GitHub link: the header has it.
  * The Find column is the front page's tabs.
  */
-export function Footer() {
+export function Footer({ wide = false }: { wide?: boolean }) {
   const data = useData()
   const menus = data.status === 'ready' ? coverage(data)[0] : undefined
   const updated = data.status === 'ready' && data.updated ? new Date(data.updated).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short' }) : undefined
 
   return (
-    <footer className="mt-20 bg-ink/[0.035] text-[15px]">
-      <Container className="grid gap-x-8 gap-y-10 pt-12 pb-10 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className={`${wide ? 'mt-12' : 'mt-20'} bg-ink/[0.035] text-[15px]`}>
+      <Container wide={wide} className="grid gap-x-8 gap-y-10 pt-12 pb-10 sm:grid-cols-2 lg:grid-cols-4">
         <FooterLinks title={`About ${SITE_NAME}`}>
           <Link to="/about">About</Link>
           <Link to="/coverage">Coverage</Link>
@@ -46,7 +46,7 @@ export function Footer() {
         </div>
       </Container>
       {/* GitHub is linked once, in the header */}
-      <Container className="pb-10">
+      <Container wide={wide} className="pb-10">
         <div className="flex gap-4">
           <img src="/favicon.svg" alt="" width={36} height={36} className="size-9 shrink-0" />
           <div className="min-w-0">

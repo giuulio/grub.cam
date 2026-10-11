@@ -18,14 +18,15 @@ import { Send } from './pages/Send.tsx'
 function Layout() {
   const data = useData()
   const { pathname } = useLocation()
+  const finder = SCOPES.some((s) => s.path === pathname)
   useScrollMemory()
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className={`flex-1 ${SCOPES.some((s) => s.path === pathname) ? 'pt-8 sm:pt-14' : 'pt-10 sm:pt-12'}`}>
-        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
+      <main className={`flex-1 ${finder ? 'pt-4' : 'pt-10 sm:pt-12'}`}>
+        <Container wide={finder}>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
       </main>
-      <Footer />
+      <Footer wide={finder} />
     </div>
   )
 }

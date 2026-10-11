@@ -91,3 +91,19 @@ export function menuWindow({ menuFrom, menuTo }: Pick<Data, 'menuFrom' | 'menuTo
   const from = formatISODate(menuFrom, { ...weekday, day: 'numeric', ...(sameMonth ? {} : { month: 'short' }) })
   return `${from}${short && sameMonth ? '–' : ' – '}${formatISODate(last, { ...weekday, day: 'numeric', month: 'short' })}`
 }
+
+/** What the front page says is still missing under a tab: how many of its venues have what matters most there. */
+export type TabCoverage = { what: string; have: number; of: number; noun: string }
+
+const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
+
+/** Menus this week for Dining (and everything, where they're what people come for); price lists for cafés and bars; formal hall's price. */
+export function tabCoverage(venues: Venue[], scope: 'all' | VenueType | 'formal'): TabCoverage {
+  const [what, noun, applies, has]: [string, string, (v: Venue) => boolean, (v: Venue) => boolean] =
+    scope === 'cafe' ? ['Price lists', 'cafés', ofType('cafe'), hasPrices]
+    : scope === 'bar' ? ['Price lists', 'bars', ofType('bar'), hasPrices]
+    : scope === 'formal' ? ['Prices', 'formal halls', holdsFormal, (v) => v.formal?.price_gbp != null]
+    : ['Menus this week', 'dining venues', servesMeals, hasMenu]
+  const mine = venues.filter(applies)
+  return { what, noun, have: mine.filter(has).length, of: mine.length }
+}

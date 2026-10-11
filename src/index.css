@@ -250,79 +250,96 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   z-index: 0;
 }
 
-/* The front page's map, as Google Maps': as tall as the screen allows under the header (--header-h while it's sticky),
-   its venues listed in a panel over its left side and the filters over its top, to the right of the panel. On a phone
-   they stack: the filters, then the list or (view=map) the map. */
-.finder { --panel-w: 22rem; scroll-margin-top: 1rem; }
-.finder-map { position: relative; }
-.finder-map .venue-map { height: max(26rem, calc(100svh - 9rem)); }
+/* The front page's venues, as Airbnb's: from a tablet up, the list down the left (its filters stay under the header as
+   it scrolls) and the map beside it, as tall as the screen allows under the header (--header-h while it's sticky),
+   staying in view as the page scrolls. On a phone (.is-map, the default) the map fills the screen below the hero
+   (--finder-top, measured), edge to edge, the filters over its top; .is-list shows the list instead. Over the map's
+   foot (.finder-sheet): the picked venue's card, and on a phone the button to the list. */
+.finder { scroll-margin-top: 1rem; }
+.finder-map { position: relative; isolation: isolate; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.finder-map .venue-map { height: 100%; }
+.finder-sheet {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.finder-sheet:empty { display: none; }
+.finder-sheet .venue-row { box-shadow: 0 6px 20px #0000002e; }
+.venue-row { scroll-margin-top: calc(var(--header-h, 0px) + 4.5rem); }
 .venue-row:has(.card-link:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: -2px;
 }
+/* A phone's cards over the map: one to a screen, the next peeking, snapping to the middle. */
+.map-cards {
+  display: flex;
+  gap: 8px;
+  width: calc(100% + 24px);
+  margin-inline: -12px;
+  padding-inline: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 20px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.map-cards::-webkit-scrollbar { display: none; }
+.map-cards > li { flex: 0 0 100%; scroll-snap-align: center; }
 @media (max-width: 767px) {
-  .finder-list { margin-inline: -1rem; }
+  .finder-filters { margin-inline: -1rem; padding: 4px 1rem; overflow-x: auto; }
+  .finder-filters > * { flex-shrink: 0; }
+  .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 8px; }
+  .finder.is-map {
+    position: relative;
+    height: max(26rem, calc(100svh - var(--finder-top, 13.5rem)));
+    margin-inline: -1rem;
+    overflow: hidden;
+  }
+  .finder.is-map .finder-map { position: absolute; inset: 0; }
+  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 0; z-index: 700; margin: 0; padding: 12px; }
+  .finder.is-map .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
+  .finder.is-map .finder-note { position: absolute; top: 68px; left: 12px; right: 12px; z-index: 700; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder.is-map .finder-list { display: none; }
+  /* Clear of the map's attribution along its foot */
+  .finder.is-map .finder-sheet { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+  /* Pinch to zoom: the buttons would sit under the filters */
+  .finder .maplibregl-ctrl-top-right { display: none; }
 }
-/* Sized for the header as it is once the page's search has scrolled away (it gains the tabs, 6.75rem in all), so
-   the card doesn't change height as it comes into view */
-@media (min-width: 640px) {
-  .finder { scroll-margin-top: 7.75rem; }
-}
+/* From a tablet up, as Airbnb's: a box as tall as the screen allows under the header, a little short of its foot so the
+   page carries on to the footer: the filters in a row across its top, then the list down its left scrolling on its own
+   and the map beside it, a little wider, 20px corners, no frame. Past the end of the list, the page scrolls. */
 @media (min-width: 768px) {
   .finder {
-    position: relative;
-    isolation: isolate;
-    height: max(34rem, calc(100svh - 8.75rem));
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--ink) 5%, transparent);
+    display: grid;
+    grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 1.5rem;
+    height: max(32rem, calc(100svh - var(--header-h, 0px) - 40px));
+    scroll-margin-top: var(--header-h, 0px);
   }
-  .finder-map { position: absolute; inset: 0; }
-  .finder-map .venue-map { height: 100%; }
-  .finder-filters {
-    position: absolute;
-    top: 12px;
-    left: calc(var(--panel-w) + 24px);
-    right: 56px;
-    z-index: 700;
+  .finder-filters { grid-column: 1 / -1; grid-row: 1; flex-wrap: wrap; padding-block: 16px; }
+  .finder-note { grid-column: 1 / -1; grid-row: 2; margin-bottom: 12px; }
+  .finder-side {
+    grid-row: 3;
+    min-height: 0;
+    overflow-y: auto;
+    margin-left: -12px;
+    padding: 4px 12px 0;
+    scrollbar-width: none;
   }
-  /* Over the map, a chip lifts off it with a shadow instead of an edge, as Google Maps' do. */
-  .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder-note {
-    position: absolute;
-    top: 64px;
-    left: calc(var(--panel-w) + 24px);
-    z-index: 700;
-    margin: 0;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: var(--raised);
-    box-shadow: var(--raised-shadow);
-  }
-  .finder-list {
-    position: absolute;
-    top: 12px;
-    bottom: 12px;
-    left: 12px;
-    z-index: 600;
-    display: flex;
-    flex-direction: column;
-    width: var(--panel-w);
-    margin: 0;
-    overflow: hidden;
-    border-radius: 12px;
-    background: var(--raised);
-    box-shadow: var(--raised-shadow);
-    outline: 1px solid var(--raised-border);
-    outline-offset: -1px;
-  }
-  /* The list scrolls on its own, without a scrollbar (as the front page's other sideways rows) */
-  .finder-rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
-  .finder-rows::-webkit-scrollbar { display: none; }
+  .finder-side::-webkit-scrollbar { display: none; }
+  .finder-side .venue-row { scroll-margin-top: 12px; }
+  .finder-map { grid-row: 3; height: 100%; overflow: hidden; border-radius: 20px; }
 }
 @media (min-width: 1024px) {
-  .finder { --panel-w: 25rem; }
+  .finder { column-gap: 2rem; }
 }
 
 /* Beside a site's venues, the map stays in view under the header (its height is --header-h while it's sticky) as a
@@ -350,21 +367,23 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .venue-pin-target.is-shared { width: 30px; }
 
 /* A disc per venue, no icon, in its type's colour, or split diagonally between its two (its fill is set inline,
-   pinFill() in VenueMap.tsx); open or not, the same. The white halo keeps it clear of both basemaps. */
+   pinFill() in VenueMap.tsx); open or not, the same. A thin darker rim and a soft shadow lift it off either basemap,
+   without a halo. */
 .venue-pin {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px #fff, 0 1px 4px #0006;
+  box-shadow: inset 0 0 0 1px #0000004d, 0 1px 3px #00000059;
   transition: transform 120ms ease-out;
 }
 
-/* Selected: larger, Cambridge Blue on Cambridge Dark Blue, visible on either basemap. */
+/* Selected: larger, ringed in Cambridge Dark Blue (Cambridge Blue on the dark basemap). */
 .venue-pin.is-selected {
-  transform: scale(1.5);
-  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #8ee8d8, 0 0 0 5px #133844;
+  transform: scale(1.45);
+  box-shadow: inset 0 0 0 1px #0000004d, 0 0 0 2px #133844, 0 2px 6px #00000066;
 }
+.venue-map[data-map-theme='dark'] .venue-pin.is-selected { box-shadow: inset 0 0 0 1px #0000004d, 0 0 0 2px #8ee8d8, 0 2px 6px #00000066; }
 
 @media (prefers-reduced-motion: reduce) {
   .venue-pin { transition: none; }

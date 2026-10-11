@@ -19,9 +19,10 @@ import { venueTypes, type VenueType } from '../lib/types.ts'
  * `maxZoom`: the closest fitting the venues zooms in: streets around a city-wide list (15), a college's grounds for a
  * site's few venues (17). `focus`: a venue to centre on at `maxZoom` instead of fitting them all, for a venue's own
  * page, where the others are context. `embedded`: a small map inside a page that scrolls, so the wheel scrolls the
- * page, not the map (the zoom buttons and pinching still zoom).
+ * page, not the map (the zoom buttons and pinching still zoom). `onBackground`: a click on the map itself, not a pin
+ * (to let go of the picked one).
  */
-type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
+type Props = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
 type Pin = { el: HTMLDivElement; marker: MapLibre.Marker }
 type Engine = { M: typeof MapLibre; map: MapLibre.Map; pins: Map<string, Pin>; user?: MapLibre.Marker }
 const TYPE_ORDER: VenueType[] = ['hall', 'cafe', 'bar']
@@ -35,7 +36,7 @@ const position = (r: Ranked): [number, number] => [r.venue.longitude!, r.venue.l
 // On a phone, clear of Near me and Show all above and the list button below; wider, clear of what sits over the map
 const fitPadding = (inset: Props['inset'] = {}) => (window.innerWidth >= 640 ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 } : { top: 70, bottom: 90, left: 44, right: 44 })
 
-export function VenueMap({ results, selected, highlight, onSelect, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false }: Props) {
+export function VenueMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -120,6 +121,16 @@ export function VenueMap({ results, selected, highlight, onSelect, filtered, pan
       engine.current = null
     }
   }, [])
+
+  const background = useRef(onBackground)
+  useEffect(() => { background.current = onBackground }, [onBackground])
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e) return
+    const click = (ev: MapLibre.MapMouseEvent) => { if (!(ev.originalEvent.target as Element).closest('.venue-pin-target')) background.current?.() }
+    e.map.on('click', click)
+    return () => { e.map.off('click', click) }
+  }, [ready])
 
   // Inside a page that scrolls, the wheel scrolls the page
   useEffect(() => {

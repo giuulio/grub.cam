@@ -1,4 +1,4 @@
-import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Slot, type Venue, type VenueType } from './types.ts'
+import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
@@ -67,6 +67,8 @@ export type Filters = {
   type?: VenueType
   /** Site slugs: any of them */
   sites?: string[]
+  /** Colleges only, or University sites only */
+  kind?: Site['kind']
   /** Explore pins menus to the selected date; venue/site browsing can preview the next service. */
   exactDate?: boolean
   diets: DietTag[]
@@ -126,6 +128,7 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
   for (const v of venues) {
     if (f.type && !venueTypes(v).includes(f.type)) continue
     if (f.sites?.length && !f.sites.includes(v.site.slug)) continue
+    if (f.kind && v.site.kind !== f.kind) continue
     const meals = f.meal ? [f.meal] : undefined
     const status = openStatus(v.slots, now, meals)
     // Site browsing can preview the next service; Explore and searches keep the explicit menu date.

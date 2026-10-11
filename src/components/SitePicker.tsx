@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'reicon-react'
 import type { Site } from '../lib/types.ts'
-import { SearchField } from './Controls.tsx'
+import { SearchField, Segmented } from './Controls.tsx'
 import { Icon } from './Icon.tsx'
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/[’']/g, '').toLowerCase()
 const nameOf = (s: Site) => s.short_name ?? s.name
 
+type Kind = Site['kind']
+const KINDS: ['' | Kind, string][] = [['', 'All'], ['college', 'Colleges'], ['university', 'University']]
+
 /**
- * Pick any number of colleges and University sites: a chip naming what's picked ("Jesus, Trinity", "3 colleges and
- * sites"), opening a box with a search over the names (and nicknames), then every college and site to tick, grouped.
- * Ticks apply as they're made; Escape, a click outside or Done closes it.
+ * Pick any number of colleges and University sites, or every college (or every University site) at once: a chip naming
+ * what's picked ("Jesus, Trinity", "3 colleges and sites", "Colleges"), opening a box with a choice of all, colleges or
+ * University, a search over the names (and nicknames), then every college and site to tick, grouped. Picking a kind
+ * clears the ticks and a tick clears the kind. Ticks apply as they're made; Escape, a click outside or Done closes it.
+ * On a phone the box rises from the foot of the screen, so a row of chips that scrolls sideways can't clip it.
  */
-export function SitePicker({ sites, value, onChange }: { sites: Site[]; value: string[]; onChange: (slugs: string[]) => void }) {
+export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; value: string[]; kind?: Kind; onChange: (slugs: string[], kind?: Kind) => void }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const box = useRef<HTMLDivElement>(null)
@@ -35,7 +40,7 @@ export function SitePicker({ sites, value, onChange }: { sites: Site[]; value: s
     }
   }, [open])
   const picked = sites.filter((s) => ticked.includes(s.slug))
-  const label = !picked.length ? 'Colleges and sites' : picked.length <= 2 ? picked.map(nameOf).join(', ') : `${picked.length} colleges and sites`
+  const label = kind === 'college' ? 'Colleges' : kind === 'university' ? 'University sites' : !picked.length ? 'Colleges and sites' : picked.length <= 2 ? picked.map(nameOf).join(', ') : `${picked.length} colleges and sites`
   const pick = (slugs: string[]) => {
     setTicked(slugs)
     onChange(slugs)
@@ -44,13 +49,14 @@ export function SitePicker({ sites, value, onChange }: { sites: Site[]; value: s
   const shown = sites.filter((s) => !q.trim() || [s.name, s.short_name ?? '', ...(s.aliases ?? [])].some((n) => fold(n).includes(fold(q.trim()))))
   return (
     <div ref={box} className="relative">
-      <button type="button" aria-expanded={open} aria-haspopup="dialog" data-on={picked.length > 0 || undefined} onClick={() => setOpen(!open)} className="chip max-w-64">
+      <button type="button" aria-expanded={open} aria-haspopup="dialog" data-on={picked.length > 0 || !!kind || undefined} onClick={() => setOpen(!open)} className="chip max-w-64">
         <span className="truncate">{label}</span>
         <Icon of={ChevronDown} className="size-4" />
       </button>
       {open && (
-        <div role="dialog" aria-label="Colleges and sites" className="raised absolute top-full left-0 z-[800] mt-2 flex max-h-[min(28rem,65svh)] w-[min(20rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl text-left">
-          <div className="border-b border-ink/10 p-3">
+        <div role="dialog" aria-label="Colleges and sites" className="raised z-[800] flex flex-col overflow-hidden rounded-xl text-left max-md:fixed max-md:inset-x-2 max-md:bottom-2 max-md:max-h-[70svh] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(30rem,65svh)] md:w-80">
+          <div className="space-y-3 border-b border-ink/10 p-3">
+            <Segmented label="Which" options={KINDS} value={kind ?? ''} onChange={(k) => { setTicked([]); onChange([], k || undefined) }} />
             <SearchField value={q} onChange={setQ} placeholder="Find a college or site" />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -73,7 +79,7 @@ export function SitePicker({ sites, value, onChange }: { sites: Site[]; value: s
             {!shown.length && <p className="px-2 py-4 text-sm text-muted">Nothing matches “{q}”.</p>}
           </div>
           <div className="flex items-center justify-between gap-2 border-t border-ink/10 p-3">
-            <button type="button" disabled={!ticked.length} onClick={() => pick([])} className="cursor-pointer text-sm text-muted hover:text-ink disabled:cursor-default disabled:opacity-50">
+            <button type="button" disabled={!ticked.length && !kind} onClick={() => pick([])} className="cursor-pointer text-sm text-muted hover:text-ink disabled:cursor-default disabled:opacity-50">
               Clear
             </button>
             <button type="button" onClick={() => setOpen(false)} className="btn btn-primary">

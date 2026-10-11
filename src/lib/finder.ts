@@ -20,6 +20,10 @@ export const SCOPES: ScopeInfo[] = [
 ]
 export const scopeInfo = (scope: Scope) => SCOPES.find((s) => s.scope === scope)!
 
+/** What a tab keeps when another is picked: the search, where, and open now (the rest is Dining's own). */
+export const SHARED_FILTERS = ['q', 'site', 'kind', 'open']
+const SITE_KINDS: Site['kind'][] = ['college', 'university']
+
 /** The meals of a menu (a sent-in menu says which); Dining's meal filter leaves out formal hall, which has its tab. */
 export const DINING_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 export const FILTER_MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
@@ -27,7 +31,7 @@ export const FILTER_DIETS: DietTag[] = ['vegetarian', 'vegan', 'halal', 'gluten_
 
 /**
  * A tab's filters from its URL, validated against the loaded menu window and the sites: `q`, `site` (one or more,
- * comma-separated) and `open` everywhere; Dining's `meal`, `diet` and `date` (menus are by date) only there. Formal hall is Dining at the formal meal.
+ * comma-separated), `kind` (colleges only, or University sites only) and `open` everywhere; Dining's `meal`, `diet` and `date` (menus are by date) only there. Formal hall is Dining at the formal meal.
  */
 export function readFilters(p: URLSearchParams, scope: Scope, today: string, sites: Site[], menuFrom: string, menuTo: string): Filters {
   const dining = scope === 'hall'
@@ -40,6 +44,7 @@ export function readFilters(p: URLSearchParams, scope: Scope, today: string, sit
     exactDate: true,
     type: scope === 'all' ? undefined : scope === 'formal' ? 'hall' : scope,
     sites: [...new Set(p.get('site')?.split(',') ?? [])].filter((slug) => sites.some((s) => s.slug === slug)),
+    kind: SITE_KINDS.find((k) => k === p.get('kind')),
     meal: scope === 'formal' ? 'formal' : dining ? FILTER_MEALS.find((m) => m === p.get('meal')) : undefined,
     diets: dining ? [...new Set((p.get('diet')?.split(',') ?? []).filter((d): d is DietTag => FILTER_DIETS.includes(d as DietTag)))] : [],
     openNow: date === today && p.has('open'),
@@ -56,7 +61,7 @@ export function legacyPath(p: URLSearchParams): string {
   const type = p.get('type')
   const scope: Scope = type === 'hall' ? (p.get('meal') === 'formal' ? 'formal' : 'hall') : type === 'cafe' || type === 'bar' ? type : 'all'
   const keep = new URLSearchParams()
-  for (const k of scope === 'hall' ? ['q', 'site', 'open', 'meal', 'diet', 'date'] : ['q', 'site', 'open']) {
+  for (const k of scope === 'hall' ? [...SHARED_FILTERS, 'meal', 'diet', 'date'] : SHARED_FILTERS) {
     const v = p.get(k)
     if (v != null) keep.set(k, v)
   }
