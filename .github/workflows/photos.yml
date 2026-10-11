@@ -1,0 +1,43 @@
+name: Members' photos
+
+# Publishes the photos members send from a venue's page ("Have a better photo?") once the submit function's model has
+# passed them: makes each one's sizes into public/photos, adds it to Supabase ahead of the venue's others, and commits
+# the files to main, which Workers Builds deploys like any other push. The submit function starts this as soon as a
+# photo is queued (workflow_dispatch, through GITHUB_DISPATCH_TOKEN, a Supabase secret); the hourly run catches any it
+# missed. Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY, as the ingest does.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+
+permissions:
+  contents: write
+
+# One at a time: two runs would both publish the same queued photos
+concurrency:
+  group: photos
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Even when one photo fails, commit the others it saved
+      - run: npm run submissions -- photos
+      - if: ${{ !cancelled() }}
+        run: |
+          git add public/photos
+          git diff --cached --quiet && exit 0
+          git -c user.name='grub.cam' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -q -m "Members' photos"
+          # Someone may have pushed meanwhile: put these on top and try again
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1

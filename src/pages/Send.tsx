@@ -8,7 +8,7 @@ import { useReady } from '../lib/data.tsx'
 import { DINING_MEALS } from '../lib/finder.ts'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
-import { isCamEmail, signIn, signOut, useSession } from '../lib/auth.ts'
+import { isCamEmail, memberName, signIn, signOut, useSession } from '../lib/auth.ts'
 import { confirm, send, shrink, type SubmitKind, type SubmitResult } from '../lib/submit.ts'
 import type { Venue } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -51,13 +51,14 @@ export function Send() {
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
   const pick = async (f?: File) => {
     setError(undefined)
-    const next = f ? await shrink(f) : undefined
+    const next = f ? await shrink(f, kind === 'photo' ? 2400 : undefined) : undefined
     setPhoto(next)
     setPreview(next ? URL.createObjectURL(next) : undefined)
   }
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!venue || !session) return
+    if (kind === 'photo' && !photo) { setError('Add the photo.'); return }
     if (!photo && !note.trim()) { setError('Add a photo or some text.'); return }
     setBusy('sending')
     setError(undefined)
@@ -88,6 +89,7 @@ export function Send() {
   const back = venue ? venuePath(venue) : '/'
   const here = `/send?${params}`
   const email = session?.user.email
+  const name = memberName(session)
   return (
     <>
       <title>{`Send what you see · ${SITE_NAME}`}</title>
@@ -95,7 +97,7 @@ export function Send() {
         <BackButton up={back} />
         <h1 className="title text-4xl">Send what you see</h1>
         <p className="mt-3 leading-relaxed text-muted">
-          A photo of the menu board, the price list or the opening times, from where you are. We read it, you check what we read, and it goes up once someone has looked.
+          A photo of the menu board, the price list or the opening times, or what it says typed out, from where you are. We read it, you check what we read, and it goes up once someone has looked.
         </p>
 
         {session === undefined ? null : !session || !isCamEmail(email) ? (
@@ -109,7 +111,7 @@ export function Send() {
             </div>
           </section>
         ) : done ? (
-          <Thanks result={done} venue={venue ? { path: back, name: venue.name } : undefined} />
+          <Thanks result={done} credit={name} venue={venue ? { path: back, name: venue.name } : undefined} />
         ) : result ? (
           <section className="mt-8 space-y-4" aria-labelledby="check">
             <h2 id="check" className="title text-2xl">Here's what we read</h2>
@@ -164,14 +166,21 @@ export function Send() {
               </div>
             )}
 
-            <Field label="Photo" hint={kind === 'photo' ? 'The room or the counter, without people. By sending it you let us show it on the site, credited to you if you leave a name.' : 'Straight on, the whole board in frame. It is shrunk before it leaves your phone.'}>
+            <Field
+              label="Photo"
+              hint={
+                kind === 'photo'
+                  ? `The room, the counter or the building, landscape, with no one's face in it. Once it's checked it replaces the venue's photo within minutes, credited to ${name ?? 'you'}; by sending it you license it under CC BY 4.0.`
+                  : 'Straight on, the whole board in frame. It is shrunk before it leaves your phone.'
+              }
+            >
               <input ref={fileInput} id="photo" type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => fileInput.current?.click()} className="btn btn-secondary">
                   <Icon of={Camera} />
                   {photo ? 'Another photo' : 'Take or choose a photo'}
                 </button>
-                {photo && preview && (
+                {photo && preview && kind !== 'photo' && (
                   <span className="flex items-center gap-3 text-sm text-muted">
                     <img src={preview} alt="" className="size-14 rounded-md object-cover" />
                     {Math.round(photo.size / 1024)} kB
@@ -179,6 +188,17 @@ export function Send() {
                   </span>
                 )}
               </div>
+              {/* How it will look at the top of the venue's page: cropped as the banner is, the name over its foot */}
+              {photo && preview && kind === 'photo' && (
+                <div className="relative mt-4">
+                  <img src={preview} alt="Your photo, cropped as the venue's banner" className="aspect-5/2 w-full rounded-xl object-cover lg:aspect-7/2" />
+                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-black/55 px-2.5 py-1 text-xs text-white backdrop-blur">
+                    <Icon of={Camera} className="size-3.5" />
+                    {name ?? 'A member'}
+                  </span>
+                  <button type="button" onClick={() => pick()} className="link mt-2 cursor-pointer text-sm text-muted">Remove</button>
+                </div>
+              )}
             </Field>
 
             <Field label={kind === 'photo' ? 'A note (optional)' : photo ? 'Or type it (optional)' : 'Or type it'} hint={kind === 'menu' || kind === 'prices' ? 'One item per line, with its price if shown.' : undefined}>
@@ -223,12 +243,18 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-function Thanks({ result, venue }: { result: SubmitResult; venue?: { path: string; name: string } }) {
+function Thanks({ result, credit, venue }: { result: SubmitResult; credit: string | null; venue?: { path: string; name: string } }) {
   return (
     <section className="mt-8 space-y-3" aria-live="polite">
       <h2 className="title text-2xl">Thank you</h2>
       <p className="text-muted">
-        {result.status === 'needs_review' ? 'It is in the queue. It appears once someone has checked it, usually within a day.' : 'We have it. A person will read it and add it, usually within a day.'}
+        {result.status === 'queued'
+          ? `It's going up: the venue's page shows it within a few minutes, credited to ${credit ?? 'you'}.`
+          : result.reason
+            ? `A person will look at it before it goes up, usually within a day: ${result.reason.replace(/\.?$/, '.')}`
+            : result.status === 'needs_review'
+              ? 'It is in the queue. It appears once someone has checked it, usually within a day.'
+              : 'We have it. A person will read it and add it, usually within a day.'}
       </p>
       {venue && <Link to={venue.path} className="link text-ink">Back to {venue.name}</Link>}
     </section>

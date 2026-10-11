@@ -15,6 +15,12 @@ export function signIn(returnTo: string) {
 
 export const signOut = () => auth.signOut()
 
+/** The account's name as Microsoft gives it: what a member's photo is credited to (the submit function reads the same). */
+export const memberName = (session: Session | null | undefined): string | null => {
+  const meta = session?.user.user_metadata ?? {}
+  return String(meta.full_name ?? meta.name ?? '').trim() || null
+}
+
 /** The current session, kept up to date; `undefined` until known. */
 export function useSession(): Session | null | undefined {
   const [session, setSession] = useState<Session | null | undefined>()

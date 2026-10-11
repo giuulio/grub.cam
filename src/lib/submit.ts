@@ -2,17 +2,21 @@
 // and costs the model little) and/or text, then confirming the transcription it comes back with.
 
 export type SubmitKind = 'menu' | 'prices' | 'hours' | 'photo' | 'other'
-export type SubmitResult = { id: string; status: 'received' | 'transcribed' | 'needs_review'; transcription: string | null; by?: 'openai' | 'gemini'; spec?: string }
+/** `queued`: a member's photo that passed its check, going up within minutes; `reason`: why one waits for a person instead. */
+export type SubmitResult = { id: string; status: 'received' | 'transcribed' | 'needs_review' | 'queued'; transcription: string | null; by?: 'openai' | 'gemini'; spec?: string; reason?: string | null }
 
 const URL_ = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit`
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
 const MAX_SIDE = 1600
 
-/** The photo as a JPEG no wider or taller than 1600 px (a board stays legible; metadata, GPS included, is dropped). */
-export async function shrink(file: File): Promise<File> {
+/**
+ * The photo as a JPEG no wider or taller than `maxSide` (1600 px keeps a board legible; a venue's photo is sent at
+ * 2400, as it becomes a page's banner). Metadata, GPS included, is dropped.
+ */
+export async function shrink(file: File, maxSide = MAX_SIDE): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
     const w = Math.round(bitmap.width * scale), h = Math.round(bitmap.height * scale)
     const canvas = document.createElement('canvas')
     canvas.width = w

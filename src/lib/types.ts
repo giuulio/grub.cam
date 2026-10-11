@@ -85,6 +85,8 @@ export type Photo = {
   licence: string | null
   /** Where it came from: its Wikimedia Commons page, or "own photo" */
   source: string | null
+  /** Set when a member sent it from the venue's page: their name (`credit`) is shown over it */
+  submission_id?: string | null
 }
 
 /** How a venue posts its prices (`venues.price_terms`), in its own words. */

@@ -20,8 +20,11 @@ export type Submission = {
   transcription: string | null
   transcribed_by: string | null
   model: string | null
-  status: 'received' | 'transcribed' | 'needs_review' | 'approved' | 'rejected'
+  status: 'received' | 'transcribed' | 'needs_review' | 'queued' | 'approved' | 'rejected'
   review_note: string | null
+  /** kind photo: the sender's name, which it's credited to, and the model's description of it */
+  credit: string | null
+  alt: string | null
   created_at: string
 }
 
@@ -98,14 +101,22 @@ export function connect() {
       if (error) throw new Error(`photos ${subject}: ${error.message}`)
       return !!count
     },
-    /** Adds a photo after the subject's others of its kind. */
-    async savePhoto(photo: { subject: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean }) {
+    /** Adds a photo after the subject's others of its kind, or, `first`, ahead of them (a member's replaces the one shown). */
+    async savePhoto(photo: { subject: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean; submission_id?: string }, opts: { first?: boolean } = {}) {
       const { subject, ...rest } = photo
       const column = subject.includes('/') ? 'venue_id' : 'site'
-      const { count, error: countError } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq(column, subject).eq('kind', photo.kind)
-      if (countError) throw new Error(`photos ${subject}: ${countError.message}`)
-      const { error } = await sb.from('photos').insert({ ...rest, [column]: subject, position: count ?? 0 })
+      const { data, error: readError } = await sb.from('photos').select('position').eq(column, subject).eq('kind', photo.kind)
+      if (readError) throw new Error(`photos ${subject}: ${readError.message}`)
+      const positions = data.map((p) => p.position as number)
+      const position = !positions.length ? 0 : opts.first ? Math.min(...positions) - 1 : Math.max(...positions) + 1
+      const { error } = await sb.from('photos').insert({ ...rest, [column]: subject, position })
       if (error) throw new Error(`photos ${subject}: ${error.message}`)
+    },
+    /** Takes down the photo a submission put up, so the venue's one before it shows again. How many were hidden. */
+    async hideSubmissionPhoto(submission: string): Promise<number> {
+      const { data, error } = await sb.from('photos').update({ approved: false }).eq('submission_id', submission).select('path')
+      if (error) throw new Error(`photos of ${submission}: ${error.message}`)
+      return data.length
     },
     /** How many services after `date` are saved for this venue. */
     async savedAfter(venue: string, date: string): Promise<number> {

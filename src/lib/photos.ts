@@ -19,5 +19,8 @@ export function licenceUrl(licence: string | null): string | undefined {
   return m ? `https://creativecommons.org/licenses/${m[1].toLowerCase()}/${m[2]}/${m[3] ? `${m[3].toLowerCase()}/` : ''}` : undefined
 }
 
+/** Whether a member sent it from the venue's page, so it's credited over the photo, by their name. */
+export const byMember = (p: Photo) => !!p.submission_id
+
 /** A link to where the photo came from, when that's a page (Wikimedia Commons); "own photo" isn't one. */
 export const sourceUrl = (p: Photo) => (p.source && /^https:\/\//.test(p.source) ? p.source : undefined)

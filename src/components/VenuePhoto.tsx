@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { Buildings, GraduationCap } from 'reicon-react'
+import { Link } from 'react-router'
+import { Buildings, Camera, GraduationCap } from 'reicon-react'
 import { TYPE_LABEL } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
-import { licenceUrl, photoSrc, sitePhoto, sourceUrl, venuePhoto } from '../lib/photos.ts'
+import { byMember, licenceUrl, photoSrc, sitePhoto, sourceUrl, venuePhoto } from '../lib/photos.ts'
+import { sendPath } from '../lib/site.ts'
 import type { Photo, Site, Venue, VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 
@@ -115,14 +117,48 @@ export function SiteThumb({ site, className = 'size-16 rounded-lg', sizes = '4re
 const BANNER = 'block aspect-5/2 w-full sm:rounded-xl lg:aspect-4/1'
 const BANNER_SIZES = '(min-width: 1024px) calc(100vw - 6rem), 100vw'
 
-/** The venue page's banner: its photo across the page, credited under it; its type's tile until it has one. */
+/**
+ * The venue page's banner: its photo across the page, credited under it (a member's by name, over its foot); its
+ * type's tile until it has one. In its top corner, the way to send a better one, which replaces it once checked.
+ */
 export function VenueBanner({ venue }: { venue: Venue }) {
   const photo = venuePhoto(venue)
+  const member = photo && byMember(photo)
   return (
-    <figure className="-mx-4 mb-8 sm:mx-0">
-      <VenueImage venue={venue} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} />
-      {photo && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
+    <figure className="relative -mx-4 mb-8 sm:mx-0">
+      <VenueImage venue={venue} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} overlay={member && <MemberCredit photo={photo} />} />
+      <Link
+        to={sendPath(venue, 'photo')}
+        className="absolute top-3 right-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-canvas/90 px-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition-colors hover:bg-canvas sm:top-4 sm:right-4"
+      >
+        <Icon of={Camera} className="size-4" />
+        {photo ? (
+          <span>
+            Have a better photo?<span className="max-sm:hidden"> Send it</span>
+          </span>
+        ) : (
+          'Add a photo'
+        )}
+      </Link>
+      {photo && !member && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
+  )
+}
+
+/** A member's name over the foot of their photo, with its licence: "Jane Smith · CC BY 4.0". */
+function MemberCredit({ photo }: { photo: Photo }) {
+  const deed = licenceUrl(photo.licence)
+  return (
+    <span className="absolute bottom-3 left-3 inline-flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-md bg-black/55 px-2.5 py-1 text-xs text-white backdrop-blur sm:bottom-4 sm:left-4">
+      <Icon of={Camera} className="size-3.5 shrink-0" />
+      <span className="truncate">{photo.credit ?? 'A member'}</span>
+      {photo.licence && (
+        <>
+          <span aria-hidden="true">·</span>
+          {deed ? <a href={deed} target="_blank" rel="noopener license" className="shrink-0 underline underline-offset-2">{photo.licence}</a> : <span className="shrink-0">{photo.licence}</span>}
+        </>
+      )}
+    </span>
   )
 }
 

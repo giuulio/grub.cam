@@ -84,6 +84,18 @@ export async function fromCommons(title: string): Promise<{ image: Buffer; credi
 /** Where the files go: served by the site itself as /photos (VITE_PHOTOS_URL can move them elsewhere). */
 const PHOTOS_DIR = 'public/photos'
 
+/** Writes a photo's sizes as `public/photos/<path>-<width>.webp`. A path is never reused, so they can be cached for good. */
+export function writeVariants(path: string, variants: Variant[]) {
+  for (const v of variants) {
+    const file = join(PHOTOS_DIR, `${path}-${v.width}.webp`)
+    mkdirSync(dirname(file), { recursive: true })
+    writeFileSync(file, v.file)
+  }
+}
+
+/** A new photo's path: `<site>/<venue>/<random id>` (or `<site>/<id>`). */
+export const newPhotoPath = (subject: string) => `${subject}/${randomBytes(4).toString('hex')}`
+
 /** `venue` is the subject: "<site>/<venue>", or "<site>" for a photo of the site itself (the college, the campus). */
 type Job = { venue: string; file: string; alt: string; credit?: string; licence?: string; source?: string; taken?: string; kind: 'venue' | 'menu' }
 
@@ -140,7 +152,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
         continue
       }
       const { variants, color } = await makeVariants(commons?.image ?? readFileSync(job.file))
-      const path = `${job.venue}/${randomBytes(4).toString('hex')}`
+      const path = newPhotoPath(job.venue)
       const largest = variants.at(-1)!
       const sizes = variants.map((v) => `${v.width}×${v.height} ${Math.round(v.file.length / 1024)} KB`).join(', ')
       const credited = credit ? ` · ${credit}, ${job.licence ?? commons?.licence ?? 'no licence given'}` : ''
@@ -149,12 +161,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
         console.log(`(dry) ${path}: ${sizes}, colour ${color}${credited}`)
         continue
       }
-      // A path is never reused (a new photo gets a new id), so the files can be cached for good
-      for (const v of variants) {
-        const file = join(PHOTOS_DIR, `${path}-${v.width}.webp`)
-        mkdirSync(dirname(file), { recursive: true })
-        writeFileSync(file, v.file)
-      }
+      writeVariants(path, variants)
       await db.savePhoto({
         subject: job.venue,
         kind: job.kind,

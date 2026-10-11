@@ -3,10 +3,15 @@
 //        npm run submissions -- transcribe <id> file.txt                    <- the model's (or your) text for it
 //        npm run submissions -- approve <id> [--keep-hours] [--dry]         <- parses the text and saves it; replaces the venue's hours unless --keep-hours
 //        npm run submissions -- approve --trusted [--dry]                   <- every contributor's row waiting (the ingest Action runs this)
-//        npm run submissions -- reject <id> "why"
+//        npm run submissions -- photos [--dry]                              <- every member's photo queued (the photos Action runs this)
+//        npm run submissions -- reject <id> "why"                           <- a published photo is taken down again
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
+//
+// A member's photo of the venue (kind photo) is published as ingest:photo would: its sizes written to public/photos
+// (commit them; the photos Action does) and its row added ahead of the venue's others, credited to the sender's name
+// under CC BY 4.0, the licence the form grants. The submit function queues the ones a model has passed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -15,7 +20,11 @@ import { header, prompt, type Transcribable } from '../../supabase/functions/_sh
 import { connect, type Submission } from './lib/db.ts'
 import { parseHours } from './hours.ts'
 import { parseManual } from './manual.ts'
+import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
 import { parsePrices } from './prices.ts'
+
+/** The licence a member grants by sending a photo of a venue (src/pages/Send.tsx says so). */
+const MEMBER_LICENCE = 'CC BY 4.0'
 
 const { values, positionals } = parseArgs({
   options: { all: { type: 'boolean' }, trusted: { type: 'boolean' }, dry: { type: 'boolean' }, 'keep-hours': { type: 'boolean' }, dir: { type: 'string' } },
@@ -35,8 +44,41 @@ async function one(id: string): Promise<Submission> {
   return hits[0]
 }
 
+/** A member's photo: its sizes into public/photos, then its row, first among the venue's photos so it's the one shown. */
+async function publishPhoto(s: Submission, dry: boolean): Promise<string> {
+  if (!s.photo_path) throw new Error('no photo with it')
+  const { variants, color } = await makeVariants(Buffer.from(await db.submissionPhoto(s.photo_path)))
+  const path = newPhotoPath(s.venue_id)
+  const largest = variants.at(-1)!
+  const sizes = `${variants.map((v) => v.width).join('/')} px, ${s.credit ?? 'no name'}`
+  if (dry) return `${path}: ${sizes}`
+  writeVariants(path, variants)
+  const v = await db.venue(s.venue_id)
+  await db.savePhoto(
+    {
+      subject: s.venue_id,
+      kind: 'venue',
+      path,
+      widths: variants.map((x) => x.width),
+      width: largest.width,
+      height: largest.height,
+      color,
+      alt: s.alt || `${v.name}, ${v.siteName}`,
+      credit: s.credit,
+      licence: MEMBER_LICENCE,
+      source: 'sent in on grub.cam',
+      taken_on: s.created_at.slice(0, 10),
+      approved: true,
+      submission_id: s.id,
+    },
+    { first: true },
+  )
+  return `${path}: ${sizes}, now the venue's photo`
+}
+
 /** Parses a transcription with its kind's parser and saves it. Returns what was saved, for the log line. */
 async function publish(s: Submission, dry: boolean): Promise<string> {
+  if (s.kind === 'photo') return publishPhoto(s, dry)
   if (!s.transcription) throw new Error('no transcription yet (show it, then transcribe)')
   const method = s.contributor_id ? 'contributor' : 'user'
   if (s.kind === 'menu') {
@@ -63,12 +105,12 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
     if (!dry) await db.saveHours(h, { replace, source_kind: 'reported', submission: s.id })
     return `${h.slots.length} slots${replace ? `, replacing ${before.length}` : ', added'}`
   }
-  throw new Error(`a ${s.kind} submission is not published from here: add the photo with ingest:photo, or act on the note`)
+  throw new Error(`a ${s.kind} submission is not published from here: act on the note`)
 }
 
 switch (command) {
   case 'list': {
-    const rows = await db.submissions(values.all ? {} : { status: ['received', 'transcribed', 'needs_review'] })
+    const rows = await db.submissions(values.all ? {} : { status: ['received', 'transcribed', 'needs_review', 'queued'] })
     if (!rows.length) console.log('nothing waiting')
     for (const s of rows) console.log(line(s))
     break
@@ -109,9 +151,13 @@ switch (command) {
     console.log(`✓ ${short(s.id)} transcribed (${text.split('\n').length} lines); approve it when it reads right`)
     break
   }
-  case 'approve': {
-    const rows = values.trusted ? await db.submissions({ status: ['needs_review'], trusted: true }) : [await one(args[0] ?? '')]
-    if (!rows.length) console.log('nothing trusted waiting')
+  case 'approve':
+  case 'photos': {
+    const rows =
+      command === 'photos' ? (await db.submissions({ status: ['queued'] })).filter((s) => s.kind === 'photo')
+      : values.trusted ? await db.submissions({ status: ['needs_review'], trusted: true })
+      : [await one(args[0] ?? '')]
+    if (!rows.length) console.log(command === 'photos' ? 'no photos queued' : 'nothing trusted waiting')
     let failures = 0
     for (const s of rows) {
       try {
@@ -128,11 +174,12 @@ switch (command) {
   }
   case 'reject': {
     const s = await one(args[0] ?? '')
+    const hidden = s.kind === 'photo' ? await db.hideSubmissionPhoto(s.id) : 0
     await db.updateSubmission(s.id, { status: 'rejected', review_note: args[1] ?? null, reviewed_at: new Date().toISOString() })
-    console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}`)
+    console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}`)
     break
   }
   default:
-    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | reject <id> "why"')
+    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | reject <id> "why"')
     process.exitCode = 1
 }
