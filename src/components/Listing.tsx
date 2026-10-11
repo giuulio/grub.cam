@@ -52,7 +52,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
         <VenueThumb venue={v} className="size-24 rounded-xl" />
       ) : (
         // Airbnb's photo: 4:3, 20px corners, its label 14px in; across the top on a phone, as Airbnb's there
-        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[1.25rem] max-sm:aspect-[16/9] sm:w-[42%] sm:max-w-80">
+        <div className="relative aspect-[4/3] w-full shrink-0 self-start overflow-hidden rounded-[1.25rem] max-sm:aspect-[16/9] sm:w-[42%] sm:max-w-80">
           <VenueImage venue={v} sizes="(min-width: 640px) 20rem, 100vw" decorative icon="size-12" className="absolute inset-0 size-full" />
           <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
             {types.map((t) => (
