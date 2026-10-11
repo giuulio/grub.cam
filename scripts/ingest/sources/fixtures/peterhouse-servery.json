@@ -1,0 +1,151 @@
+{
+  "term_name": "Michaelmas 2026",
+  "breakfast": [
+    ["Cereals",["V","G"]],
+    ["Granola",["VV","G"]],
+    ["Skimmed milk",["V","D"]],
+    ["Oat milk",["VV","G"]],
+    ["Selection of jam",["VV"]],
+    ["Fresh fruit salad",["VV"]],
+    ["Natural yogurt",["V","D"]],
+    ["Selection of bread and baked rolls",["VV","G","SO"]],
+    ["Croissants and Danish",["V","G","D","E","SO"]],
+    ["Sausages",["G","SD"]],
+    ["Bacon",["SD"]],
+    ["Hash Browns",["VV"]],
+    ["Baked mushrooms",["VV"]],
+    ["Grilled tomatoes",["VV"]],
+    ["Fried eggs",["V","E"]],
+    ["Baked beans",["VV"]],
+    ["Vegan sausages",["VV","SO"]],
+    ["Scrambled tofu",["VV","SO"]],
+    ["Toast",["VV","G","SO"]]
+  ],
+  "menus_by_date": {
+    "2026-10-16": {
+      "desserts": [
+        ["Chai tea and brown sugar éclair",["V","G","D","E"]],
+        ["Fruit salad",["VV"]],
+        ["Steamed lemon curd sponge Custard",["V","G","D","E"]]
+      ],
+      "dinner": {
+        "mains": [
+          ["Fried tofu Lemon and seaweed batter Tartare sauce",["VV","G","SO"]],
+          ["Spinach, sundried tomato, basil and ricotta quiche",["V","G","D","E"]],
+          ["Slow-cooked BBQ shoulder of pork Crackling",[]]
+        ],
+        "sides": [
+          ["French fries",["VV","G"]],
+          ["Rice",["VV"]],
+          ["Fine beans",["VV"]],
+          ["Roast courgettes",["VV"]]
+        ]
+      },
+      "lunch": {
+        "mains": [
+          ["Vegetable spring roll Sweet & sour vegetables",["VV","G","SO"]],
+          ["Texan beef and bean chilli Tortilla chips",["HM"]],
+          ["Scampi Seaweed and lemon tartar sauce",["P","G","M","E","SD"]]
+        ],
+        "sides": [
+          ["Chips",["VV","G"]],
+          ["Spiced rice",["VV"]],
+          ["Peas and sweetcorn",["VV"]],
+          ["Baked beans",["VV"]]
+        ]
+      },
+      "potato": [
+        ["Jacket potato",["VV"]]
+      ],
+      "salads": [
+        ["Mixed side salad VV  Tomato and fennel VV  Cucumber, sesame, chilli and soy VV S SO  Pesto pasta V G D   Boiled eggs V E   Prawn cocktail P E M  Grated carrot VV  Grated cheese",["V","D"]]
+      ],
+      "soup": ["Cream of parsnip",["V","D","SD"]]
+    },
+    "2026-10-17": {
+      "brunch": {
+        "regular": [
+          ["Mushrooms",["VV"]],
+          ["Herb roasted tomatoes",["VV"]],
+          ["Hash Browns",["VV"]],
+          ["Baked Beans",["VV"]],
+          ["Onion rings",["V","G"]],
+          ["Breaded cheese",["V","G","D"]],
+          ["Sausage",["SD","G"]],
+          ["Smoked Bacon",["SD"]],
+          ["Scrambled tofu",["VV","SO"]],
+          ["Falafel",["VV"]],
+          ["Hummus",["VV"]],
+          ["Fried bread",["VV","G","SO"]],
+          ["Fresh Fruit",["VV"]],
+          ["Fruit Salad",["VV"]],
+          ["Homemade Granola",["VV","G","SD"]],
+          ["Selection of cereals",["VV","G"]],
+          ["Preserves",["VV"]],
+          ["Natural Yogurt",["V","D"]],
+          ["Fruit Yogurt",["V","D"]],
+          ["Selection of sliced bread",["VV","G","SO"]],
+          ["Selection of Breads",["VV","G","S"]],
+          ["Croissants",["V","G","D","E"]],
+          ["Danish Pastries",["V","G","D","N","E"]],
+          ["Belgium waffles",["V","G","E","SO"]]
+        ],
+        "specials": [
+          ["Smashed avocado on sourdough with roasted pepper salsa",["VV","G","SD"]]
+        ]
+      },
+      "desserts": [
+        ["Jaffa cake",["V","G","D","E","SO"]],
+        ["Fruit salad",["VV"]],
+        ["Triple chocolate brownie Cream",["V","G","D","E","SO"]]
+      ],
+      "dinner": {
+        "mains": [
+          ["Mixed bean and chimichurri kofta kebab Siracha mayonnaise, salad, flatbread",["VV","G"]],
+          ["Steak and mushroom pie Beef gravy",["G","E"]],
+          ["Crispy roast chicken leg Caesar dressing",["HM","E","D"]]
+        ],
+        "sides": [
+          ["Chips",["VV","G"]],
+          ["Chive creamed potatoes",["VV","SD"]],
+          ["Peas",["VV"]],
+          ["Roasted root vegetables",["VV"]]
+        ]
+      },
+      "potato": [
+
+      ],
+      "salads": [
+        ["Mixed side salad VV  Tomato and basil VV  Cucumber and herbs VV  Gherkins VV SD  Tuna, sweetcorn and mayonnaise F E M  Sliced peppers",["VV"]]
+      ],
+      "soup": ["",["X"]]
+    },
+    "2026-10-18": {
+      "desserts": [
+        ["Brookie",["V","G","D","E","SO"]],
+        ["Fruit salad",["VV"]],
+        ["Waffle butter pudding Cream",["V","G","D","E","SO"]]
+      ],
+      "dinner": {
+        "mains": [
+          ["Roast seitan smokey ‘pork’ Mustard gravy",["VV","G","SO","M"]],
+          ["Ravioli  Basil pesto, roasted peppers, parmesan",["V","G","D","E"]],
+          ["Roast beef Horseradish sauce",["HM","E","M","SD"]]
+        ],
+        "sides": [
+          ["Roast potatoes",["VV","SD"]],
+          ["Fine beans and broccoli",["VV"]],
+          ["Cauliflower cheese",["V","D","G","M"]],
+          ["Yorkshire pudding V G D E Included with your main",[]]
+        ]
+      },
+      "potato": [
+
+      ],
+      "salads": [
+        ["Mixed side salad VV  Tomato and olives VV  Cucumber, onion and spicy dressing VV  Mixed bean salad  Boiled eggs V E  Potato salad",["VV","SD"]]
+      ],
+      "soup": ["",["X"]]
+    }
+  }
+}
