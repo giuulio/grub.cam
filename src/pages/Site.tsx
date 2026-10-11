@@ -7,7 +7,8 @@ import { SiteBanner } from '../components/VenuePhoto.tsx'
 import { useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, TYPES } from '../lib/filters.ts'
 import { hasLocation } from '../lib/finder.ts'
-import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
+import { siteName, venuePath } from '../lib/site.ts'
+import { siteTitle } from '../lib/seo.ts'
 import { useNow } from '../lib/useNow.ts'
 import { NotFound } from './NotFound.tsx'
 
@@ -46,7 +47,7 @@ export function SitePage() {
 
   return (
     <>
-      <title>{`${siteName(site)}: hours and menus · ${SITE_NAME}`}</title>
+      <title>{siteTitle(site, mine)}</title>
       <SiteBanner site={site} />
       <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-16">
         <div className="min-w-0">

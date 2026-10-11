@@ -16,7 +16,8 @@ import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
-import { sendPath, SITE_NAME, siteName, venuePath } from '../lib/site.ts'
+import { sendPath, siteName, venuePath } from '../lib/site.ts'
+import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
@@ -45,7 +46,6 @@ export function VenuePage() {
 
   const venue = venues.find((v) => v.site.slug === params.site && v.slug === params.venue)
   if (!venue) return <NotFound />
-  const hasMenu = venue.menu.some((d) => d.items.length) || !!venue.prices?.length
   // The site's venues, for the map: this one in the middle, the others as context
   const neighbours = applyFilters(venues.filter((v) => v.site.slug === venue.site.slug), { ...DEFAULT_FILTERS, date: now.date, exactDate: true }, now)
   const tail = (
@@ -57,7 +57,7 @@ export function VenuePage() {
 
   return (
     <>
-      <title>{`${venue.name}, ${siteName(venue.site)}: ${hasMenu ? 'menu and hours' : 'opening hours'} · ${SITE_NAME}`}</title>
+      <title>{venueTitle(venue)}</title>
       <VenueBanner venue={venue} />
       <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-16">
         {/* The page scrolls past the name, the facts and the sections, while the rail stays beside them; on a phone,

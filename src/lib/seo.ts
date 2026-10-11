@@ -7,10 +7,10 @@ import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
-import { venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
+import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
-/** `image`: a photo for link previews (og:image) */
-export type Page = { path: string; description: string; jsonLd?: object; image?: string }
+/** `image`: a photo for link previews (og:image); `jsonLd`: one or more schema.org things */
+export type Page = { path: string; description: string; jsonLd?: object | object[]; image?: string }
 
 const TYPE_SCHEMA: Record<VenueType, string> = { hall: 'FoodEstablishment', cafe: 'CafeOrCoffeeShop', bar: 'BarOrPub' }
 const DAY_SCHEMA: Record<Day, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
@@ -27,6 +27,50 @@ const MENU_DAYS_IN_JSONLD = 3
 const abs = (path: string) => SITE_URL + path
 const siteType = (s: Site) => (s.kind === 'college' ? 'CollegeOrUniversity' : 'Place')
 const day = (iso: string) => formatISODate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
+const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
+const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
+const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items.some((i) => i.price_gbp != null))
+/** "a, b and c" */
+const list = (parts: string[]) => parts.join(', ').replace(/, ([^,]*)$/, ' and $1')
+/** "Jesus College, Cambridge"; a University site is already in Cambridge by name, so it's placed by the University */
+const placed = (s: Site) => (s.kind === 'college' ? `${siteName(s)}, Cambridge` : `${siteName(s)}, University of Cambridge`)
+
+// Page titles: what people search for first (the place, "menu today", "opening hours", "prices", "formal hall",
+// "Cambridge"), the site's name last. The pages set them; the prerenderer lifts them into <head>.
+
+/** The front page and its tabs. */
+export const TAB_TITLES: Record<string, string> = {
+  '/': `Cambridge college menus, cafés and bars today · ${SITE_NAME}`,
+  '/dining': `Cambridge college dining hall menus today and meal times · ${SITE_NAME}`,
+  '/cafes': `Cambridge college and University cafés: opening hours and prices · ${SITE_NAME}`,
+  '/bars': `Cambridge college bars: opening hours and drink prices · ${SITE_NAME}`,
+  '/formal': `Cambridge college formal hall: nights, prices and dress code · ${SITE_NAME}`,
+}
+
+/** "Jesus College, Cambridge: dining hall menus, café and bar opening hours · grub.cam", from what the site has. */
+export function siteTitle(s: Site, venues: Venue[]): string {
+  const kinds = new Set(venues.flatMap(venueTypes))
+  const parts = [kinds.has('hall') && 'dining hall menus', kinds.has('cafe') && 'café', kinds.has('bar') && 'bar'].filter((x): x is string => !!x)
+  return `${placed(s)}: ${parts.length ? `${list(parts)} ` : ''}opening hours · ${SITE_NAME}`
+}
+
+/** "Caff, Jesus College, Cambridge: menu today and opening hours · grub.cam", from what the venue is and has. */
+export function venueTitle(v: Venue): string {
+  const what =
+    v.type === 'hall' && isFormalOnly(v) ? 'formal hall nights, price and dress code'
+    : hasMenu(v) ? `menu today, opening hours${hasPrices(v) ? ' and prices' : ''}`
+    : `${TYPE_LABEL[v.type].toLowerCase()} opening hours${hasPrices(v) ? ' and prices' : ''}`
+  return `${v.name}, ${placed(v.site)}: ${what} · ${SITE_NAME}`
+}
+
+/** Home › Jesus College › Caff, for a rich result's breadcrumb. */
+function breadcrumbs(trail: [name: string, path: string][]): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [['Home', '/'] as [string, string], ...trail].map(([name, path], i) => ({ '@type': 'ListItem', position: i + 1, name, item: abs(path) })),
+  }
+}
 
 /** "Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40" (the meal only when there's more than one). */
 export function hoursText(slots: Slot[]): string {
@@ -41,9 +85,10 @@ const clip = (s: string, n = 160) => (s.length <= n ? s : `${s.slice(0, n - 1).r
 
 function venueDescription(v: Venue, date: string): string {
   const hours = hoursText(periodSlots(v.slots, date))
-  const menu = v.menu.some((d) => d.items.length) ? ' Menu dish by dish.' : v.prices?.length ? ' Menu with prices.' : ''
-  const types = venueTypes(v).map((t) => TYPE_LABEL[t].toLowerCase()).join(' and ')
-  return clip(`${v.name}, ${siteName(v.site)}, Cambridge: ${types}. ${hours ? `Open ${hours}.` : 'Hours not published.'}${menu}`)
+  const menu = hasMenu(v) ? ` Today's menu dish by dish${hasPrices(v) ? ', with prices' : ''}.` : v.prices?.length ? ' Menu and prices as posted.' : ''
+  const kinds = venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase()))
+  const formal = v.type === 'hall' && isFormalOnly(v)
+  return clip(`${v.name}, ${placed(v.site)}: ${formal ? 'formal hall' : list(kinds)}. ${hours ? `${formal ? 'Nights' : 'Open'} ${hours}.` : 'Opening hours not published yet.'}${menu}`)
 }
 
 function venueJsonLd(v: Venue, date: string): object {
@@ -57,6 +102,7 @@ function venueJsonLd(v: Venue, date: string): object {
     sameAs: v.url ?? undefined,
     containedInPlace: { '@type': siteType(v.site), name: siteName(v.site), url: abs(sitePath(v.site)) },
     address: { '@type': 'PostalAddress', streetAddress: [v.where, siteName(v.site)].filter(Boolean).join(', '), addressLocality: 'Cambridge', addressCountry: 'GB' },
+    geo: v.latitude != null && v.longitude != null ? { '@type': 'GeoCoordinates', latitude: v.latitude, longitude: v.longitude } : undefined,
     // Members' rating, once there are 5 reviews (the same rule as the page)
     aggregateRating: v.rating ? { '@type': 'AggregateRating', ratingValue: v.rating.average.toFixed(1), reviewCount: v.rating.reviews, bestRating: 5, worstRating: 1 } : undefined,
     openingHoursSpecification: periodSlots(v.slots, date).map((s) => ({ '@type': 'OpeningHoursSpecification', name: MEAL_LABEL[s.meal], dayOfWeek: s.days.map((d) => DAY_SCHEMA[d]), opens: s.start, closes: s.end })),
@@ -94,6 +140,7 @@ function dietUrls(tags: DietTag[]): string[] | undefined {
 
 /** Every page worth indexing, with its description and structured data. Titles come from the pages themselves. */
 export function pages(data: Data, date: string): Page[] {
+  const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/') }
   const home: Page = {
     path: '/',
     description: SITE_DESCRIPTION,
@@ -103,17 +150,34 @@ export function pages(data: Data, date: string): Page[] {
       name: SITE_NAME,
       url: abs('/'),
       description: SITE_DESCRIPTION,
+      inLanguage: 'en-GB',
+      publisher: organization,
       potentialAction: { '@type': 'SearchAction', target: `${abs('/')}?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
     },
   }
-  // The front page's other tabs: Dining, Cafés, Bars, Formal hall
-  const TAB_DESCRIPTIONS: Record<string, string> = {
-    '/dining': "Every Cambridge college and University dining hall and canteen: today's menus dish by dish, meal times, and what's open now.",
-    '/cafes': "Every Cambridge college and University café: opening hours, posted prices, and what's open now.",
-    '/bars': 'Every Cambridge college and University bar: opening hours, posted prices, and what’s open now.',
-    '/formal': 'Formal hall at every Cambridge college that holds it: when, what it costs, dress and how to book.',
+  // The front page's other tabs: Dining, Cafés, Bars, Formal hall, each listing its venues for search engines
+  const TABS: Record<string, { description: string; of: (v: Venue) => boolean }> = {
+    '/dining': { description: "Every Cambridge college dining hall and University canteen: today's menus dish by dish, with prices, meal times, and what's open now.", of: (v) => venueTypes(v).includes('hall') && !isFormalOnly(v) },
+    '/cafes': { description: "Every Cambridge college and University café: opening hours, coffee and food prices as posted, and what's open now.", of: (v) => venueTypes(v).includes('cafe') },
+    '/bars': { description: "Every Cambridge college bar: opening hours, pint and drink prices as posted, and what's open now.", of: (v) => venueTypes(v).includes('bar') },
+    '/formal': { description: 'Formal hall at every Cambridge college that holds it: which nights, what it costs, dress code, guests and how to book.', of: holdsFormal },
   }
-  const tabs = SCOPES.filter((s) => s.path !== '/').map((s): Page => ({ path: s.path, description: TAB_DESCRIPTIONS[s.path] }))
+  const tabs = SCOPES.filter((s) => s.path !== '/').map((s): Page => {
+    const { description, of } = TABS[s.path]
+    const mine = data.venues.filter(of)
+    return {
+      path: s.path,
+      description,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: TAB_TITLES[s.path].replace(` · ${SITE_NAME}`, ''),
+        url: abs(s.path),
+        numberOfItems: mine.length,
+        itemListElement: mine.map((v, i) => ({ '@type': 'ListItem', position: i + 1, name: `${v.name}, ${siteName(v.site)}`, url: abs(venuePath(v)) })),
+      },
+    }
+  })
   const about: Page = { path: '/about', description: 'What grub.cam is, where its opening hours and menus come from, and how to help build it.' }
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for Cambridge's college and University venues (menus this week, price lists, hours, photos), and every venue still missing something, with the way to send it in." }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
@@ -121,37 +185,65 @@ export function pages(data: Data, date: string): Page[] {
   const sendPage: Page = { path: '/send', description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
+    // "Caff (dining hall), Hall (formal hall), The Roost (bar)"
+    const named = mine.map((v) => `${v.name} (${v.type === 'hall' && isFormalOnly(v) ? 'formal hall' : list(venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase())))})`)
     return {
       path: sitePath(s),
-      description: clip(`${siteName(s)}, Cambridge: ${mine.map((v) => v.name).join(', ')}. Opening hours and menus.`),
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': siteType(s),
-        name: siteName(s),
-        url: abs(sitePath(s)),
-        containsPlace: mine.map((v) => ({ '@type': TYPE_SCHEMA[v.type], name: v.name, url: abs(venuePath(v)) })),
-        ...(imageOf(sitePhoto(s)) ? { image: imageOf(sitePhoto(s)) } : {}),
-      },
+      description: clip(`Where to eat and drink at ${placed(s)}: ${named.join(', ')}. Today's menus, opening hours and prices.`),
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': siteType(s),
+          name: siteName(s),
+          url: abs(sitePath(s)),
+          containsPlace: mine.map((v) => ({ '@type': TYPE_SCHEMA[v.type], name: v.name, url: abs(venuePath(v)) })),
+          ...(imageOf(sitePhoto(s)) ? { image: imageOf(sitePhoto(s)) } : {}),
+        },
+        breadcrumbs([[siteName(s), sitePath(s)]]),
+      ],
       image: imageOf(sitePhoto(s)),
     }
   })
-  const venues = data.venues.map((v): Page => ({ path: venuePath(v), description: venueDescription(v, date), jsonLd: venueJsonLd(v, date), image: venueImage(v) }))
+  const venues = data.venues.map((v): Page => ({
+    path: venuePath(v),
+    description: venueDescription(v, date),
+    jsonLd: [venueJsonLd(v, date), breadcrumbs([[siteName(v.site), sitePath(v.site)], [v.name, venuePath(v)]])],
+    image: venueImage(v),
+  }))
   return [home, ...tabs, about, coverage, terms, credits, sendPage, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+const unescapeText = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, '&')
+
+/**
+ * What React's renderToString hoists to the front of a page: its <title>, and a <link rel="preload"> for an image
+ * fetched with high priority (a page's banner photo), in either order. They belong in <head>, not in the body: left
+ * there, the page's <title> is empty.
+ */
+const HOISTED = /^(?:<title>.*?<\/title>|<(?:link|meta)\b[^>]*\/?>)+/s
+
+/** Splits a rendered page into its title (as text), the other hoisted tags (for the <head>) and the body. */
+export function splitHoisted(out: string): { title: string; head: string; html: string } {
+  const lead = out.match(HOISTED)?.[0] ?? ''
+  const title = lead.match(/<title>(.*?)<\/title>/s)
+  return { title: title ? unescapeText(title[1]) : '', head: lead.replace(/<title>.*?<\/title>/s, ''), html: out.slice(lead.length) }
+}
 
 /** The <head> tags for one prerendered page (besides <title>). */
 export function headTags(page: Page, title: string): string {
   const url = abs(page.path)
   const tags = [
     `<meta name="description" content="${escapeAttr(page.description)}" />`,
+    // Large image previews in results (a page's photo), otherwise Google's defaults
+    '<meta name="robots" content="max-image-preview:large" />',
     `<link rel="canonical" href="${escapeAttr(url)}" />`,
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${escapeAttr(page.description)}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
+    `<meta name="twitter:card" content="${page.image ? 'summary_large_image' : 'summary'}" />`,
   ]
-  if (page.image) tags.push(`<meta property="og:image" content="${escapeAttr(page.image)}" />`, '<meta name="twitter:card" content="summary_large_image" />')
+  if (page.image) tags.push(`<meta property="og:image" content="${escapeAttr(page.image)}" />`)
   // "<" escaped so a dish name can't close the script tag
   if (page.jsonLd) tags.push(`<script type="application/ld+json">${JSON.stringify(page.jsonLd).replace(/</g, '\\u003c')}</script>`)
   return tags.join('\n    ')

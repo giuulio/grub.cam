@@ -13,7 +13,7 @@ import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filter
 import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, scopeInfo, type Scope } from '../lib/finder.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
-import { SITE_NAME } from '../lib/site.ts'
+import { TAB_TITLES } from '../lib/seo.ts'
 import { addDaysISO, formatISODate, relativeDay } from '../lib/time/clock.ts'
 import { isFormalOnly, type Venue } from '../lib/types.ts'
 import { useMedia } from '../lib/useMedia.ts'
@@ -217,7 +217,7 @@ function Finder({ scope }: { scope: Scope }) {
 
   return (
     <>
-      <title>{scope === 'all' ? `${SITE_NAME}: Cambridge college and University menus` : `${info.heading} · ${SITE_NAME}`}</title>
+      <title>{TAB_TITLES[info.path]}</title>
 
       {/* As Airbnb's: the heading and the list down the left, scrolling on their own, and the map beside them, the
           filters over its top; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
