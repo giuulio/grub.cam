@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { hasLocation } from '../lib/finder.ts'
 import type { Ranked } from '../lib/filters.ts'
-import { CAMBRIDGE, findMe, fitPadding, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH, zoomFor } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import { MapActions, MapPin, type MapProps } from './MapParts.tsx'
 
@@ -10,8 +10,13 @@ declare global {
   interface Window { grubMapKitLoaded?: () => void }
 }
 
-/** Apple's own food and drink places, left off so they don't compete with the venues' pins. */
-const HIDDEN_PLACES = ['Bakery', 'Brewery', 'Cafe', 'FoodMarket', 'Nightlife', 'Restaurant', 'Winery'] as const
+/**
+ * Apple's own places kept on the map: landmarks to find your way by (parks, museums, libraries, stations, the
+ * hospital). The rest would compete with the venues' pins and names: its restaurants, cafés, bars, shops and hotels,
+ * and its colleges, whose labels would sit under the venues' (which name the college where the venue's own name
+ * doesn't).
+ */
+const SHOWN_PLACES = ['Park', 'Museum', 'Library', 'PublicTransport', 'Hospital'] as const
 
 // MapKit JS loads once, from Apple, the first time a map shows; a refused token or a failed load is reported to every
 // map showing, which then falls back to OpenFreeMap's.
@@ -58,6 +63,9 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
   const [ready, setReady] = useState(false)
+  // MapKit only puts annotations on the page once it has drawn its detailed map, seconds after its first sketch of it:
+  // the map stays hidden until the pins are there, so the two show together
+  const [drawn, setDrawn] = useState(false)
   const [locating, setLocating] = useState(false)
   const [locationNote, setLocationNote] = useState('')
   const [anchors, setAnchors] = useState<Map<string, HTMLDivElement>>(() => new Map())
@@ -79,7 +87,8 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
       if (disposed || !el) return
       const scheme = () => (mapTheme() === 'dark' ? mapkit.Map.ColorSchemes.Dark : mapkit.Map.ColorSchemes.Light)
       const map = new mapkit.Map(el, {
-        mapType: mapkit.Map.MapTypes.MutedStandard,
+        // Apple's own style, as maps.apple.com
+        mapType: mapkit.Map.MapTypes.Standard,
         colorScheme: scheme(),
         showsCompass: mapkit.FeatureVisibility.Hidden,
         showsScale: mapkit.FeatureVisibility.Hidden,
@@ -88,7 +97,7 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
         // Pinch on a touch screen; the buttons elsewhere
         showsZoomControl: !window.matchMedia('(pointer: coarse)').matches,
         isRotationEnabled: false,
-        pointOfInterestFilter: mapkit.PointOfInterestFilter.excluding(HIDDEN_PLACES.map((c) => mapkit.PointOfInterestCategory[c])),
+        pointOfInterestFilter: mapkit.PointOfInterestFilter.including(SHOWN_PLACES.map((c) => mapkit.PointOfInterestCategory[c])),
         region: regionAt({ latitude: CAMBRIDGE[1], longitude: CAMBRIDGE[0] }, 13, el),
       })
       // Never wander, or zoom out, far past REACH
@@ -148,15 +157,36 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
         e.map.addAnnotation(annotation)
         return { el, annotation }
       })()
-      // MapKit hangs an element from its bottom centre; a pin's 44px target is centred on its point, as on OpenFreeMap's
+      // MapKit sets an element's corner at the coordinate less `anchorOffset` (its size is nothing: see MapPin), so this
+      // moves the pin to its place beside the others in its building
       const [x, y] = offsets.get(r.venue.id) ?? [0, 0]
-      pin.annotation.anchorOffset = new DOMPoint(x, y + 22)
+      pin.annotation.anchorOffset = new DOMPoint(-x, -y)
       next.set(r.venue.id, pin)
     }
     for (const [id, pin] of e.pins) if (!next.has(id)) e.map.removeAnnotation(pin.annotation)
     e.pins = next
     setAnchors(new Map([...next].map(([id, pin]) => [id, pin.el])))
   }, [ready, key])
+
+  // Shown once the first pin is on the page (or, with none to show or MapKit slow, after a few seconds regardless)
+  useEffect(() => {
+    if (drawn || !ready || !anchors.size) return
+    let frame = 0
+    const giveUp = window.setTimeout(() => setDrawn(true), 6000)
+    const look = () => {
+      // On the page and laid out (MapKit attaches them a moment before it shows them)
+      if ([...anchors.values()].some((el) => el.isConnected && (el.querySelector('.venue-pin')?.getBoundingClientRect().width ?? 0) > 0)) setDrawn(true)
+      else frame = requestAnimationFrame(look)
+    }
+    look()
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(giveUp)
+    }
+  }, [ready, anchors, drawn])
+
+  // With no pins to wait for, as soon as the map is made
+  const shown = drawn || (ready && !mapped.length)
 
   // Fit the venues (central Cambridge until the list is narrowed), or centre on the one this page is about
   useEffect(() => {
@@ -178,6 +208,38 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
   const lit = (id: string) => id === selected || !!highlight?.includes(id)
   const litKey = highlight?.join('|')
   useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected || litKey?.split('|').includes(id) ? '1' : '' }) }, [anchors, selected, litKey])
+
+  // Pins' names, as Apple's places have: those that fit once zoomed in, the picked one's always
+  const name = useRef(() => {})
+  useEffect(() => {
+    name.current = () => {
+      const e = engine.current
+      const el = container.current
+      if (!e || !el) return
+      const box = el.getBoundingClientRect()
+      // Where each pin is drawn: its point, from the map's centre (MapKit says the region has changed before it has
+      // moved the pins on the page, so the page can't be read yet), plus its place beside the others in its building
+      const centre = e.map.convertCoordinateToPointOnPage(e.map.center)
+      const at = (id: string) => {
+        const pin = e.pins.get(id)
+        if (!pin) return undefined
+        const p = e.map.convertCoordinateToPointOnPage(pin.annotation.coordinate)
+        const [x, y] = offsets.get(id) ?? [0, 0]
+        return { x: p.x - centre.x + box.width / 2 + x, y: p.y - centre.y + box.height / 2 + y }
+      }
+      const order = [...(selected ? [selected] : []), ...(highlight ?? []), ...results.map((r) => r.venue.id)]
+      labelPins(anchors, at, order, zoomFor(el.clientWidth, e.map.region.span.longitudeDelta), selected, box)
+    }
+  })
+  // Placed again whenever the map stops moving, and when the pins or the picked one change
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e) return
+    const moved = () => name.current()
+    e.map.addEventListener('region-change-end', moved)
+    return () => e.map.removeEventListener('region-change-end', moved)
+  }, [ready])
+  useEffect(() => { requestAnimationFrame(() => name.current()) }, [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
   // middle of what the panel leaves free.
@@ -227,12 +289,12 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
 
   return (
     <>
-      <div ref={container} className="venue-map" aria-label="Map of food and drink in Cambridge" />
+      <div ref={container} className={`venue-map transition-opacity duration-300 ${shown ? '' : 'opacity-0'}`} aria-label="Map of food and drink in Cambridge" />
       {mapped.map((r) => {
         const el = anchors.get(r.venue.id)
         return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
       })}
-      {!ready && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
+      {!shown && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
       <MapActions controls={controls} ready={ready} locating={locating} canShowAll={mapped.length > 0} onLocate={locate} onShowAll={showAll} note={locationNote} />
     </>
   )
@@ -250,7 +312,8 @@ function showHere(e: Engine, p: Point, el: HTMLElement) {
   const dot = document.createElement('span')
   dot.className = 'map-user-location'
   dot.setAttribute('aria-label', 'Your location')
-  e.user = new mapkit.Annotation(coordinate(p), () => dot, { calloutEnabled: false, enabled: false, anchorOffset: new DOMPoint(0, 9) })
+  // An 18px dot, hung by MapKit from its bottom centre: raised half its height to centre it
+  e.user = new mapkit.Annotation(coordinate(p), () => dot, { calloutEnabled: false, enabled: false, anchorOffset: new DOMPoint(0, -9) })
   e.map.addAnnotation(e.user)
   e.map.setRegionAnimated(regionAt(p, 15, el), true)
 }

@@ -344,7 +344,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: 12px; pointer-events: none; }
   .finder-filters > * { pointer-events: auto; }
   .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder-note { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; margin: 64px 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 24px); z-index: 10; margin: 64px 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder-side {
     grid-column: 1;
     grid-row: 1;
@@ -371,6 +371,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .rail-map .venue-map { height: auto; aspect-ratio: 1; max-height: 22rem; }
 
 .venue-pin-target {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -385,24 +386,68 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 /* Side by side (one building), pins sit 30px apart: targets that wide never overlap. */
 .venue-pin-target.is-shared { width: 30px; }
 
-/* A disc per venue, no icon, in its type's colour, or split diagonally between its two (its fill is set inline,
-   pinFill() in VenueMap.tsx); open or not, the same. A thin darker rim and a soft shadow lift it off either basemap,
-   without a halo. */
+/* A pin hangs from a point of no size, its centre on it (see MapPin) */
+.venue-pin-anchor, .venue-pin-origin { display: block; width: 0; height: 0; }
+.venue-pin-origin { position: relative; }
+.venue-pin-origin > .venue-pin-target { position: absolute; top: -22px; left: -22px; }
+.venue-pin-origin > .venue-pin-target.is-shared { left: -15px; }
+
+/* As Apple marks its own places: a disc in its type's colour, or split diagonally between its two (its fill is set
+   inline, pinFill() in lib/mapView.ts), with the type's glyph, ringed in the map's paper with a soft shadow; open or
+   not, the same. */
 .venue-pin {
-  display: block;
-  width: 18px;
-  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px #0000004d, 0 1px 3px #00000059;
+  box-shadow: 0 0 0 1.5px var(--pin-ring, #fff), 0 1px 4px #00000047;
   transition: transform 120ms ease-out;
 }
+.venue-map[data-map-theme='dark'] .venue-pin { --pin-ring: #2b3a40; }
+.venue-pin-glyph { width: 14px; height: 14px; color: var(--pin-ink, #fff); }
 
 /* Selected: larger, ringed in Cambridge Dark Blue (Cambridge Blue on the dark basemap). */
 .venue-pin.is-selected {
-  transform: scale(1.45);
-  box-shadow: inset 0 0 0 1px #0000004d, 0 0 0 2px #133844, 0 2px 6px #00000066;
+  transform: scale(1.35);
+  box-shadow: 0 0 0 1.5px var(--pin-ring, #fff), 0 0 0 3px #133844, 0 2px 6px #00000066;
 }
-.venue-map[data-map-theme='dark'] .venue-pin.is-selected { box-shadow: inset 0 0 0 1px #0000004d, 0 0 0 2px #8ee8d8, 0 2px 6px #00000066; }
+.venue-map[data-map-theme='dark'] .venue-pin.is-selected { box-shadow: 0 0 0 1.5px var(--pin-ring), 0 0 0 3px #8ee8d8, 0 2px 6px #00000066; }
+
+/* Its name, as Apple's labels: bold, in a darker shade of its type's colour, haloed in the map's paper so it reads over
+   streets, a long one over two lines; shown, on the side the map placed it, only where it overlaps nothing
+   (placeLabels()). */
+.venue-pin-label {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 16px);
+  transform: translateY(-50%);
+  visibility: hidden;
+  width: max-content;
+  max-width: 9.5rem;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 1px 2px;
+  color: var(--pin-label);
+  text-shadow: 0 0 2px var(--pin-halo), 0 0 2px var(--pin-halo), 0 0 3px var(--pin-halo), 0 0 4px var(--pin-halo);
+}
+[data-label] .venue-pin-label { visibility: visible; }
+[data-label='left'] .venue-pin-label { left: auto; right: calc(50% + 16px); text-align: right; }
+.venue-pin-target { --pin-halo: #fff; }
+.venue-pin-target[data-type='hall'] { --pin-label: #b8231b; }
+.venue-pin-target[data-type='cafe'] { --pin-label: #0a6f6b; }
+.venue-pin-target[data-type='bar'] { --pin-label: #911449; }
+.venue-map[data-map-theme='dark'] .venue-pin-target { --pin-halo: #1b2a30; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='hall'] { --pin-label: #ff8f86; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='cafe'] { --pin-label: #5fe0d6; }
+.venue-map[data-map-theme='dark'] .venue-pin-target[data-type='bar'] { --pin-label: #f394bd; }
 
 @media (prefers-reduced-motion: reduce) {
   .venue-pin { transition: none; }

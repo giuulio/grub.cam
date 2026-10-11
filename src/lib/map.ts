@@ -1,16 +1,17 @@
 /**
- * Pixel offsets that set venues sharing a coordinate (several venues in one building) side by side around it: one row
- * of up to three, a centred grid beyond that. Only those venues are listed; every other one stays exactly on its point,
- * and nothing is ever merged.
+ * Pixel offsets that set venues sharing a point (several venues in one building, or points a few metres apart, `near`,
+ * that would draw on top of each other) side by side around it: one row of up to three, a centred grid beyond that.
+ * Only those venues are listed; every other one stays exactly on its point, and nothing is ever merged.
  */
-export function sideBySide<T extends { id: string; latitude: number; longitude: number }>(points: T[], spacing = 30): Map<string, [number, number]> {
-  const groups = new Map<string, T[]>()
+export function sideBySide<T extends { id: string; latitude: number; longitude: number }>(points: T[], spacing = 30, near = 8): Map<string, [number, number]> {
+  const groups: T[][] = []
   for (const p of points) {
-    const key = `${p.latitude},${p.longitude}`
-    groups.set(key, [...(groups.get(key) ?? []), p])
+    const group = groups.find((g) => metresBetween(g[0], p) <= near)
+    if (group) group.push(p)
+    else groups.push([p])
   }
   const offsets = new Map<string, [number, number]>()
-  for (const group of groups.values()) {
+  for (const group of groups) {
     if (group.length < 2) continue
     const cols = group.length <= 3 ? group.length : Math.ceil(Math.sqrt(group.length))
     const rows = Math.ceil(group.length / cols)

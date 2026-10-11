@@ -29,7 +29,8 @@ export function Home({ scope }: { scope: Scope }) {
   const [params] = useSearchParams()
   // Links from before the tabs: Explore's ?type= and a picked ?venue=
   if (scope === 'all' && ['type', 'venue', 'place'].some((k) => params.has(k))) return <Navigate to={legacyPath(params)} replace />
-  return <Finder key={scope} scope={scope} />
+  // One finder for every tab, so its map (and where it's looking) stays as the tabs change
+  return <Finder scope={scope} />
 }
 
 /** /explore, from before the tabs, goes to the tab its filters name. */
@@ -58,13 +59,24 @@ function Finder({ scope }: { scope: Scope }) {
   const [here, setHere] = useState<Point>()
   const [locating, setLocating] = useState(false)
   const [note, setNote] = useState('')
-  // How many rows show: a page at a time, back to one whenever the filters change
+  // How many rows show: a page at a time, back to one whenever the tab or the filters change
   const [shown, setShown] = useState(PAGE)
-  const [shownFor, setShownFor] = useState(params.toString())
-  if (params.toString() !== shownFor) {
-    setShownFor(params.toString())
+  const view = `${scope}?${params}`
+  const [shownFor, setShownFor] = useState(view)
+  if (view !== shownFor) {
+    setShownFor(view)
     setShown(PAGE)
   }
+  // Another tab is another list: nothing picked or pointed at in it yet (where you are is kept)
+  const [tab, setTab] = useState(scope)
+  if (tab !== scope) {
+    setTab(scope)
+    setSelected(undefined)
+    setHover(undefined)
+    setNote('')
+  }
+  const side = useRef<HTMLDivElement>(null)
+  useEffect(() => { side.current?.scrollTo({ top: 0 }) }, [scope])
 
   const info = scopeInfo(scope)
   const f = readFilters(params, scope, now.date, sites, menuFrom, menuTo)
@@ -111,7 +123,12 @@ function Finder({ scope }: { scope: Scope }) {
       },
       (err) => {
         setLocating(false)
-        setNote(err.code === 1 ? 'Location access was denied.' : 'Couldn’t find your location. Try again.')
+        // Say what to check: the site's permission, the computer's location services, or just time
+        setNote(
+          err.code === 1 ? 'Location is blocked for this site. Allow it in your browser’s settings for grub.cam, then try again.'
+          : err.code === 2 ? 'Your device couldn’t tell where you are. Check Location Services is on for your browser (on a Mac: System Settings › Privacy & Security › Location Services).'
+          : 'Finding you took too long. Try again.',
+        )
       },
       { timeout: 10000, maximumAge: 60000 },
     )
@@ -223,7 +240,7 @@ function Finder({ scope }: { scope: Scope }) {
           )}
         </div>
         {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
-        <div className="finder-side">
+        <div ref={side} className="finder-side">
           {/* What the site is for this tab, at the top of its list (it scrolls away with it); over a phone's map, read
               out but not shown, so the map has the screen */}
           <h1 className={`finder-title title text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
@@ -275,13 +292,8 @@ function Finder({ scope }: { scope: Scope }) {
             )}
             <div ref={sheet} className="finder-sheet">
               {!split && !listView && ranked.length > 0 && toggle}
-              {picked && (split ? (
-                <ul className="pointer-events-auto w-full max-w-md">
-                  <VenueRow {...rowProps(picked)} card />
-                </ul>
-              ) : (
-                <MapCards rows={ranked} selected={picked.venue.id} onSelect={pick} card={rowProps} />
-              ))}
+              {/* Wider, the list beside the map marks the picked venue's row and brings it into view: no card */}
+              {picked && !split && <MapCards rows={ranked} selected={picked.venue.id} onSelect={pick} card={rowProps} />}
             </div>
           </div>
         )}

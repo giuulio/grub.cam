@@ -89,5 +89,7 @@ describe('verified map points', () => {
     // Four or more: a centred grid, the last row centred too
     expect([...sideBySide(['a', 'b', 'c', 'd', 'e'].map((id) => at(id, 52.2)))].map(([, o]) => o)).toEqual([[-30, -15], [0, -15], [30, -15], [-15, 15], [15, 15]])
     expect(sideBySide([]).size).toBe(0)
+    // A metre apart (two entries for one building) is the same point
+    expect([...sideBySide([at('canteen', 52.21032), at('coffee', 52.21033)])]).toEqual([['canteen', [-15, 0]], ['coffee', [15, 0]]])
   })
 })

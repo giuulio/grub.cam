@@ -1,6 +1,6 @@
 // Which reicon (reicon.dev) stands for what, so every page uses the same one: a cup and saucer for cafés (a mug reads
 // as beer), a cocktail glass for bars, a bow tie for formal hall (reicon has none: drawn here in its 24px, 1.5 stroke).
-// The map shows no icons: its pins are the type's colour (see index.css).
+// The map's pins carry the type's glyph on its colour (MapPin, index.css).
 import { createIcon, ForkKnife, Home, HotDrink, Wineglass2, type IconComponent } from 'reicon-react'
 import type { Scope } from './finder.ts'
 import type { VenueType } from './types.ts'

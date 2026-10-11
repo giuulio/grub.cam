@@ -4,7 +4,7 @@ import type * as MapLibre from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/finder.ts'
-import { CAMBRIDGE, findMe, fitPadding, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import { AppleMap } from './AppleMap.tsx'
@@ -170,6 +170,33 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
   const lit = (id: string) => id === selected || !!highlight?.includes(id)
   const litKey = highlight?.join('|')
   useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected || litKey?.split('|').includes(id) ? '1' : '' }) }, [anchors, selected, litKey])
+
+  // Pins' names, as Apple's places have: those that fit once zoomed in, the picked one's always
+  const name = useRef(() => {})
+  useEffect(() => {
+    name.current = () => {
+      const e = engine.current
+      const el = container.current
+      if (!e || !el) return
+      const at = (id: string) => {
+        const r = mapped.find((m) => m.venue.id === id)
+        if (!r) return undefined
+        const p = e.map.project(position(r))
+        const [x, y] = offsets.get(id) ?? [0, 0]
+        return { x: p.x + x, y: p.y + y }
+      }
+      const order = [...(selected ? [selected] : []), ...(highlight ?? []), ...results.map((r) => r.venue.id)]
+      labelPins(anchors, at, order, e.map.getZoom(), selected, { width: el.clientWidth, height: el.clientHeight })
+    }
+  })
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e) return
+    const moved = () => name.current()
+    e.map.on('moveend', moved)
+    return () => { e.map.off('moveend', moved) }
+  }, [ready])
+  useEffect(() => { requestAnimationFrame(() => name.current()) }, [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
   // middle of what the panel leaves free.
