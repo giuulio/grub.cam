@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
 import { Container } from './components/Container.tsx'
@@ -17,13 +17,19 @@ import { Send } from './pages/Send.tsx'
 
 function Layout() {
   const data = useData()
+  const { pathname } = useLocation()
+  // The front page's tabs use the whole window, the list beside the map; every other page reads in a column as wide
+  // as Luma's or an Airbnb listing's, under the same header
+  const full = SCOPES.some((s) => s.path === pathname)
   useScrollMemory()
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       {/* A list beside a map (.finder) runs from the header to the footer, and sets its own space */}
       <main className="flex-1 pt-10 sm:pt-12 has-[.finder]:pt-0">
-        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
+        <Container>
+          <div className={full ? '' : 'mx-auto max-w-[76rem]'}>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</div>
+        </Container>
       </main>
       <Footer />
     </div>

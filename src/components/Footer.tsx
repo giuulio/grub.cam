@@ -5,11 +5,10 @@ import { useData } from '../lib/data.tsx'
 import { SCOPES } from '../lib/finder.ts'
 import { ISSUES_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
-import { Logo } from './Logo.tsx'
 
 /**
  * Laid out as Tripadvisor's: columns of links (the site, where to browse, how to help) and how fresh the menus are;
- * then the mark, ©, the terms, and that grub.cam isn't the University's. No GitHub link: the header has it.
+ * then ©, the terms, and that grub.cam isn't the University's. No GitHub link: the header has it.
  * The Find column is the front page's tabs.
  */
 export function Footer() {
@@ -30,7 +29,7 @@ export function Footer() {
           {SCOPES.map((s) => <Link key={s.scope} to={s.path}>{s.scope === 'all' ? 'Everything' : s.label}</Link>)}
         </FooterLinks>
         <FooterLinks title="Help build it">
-          <Link to="/send">Send a photo or a correction</Link>
+          <Link to="/send">Send a menu, prices or a correction</Link>
           <a href={ISSUES_URL} target="_blank" rel="noopener">Report an issue</a>
         </FooterLinks>
         <div>
@@ -48,17 +47,14 @@ export function Footer() {
       </Container>
       {/* GitHub is linked once, in the header */}
       <Container className="pb-10">
-        <div className="flex gap-4">
-          <Logo className="size-9 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm text-muted">© {new Date().getFullYear()} {SITE_NAME}</p>
-            <p className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 font-medium">
-              <Link to="/terms" className="underline underline-offset-4 hover:no-underline">Terms and privacy</Link>
-              <Link to="/credits" className="underline underline-offset-4 hover:no-underline">Photo credits</Link>
-              <Link to="/about" className="underline underline-offset-4 hover:no-underline">Contact</Link>
-            </p>
-            <p className="mt-3 max-w-2xl text-sm text-muted">Independent, and not affiliated with the University of Cambridge or its colleges. Menus, hours and prices are as each venue publishes them: check allergens with the venue.</p>
-          </div>
+        <div className="min-w-0">
+          <p className="text-sm text-muted">© {new Date().getFullYear()} {SITE_NAME}</p>
+          <p className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 font-medium">
+            <Link to="/terms" className="underline underline-offset-4 hover:no-underline">Terms and privacy</Link>
+            <Link to="/credits" className="underline underline-offset-4 hover:no-underline">Photo credits</Link>
+            <Link to="/about" className="underline underline-offset-4 hover:no-underline">Contact</Link>
+          </p>
+          <p className="mt-3 max-w-2xl text-sm text-muted">Independent, and not affiliated with the University of Cambridge or its colleges. Menus, hours and prices are as each venue publishes them: check allergens with the venue.</p>
         </div>
       </Container>
     </footer>

@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
 import { dishTags, MEAL_LABEL, MEALS } from '../lib/filters.ts'
 import { dishPrice, fromList, mealPrices, priceHeads, type MealPrices } from '../lib/prices.ts'
 import { slotApplies } from '../lib/time/openNow.ts'
-import type { Dish, Meal, MenuDay, PriceTerms, Slot, VenuePrice } from '../lib/types.ts'
+import type { Dish, MenuDay, PriceTerms, Slot, VenuePrice } from '../lib/types.ts'
 import { GroupHead, ListNote, PriceList, PriceText, Row } from './MenuRows.tsx'
 
 type Course = NonNullable<Dish['course']>
@@ -10,8 +9,8 @@ const COURSES: Course[] = ['soup', 'main', 'side', 'dessert', 'other']
 const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side: 'Sides', dessert: 'Dessert', other: 'Other' }
 
 /**
- * One date's menus, meal by meal, one under another, with that day's hours; a row of tabs over them, as TheFork's
- * menu sections, names each meal with how many dishes it has and jumps to it. Prices from the venue's posted list
+ * One date's menus, meal by meal, one under another, each headed by its name and that day's hours (no tabs over them:
+ * they only repeated the headings). Prices from the venue's posted list
  * (its Dining lines, `priceGroups`) sit next to the dishes they apply to, or in the heading for one price per meal;
  * anything else it sells at that meal is folded below. Price columns are headed, and explained, the venue's way
  * (`terms`).
@@ -30,8 +29,7 @@ export function DayMenu({ days, slots, date, prices, terms }: { days: MenuDay[];
   const listed = shown.flatMap(({ prices: mp }) => [mp.meal, ...Object.values(mp.course), ...mp.items]).filter((p) => !!p)
 
   return (
-    <div className="space-y-2">
-      <MealTabs meals={shown.map(({ day, prices: mp }) => ({ meal: day.service, count: day.items.length || mp.items.length }))} />
+    <div>
       <div>
         {shown.map(({ day, prices: mp }) => {
           const hours = slots
@@ -39,9 +37,9 @@ export function DayMenu({ days, slots, date, prices, terms }: { days: MenuDay[];
             .map((s) => `${s.start}–${s.end}`)
             .join(', ')
           return (
-            <section key={day.service} id={`meal-${day.service}`} data-meal={day.service} aria-labelledby={`meal-${day.service}-heading`} className="mb-14 scroll-mt-[calc(var(--header-h,0px)+4rem)]">
-              <div className="flex items-baseline gap-4 border-b border-ink/10 pb-2">
-                <h3 id={`meal-${day.service}-heading`} className="flex-1 text-xl font-semibold">{MEAL_LABEL[day.service]}</h3>
+            <section key={day.service} id={`meal-${day.service}`} data-meal={day.service} aria-labelledby={`meal-${day.service}-heading`} className="mb-12 scroll-mt-[calc(var(--header-h,0px)+1.5rem)]">
+              <div className="flex items-baseline gap-4 border-b border-ink/10 pb-3 text-lg">
+                <h3 id={`meal-${day.service}-heading`} className="title flex-1 text-2xl">{MEAL_LABEL[day.service]}</h3>
                 {mp.meal && <PriceText price={fromList(mp.meal)} />}
                 {hours && <span className="text-muted tabular-nums">{hours}</span>}
               </div>
@@ -70,46 +68,6 @@ export function DayMenu({ days, slots, date, prices, terms }: { days: MenuDay[];
   )
 }
 
-/**
- * The day's meals as a row of tabs that stays at the top while the menu scrolls, as TheFork's menu sections: each
- * named with how many dishes it lists, the one being read underlined, a click scrolling to it.
- */
-function MealTabs({ meals }: { meals: { meal: Meal; count: number }[] }) {
-  const key = meals.map((m) => m.meal).join('|')
-  const [active, setActive] = useState(meals[0]?.meal)
-  useEffect(() => {
-    const names = key ? (key.split('|') as Meal[]) : []
-    // The meal being read: the last whose heading has passed under the tabs
-    const spy = () => {
-      let current = names[0]
-      for (const meal of names) {
-        const top = document.getElementById(`meal-${meal}`)?.getBoundingClientRect().top
-        if (top != null && top <= 80 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 0)) current = meal
-      }
-      setActive(current)
-    }
-    spy()
-    window.addEventListener('scroll', spy, { passive: true })
-    return () => window.removeEventListener('scroll', spy)
-  }, [key])
-  if (!meals.length) return null
-  return (
-    <nav aria-label="Meals" className="card-row sticky top-[var(--header-h,0px)] z-10 -mx-4 flex gap-6 overflow-x-auto border-b border-ink/10 bg-canvas px-4 pt-2 sm:mx-0 sm:px-0">
-      {meals.map(({ meal, count }) => (
-        <button
-          key={meal}
-          type="button"
-          aria-current={meal === active ? 'true' : undefined}
-          onClick={() => document.getElementById(`meal-${meal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className={`shrink-0 cursor-pointer border-b-2 pb-2.5 font-medium whitespace-nowrap transition-colors ${meal === active ? 'border-ink text-ink' : 'border-transparent text-muted hover:border-ink/25 hover:text-ink'}`}
-        >
-          {MEAL_LABEL[meal]} <span className="font-normal text-muted">({count})</span>
-        </button>
-      ))}
-    </nav>
-  )
-}
-
 /** Dishes in course order, with course headings when there's more than one course. */
 function Dishes({ items, prices, terms }: { items: Dish[]; prices: MealPrices; terms?: PriceTerms | null }) {
   const groups = COURSES.map((c) => ({ course: c, items: items.filter((i) => (i.course ?? 'other') === c) })).filter((g) => g.items.length)
@@ -117,7 +75,7 @@ function Dishes({ items, prices, terms }: { items: Dish[]; prices: MealPrices; t
   const columns = priced.some((p) => p?.second != null) ? 2 : priced.some((p) => p) ? 1 : 0
   const heads = priceHeads(columns, terms)
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-5 space-y-7">
       {groups.map((g, n) => (
         <div key={g.course}>
           <GroupHead label={groups.length > 1 ? COURSE_LABEL[g.course] : undefined} heads={n === 0 ? heads : []} />

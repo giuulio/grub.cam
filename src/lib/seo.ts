@@ -116,7 +116,7 @@ export function pages(data: Data, date: string): Page[] {
   const coverage: Page = { path: '/coverage', description: "What grub.cam has for each Cambridge college (menus, prices, hours) and what's still missing." }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
-  const sendPage: Page = { path: '/send', description: 'Send a photo of a menu board, price list or opening times from a Cambridge college café, hall or bar, to add it to grub.cam.' }
+  const sendPage: Page = { path: '/send', description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     return {

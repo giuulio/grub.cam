@@ -336,7 +336,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .finder.is-map .finder-search { position: absolute; top: 12px; inset-inline: 12px; z-index: 11; margin: 0; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
   .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 4px var(--gutter); overflow-x: auto; }
   .finder-filters > * { flex-shrink: 0; }
-  /* A site's list on a phone: the list alone */
+  /* The list asked for on a phone (view=list): the list alone */
   .finder.is-list .finder-map { display: none; }
   .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 8px; }
   .finder.is-map {

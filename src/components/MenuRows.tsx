@@ -56,7 +56,8 @@ export function GroupHead({ label, heads }: { label?: string; heads: string[] })
   if (!label && !heads.length) return null
   return (
     <div className="mb-1 flex items-baseline gap-4">
-      <h4 className="flex-1 font-semibold text-ink">{label}</h4>
+      {/* Quieter than the dishes under it, so it reads as their heading, not one of them */}
+      <h4 className="flex-1 text-[15px] font-semibold text-muted">{label}</h4>
       {heads.map((h) => (
         <span key={h} className={`${PRICE_COL} text-xs whitespace-nowrap text-muted`}>
           {h}
@@ -69,7 +70,7 @@ export function GroupHead({ label, heads }: { label?: string; heads: string[] })
 /** A dish or a line of a price list: its name leads, in a medium weight, its price lined up at the right, as TheFork's menus. */
 export function Row({ name, tags = [], soldOut, price, columns }: { name: string; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
-    <li className="flex items-baseline gap-4 py-2">
+    <li className="flex items-baseline gap-4 py-2 text-[17px] sm:text-lg">
       <span className="min-w-0 flex-1">
         <span className={soldOut ? 'text-muted line-through' : 'font-medium text-ink'}>{name}</span>
         {tags.map((t) => (
@@ -104,7 +105,7 @@ export function PriceText({ price, className = '' }: { price: Price; className?:
 /** A diet code as printed after a dish (VG, H, GF): small and quiet, so the dish name leads. */
 export function Code({ tag, className = '' }: { tag: DietTag; className?: string }) {
   return (
-    <abbr title={DIET_LABEL[tag]} className={`text-xs font-semibold tracking-wide text-muted no-underline ${className}`}>
+    <abbr title={DIET_LABEL[tag]} className={`text-[13px] font-semibold tracking-wide text-muted no-underline ${className}`}>
       {DIET_SHORT[tag]}
     </abbr>
   )

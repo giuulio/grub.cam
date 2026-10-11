@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { CameraAdd, ChevronRight, Home, NoteAdd, type IconComponent } from 'reicon-react'
+import { NoteAdd, type IconComponent } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
 import { mainDishes, MEAL_LABEL, nextService, slotOrder, type Ranked } from '../lib/filters.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
@@ -15,27 +15,6 @@ import { TypeLabel, VenueImage, VenueThumb } from './VenuePhoto.tsx'
 
 // The venues as Airbnb lists homes, a row each (its photo down the left, what to know beside it), beside a map of them:
 // the front page's and a site's.
-
-/** Home › Jesus College: the last is the page itself. */
-export function Breadcrumbs({ trail }: { trail: [to: string, label: string][] }) {
-  return (
-    <nav aria-label="Breadcrumb" className="mb-5 text-sm">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <li>
-          <Link to="/" aria-label="Home" title="Home" className="flex text-ink hover:text-muted">
-            <Icon of={Home} className="size-4.5" />
-          </Link>
-        </li>
-        {trail.map(([to, label], i) => (
-          <li key={to} className="flex items-center gap-2">
-            <Icon of={ChevronRight} className="size-3.5 text-muted" />
-            {i === trail.length - 1 ? <span aria-current="page">{label}</span> : <Link to={to} className="hover:underline">{label}</Link>}
-          </li>
-        ))}
-      </ol>
-    </nav>
-  )
-}
 
 /** The prices of what people usually order at a venue of its kind (`headlinePrices`), its own kind's list first. */
 function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] {
@@ -171,8 +150,8 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
         ))}
       </ul>
     )
-  if (v.type === 'hall' && !isFormalOnly(v)) return <Gap to={sendPath(v, 'menu')} send="Send a photo of the board" compact={compact}>No menu here yet.</Gap>
-  return <Gap to={sendPath(v, 'prices')} send="Send a photo of the list" compact={compact}>No prices here yet.</Gap>
+  if (v.type === 'hall' && !isFormalOnly(v)) return <Gap to={sendPath(v, 'menu')} send="Send today’s menu" compact={compact}>No menu here yet.</Gap>
+  return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices here yet.</Gap>
 }
 
 /** Dishes as a list, one to a line, with how many more; or, `compact`, on one line. */
@@ -201,10 +180,10 @@ function Lines({ title, items, max, compact }: { title?: string; items: string[]
 }
 
 /**
- * What a row doesn't know yet, and how to send it in: what it would take (a camera, by default) in a Light Blue disc,
+ * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Light Blue disc,
  * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
  */
-function Gap({ to, send, icon = CameraAdd, compact = false, children }: { to: string; send: string; icon?: IconComponent; compact?: boolean; children: ReactNode }) {
+function Gap({ to, send, icon = NoteAdd, compact = false, children }: { to: string; send: string; icon?: IconComponent; compact?: boolean; children: ReactNode }) {
   const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
   if (compact)
     return (

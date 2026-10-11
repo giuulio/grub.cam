@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { hasLocation } from '../lib/finder.ts'
 import type { Ranked } from '../lib/filters.ts'
-import { CAMBRIDGE, findMe, fitPadding, labelPins, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH, userDot, zoomFor } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, labelUntilMeasured, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, REACH, userDot, zoomFor } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import { MapActions, MapPin, type MapProps } from './MapParts.tsx'
 
@@ -215,12 +215,12 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
   useEffect(() => { anchors.forEach((el, id) => { el.style.zIndex = id === selected || litKey?.split('|').includes(id) ? '1' : '' }) }, [anchors, selected, litKey])
 
   // Pins' names, as Apple's places have: those that fit once zoomed in, the picked one's always
-  const name = useRef(() => {})
+  const name = useRef<() => boolean>(() => true)
   useEffect(() => {
     name.current = () => {
       const e = engine.current
       const el = container.current
-      if (!e || !el) return
+      if (!e || !el) return true
       const box = el.getBoundingClientRect()
       // Where each pin is drawn: its point, from the map's centre (MapKit says the region has changed before it has
       // moved the pins on the page, so the page can't be read yet), plus its place beside the others in its building
@@ -233,18 +233,25 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
         return { x: p.x - centre.x + box.width / 2 + x, y: p.y - centre.y + box.height / 2 + y }
       }
       const order = [...(selected ? [selected] : []), ...(highlight ?? []), ...results.map((r) => r.venue.id)]
-      labelPins(anchors, at, order, zoomFor(el.clientWidth, e.map.region.span.longitudeDelta), selected, box)
+      return labelPins(anchors, at, order, zoomFor(el.clientWidth, e.map.region.span.longitudeDelta), selected, el)
     }
   })
   // Placed again whenever the map stops moving, and when the pins or the picked one change
   useEffect(() => {
     const e = engine.current
     if (!ready || !e) return
-    const moved = () => name.current()
+    let cancel = () => {}
+    const moved = () => {
+      cancel()
+      cancel = labelUntilMeasured(() => name.current())
+    }
     e.map.addEventListener('region-change-end', moved)
-    return () => e.map.removeEventListener('region-change-end', moved)
+    return () => {
+      cancel()
+      e.map.removeEventListener('region-change-end', moved)
+    }
   }, [ready])
-  useEffect(() => { requestAnimationFrame(() => name.current()) }, [anchors, selected, litKey, key])
+  useEffect(() => labelUntilMeasured(() => name.current()), [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
   // middle of what the panel leaves free.

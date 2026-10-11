@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { Calendar, Camera, Flag, Global, Leaf, Map as MapIcon } from 'reicon-react'
+import { Calendar, Flag, Global, Leaf, Map as MapIcon, NoteAdd } from 'reicon-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { BackButton } from '../components/BackButton.tsx'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
+import { GapCard, SEND_EITHER } from '../components/GapCard.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
 import { ListNote, PriceList } from '../components/MenuRows.tsx'
@@ -58,9 +58,8 @@ export function VenuePage() {
   return (
     <>
       <title>{`${venue.name}, ${siteName(venue.site)}: ${hasMenu ? 'menu and hours' : 'opening hours'} · ${SITE_NAME}`}</title>
-      <BackButton up={`/${venue.site.slug}`} />
       <VenueBanner venue={venue} />
-      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-16">
+      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-16">
         {/* The page scrolls past the name, the facts and the sections, while the rail stays beside them; on a phone,
             the hours come after the name, and the facts, the map and the help after the sections */}
         <div className="contents md:col-start-1 md:row-start-1 md:block md:min-w-0">
@@ -109,7 +108,7 @@ function useFits(ref: RefObject<HTMLElement | null>, margin: number): boolean {
 
 /** One of the rail's cards, bordered as the listing cards are. */
 function RailCard({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-ink/12 bg-canvas p-4 lg:p-5 ${className}`}>{children}</div>
+  return <div className={`rounded-xl border border-ink/12 bg-canvas p-5 lg:p-6 ${className}`}>{children}</div>
 }
 
 /**
@@ -123,7 +122,7 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
   return (
     <RailCard className="overflow-hidden">
       {mapped && !snapshot && (
-        <div className="rail-map relative isolate -mx-4 -mt-4 mb-4 border-b border-ink/10 lg:-mx-5 lg:-mt-5">
+        <div className="rail-map relative isolate -mx-5 -mt-5 mb-4 border-b border-ink/10 lg:-mx-6 lg:-mt-6">
           <VenueMap
             results={rows}
             selected={venue.id}
@@ -148,7 +147,7 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
 }
 
 /**
- * What this page is still missing, each a link to send a photo of it from the venue: the gaps made plain to the
+ * What this page is still missing, each a link to send it (a photo or the text) from the venue: the gaps made plain to the
  * members who can fill them. Nothing when it's all here.
  */
 function HelpCard({ venue }: { venue: Venue }) {
@@ -161,12 +160,12 @@ function HelpCard({ venue }: { venue: Venue }) {
   if (!missing.length) return null
   return (
     <RailCard>
-      <h2 className="font-semibold">Help fill this in</h2>
-      <p className="mt-1 text-sm text-muted">A photo from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
-      <ul className="mt-3 space-y-1.5">
+      <h2 className="text-lg font-semibold">Help fill this in</h2>
+      <p className="mt-1 text-[15px] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
+      <ul className="mt-3 space-y-2">
         {missing.map(([label, kind]) => (
           <li key={label} className="flex items-start gap-3">
-            <Icon of={Camera} className="mt-1 size-4 shrink-0 text-muted" />
+            <Icon of={NoteAdd} className="mt-1 size-4 shrink-0 text-muted" />
             <Link to={sendPath(venue, kind)} className="link">{label}</Link>
           </li>
         ))}
@@ -224,11 +223,7 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
   for (const t of types) {
     const title = t === types[0] ? 'Menu' : TYPE_LABEL[t]
     if (t === 'hall') {
-      const menu = (
-        <Section key="menu" title={title}>
-          <DatedMenu venue={venue} now={now} prices={groups.hall} />
-        </Section>
-      )
+      const menu = <DatedMenu key="menu" title={title} venue={venue} now={now} prices={groups.hall} />
       const formal = holdsFormal(venue) && (
         <Section key="formal" title="Formal hall">
           <FormalHall venue={venue} formal={venue.formal ?? {}} />
@@ -244,24 +239,24 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
   }
   // A café or bar that posts dishes by date too
   if (types[0] !== 'hall' && venue.menu.some((d) => d.items.length))
-    out.push(
-      <Section key="daily" title="Daily menu">
-        <DatedMenu venue={venue} now={now} />
-      </Section>,
-    )
+    out.push(<DatedMenu key="daily" title="Daily menu" venue={venue} now={now} />)
   return out
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/** A section of the page: its title, with what controls it beside it (a menu's date), then what it holds. */
+function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section>
-      <h2 className="title mb-5 text-3xl">{title}</h2>
+      <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <h2 className="title flex-1 text-3xl">{title}</h2>
+        {aside}
+      </div>
       {children}
     </section>
   )
 }
 
-const HelpLink = ({ venue, kind, children = 'Send a photo of it' }: { venue: Venue; kind: 'menu' | 'prices' | 'hours'; children?: ReactNode }) => (
+const HelpLink = ({ venue, kind, children = 'Send it' }: { venue: Venue; kind: 'menu' | 'prices' | 'hours'; children?: ReactNode }) => (
   <Link to={sendPath(venue, kind)} className="link text-ink">
     {children}
   </Link>
@@ -271,10 +266,13 @@ const HelpLink = ({ venue, kind, children = 'Send a photo of it' }: { venue: Ven
 function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueType; lines: VenuePrice[]; terms?: PriceTerms | null }) {
   if (!lines.length)
     return (
-      <div className="space-y-2">
-        <p className="text-muted">
-          {type === 'bar' ? 'No drinks prices here yet.' : 'No menu or prices here yet.'} <HelpLink venue={venue} kind="prices">Send a photo of the list</HelpLink>
-        </p>
+      <div className="space-y-4">
+        <GapCard
+          title={type === 'bar' ? 'No drinks list yet' : 'No menu or prices yet'}
+          body={`Seen the ${type === 'bar' ? 'drinks list' : 'menu'}? ${SEND_EITHER}`}
+          to={sendPath(venue, 'prices')}
+          action={type === 'bar' ? 'Send the drinks list' : 'Send the menu'}
+        />
         {terms?.note && <p>{terms.note}</p>}
       </div>
     )
@@ -290,7 +288,7 @@ function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueTyp
  * The menu for one date (?date=, default today), with a calendar of every date that has one. A Dining venue that has
  * never posted dishes shows its posted list (`prices`) instead, or why there's no menu.
  */
-function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices?: VenuePrice[] }) {
+function DatedMenu({ title, venue, now, prices }: { title: string; venue: Venue; now: LocalNow; prices?: VenuePrice[] }) {
   const { snapshot } = useReady()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const { asked, date, setDate, fetched, dates } = useMenuDate(venue, now)
@@ -298,28 +296,31 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
   if (!dates.length && !asked) {
     if (prices?.length)
       return (
-        <div className="space-y-6">
-          <MissingMenu venue={venue} published={false} />
-          <PriceList lines={prices} terms={venue.price_terms} />
-          <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} />
-        </div>
+        <Section title={title}>
+          <div className="space-y-6">
+            <MissingMenu venue={venue} published={false} />
+            <PriceList lines={prices} terms={venue.price_terms} />
+            <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} />
+          </div>
+        </Section>
       )
     // A build-time page only knows this week; in the browser, wait for the history before saying there's none
-    return fetched || snapshot ? <MissingMenu venue={venue} /> : null
+    return <Section title={title}>{fetched || snapshot ? <MissingMenu venue={venue} /> : null}</Section>
   }
 
   // A build-time page can't know what "today" will be when it's read
   const relative = snapshot ? undefined : relativeDay(date, now.date)
   const dayMonth: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', ...(date.slice(0, 4) === now.date.slice(0, 4) ? {} : { year: 'numeric' }) }
-  return (
-    <div>
-      <div className="flex items-center gap-2 border-b border-ink/10 pb-4">
+  // The date beside the section's title: which day this is, the way to the one before and after, and (on a phone,
+  // where the rail's calendar isn't beside it) the calendar
+  const day = (
+    <div className="flex min-w-0 items-center gap-1 max-sm:w-full">
         <button
           type="button"
           onClick={() => setCalendarOpen(!calendarOpen)}
           aria-expanded={calendarOpen}
           aria-label={`${formatISODate(date, { weekday: 'long', ...dayMonth })}: choose another date`}
-          className="-ml-2 flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-ink/5 md:pointer-events-none md:cursor-auto"
+          className="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-ink/5 max-sm:-ml-2 md:pointer-events-none md:cursor-auto"
         >
           <Icon of={Calendar} className="size-5 text-muted md:hidden" />
           <span className="min-w-0 truncate text-lg font-medium">
@@ -328,7 +329,7 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
             {relative && <span className="font-normal text-muted"> · {relative}</span>}
           </span>
         </button>
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 max-sm:ml-auto">
           {date !== now.date && (
             <button type="button" onClick={() => setDate(now.date)} className="cursor-pointer rounded-md px-2 py-1 text-sm text-muted transition-colors hover:bg-ink/10 hover:text-ink">
               Today
@@ -336,13 +337,16 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
           )}
           <DayStepper value={date} dates={dates} onChange={setDate} />
         </div>
-      </div>
+    </div>
+  )
+  return (
+    <Section title={title} aside={day}>
       {calendarOpen && (
         <div className="mt-4 md:hidden">
           <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
         </div>
       )}
-      <div className="mt-6">
+      <div>
         {days?.some((d) => d.items.length) ? (
           <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} />
         ) : (
@@ -351,11 +355,11 @@ function DatedMenu({ venue, now, prices }: { venue: Venue; now: LocalNow; prices
         {/* A Dining menu with no price list: say so where the prices would be, with the way to send one */}
         {venue.type === 'hall' && !venue.prices?.length && (
           <p className="mt-6 text-sm text-muted">
-            Prices aren’t posted here yet. <HelpLink venue={venue} kind="prices">Send a photo of the price list</HelpLink>
+            Prices aren’t posted here yet. <HelpLink venue={venue} kind="prices">Send the price list</HelpLink>
           </p>
         )}
       </div>
-    </div>
+    </Section>
   )
 }
 
@@ -366,24 +370,19 @@ function MissingMenu({ venue, published = true }: { venue: Venue; published?: bo
   const status = venue.menu_scripted ? undefined : menuGap(venue)
   if (status === 'online' && !published) return null
   const site = venue.site.short_name ?? venue.site.name
+  const [title, lead] =
+    status === 'members' ? ['Menu for members only', `${site} posts its daily menu for members only, ${MEMBERS_WHERE[venue.menu_channel!] ?? 'not online'}. A member?`]
+    : status === 'online' ? ['Published, not here yet', `${site} publishes this menu, and it isn’t here yet. Seen it?`]
+    : status === 'unpublished' ? ['No menu published', `${site} doesn’t publish this menu anywhere we know of. Seen it?`]
+    : ['No menu here yet', 'Seen today’s menu?']
   return (
-    <div className="text-muted">
-      <p>
-        {status === 'members'
-          ? `The daily menu is posted for ${site} members only, ${MEMBERS_WHERE[venue.menu_channel!] ?? 'not online'}.`
-          : status === 'online'
-          ? 'Published, not here yet.'
-          : status === 'unpublished'
-          ? 'The menu isn’t published anywhere we know of.'
-          : 'No menu here yet.'}{' '}
-        <HelpLink venue={venue} kind="menu">{status === 'members' ? 'A member? Send a photo of today’s board' : 'Send a photo of the board'}</HelpLink>
-      </p>
+    <GapCard title={title} body={`${lead} ${SEND_EITHER}`} to={sendPath(venue, 'menu')} action="Send today’s menu">
       {status === 'online' && venue.menu_url && (
         <div className="mt-2">
           <ExternalLink href={venue.menu_url} />
         </div>
       )}
-    </div>
+    </GapCard>
   )
 }
 
@@ -428,17 +427,17 @@ function Details({ venue }: { venue: Venue }) {
   const website = venue.url ?? venue.site.official_dining_url
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
-    <ul className="order-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
+    <ul className="order-4 grid gap-x-8 gap-y-3 text-[17px] sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         <Fact icon={Leaf} known={!!diets}>
           {diets ? `${diets} options` : 'Diet options not known yet'}
         </Fact>
         {website && (
           <Fact icon={Global} known>
-            <ExternalLink href={website} className="text-base" />
+            <ExternalLink href={website} className="" />
           </Fact>
         )}
         <li className="border-t border-ink/10 pt-3 sm:col-span-2 md:border-0 md:pt-0">
-          <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-sm text-muted transition-colors hover:text-ink">
+          <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-[15px] text-muted transition-colors hover:text-ink">
             <Icon of={Flag} />
             Report a change
           </Link>
@@ -450,7 +449,7 @@ function Details({ venue }: { venue: Venue }) {
 function Fact({ icon, known, children }: { icon: Parameters<typeof Icon>[0]['of']; known: boolean; children: ReactNode }) {
   return (
     <li className={`flex items-start gap-3 ${known ? 'text-ink' : 'text-muted'}`}>
-      <Icon of={icon} className="mt-1 size-4 text-muted" />
+      <Icon of={icon} className="mt-1 size-[18px] text-muted" />
       <span className="min-w-0">{children}</span>
     </li>
   )
@@ -473,22 +472,20 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   const label = seasonal && ((current.length ? inTerm : !inTerm) ? 'In term' : 'Out of term')
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between gap-3 text-sm text-muted">
+      <div className="mb-2 flex items-baseline justify-between gap-3 text-[15px] text-muted">
         <h2 className="font-semibold text-ink">{walkIn.length ? 'Hours' : 'Formal hall'}</h2>
         {label && <span>{label}</span>}
       </div>
       {shown.length ? (
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm tabular-nums">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 tabular-nums">
           {weekHours(shown).map((row) => (
             // Today's row stands out, once the page knows what today is
             <div key={row.days.join()} className={`contents ${!snapshot && row.days.includes(now.day) ? 'text-ink' : 'text-muted'}`}>
               <dt className="whitespace-nowrap">{formatDays(row.days)}</dt>
+              {/* A time to a line, so a day of three meals doesn't wrap mid-list */}
               <dd>
-                {row.times.map((s, i) => (
-                  <span key={`${s.meal}${s.start}`}>
-                    {i > 0 && ', '}
-                    <span title={MEAL_LABEL[s.meal]} className="whitespace-nowrap">{s.start}–{s.end}</span>
-                  </span>
+                {row.times.map((s) => (
+                  <span key={`${s.meal}${s.start}`} title={MEAL_LABEL[s.meal]} className="block whitespace-nowrap">{s.start}–{s.end}</span>
                 ))}
               </dd>
             </div>
@@ -496,7 +493,7 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
         </dl>
       ) : (
         <p className="text-muted">
-          Not published. <HelpLink venue={venue} kind="hours">Send a photo of the times</HelpLink>
+          Not published. <HelpLink venue={venue} kind="hours">Send the times</HelpLink>
         </p>
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}

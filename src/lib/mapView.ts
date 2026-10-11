@@ -147,9 +147,13 @@ export function placeLabels(pins: { id: string; x: number; y: number; width: num
 /**
  * Names the pins a map shows (`anchors`, each holding a MapPin): where each is (`at`, in the map's pixels), in priority
  * order (the picked pin, those picked out, then the list's order); every pin that fits once zoomed in to LABEL_ZOOM,
- * only the picked one before. Marks each anchor's `data-label` with the side, for the CSS.
+ * only the picked one before. Marks each anchor's `data-label` with the side, for the CSS. False when the map hadn't
+ * drawn what it was told yet (a name not laid out, so of no width, or a pin not yet where `at` says, as when MapKit
+ * reports a move before making it): try again a frame later (`labelUntilMeasured`).
  */
-export function labelPins(anchors: Map<string, HTMLElement>, at: (id: string) => { x: number; y: number } | undefined, order: string[], zoom: number, picked: string | undefined, size: { width: number; height: number }) {
+export function labelPins(anchors: Map<string, HTMLElement>, at: (id: string) => { x: number; y: number } | undefined, order: string[], zoom: number, picked: string | undefined, map: HTMLElement) {
+  const box = map.getBoundingClientRect()
+  const size = { width: box.width, height: box.height }
   const pins = [...new Set(order)].flatMap((id) => {
     const el = anchors.get(id)
     const p = el && at(id)
@@ -162,4 +166,21 @@ export function labelPins(anchors: Map<string, HTMLElement>, at: (id: string) =>
     if (side) el.dataset.label = side
     else delete el.dataset.label
   })
+  const shown = (p: { x: number; y: number }) => p.x >= 0 && p.y >= 0 && p.x <= size.width && p.y <= size.height
+  const drawn = (p: { id: string; x: number; y: number }) => {
+    const r = anchors.get(p.id)?.querySelector('.venue-pin')?.getBoundingClientRect()
+    return !!r && Math.abs(r.left + r.width / 2 - box.left - p.x) < 3 && Math.abs(r.top + r.height / 2 - box.top - p.y) < 3
+  }
+  return pins.every((p) => !shown(p) || (p.width > 0 && drawn(p)))
+}
+
+/** Runs `label` (a map's labelPins) next frame and, while the map hadn't drawn what it was told, each frame for up to a second. Returns the cancel. */
+export function labelUntilMeasured(label: () => boolean): () => void {
+  let frame = 0
+  let tries = 0
+  const run = () => {
+    if (!label() && ++tries < 60) frame = requestAnimationFrame(run)
+  }
+  frame = requestAnimationFrame(run)
+  return () => cancelAnimationFrame(frame)
 }

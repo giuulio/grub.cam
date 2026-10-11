@@ -4,7 +4,6 @@ import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
 import { REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
-import { Logo } from './Logo.tsx'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
 import { useMedia } from '../lib/useMedia.ts'
@@ -13,7 +12,7 @@ import { useMedia } from '../lib/useMedia.ts'
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it, GitHub
+ * The same bar on every page, as Airbnb's compact one: the name (no mark), the search with the tabs inside it, GitHub
  * and the theme; one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
  * front page the search is over the map instead (the Finder draws it there), so the bar is one row and the map starts
  * right under it. It stays at the top above a phone; its height (`--header-h`) keeps what else stays in view (a map
@@ -42,9 +41,8 @@ export function Header() {
       {/* From 1280px, three columns, so the search sits in the middle of the page whatever is either side of it */}
       <Container className="flex flex-wrap items-center gap-x-4 gap-y-3.5 py-3.5 sm:py-5 xl:grid xl:h-28 xl:grid-cols-[1fr_minmax(0,46rem)_1fr] xl:gap-x-8 xl:py-0">
         <div className="flex shrink-0 items-center gap-3">
-          <Link to="/" className="flex items-center gap-2.5">
-            <Logo className="size-9 shrink-0 sm:size-11" />
-            <span className="title text-2xl sm:text-[1.875rem]">{SITE_NAME}</span>
+          <Link to="/" className="title text-2xl sm:text-[1.875rem]">
+            {SITE_NAME}
           </Link>
           {/* Still being built: say so to anyone who lands here */}
           <span title="Still being built: some menus, hours and venues are missing" className="beta-pill">Beta</span>
