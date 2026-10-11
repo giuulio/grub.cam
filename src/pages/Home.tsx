@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from 'react'
-import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
-import { CloseCircle, List as ListIcon, Map as MapIcon, Search } from 'reicon-react'
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
+import { Link, Navigate, useSearchParams } from 'react-router'
+import { CloseCircle, List as ListIcon, Map as MapIcon } from 'reicon-react'
 import { Chip, ChipSelect } from '../components/Controls.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { VenueRow } from '../components/Listing.tsx'
@@ -9,8 +9,7 @@ import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
 import { tabCoverage } from '../lib/coverage.ts'
 import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filters.ts'
-import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, SHARED_FILTERS, type Scope } from '../lib/finder.ts'
-import { SCOPE_ICON } from '../lib/icons.ts'
+import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, scopeInfo, type Scope } from '../lib/finder.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
 import { SITE_NAME } from '../lib/site.ts'
@@ -47,7 +46,6 @@ function Finder({ scope }: { scope: Scope }) {
   const now = useNow()
   const [params, setParams] = useSearchParams()
   const results = useRef<HTMLDivElement>(null)
-  const hero = useRef<HTMLElement>(null)
   const sheet = useRef<HTMLDivElement>(null)
   // From a tablet up, the list and the map side by side; on a phone, the map (or, asked for, the list)
   const split = useMedia('(min-width: 768px)')
@@ -98,16 +96,6 @@ function Finder({ scope }: { scope: Scope }) {
   const clear = () => {
     update((p) => { for (const k of ['q', 'open', 'site', 'kind', 'meal', 'diet', 'date']) p.delete(k) })
     setHere(undefined)
-  }
-  const tabSearch = () => {
-    const keep = new URLSearchParams()
-    for (const k of SHARED_FILTERS) if (params.get(k) != null) keep.set(k, params.get(k)!)
-    return keep.toString() ? `?${keep}` : ''
-  }
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    ;(document.activeElement as HTMLElement | null)?.blur()
-    if (split || listView) results.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   const locate = () => {
     if (here) return setHere(undefined)
@@ -160,14 +148,15 @@ function Finder({ scope }: { scope: Scope }) {
     else requestAnimationFrame(() => results.current?.scrollIntoView({ block: 'start' }))
   }
 
-  // On a phone's map, the map fills the screen below the hero: measured from the top of the page
+  // On a phone's map, the map fills the screen below the header: measured from the top of the page
   useLayoutEffect(() => {
     const el = results.current
     if (split || listView || !el) return
     const measure = () => el.style.setProperty('--finder-top', `${Math.round(el.getBoundingClientRect().top + window.scrollY)}px`)
     measure()
     const observer = new ResizeObserver(measure)
-    if (hero.current) observer.observe(hero.current)
+    const header = document.querySelector('header')
+    if (header) observer.observe(header)
     window.addEventListener('resize', measure)
     return () => {
       observer.disconnect()
@@ -185,38 +174,11 @@ function Finder({ scope }: { scope: Scope }) {
   return (
     <>
       <title>{scope === 'all' ? `${SITE_NAME}: Cambridge college and University menus` : `${info.heading} · ${SITE_NAME}`}</title>
-      {/* On a phone, the tabs and the search; from a tablet up the header holds them, as Airbnb's does */}
-      <section ref={hero} className="text-center md:hidden">
-        <nav aria-label="Kinds of venue" className="card-row -mx-4 flex gap-7 overflow-x-auto px-4 sm:mx-0 sm:justify-center sm:gap-9 sm:px-0">
-          {SCOPES.map((s) => (
-            <NavLink
-              key={s.scope}
-              to={`${s.path}${tabSearch()}${!split && listView ? `${tabSearch() ? '&' : '?'}view=list` : ''}`}
-              end
-              className={({ isActive }) => `flex shrink-0 items-center gap-2 border-b-2 pb-2 text-base font-medium whitespace-nowrap text-ink transition-colors sm:text-lg ${isActive ? 'border-ink' : 'border-transparent hover:border-ink/25'}`}
-            >
-              <Icon of={SCOPE_ICON[s.scope]} className="size-5" />
-              {s.label}
-            </NavLink>
-          ))}
-        </nav>
-        <form id="hero-search" role="search" onSubmit={submit} className="hero-search search-glow mx-auto mt-3 flex max-w-200 items-center gap-2 rounded-full border bg-canvas px-5 py-1.5 text-left">
-          <Icon of={Search} className="size-5 text-ink" />
-          <input
-            type="search"
-            value={f.q}
-            onChange={(e) => set('q', e.target.value)}
-            placeholder={info.placeholder}
-            aria-label={scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${info.label.toLowerCase()}`}
-            className="h-11 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted"
-          />
-        </form>
-      </section>
 
       {/* As Airbnb's: the heading and the list down the left, scrolling on their own, and the map beside them, the
           filters over its top; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
           over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
-      <div ref={results} className={`finder mt-3 ${listView ? 'is-list' : 'is-map'}`}>
+      <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
         <div className="finder-filters card-row flex items-center gap-2">
           {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
           {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}

@@ -113,7 +113,7 @@ export function SiteThumb({ site, className = 'size-16 rounded-lg', sizes = '4re
 }
 
 const BANNER = 'block aspect-5/2 w-full sm:rounded-xl lg:aspect-4/1'
-const BANNER_SIZES = '(min-width: 1280px) 78rem, 100vw'
+const BANNER_SIZES = '(min-width: 1024px) calc(100vw - 6rem), 100vw'
 
 /** The venue page's banner: its photo across the page, credited under it; its type's tile until it has one. */
 export function VenueBanner({ venue }: { venue: Venue }) {
@@ -126,12 +126,12 @@ export function VenueBanner({ venue }: { venue: Venue }) {
   )
 }
 
-/** A site's page banner: its photo across the page, as a venue's, credited under it; a plain tile until it has one. */
+/** A site's page banner: its photo at the top of its list, rounded as the list's rows, credited under it; a plain tile until it has one. */
 export function SiteBanner({ site }: { site: Site }) {
   const photo = sitePhoto(site)
   return (
-    <figure className="-mx-4 mb-8 sm:mx-0">
-      <SiteImage site={site} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} />
+    <figure className="-mx-4 mb-6 sm:mx-0">
+      <SiteImage site={site} sizes="(min-width: 768px) 45vw, 100vw" eager icon="size-12" className="block aspect-5/2 w-full sm:rounded-[20px]" />
       {photo && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
   )

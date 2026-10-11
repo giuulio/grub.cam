@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-/** The page's edges: header, main and footer share them. `wide`: the whole window, as on the front page's tabs (Airbnb's edges). */
-export function Container({ className = '', wide = false, children }: { className?: string; wide?: boolean; children: ReactNode }) {
-  return <div className={`mx-auto w-full px-4 sm:px-6 ${wide ? 'lg:px-12' : 'max-w-7xl'} ${className}`}>{children}</div>
+/** The page's edges, the same on every page: header, main and footer share them. The whole window, as Airbnb's, up to 1920px. */
+export function Container({ className = '', children }: { className?: string; children: ReactNode }) {
+  return <div className={`mx-auto w-full max-w-[120rem] px-4 sm:px-6 lg:px-12 ${className}`}>{children}</div>
 }

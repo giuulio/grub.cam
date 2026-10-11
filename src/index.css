@@ -147,9 +147,7 @@ select option, select optgroup {
   .field {
     @apply flex h-11 w-full items-center gap-2.5 rounded-lg border border-ink/15 bg-canvas px-3.5 text-muted transition-colors focus-within:border-ink/50 sm:h-10;
   }
-  /* The front page's header, as Airbnb's: a faint wash towards its foot. */
-  .header-wash { background: linear-gradient(var(--canvas), color-mix(in srgb, var(--ink) 3%, var(--canvas))); }
-  /* The front page's search, as its one main control: a soft Cambridge Blue glow, stronger while typing in it. */
+  /* The search, as the page's one main control: a soft Cambridge Blue glow, stronger while typing in it. */
   .search-glow {
     border-color: color-mix(in srgb, var(--ink) 12%, transparent);
     box-shadow: 0 1px 3px #1338440f, 0 6px 30px color-mix(in srgb, #8ee8d8 60%, transparent);
@@ -164,8 +162,8 @@ select option, select optgroup {
   }
   .field input { @apply w-full min-w-0 bg-transparent text-base text-ink outline-none placeholder:text-muted sm:text-sm; }
 
-  /* The front page's search, one wide rounded box as Tripadvisor's: it draws the focus ring, not the input inside. */
-  .hero-search:has(input:focus-visible) {
+  /* The search, one rounded box: it draws the focus ring, not the input inside. */
+  .search-box:has(input:focus-visible) {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
@@ -176,12 +174,6 @@ select option, select optgroup {
   }
   .card-row::-webkit-scrollbar {
     display: none;
-  }
-
-  /* A list's card, as TheFork's: its name's link covers it, so the card draws the focus ring. */
-  .listing-card:has(.card-link:focus-visible) {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
   }
 
   .filter-select {
@@ -263,10 +255,13 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 
 /* The front page's venues, as Airbnb's: from a tablet up, the list down the left (its filters stay under the header as
    it scrolls) and the map beside it, as tall as the screen allows under the header (--header-h while it's sticky),
-   staying in view as the page scrolls. On a phone (.is-map, the default) the map fills the screen below the hero
+   staying in view as the page scrolls. On a phone (.is-map, the default) the map fills the screen below the header
    (--finder-top, measured), edge to edge, the filters over its top; .is-list shows the list instead. Over the map's
    foot (.finder-sheet): the picked venue's card, and on a phone the button to the list. */
-.finder { scroll-margin-top: 1rem; }
+/* The page's side edge, as Container's padding */
+.finder { --gutter: 16px; scroll-margin-top: 1rem; }
+@media (min-width: 640px) { .finder { --gutter: 24px; } }
+@media (min-width: 1024px) { .finder { --gutter: 48px; } }
 .finder-map { position: relative; isolation: isolate; background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .finder-map .venue-map { height: 100%; }
 .finder-sheet {
@@ -304,28 +299,31 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .map-cards::-webkit-scrollbar { display: none; }
 .map-cards > li { flex: 0 0 100%; scroll-snap-align: center; }
 @media (max-width: 767px) {
-  .finder-filters { margin-inline: -1rem; padding: 4px 1rem; overflow-x: auto; }
+  .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 4px var(--gutter); overflow-x: auto; }
   .finder-filters > * { flex-shrink: 0; }
+  /* A site's list on a phone: the list alone */
+  .finder.is-list .finder-map { display: none; }
   .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 8px; }
   .finder.is-map {
     position: relative;
     height: max(26rem, calc(100svh - var(--finder-top, 13.5rem)));
-    margin-inline: -1rem;
+    margin-inline: calc(-1 * var(--gutter));
     overflow: hidden;
   }
   .finder.is-map .finder-map { position: absolute; inset: 0; }
-  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 0; z-index: 700; margin: 0; padding: 12px; }
+  /* Over the map (it's isolated, so 10 is enough) but under the header, sticky from 640px */
+  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 0; z-index: 10; margin: 0; padding: 12px; }
   .finder.is-map .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder.is-map .finder-note { position: absolute; top: 68px; left: 12px; right: 12px; z-index: 700; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder.is-map .finder-note { position: absolute; top: 68px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder.is-map .finder-list { display: none; }
   /* Clear of the map's attribution along its foot */
   .finder.is-map .finder-sheet { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
   /* Pinch to zoom: the buttons would sit under the filters */
   .finder .maplibregl-ctrl-top-right { display: none; }
 }
-/* From a tablet up, as Airbnb's: a box as tall as the screen allows under the header, a little short of its foot so the
-   page carries on to the footer: the tab's heading and its list down its left, scrolling on their own, and the map
-   beside them from the top of the heading down, a little wider, 20px corners, no frame, with the filters over its top
+/* From a tablet up, as Airbnb's: a box from the header to the screen's foot, less --gutter (the page's edge) so the
+   footer starts at the fold: the tab's heading and its list down its left, scrolling on their own right up to the
+   header, and the map beside them as far from the header and the screen's foot as from its side (--gutter), a little wider, 20px corners, no frame, with the filters over its top
    as chips. Past the end of the list, the page scrolls. */
 @media (min-width: 768px) {
   .finder {
@@ -333,25 +331,25 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
     grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
     grid-template-rows: minmax(0, 1fr);
     column-gap: 1.5rem;
-    margin-top: 24px;
-    height: max(32rem, calc(100svh - var(--header-h, 0px) - 48px));
-    scroll-margin-top: calc(var(--header-h, 0px) + 24px);
+    margin-bottom: var(--gutter);
+    height: max(32rem, calc(100svh - var(--header-h, 0px) - var(--gutter)));
+    scroll-margin-top: var(--header-h, 0px);
   }
   .finder-title { padding-bottom: 8px; }
-  .finder-map { grid-column: 2; grid-row: 1; height: 100%; overflow: hidden; border-radius: 20px; }
+  .finder-map { grid-column: 2; grid-row: 1; height: calc(100% - var(--gutter)); margin-top: var(--gutter); overflow: hidden; border-radius: 20px; }
   /* Over the map but under the sticky header (z-40), so they leave with the map as the page scrolls on: the map is
      isolated, so a low z-index is enough to sit over it */
-  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: 12px; pointer-events: none; }
+  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: calc(var(--gutter) + 12px) 12px 12px; pointer-events: none; }
   .finder-filters > * { pointer-events: auto; }
   .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 24px); z-index: 10; margin: 64px 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 24px); z-index: 10; margin: calc(var(--gutter) + 64px) 12px 0; padding: 8px 12px; border-radius: 8px; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder-side {
     grid-column: 1;
     grid-row: 1;
     min-height: 0;
     overflow-y: auto;
     margin-left: -12px;
-    padding: 0 12px;
+    padding: var(--gutter) 12px 12px;
     scrollbar-width: none;
   }
   .finder-side::-webkit-scrollbar { display: none; }
@@ -361,11 +359,9 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   .finder { column-gap: 2rem; }
 }
 
-/* Beside a site's venues, the map stays in view under the header (its height is --header-h while it's sticky) as a
-   landscape card, 4:3, never taller than the screen allows: a site has a few venues, so a map the height of the screen
-   would dwarf its list. */
-.listing-map.sticky { top: calc(var(--header-h, 0px) + 1rem); }
-.listing-map .venue-map { height: auto; aspect-ratio: 4 / 3; min-height: 18rem; max-height: calc(100svh - var(--header-h, 0px) - 2rem); }
+/* After a list beside a map, the footer starts at the fold (the list's box ends a gutter short of it) */
+main:has(.finder) + .site-footer { margin-top: 3rem; }
+@media (min-width: 768px) { main:has(.finder) + .site-footer { margin-top: 0; } }
 
 /* A venue page's map, square in its rail card, centred on the venue (no taller than that on a phone, where the card is the screen's width). */
 .rail-map .venue-map { height: auto; aspect-ratio: 1; max-height: 22rem; }

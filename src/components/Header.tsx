@@ -9,39 +9,30 @@ import { Icon } from './Icon.tsx'
 import { Logo } from './Logo.tsx'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
+import { useMedia } from '../lib/useMedia.ts'
 
 /** Read at build time (vite.config.ts); null when GitHub couldn't be reached. */
 const STARS = import.meta.env.VITE_GITHUB_STARS as number | null
 
 /**
- * The mark and name, a search box, GitHub, the theme, and sending a photo in. On the front page's tabs it stays at the
- * top and spans the window, as Airbnb's does: from a tablet up it holds the tabs (in its top row between the name and
- * the rest, under the search when that's too narrow) and the page's search, wide and glowing Cambridge Blue (on a phone
- * they're the page's own, and it gains the tabs once they've scrolled away); its height (`--header-h`) keeps the map
- * beside the list clear of it. Elsewhere the search box opens the front page.
+ * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it, GitHub,
+ * the theme, and sending a photo in; one row on a wide screen, the search on a row of its own under the rest below that,
+ * so the front page's map starts right under it on a phone. It stays at the top above a phone; its height
+ * (`--header-h`) keeps what else stays in view (a map beside a list, a venue page's rail) clear of it. On the front
+ * page's tabs the search is the page's own; elsewhere it opens the front page.
  */
 export function Header() {
   const { pathname } = useLocation()
   const data = useData()
-  const status = data.status
   const finder = SCOPES.some((s) => s.path === pathname)
   // On a venue's page, sending a photo is about that venue
   const venue = data.status === 'ready' ? data.venues.find((v) => venuePath(v) === pathname) : undefined
   const header = useRef<HTMLElement>(null)
-  const [heroGone, setHeroGone] = useState(false)
-  useEffect(() => {
-    const hero = finder && document.getElementById('hero-search')
-    if (!hero) return
-    // Gone once it's above the header (72px), not merely under it
-    const observer = new IntersectionObserver(([e]) => setHeroGone(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: '-72px 0px 0px 0px' })
-    observer.observe(hero)
-    return () => observer.disconnect()
-  }, [finder, pathname, status])
   useEffect(() => {
     const el = header.current
     if (!el) return
-    // Sticky only on the tabs, and above a phone
-    const measure = () => document.documentElement.style.setProperty('--header-h', finder && window.matchMedia('(min-width: 640px)').matches ? `${el.offsetHeight}px` : '0px')
+    // Sticky above a phone
+    const measure = () => document.documentElement.style.setProperty('--header-h', window.matchMedia('(min-width: 640px)').matches ? `${el.offsetHeight}px` : '0px')
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     window.addEventListener('resize', measure)
@@ -49,74 +40,86 @@ export function Header() {
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [finder])
-  const [params] = useSearchParams()
-  const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k))).toString()
-  const tabs = (className: string) => (
-    <nav aria-label="Kinds of venue" className={`card-row gap-8 overflow-x-auto text-base font-medium xl:gap-11 ${className}`}>
-      {SCOPES.map((s) => (
-        <NavLink key={s.scope} to={`${s.path}${keep ? `?${keep}` : ''}`} end className={({ isActive }) => `flex shrink-0 items-center gap-3 border-b-[3px] py-3 whitespace-nowrap transition-colors ${isActive ? 'border-ink text-ink' : 'border-transparent text-muted hover:border-ink/25 hover:text-ink'}`}>
-          <Icon of={SCOPE_ICON[s.scope]} className="size-8" />
-          {s.label}
-        </NavLink>
-      ))}
-    </nav>
-  )
+  }, [])
   return (
-    <header ref={header} className={finder ? 'header-wash border-b border-ink/10 sm:sticky sm:top-0 sm:z-40' : 'bg-canvas'}>
-      {/* On the front page's tabs, as Airbnb's: the name, the tabs in the middle, the rest at the right; the search
-          under them. Elsewhere the search sits in the one row. */}
-      <Container wide={finder} className={`flex min-h-18 items-center gap-x-6 ${finder ? 'md:min-h-24 md:pt-2 lg:grid lg:grid-cols-[1fr_auto_1fr]' : ''}`}>
-        <div className="flex items-center gap-2.5">
-          <Link to="/" className="flex items-center gap-2.5 py-4">
-            <Logo className={`size-9 shrink-0 ${finder ? 'md:size-10' : ''}`} />
-            <span className={`title text-2xl ${finder ? 'md:text-[1.75rem]' : ''}`}>{SITE_NAME}</span>
+    <header ref={header} className="border-b border-ink/10 bg-canvas sm:sticky sm:top-0 sm:z-40">
+      <Container className="flex flex-wrap items-center gap-x-4 gap-y-3 py-3 sm:py-4 xl:h-24 xl:flex-nowrap xl:gap-x-8 xl:py-0">
+        <div className="flex shrink-0 items-end gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <Logo className="size-9 shrink-0 sm:size-11" />
+            <span className="title text-2xl sm:text-[1.875rem]">{SITE_NAME}</span>
           </Link>
           {/* Still being built: say so to anyone who lands here */}
-          <span title="Still being built: some menus, hours and venues are missing" className="self-end pb-5 text-xs text-muted">beta</span>
+          <span title="Still being built: some menus, hours and venues are missing" className="pb-1 text-xs text-muted">beta</span>
         </div>
-        {finder ? tabs('hidden justify-center lg:flex') : <HeaderSearch finder={false} />}
-        <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
+        <HeaderSearch finder={finder} />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <a
             href={REPO_URL}
             target="_blank"
             rel="noopener"
             aria-label={`grub.cam on GitHub${STARS != null ? `, ${STARS} ${STARS === 1 ? 'star' : 'stars'}` : ''}`}
             title="grub.cam on GitHub"
-            className="flex h-11 items-center gap-2 rounded-full bg-ink/5 px-4 text-[15px] font-medium text-ink transition-colors hover:bg-ink/10"
+            className="flex h-11 items-center gap-2 rounded-full bg-ink/5 px-4 text-base font-bold text-ink transition-colors hover:bg-ink/10 sm:h-12"
           >
-            <GitHubIcon className="size-5" />
+            <GitHubIcon className="size-5 sm:size-6" />
             {STARS != null && <span>{STARS >= 1000 ? `${(STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : STARS}</span>}
           </a>
-          <ThemeToggle className="size-11 rounded-full bg-ink/5 text-ink hover:bg-ink/10" />
+          <ThemeToggle className="size-11 rounded-full bg-ink/5 text-ink hover:bg-ink/10 sm:size-12" />
           {pathname !== '/send' && (
-            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden h-11 rounded-full px-5 text-[15px] font-semibold sm:inline-flex sm:h-11">
+            <Link to={venue ? `/send?${new URLSearchParams({ venue: venue.id })}` : '/send'} className="btn btn-primary ml-1 hidden h-12 rounded-full px-6 text-base font-bold sm:inline-flex sm:h-12">
               Send a photo
             </Link>
           )}
         </div>
       </Container>
-      {finder && (
-        <Container wide className="hidden pt-3 pb-8 md:block">
-          <HeaderSearch finder />
-        </Container>
-      )}
-      {/* Narrower, the tabs go under the search (on a phone, once the page's own have scrolled away) */}
-      {finder && <Container wide className={heroGone ? 'hidden sm:block lg:hidden' : 'hidden md:block lg:hidden'}>{tabs('flex justify-center')}</Container>}
     </header>
   )
 }
 
 /**
- * On the front page's tabs, the page's own search (the list under it follows as you type); elsewhere a search that
- * opens the front page with it.
+ * A tab per kind of venue, inside the search at its end: each its icon, the picked one (in Cambridge Blue) also its
+ * name, so they fit beside what's typed even on a phone. A tab keeps the page's shared filters and the phone's list.
+ */
+function ScopeTabs() {
+  const [params] = useSearchParams()
+  const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
+  return (
+    <nav aria-label="Kinds of venue" className="card-row flex shrink-0 items-center border-l border-ink/10 pl-1 sm:gap-1 sm:pl-2">
+      {SCOPES.map((s) => (
+        <NavLink
+          key={s.scope}
+          to={`${s.path}${keep ? `?${keep}` : ''}`}
+          end
+          aria-label={s.label}
+          title={s.label}
+          className={({ isActive }) => `flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-sm sm:h-11 sm:min-w-11 sm:gap-2 sm:px-2.5 sm:text-base sm:font-bold font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-2.5 text-accent-ink sm:pr-4' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+        >
+          {({ isActive }) => (
+            <>
+              <Icon of={SCOPE_ICON[s.scope]} className="size-5 sm:size-6" />
+              {isActive && s.label}
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
+
+/**
+ * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, the tabs, and a round button at its
+ * end (above a phone). On the front page's tabs it's the page's own search (the list under it follows as you type); elsewhere it opens
+ * the front page with it.
  */
 function HeaderSearch({ finder }: { finder: boolean }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [params, setParams] = useSearchParams()
   const [draft, setDraft] = useState('')
-  const value = finder ? (params.get('q') ?? '') : draft
+  const scope = SCOPES.find((s) => s.path === pathname) ?? SCOPES[0]
+  // On a phone the tabs leave room for a word; the keyboard's own key searches
+  const wide = useMedia('(min-width: 640px)')
   const change = (q: string) => {
     if (!finder) return setDraft(q)
     const next = new URLSearchParams(params)
@@ -132,16 +135,21 @@ function HeaderSearch({ finder }: { finder: boolean }) {
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className={`field hidden rounded-full md:flex ${finder ? 'search-glow mx-auto h-16 max-w-[53rem] pr-2 pl-7 text-base sm:h-16' : 'md:w-64 lg:w-96'}`}
+      className="search-box search-glow order-last flex h-12 w-full items-center gap-1.5 rounded-full border bg-canvas pr-1 pl-4 sm:h-14 sm:gap-2 sm:pr-1.5 sm:pl-6 xl:order-none xl:w-auto xl:max-w-3xl xl:min-w-0 xl:flex-1"
     >
-      {!finder && <Icon of={Search} />}
-      <input type="search" value={value} onChange={(e) => change(e.target.value)} placeholder={SCOPES.find((s) => s.path === pathname)?.placeholder ?? 'Search'} aria-label="Search venues, colleges and dishes" />
-      {/* As Airbnb's: a round button at the end of the search */}
-      {finder && (
-        <button type="submit" aria-label="Search" className="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-action text-action-ink transition-opacity hover:opacity-90">
-          <Icon of={Search} className="size-5" />
-        </button>
-      )}
+      <input
+        type="search"
+        value={finder ? (params.get('q') ?? '') : draft}
+        onChange={(e) => change(e.target.value)}
+        enterKeyHint="search"
+        placeholder={wide ? scope.placeholder : 'Search'}
+        aria-label={scope.scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${scope.label.toLowerCase()}`}
+        className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-ink sm:text-lg outline-none placeholder:text-muted"
+      />
+      <ScopeTabs />
+      <button type="submit" aria-label="Search" className="hidden size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-action text-action-ink transition-opacity hover:opacity-90 sm:flex">
+        <Icon of={Search} className="size-5" />
+      </button>
     </form>
   )
 }

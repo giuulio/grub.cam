@@ -71,7 +71,7 @@ export function VenuePage() {
           </div>
           {!wide && <div className="order-5 space-y-5">{tail}</div>}
         </div>
-        <aside ref={rail} className={`order-2 min-w-0 space-y-5 md:col-start-2 md:row-start-1 md:self-start ${fits ? 'md:sticky md:top-6' : ''}`}>
+        <aside ref={rail} className={`order-2 min-w-0 space-y-5 md:col-start-2 md:row-start-1 md:self-start ${fits ? 'md:sticky md:top-[calc(var(--header-h,0px)+1.5rem)]' : ''}`}>
           <RailCard>
             <section aria-label="Opening hours">
               <p className="mb-4 text-lg empty:hidden">
@@ -88,13 +88,13 @@ export function VenuePage() {
   )
 }
 
-/** Whether an element, with `margin` around it, fits the window's height; measured again as either changes. */
+/** Whether an element, with `margin` around it, fits the window's height under the header; measured again as either changes. */
 function useFits(ref: RefObject<HTMLElement | null>, margin: number): boolean {
   const [fits, setFits] = useState(true)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const measure = () => setFits(el.offsetHeight + margin <= window.innerHeight)
+    const measure = () => setFits(el.offsetHeight + margin + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 0) <= window.innerHeight)
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)

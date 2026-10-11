@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
+import { Navigate, Outlet, Route, Routes } from 'react-router'
 import { Footer } from './components/Footer.tsx'
 import { Header } from './components/Header.tsx'
 import { Container } from './components/Container.tsx'
@@ -17,16 +17,15 @@ import { Send } from './pages/Send.tsx'
 
 function Layout() {
   const data = useData()
-  const { pathname } = useLocation()
-  const finder = SCOPES.some((s) => s.path === pathname)
   useScrollMemory()
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className={`flex-1 ${finder ? 'pt-4' : 'pt-10 sm:pt-12'}`}>
-        <Container wide={finder}>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
+      {/* A list beside a map (.finder) runs from the header to the footer, and sets its own space */}
+      <main className="flex-1 pt-10 sm:pt-12 has-[.finder]:pt-0">
+        <Container>{data.status === 'ready' ? <Outlet /> : data.status === 'error' ? <p className="text-muted">{data.error}</p> : null}</Container>
       </main>
-      <Footer wide={finder} />
+      <Footer />
     </div>
   )
 }

@@ -39,7 +39,7 @@ export function DayMenu({ days, slots, date, prices, terms }: { days: MenuDay[];
             .map((s) => `${s.start}–${s.end}`)
             .join(', ')
           return (
-            <section key={day.service} id={`meal-${day.service}`} data-meal={day.service} aria-labelledby={`meal-${day.service}-heading`} className="mb-14 scroll-mt-16">
+            <section key={day.service} id={`meal-${day.service}`} data-meal={day.service} aria-labelledby={`meal-${day.service}-heading`} className="mb-14 scroll-mt-[calc(var(--header-h,0px)+4rem)]">
               <div className="flex items-baseline gap-4 border-b border-ink/10 pb-2">
                 <h3 id={`meal-${day.service}-heading`} className="flex-1 text-xl font-semibold">{MEAL_LABEL[day.service]}</h3>
                 {mp.meal && <PriceText price={fromList(mp.meal)} />}
@@ -84,7 +84,7 @@ function MealTabs({ meals }: { meals: { meal: Meal; count: number }[] }) {
       let current = names[0]
       for (const meal of names) {
         const top = document.getElementById(`meal-${meal}`)?.getBoundingClientRect().top
-        if (top != null && top <= 80) current = meal
+        if (top != null && top <= 80 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 0)) current = meal
       }
       setActive(current)
     }
@@ -94,7 +94,7 @@ function MealTabs({ meals }: { meals: { meal: Meal; count: number }[] }) {
   }, [key])
   if (!meals.length) return null
   return (
-    <nav aria-label="Meals" className="card-row sticky top-0 z-10 -mx-4 flex gap-6 overflow-x-auto border-b border-ink/10 bg-canvas px-4 pt-2 sm:mx-0 sm:px-0">
+    <nav aria-label="Meals" className="card-row sticky top-[var(--header-h,0px)] z-10 -mx-4 flex gap-6 overflow-x-auto border-b border-ink/10 bg-canvas px-4 pt-2 sm:mx-0 sm:px-0">
       {meals.map(({ meal, count }) => (
         <button
           key={meal}
