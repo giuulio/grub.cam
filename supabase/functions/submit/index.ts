@@ -1,14 +1,17 @@
 // POST /functions/v1/submit — what someone in a venue sends from its page: a photo of the menu board, the price list
-// or the hours, and/or typed text. Stores the photo in the private `submissions` bucket, inserts the row, and (within
-// a daily budget) has a model transcribe it into the ingest text format for its kind; the sender then confirms that
+// or the hours, and/or typed text. Stores the photo in the private `submissions` bucket, inserts the row, and has a
+// model transcribe it into the ingest text format for its kind; the sender then confirms that
 // text (action "confirm"), which queues it for review. Nothing is published from here: `npm run submissions -- approve`
 // does that, after a person has looked (or, for a member's photo of the venue, the photos Action: see below).
 //
-// The model is OpenAI's (OPENAI_API_KEY, OPENAI_MODEL; OPENAI_PRICE "0.75/4.50", its dollars per million input and
-// output tokens; OPENAI_REASONING, the effort for a reasoning model), through the Responses API with answers in a fixed
-// shape (_shared/openai.ts). Every call is logged in `model_calls` with its tokens and cost, and once today's calls
-// have cost LLM_DAILY_USD (default 2) no more are made, so a burst can't spend the credit: past it, a row waits for a
-// person. No key: the same. Contributors (table `contributors`) post JSON with a X-Contributor-Token header and their
+// The models are OpenAI's (OPENAI_API_KEY), through the Responses API with answers in a fixed shape (_shared/openai.ts):
+// OPENAI_MODEL (default gpt-6.1-sol) reads boards, price lists and hours, where accuracy is what members feel;
+// OPENAI_CHECK_MODEL (default gpt-6-luna) vets photos and reviews, simpler questions at a twentieth of the price.
+// Their prices are known for the defaults (priceOf()); OPENAI_PRICE / OPENAI_CHECK_PRICE ("2/10", dollars per million
+// input and output tokens) set them for any other. OPENAI_REASONING: the effort for both (default the model's own).
+// Every call is logged in `model_calls` with its tokens and cost. Spending is limited by the OpenAI project's monthly
+// budget, not here (filling gaps fast is worth a month's budget in a day); LLM_DAILY_USD, when set, also stops calls
+// once today's have cost that much. A call refused or failing (no key, quota spent) leaves the row for a person. Contributors (table `contributors`) post JSON with a X-Contributor-Token header and their
 // own transcription; the ingest Action approves theirs.
 //
 // A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
@@ -26,14 +29,14 @@
 // don't need one.
 //
 // A review (action "review": venue, rating 1–5, optional words; or remove) is a signed-in member's, one per venue. A
-// rating alone is published; words are checked first (OpenAI's moderation, free, then OPENAI_REVIEW_MODEL, default
-// gpt-5.4-nano, asking whether they're about the venue and name no one) and wait for a person when they don't pass or
+// rating alone is published; words are checked first (OpenAI's moderation, free, then OPENAI_CHECK_MODEL asking
+// whether they're about the venue and name no one) and wait for a person when they don't pass or
 // no model can look. Venues show reviews only with 5 or more published (the views in migration 0030).
 //
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
-import { base64, costOf, moderate, readPrice, respond, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
+import { base64, costOf, moderate, priceOf, respond, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
@@ -41,15 +44,18 @@ const MAX_PHOTO = 5 * 1024 * 1024
 const PER_HOUR = 12 // submissions from one address
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
 const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
-const DAILY_USD = Number(Deno.env.get('LLM_DAILY_USD') ?? 2)
-const MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-5.4-mini'
-const PRICE = readPrice(Deno.env.get('OPENAI_PRICE'))
-// Checking a review's words is an easier question: a smaller model (OPENAI_REVIEW_PRICE its price, as OPENAI_PRICE)
-const REVIEW_MODEL = Deno.env.get('OPENAI_REVIEW_MODEL') ?? 'gpt-5.4-nano'
-const REVIEW_PRICE = readPrice(Deno.env.get('OPENAI_REVIEW_PRICE'))
+// No daily cap unless one is set: OpenAI's project budget is the limit
+const DAILY_USD = Deno.env.get('LLM_DAILY_USD') ? Number(Deno.env.get('LLM_DAILY_USD')) : Infinity
+const MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-6.1-sol'
+const PRICE = priceOf(MODEL, Deno.env.get('OPENAI_PRICE'))
+// Whether a photo or a review can go up is an easier question than reading a board: a cheaper model
+const CHECK_MODEL = Deno.env.get('OPENAI_CHECK_MODEL') || 'gpt-6-luna'
+const CHECK_PRICE = priceOf(CHECK_MODEL, Deno.env.get('OPENAI_CHECK_PRICE'))
 const REVIEWS_PER_DAY = 20 // reviews one member can write or change in a day
-// A call whose cost isn't known (no OPENAI_PRICE) counts as this against the day's budget
+// A call whose cost isn't known (a model priceOf() doesn't know, and no OPENAI_PRICE) counts as this against the day's budget
 const UNPRICED_USD = 0.01
+// Room for a reasoning model's thinking as well as a long price list's answer
+const MAX_OUTPUT = 16000
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -70,8 +76,9 @@ async function sha256(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-/** Whether today's calls (London time) have left room in the budget for one more. */
+/** Whether today's calls (London time) have left room under LLM_DAILY_USD for one more; always, when it isn't set. */
 async function underBudget(): Promise<boolean> {
+  if (DAILY_USD === Infinity) return true
   const { data } = await sb.from('model_calls').select('cost_usd').gte('at', `${today()}T00:00:00Z`)
   const spent = (data ?? []).reduce((n, c) => n + (c.cost_usd == null ? UNPRICED_USD : Number(c.cost_usd)), 0)
   return spent < DAILY_USD
@@ -82,14 +89,14 @@ type Purpose = 'transcribe' | 'vet_photo' | 'review'
 /**
  * One call to the model, logged with its tokens and cost against what it was for (`ref`); its parsed answer, or null
  * when it can't be asked (no key, over budget) or the call fails. `good` says whether the answer was of use, for the
- * log. A review's check uses the smaller REVIEW_MODEL.
+ * log. A photo's or a review's check uses the cheaper CHECK_MODEL.
  */
 async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Image | null, ref: { submission_id?: string; review_id?: string }, good: (v: T) => boolean = () => true): Promise<T | null> {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key || !(await underBudget())) return null
-  const [model, price] = purpose === 'review' ? [REVIEW_MODEL, REVIEW_PRICE] : [MODEL, PRICE]
+  const [model, price] = purpose === 'transcribe' ? [MODEL, PRICE] : [CHECK_MODEL, CHECK_PRICE]
   try {
-    const { value, usage } = await respond<T>({ key, model, text, image: image ?? undefined, schema, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
+    const { value, usage } = await respond<T>({ key, model, text, image: image ?? undefined, schema, maxOutput: MAX_OUTPUT, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
     await sb.from('model_calls').insert({ purpose, model, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, price) ?? null, ok: good(value), ...ref })
     return value
   } catch (e) {
@@ -146,7 +153,7 @@ async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: 
   const { count: recent } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq('venue_id', venue.id).not('submission_id', 'is', null).gte('created_at', day)
   const waitFor = (mine ?? 0) >= PHOTOS_PER_DAY ? 'you have sent a few today' : (recent ?? 0) > 0 ? 'this venue had a new photo today' : null
   const verdict = await vet(id, venue, photo)
-  const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: MODEL } : {}) }
+  const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: CHECK_MODEL } : {}) }
   if (verdict?.ok && !waitFor) {
     await sb.from('submissions').update({ ...patch, status: 'queued' }).eq('id', id)
     await dispatchPublish()
@@ -179,14 +186,19 @@ async function venueOf(id: string): Promise<Venue | null> {
 /**
  * A sender confirming (possibly edited) text. A menu goes up without a person when the venue's menu isn't a script's
  * and the sender's day has room (`queued`: the photos Action checks it reads and is for a sensible day, and publishes
- * it); anything else joins the review queue. Only while the row is fresh and unreviewed.
+ * it); anything else joins the review queue. `wrong`: the sender says the reading is wrong and leaves it to a person,
+ * with the photo. Only while the row is fresh and unreviewed.
  */
-async function confirm(sender: { id: string }, body: { id?: string; transcription?: string }): Promise<Response> {
+async function confirm(sender: { id: string }, body: { id?: string; transcription?: string; wrong?: boolean }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
   const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, created_at, user_id').eq('id', body.id).maybeSingle()
   if (!row || row.user_id !== sender.id) return fail('no such submission', 404)
   if (!['received', 'transcribed'].includes(row.status)) return fail('already reviewed', 409)
   if (Date.now() - new Date(row.created_at).getTime() > 24 * 3600 * 1000) return fail('too late to change', 409)
+  if (body.wrong) {
+    await sb.from('submissions').update({ status: 'needs_review', review_note: 'the sender says the reading is wrong' }).eq('id', body.id)
+    return json({ id: body.id, status: 'needs_review' })
+  }
   const text = body.transcription.trim().slice(0, 20000)
   if (!text.includes('\n---\n')) return fail('the text needs its header and a --- line')
   const edited = text !== (row.transcription ?? '').trim()

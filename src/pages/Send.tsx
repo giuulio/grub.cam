@@ -74,12 +74,12 @@ export function Send() {
       setBusy(undefined)
     }
   }
-  const approve = async () => {
+  const approve = async (wrong = false) => {
     if (!result || !session) return
     setBusy('confirming')
     setError(undefined)
     try {
-      setDone(await confirm(session.access_token, result.id, text))
+      setDone(await confirm(session.access_token, result.id, text, wrong))
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -126,8 +126,8 @@ export function Send() {
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={Math.min(30, Math.max(8, text.split('\n').length + 1))} spellCheck={false} className="w-full rounded-lg border border-ink/15 bg-canvas p-3 font-mono text-sm leading-6 text-ink focus:border-ink/50 focus:outline-none" aria-label="Transcription" />
             {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-3">
-              <button type="button" onClick={approve} disabled={busy === 'confirming'} className="btn btn-primary">{busy === 'confirming' ? 'Sending…' : 'Send it'}</button>
-              <button type="button" onClick={() => setDone(result)} className="btn btn-secondary">It's wrong, send the photo as it is</button>
+              <button type="button" onClick={() => approve()} disabled={busy === 'confirming'} className="btn btn-primary">{busy === 'confirming' ? 'Sending…' : 'Send it'}</button>
+              <button type="button" onClick={() => approve(true)} disabled={busy === 'confirming'} className="btn btn-secondary">It's wrong, send the photo as it is</button>
             </div>
           </section>
         ) : (

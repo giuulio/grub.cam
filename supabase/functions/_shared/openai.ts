@@ -3,7 +3,7 @@
 // everything it needs is passed in.
 
 export type Usage = { input: number; output: number }
-/** Dollars per million tokens, input and output, for the model a call uses (OPENAI_PRICE "0.75/4.50"). */
+/** Dollars per million tokens, input and output, for the model a call uses (priceOf(), or OPENAI_PRICE "2/10"). */
 export type Price = { input: number; output: number }
 export type Image = { base64: string; mime: string }
 /** A JSON Schema for the answer: an object whose properties are all required, nothing else allowed (strict mode). */
@@ -14,6 +14,18 @@ export function readPrice(text: string | undefined): Price | undefined {
   const m = text?.match(/^\s*([\d.]+)\s*\/\s*([\d.]+)\s*$/)
   return m ? { input: Number(m[1]), output: Number(m[2]) } : undefined
 }
+
+/** Standard-tier prices of the models worth using here, from developers.openai.com/api/docs/pricing (October 2026). */
+const PRICES: Record<string, Price> = {
+  'gpt-6.1-sol': { input: 2, output: 10 },
+  'gpt-6-sol': { input: 2, output: 10 },
+  'gpt-6-luna': { input: 0.1, output: 0.5 },
+  'gpt-5.4-mini': { input: 0.75, output: 4.5 },
+  'gpt-5.4-nano': { input: 0.2, output: 1.25 },
+}
+
+/** A model's price: `override` ("in/out") when given, else the table's; undefined when neither knows it. */
+export const priceOf = (model: string, override?: string): Price | undefined => readPrice(override) ?? PRICES[model]
 
 /** What a call cost, in dollars; undefined when the model's price isn't known. */
 export const costOf = (u: Usage, p: Price | undefined) => (p ? (u.input * p.input + u.output * p.output) / 1e6 : undefined)

@@ -55,6 +55,7 @@ export async function saveReview(token: string, review: { venue: string; rating?
   return r.status
 }
 
-export function confirm(token: string, id: string, transcription: string): Promise<SubmitResult> {
-  return call(token, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'confirm', id, transcription }) })
+/** Confirms the text as read (or as the sender fixed it); `wrong`: the reading is wrong, and a person reads the photo instead. */
+export function confirm(token: string, id: string, transcription: string, wrong = false): Promise<SubmitResult> {
+  return call(token, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'confirm', id, transcription, ...(wrong ? { wrong } : {}) }) })
 }

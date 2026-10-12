@@ -6,3 +6,9 @@ schemas = ["public"]
 
 [db]
 major_version = 17
+
+# The function checks who's calling itself (a member's token through Auth, or a contributor's token), so the gateway's
+# own JWT check is off: it would refuse contributors' posts, and it can't verify tokens once the project's JWT keys are
+# asymmetric. `supabase functions deploy submit` reads this.
+[functions.submit]
+verify_jwt = false

@@ -1,4 +1,4 @@
-// Usage: npm run models:compare -- <dir> --model gpt-5.4-mini=0.75/4.50 --model gpt-5.4-nano=0.20/1.25 [--reasoning low]
+// Usage: npm run models:compare -- <dir> --model gpt-6.1-sol --model gpt-6-luna [--model other=2/10] [--reasoning low]
 //
 // Which OpenAI model to transcribe with (OPENAI_MODEL in the submit function), decided on real boards rather than on
 // price: each photo in <dir> is sent to each model with the same prompt and answer shape the submit function uses,
@@ -7,7 +7,8 @@
 // <dir> holds pairs: menu-<anything>.jpg with menu-<anything>.txt (likewise prices-… and hours-…), the .txt a file in
 // the ingest format (header, ---, body) as ingest:manual, ingest:prices or ingest:hours would take, checked by hand.
 // The header's site and venue say where it is; a menu's first body line ("2026-10-09 lunch") its day and meal.
-// After a model's name, "=in/out" is its price in dollars per million tokens, for the cost column.
+// After a model's name, "=in/out" is its price in dollars per million tokens, for the cost column (known already for
+// the models in priceOf()'s table).
 //
 // The score is per line: lines the model got exactly (after folding case, spaces and price formats) over the lines it
 // should have (recall) and over the lines it gave (precision), as F1. Needs OPENAI_API_KEY in .env, as well as the
@@ -17,14 +18,14 @@ import { basename, extname, join } from 'node:path'
 import { parseArgs } from 'node:util'
 import sharp from 'sharp'
 import { prompt, type Transcribable } from '../../supabase/functions/_shared/formats.ts'
-import { costOf, readPrice, respond, TRANSCRIPTION, type Transcription } from '../../supabase/functions/_shared/openai.ts'
+import { costOf, priceOf, respond, TRANSCRIPTION, type Transcription } from '../../supabase/functions/_shared/openai.ts'
 import { connect } from './lib/db.ts'
 
 const { values, positionals } = parseArgs({ options: { model: { type: 'string', multiple: true }, reasoning: { type: 'string' } }, allowPositionals: true })
 const dir = positionals[0]
 const models = (values.model ?? []).map((m) => {
   const [name, price] = m.split('=')
-  return { name, price: readPrice(price) }
+  return { name, price: priceOf(name, price) }
 })
 if (!dir || !models.length) {
   console.error('usage: npm run models:compare -- <dir> --model <name>[=in/out] [--model …] [--reasoning low]')

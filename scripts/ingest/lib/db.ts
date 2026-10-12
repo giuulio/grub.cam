@@ -165,6 +165,16 @@ export function connect() {
       if (error) throw new Error(`photos of ${submission}: ${error.message}`)
       return data.length
     },
+    /** Members' photos published but not yet shown: their rows wait, unapproved, until their files are served (`live`). Not one taken down since. */
+    async photosAwaitingDeploy(): Promise<{ id: string; path: string; widths: number[]; venue_id: string; submission_id: string }[]> {
+      const { data, error } = await sb.from('photos').select('id, path, widths, venue_id, submission_id, submissions!inner(status)').eq('approved', false).not('submission_id', 'is', null).eq('submissions.status', 'approved')
+      if (error) throw new Error(`photos awaiting deploy: ${error.message}`)
+      return data as unknown as { id: string; path: string; widths: number[]; venue_id: string; submission_id: string }[]
+    },
+    async approvePhoto(id: string) {
+      const { error } = await sb.from('photos').update({ approved: true }).eq('id', id)
+      if (error) throw new Error(`photos ${id}: ${error.message}`)
+    },
     /** How many services after `date` are saved for this venue. */
     async savedAfter(venue: string, date: string): Promise<number> {
       const { count, error } = await sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)

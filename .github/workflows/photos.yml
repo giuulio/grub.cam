@@ -3,7 +3,8 @@ name: Members' photos and menus
 # Publishes what members send that goes up without a person: menus whose text the sender confirmed (checked, then saved
 # to Supabase, where the site reads them live), and photos of a venue the submit function's model has passed (each
 # one's sizes made into public/photos, added to Supabase ahead of the venue's others, and the files committed to main,
-# which Workers Builds deploys like any other push). The submit function starts this as soon as a menu or
+# which Workers Builds deploys like any other push; the row is turned on once grub.cam serves its files, so the venue
+# keeps its old photo until then). The submit function starts this as soon as a menu or
 # photo is queued (workflow_dispatch, through GITHUB_DISPATCH_TOKEN, a Supabase secret); the hourly run catches any it
 # missed. Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY, as the ingest does.
 on:
@@ -44,3 +45,6 @@ jobs:
           # Someone may have pushed meanwhile: put these on top and try again
           for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
           exit 1
+      # Each photo published (now, or by hand) shows once the deploy serves its files; up to 12 minutes, else the next run
+      - if: ${{ !cancelled() }}
+        run: npm run submissions -- live --wait 720

@@ -4,9 +4,11 @@
 //        npm run submissions -- approve <id> [--keep-hours] [--dry]         <- parses the text and saves it; replaces the venue's hours unless --keep-hours
 //        npm run submissions -- approve --trusted [--dry]                   <- every contributor's row waiting (the ingest Action runs this)
 //        npm run submissions -- photos [--dry]                              <- every member's photo queued (the photos Action runs this)
+//        npm run submissions -- live [--wait 600]                           <- turns on the published photos the site now serves (after the commit's deploy)
 //        npm run submissions -- menus [--dry]                               <- every member's menu queued, checked and published (the same Action)
 //        npm run submissions -- reject <id> "why"                           <- a published photo or menu is taken down again
 //        npm run submissions -- digest                                      <- what's waiting, as Markdown for the review issue (the queue Action)
+//        npm run submissions -- smoke [--venue v] [--photo f.jpg] [--review] <- sends something in end to end as a throwaway member, then removes it (smoke.ts)
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
@@ -17,7 +19,8 @@
 //
 // A member's photo of the venue (kind photo) is published as ingest:photo would: its sizes written to public/photos
 // (commit them; the photos Action does) and its row added ahead of the venue's others, credited to the sender's name
-// under CC BY 4.0, the licence the form grants. The submit function queues the ones a model has passed.
+// under CC BY 4.0, the licence the form grants, but unapproved until `live` finds its files served, so the venue keeps
+// its old photo until the deploy is done. The submit function queues the ones a model has passed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -28,12 +31,13 @@ import { parseHours } from './hours.ts'
 import { parseManual } from './manual.ts'
 import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
 import { parsePrices } from './prices.ts'
+import { SITE_URL } from '../../src/lib/site.ts'
 
 /** The licence a member grants by sending a photo of a venue (src/pages/Send.tsx says so). */
 const MEMBER_LICENCE = 'CC BY 4.0'
 
 const { values, positionals } = parseArgs({
-  options: { all: { type: 'boolean' }, trusted: { type: 'boolean' }, dry: { type: 'boolean' }, 'keep-hours': { type: 'boolean' }, dir: { type: 'string' } },
+  options: { all: { type: 'boolean' }, trusted: { type: 'boolean' }, dry: { type: 'boolean' }, 'keep-hours': { type: 'boolean' }, dir: { type: 'string' }, wait: { type: 'string' }, venue: { type: 'string' }, photo: { type: 'string' }, review: { type: 'boolean' } },
   allowPositionals: true,
 })
 const [command, ...args] = positionals
@@ -74,12 +78,38 @@ async function publishPhoto(s: Submission, dry: boolean): Promise<string> {
       licence: MEMBER_LICENCE,
       source: 'sent in on grub.cam',
       taken_on: s.created_at.slice(0, 10),
-      approved: true,
+      // Shown once its files are served (`live`): approved now, the venue would show its tile, not its old photo, until the deploy
+      approved: false,
       submission_id: s.id,
     },
     { first: true },
   )
-  return `${path}: ${sizes}, now the venue's photo`
+  return `${path}: ${sizes}; the venue's photo once deployed (commit public/photos; \`live\` turns it on)`
+}
+
+/**
+ * Turns on each member's photo whose files the site now serves, checking every 15 s for up to `waitMs` (the deploy
+ * after the photos commit takes a few minutes). Whatever isn't served by then waits for the next run, and the run fails
+ * so the Action says so.
+ */
+async function live(waitMs: number) {
+  const base = process.env.VITE_PHOTOS_URL ?? `${SITE_URL}/photos`
+  let pending = await db.photosAwaitingDeploy()
+  if (!pending.length) return console.log('no photos waiting for their deploy')
+  const until = Date.now() + waitMs
+  for (;;) {
+    const served = await Promise.all(pending.map(async (p) => (await fetch(`${base}/${p.path}-${p.widths[0]}.webp?check=${Date.now()}`, { method: 'HEAD' }).catch(() => null))?.ok ?? false))
+    for (const p of pending.filter((_, i) => served[i])) {
+      await db.approvePhoto(p.id)
+      console.log(`✓ ${short(p.submission_id)} ${p.venue_id}: photo served, now shown`)
+    }
+    pending = pending.filter((_, i) => !served[i])
+    if (!pending.length) return
+    if (Date.now() > until) break
+    await new Promise((r) => setTimeout(r, 15000))
+  }
+  for (const p of pending) console.error(`✗ ${short(p.submission_id)} ${p.venue_id}: ${base}/${p.path} not served yet; the next run checks again`)
+  process.exitCode = 1
 }
 
 /** Parses a transcription with its kind's parser and saves it. Returns what was saved, for the log line. */
@@ -268,10 +298,16 @@ switch (command) {
     console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}${menus ? `; ${menus} of its menus taken down` : ''}`)
     break
   }
+  case 'live':
+    await live(Number(values.wait ?? 600) * 1000)
+    break
   case 'digest':
     console.log(await digest())
     break
+  case 'smoke':
+    await (await import('./smoke.ts')).smoke({ venue: values.venue ?? 'clare/buttery', photo: values.photo, review: values.review })
+    break
   default:
-    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | menus | reject <id> "why" | digest')
+    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | live | menus | reject <id> "why" | digest | smoke')
     process.exitCode = 1
 }
