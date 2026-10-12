@@ -51,13 +51,17 @@ The submit function starts the publishing workflow for a queued menu or photo th
 
 Approval validates through `parseManual`, `parsePrices` or `parseHours`, using the same database calls as hand ingest (`method: user`, or `contributor`). Menus upsert days; prices replace the list; hours replace slots unless `--keep-hours` is passed; either keeps what it replaced for `reject`. Slot provenance records the submission. Notes (`kind: other`) require acting on the note rather than publishing it with `approve`.
 
-pg_cron starts `.github/workflows/queue.yml` at 07:00 and 18:00 UTC; it keeps one open “Review queue” issue. `submissions -- digest` includes kind, venue, age, reason, action commands, held-back review counts and model spend. It excludes personal details, evidence and review words because the repo is public. Queue changes trigger a comment for email notification; spend-only changes do not.
+The queue Action (`.github/workflows/queue.yml`) keeps one open “Review queue” issue. Every newly inserted submission starts it through the database (`0033`), including contributor submissions and anything published automatically. `submissions -- notify <issue>` adds one receipt comment per submission, with only its kind, correction topic, venue link and private CLI command. It never copies submitted words, photos, model output or sender details. Subscribe to the issue for GitHub notifications; email delivery follows your GitHub notification settings.
+
+`submissions.notified_at` records successful delivery independently of publication status. A bot comment's submission marker prevents a duplicate if GitHub accepted it but the database acknowledgement failed. Runs are serialised; pg_cron retries outstanding receipts every ten minutes. Existing submissions were marked as the baseline when `0033` was applied, so enabling this does not announce old submissions.
+
+pg_cron also starts the Action at 07:00 and 18:00 UTC. `submissions -- digest` includes kind, venue, age, reason, action commands, held-back review counts and model spend. It excludes personal details, evidence and review words because the repo is public. Review-queue changes trigger a summary comment; spend-only changes do not.
 
 ### Contributors and limits
 
 Contributors post their own complete ingest-format transcription with `X-Contributor-Token`. `contributors` stores a SHA-256 token hash, active status and optional allowed sites. Generate 32 random bytes as hex, save `encode(sha256(token), 'hex')`, and give the contributor the raw token. Rows wait as `needs_review`; the ingest Action runs `approve --trusted` and publishes them as method `contributor`. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the HTTP format.
 
-The function also has a honeypot, a 5MB upload limit and 12 submissions per hour per hashed IP. Review writes have a separate limit. `IP_SALT` is an optional secret used for the hash.
+Each member submission accepts one image, at most 5 MB, and each account may make 12 submissions per rolling hour. There is no separate daily upload cap. Automatic publication allows three venue photos, or six each of menus, price lists and hours, per rolling 24 hours; further submissions wait for review. Venue photos also wait if another member photo has been added for that venue in the preceding 24 hours. The function has a honeypot and keeps a salted IP hash for investigation, without limiting a college's shared IP. Review writes have a separate limit. `IP_SALT` is an optional secret used for the hash.
 
 ## Models and spending
 
