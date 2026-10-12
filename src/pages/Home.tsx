@@ -252,6 +252,7 @@ function Finder({ scope }: { scope: Scope }) {
           {/* What the site is for this tab, at the top of its list (it scrolls away with it); over a phone's map, read
               out but not shown, so the map has the screen */}
           <h1 className={`finder-title title text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
+          <p className={`finder-intro max-w-xl pb-3 text-muted ${listView ? 'max-md:mt-1.5' : 'max-md:sr-only'}`}>{info.intro}</p>
           <section aria-label={`${info.label} venues`} className="finder-list">
             <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
               {alone ? (

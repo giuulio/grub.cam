@@ -9,8 +9,11 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } 
 import { formatDays, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
-/** `image`: a photo for link previews (og:image); `jsonLd`: one or more schema.org things */
-export type Page = { path: string; description: string; jsonLd?: object | object[]; image?: string }
+/**
+ * `image`: a photo for link previews (og:image); `jsonLd`: one or more schema.org things; `daily`: what the page shows
+ * changes from day to day (a menu), so the sitemap dates it to the build, while the rest go without a date they don't have
+ */
+export type Page = { path: string; description: string; jsonLd?: object | object[]; image?: string; daily?: boolean }
 
 const TYPE_SCHEMA: Record<VenueType, string> = { hall: 'FoodEstablishment', cafe: 'CafeOrCoffeeShop', bar: 'BarOrPub' }
 const DAY_SCHEMA: Record<Day, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
@@ -41,7 +44,7 @@ const placed = (s: Site) => (s.kind === 'college' ? `${siteName(s)}, Cambridge` 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
   '/': `Cambridge college menus, cafés and bars today · ${SITE_NAME}`,
-  '/dining': `Cambridge college dining hall menus today and meal times · ${SITE_NAME}`,
+  '/dining': `Cambridge college hall and canteen menus today, and meal times · ${SITE_NAME}`,
   '/cafes': `Cambridge college and University cafés: opening hours and prices · ${SITE_NAME}`,
   '/bars': `Cambridge college bars: opening hours and drink prices · ${SITE_NAME}`,
   '/formal': `Cambridge college formal hall: nights, prices and dress code · ${SITE_NAME}`,
@@ -143,6 +146,7 @@ export function pages(data: Data, date: string): Page[] {
   const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/') }
   const home: Page = {
     path: '/',
+    daily: true,
     description: SITE_DESCRIPTION,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -156,18 +160,18 @@ export function pages(data: Data, date: string): Page[] {
     },
   }
   // The front page's other tabs: Dining, Cafés, Bars, Formal hall, each listing its venues for search engines
-  const TABS: Record<string, { description: string; of: (v: Venue) => boolean }> = {
-    '/dining': { description: "Every Cambridge college dining hall and University canteen: today's menus dish by dish, with prices, meal times, and what's open now.", of: (v) => venueTypes(v).includes('hall') && !isFormalOnly(v) },
-    '/cafes': { description: "Every Cambridge college and University café: opening hours, coffee and food prices as posted, and what's open now.", of: (v) => venueTypes(v).includes('cafe') },
-    '/bars': { description: "Every Cambridge college bar: opening hours, pint and drink prices as posted, and what's open now.", of: (v) => venueTypes(v).includes('bar') },
-    '/formal': { description: 'Formal hall at every Cambridge college that holds it: which nights, what it costs, dress code, guests and how to book.', of: holdsFormal },
+  const TABS: Record<string, (v: Venue) => boolean> = {
+    '/dining': (v) => venueTypes(v).includes('hall') && !isFormalOnly(v),
+    '/cafes': (v) => venueTypes(v).includes('cafe'),
+    '/bars': (v) => venueTypes(v).includes('bar'),
+    '/formal': holdsFormal,
   }
   const tabs = SCOPES.filter((s) => s.path !== '/').map((s): Page => {
-    const { description, of } = TABS[s.path]
-    const mine = data.venues.filter(of)
+    const mine = data.venues.filter(TABS[s.path])
     return {
       path: s.path,
-      description,
+      description: s.intro,
+      daily: mine.some(hasMenu),
       jsonLd: {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
@@ -189,6 +193,7 @@ export function pages(data: Data, date: string): Page[] {
     const named = mine.map((v) => `${v.name} (${v.type === 'hall' && isFormalOnly(v) ? 'formal hall' : list(venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase())))})`)
     return {
       path: sitePath(s),
+      daily: mine.some(hasMenu),
       description: clip(`Where to eat and drink at ${placed(s)}: ${named.join(', ')}. Today's menus, opening hours and prices.`),
       jsonLd: [
         {
@@ -206,6 +211,7 @@ export function pages(data: Data, date: string): Page[] {
   })
   const venues = data.venues.map((v): Page => ({
     path: venuePath(v),
+    daily: hasMenu(v),
     description: venueDescription(v, date),
     jsonLd: [venueJsonLd(v, date), breadcrumbs([[siteName(v.site), sitePath(v.site)], [v.name, venuePath(v)]])],
     image: venueImage(v),
@@ -249,8 +255,9 @@ export function headTags(page: Page, title: string): string {
   return tags.join('\n    ')
 }
 
+/** Every page; only those with a menu carry the build's date, since a lastmod that's always today is one Google ignores. */
 export function sitemap(list: Page[], lastmod: string): string {
-  const urls = list.map((p) => `  <url><loc>${abs(p.path)}</loc><lastmod>${lastmod}</lastmod></url>`).join('\n')
+  const urls = list.map((p) => `  <url><loc>${abs(p.path)}</loc>${p.daily ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`).join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
 }
 

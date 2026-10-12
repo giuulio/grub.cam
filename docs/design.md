@@ -4,7 +4,7 @@ See [AGENTS.md](../AGENTS.md) for data rules and commands, and [operations](oper
 
 ## Routes and shared shell
 
-The front page is the finder, with one address per tab: `/` All, `/dining`, `/cafes`, `/bars`, `/formal`. `SCOPES` in `src/lib/finder.ts` defines their headings and labels. A site has `/:slug`; a venue has `/:site/:venue`. Other pages are `/send`, `/coverage`, `/about`, `/terms`, `/credits` and a real 404.
+The front page is the finder, with one address per tab: `/` All, `/dining`, `/cafes`, `/bars`, `/formal`. `SCOPES` in `src/lib/finder.ts` defines their headings, labels and intro sentences. Headings use the words people search for (“Cambridge college bars”); the intro is also the tab's meta description. A site has `/:slug`; a venue has `/:site/:venue`. Other pages are `/send`, `/coverage`, `/about`, `/terms`, `/credits` and a real 404.
 
 Keep old links working: `legacyPath()` handles `/explore?…`, `/?type=…` and `/?venue=<id>`; `/directory`, `/colleges` and `/university` redirect to `/` in the app and `public/_redirects`. Old site-page `#venue-slug` links redirect to the venue. There is no separate directory or site index: find a site through search or `SitePicker`.
 
@@ -16,7 +16,7 @@ The footer has About, Find and Help links, coverage counts, copyright, terms and
 
 ## Finder
 
-From tablet width up, the finder is a list of `VenueRow`s beside a slightly wider map (9fr:11fr). The list starts with the tab's heading, count and coverage line (`tabCoverage()`), then 24 rows at a time (`PAGE`) and “Show 24 more”. Filters reset the count; a pin can reveal enough rows to reach its venue. Prerendered HTML includes every row. The list scrolls independently without a scrollbar; the map clears the header, window edge and screen foot by the page gutter. After the list ends, the page can scroll to the footer.
+From tablet width up, the finder is a list of `VenueRow`s beside a slightly wider map (9fr:11fr). The list starts with the tab's heading, intro sentence, count and coverage line (`tabCoverage()`), then 24 rows at a time (`PAGE`) and “Show 24 more”. Filters reset the count; a pin can reveal enough rows to reach its venue. Prerendered HTML includes every row. The list scrolls independently without a scrollbar; the map clears the header, window edge and screen foot by the page gutter. After the list ends, the page can scroll to the footer.
 
 Rows have a 4:3 photo, up to 320px wide, 20px corners, type badges, site name, venue name and one status line (meal, next service today, distance when available). Their detail depends on the tab:
 
@@ -27,7 +27,7 @@ Rows have a 4:3 photo, up to 320px wide, 20px corners, type badges, site name, v
 
 Picking a desktop pin reduces the list to that venue under “Show all N venues”. That link or a map-background click restores the full list and its scroll position. No duplicate card floats over the desktop map. Hovering a row highlights its pin. The initial fit uses the central cluster (`core`, within 1.5 km of Cambridge's middle); narrowing the list fits every remaining venue.
 
-On a phone the map fills the screen below the measured `--finder-top`. The heading is available to screen readers. Search and horizontally scrolling filter chips overlay the top; a selected pin shows swipeable `MapCards` at the foot. Search selects its first result, clearing it hides the cards, and the map follows the selected card. Cards sit above the keyboard using `--keyboard` from the visual viewport. “List · N” switches to `view=list`; old `view=map` links still open the map. Only mount a map where one is shown.
+On a phone the map fills the screen below the measured `--finder-top`. The heading and intro are available to screen readers. Search and horizontally scrolling filter chips overlay the top; a selected pin shows swipeable `MapCards` at the foot. Search selects its first result, clearing it hides the cards, and the map follows the selected card. Cards sit above the keyboard using `--keyboard` from the visual viewport. “List · N” switches to `view=list`; old `view=map` links still open the map. Only mount a map where one is shown.
 
 Filters are validated by `readFilters()`. Shared across tabs: `q`, comma-separated `site`, `kind=college|university` and `open`. Dining also has `date` within the loaded week, `meal` and comma-separated `diet`. `SitePicker` has All / Colleges / University, search and any number of site checkboxes; on phones it rises from the foot. Nearest first requests location only on click, keeps it in memory, sorts by straight-line distance (`metresBetween()`) and shows that distance.
 

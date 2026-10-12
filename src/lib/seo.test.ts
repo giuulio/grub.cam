@@ -94,6 +94,8 @@ describe('seo', () => {
 
   it('writes a sitemap and llms.txt files', () => {
     expect(sitemap(pages(data, date), date)).toContain('<url><loc>https://grub.cam/jesus/caff</loc><lastmod>2026-10-08</lastmod></url>')
+    // A page without a menu doesn't change with each build, so it isn't dated
+    expect(sitemap(pages(data, date), date)).toContain('<url><loc>https://grub.cam/about</loc></url>')
     expect(llmsTxt(data)).toContain('- [Jesus College](https://grub.cam/jesus): Caff')
     const full = llmsFullTxt(data, date, '8 Oct 2026, 14:00')
     expect(full).toContain('Hours: Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40')
