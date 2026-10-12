@@ -2,7 +2,7 @@
 // count, the "Help fill this in" card on a venue's page, and the note on one that has never had a menu.
 import type { Data } from './data.tsx'
 import { venuePhoto } from './photos.ts'
-import type { sendPath } from './site.ts'
+import { sendPath } from './site.ts'
 import { addDaysISO, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Channel, type Site, type Venue, type VenueType } from './types.ts'
 
@@ -108,6 +108,9 @@ export function overallCoverage(venues: Venue[]): (Counter & { dated: boolean })
 
 /** Something a venue's page is missing, and the way to send it in: /send's `kind`, and how much the site gains by it. */
 export type Gap = { kind: 'menu' | 'prices' | 'hours' | 'formal' | 'photo'; label: string; send: Parameters<typeof sendPath>[1]; weight: number }
+
+/** Where a gap's link goes: /send with its kind, and a correction's topic (formal hall's price or time). */
+export const gapPath = (v: Pick<Venue, 'id'>, g: Gap) => sendPath(v, g.send, g.send === 'other' ? { topic: g.kind } : {})
 
 /**
  * What a venue is still missing, most worth having first: a dining hall's menu (the thing people come for; not asked

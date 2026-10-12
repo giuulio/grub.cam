@@ -3,12 +3,10 @@ name: Review queue
 # Keeps one issue, "Review queue", saying what members sent in that waits for a person (prices, hours, notes, anything
 # a model held back), so GitHub tells you when there's something to look at. No personal data goes in it (the repo is
 # public): `submissions -- digest` gives only what, where, how long and why, and the commands to act on each. Runs
-# each morning and after the ingest's evening run; needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY.
+# at 07:00 and 18:00 UTC, started by Supabase's pg_cron (migration 0031); needs repository secrets VITE_SUPABASE_URL
+# and SUPABASE_SECRET_KEY.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 7 * * *'
-    - cron: '0 18 * * *'
 
 permissions:
   contents: read

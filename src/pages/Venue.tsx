@@ -11,7 +11,7 @@ import { ListNote, PriceList } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
-import { menuGap, venueGaps } from '../lib/coverage.ts'
+import { gapPath, menuGap, venueGaps } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { priceGroups } from '../lib/prices.ts'
@@ -155,17 +155,17 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
  */
 function HelpCard({ venue }: { venue: Venue }) {
   // The same list /coverage shows for it, so the two never disagree
-  const missing = venueGaps(venue).map((g): [label: string, kind: Parameters<typeof sendPath>[1]] => [g.label, g.send])
+  const missing = venueGaps(venue).map((g): [label: string, to: string] => [g.label, gapPath(venue, g)])
   if (!missing.length) return null
   return (
     <RailCard>
       <h2 className="text-lg font-semibold">Help fill this in</h2>
       <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
       <ul className="mt-3 space-y-2">
-        {missing.map(([label, kind]) => (
+        {missing.map(([label, to]) => (
           <li key={label} className="flex items-start gap-3">
             <Icon of={NoteAdd} className="mt-1 size-4 shrink-0 text-muted" />
-            <Link to={sendPath(venue, kind)} className="link">{label}</Link>
+            <Link to={to} className="link">{label}</Link>
           </li>
         ))}
       </ul>
@@ -433,7 +433,11 @@ function Details({ venue }: { venue: Venue }) {
   return (
     <ul className="order-4 grid gap-x-8 gap-y-3 text-[1.0625rem] sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         <Fact icon={Leaf} known={!!diets}>
-          {diets ? `${diets} options` : 'Diet options not known yet'}
+          {diets ? `${diets} options` : (
+            <>
+              Diet options not known yet. <Link to={sendPath(venue, 'other', { topic: 'diet' })} className="link">Tell us</Link>
+            </>
+          )}
         </Fact>
         {website && (
           <Fact icon={Global} known>

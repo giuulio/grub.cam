@@ -5,12 +5,11 @@ name: Members' photos and menus
 # one's sizes made into public/photos, added to Supabase ahead of the venue's others, and the files committed to main,
 # which Workers Builds deploys like any other push; the row is turned on once grub.cam serves its files, so the venue
 # keeps its old photo until then). The submit function starts this as soon as a menu or
-# photo is queued (workflow_dispatch, through GITHUB_DISPATCH_TOKEN, a Supabase secret); the hourly run catches any it
-# missed. Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY, as the ingest does.
+# photo is queued (workflow_dispatch, through dispatch_workflow() in the database, migration 0031); Supabase's pg_cron
+# starts it hourly too, at :23, to catch any it missed. Needs repository secrets VITE_SUPABASE_URL and
+# SUPABASE_SECRET_KEY, as the ingest does.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '23 * * * *'
 
 permissions:
   contents: write

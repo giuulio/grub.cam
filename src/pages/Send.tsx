@@ -9,7 +9,7 @@ import { DINING_MEALS } from '../lib/finder.ts'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
 import { isCamEmail, memberName, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
-import { confirm, send, shrink, type SubmitKind, type SubmitResult } from '../lib/submit.ts'
+import { confirm, send, shrink, type SubmitKind, type SubmitResult, type Topic } from '../lib/submit.ts'
 import type { Venue } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
 
@@ -19,6 +19,18 @@ const KINDS: [SubmitKind, string, string][] = [
   ['hours', 'Hours', 'opening times'],
   ['photo', 'Photo of the venue', 'for its page'],
   ['other', 'Something else', 'a correction or a note'],
+]
+
+/** What a correction is about ("Report a change" leaves it to choose; a gap's link picks it). */
+const TOPICS: [Topic, string][] = [
+  ['hours', 'Hours'],
+  ['prices', 'Prices'],
+  ['menu', 'Menu'],
+  ['formal', 'Formal hall'],
+  ['diet', 'Diet options'],
+  ['location', 'Where it is'],
+  ['closed', 'Closed or moved'],
+  ['other', 'Something else'],
 ]
 
 /**
@@ -34,6 +46,7 @@ export function Send() {
   const [params, setParams] = useSearchParams()
   const venue = venues.find((v) => v.id === params.get('venue'))
   const kind = (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu') as SubmitKind
+  const topic = kind === 'other' ? TOPICS.find(([t]) => t === params.get('topic'))?.[0] : undefined
   const set = (k: string, v?: string) => setParams((p) => { const n = new URLSearchParams(p); if (v) n.set(k, v); else n.delete(k); return n }, { replace: true })
 
   const [date, setDate] = useState(params.get('date') ?? now.date)
@@ -64,7 +77,7 @@ export function Send() {
     setBusy('sending')
     setError(undefined)
     try {
-      const r = await send(session.access_token, { venue: venue.id, kind, date: kind === 'menu' ? date : undefined, service: kind === 'menu' ? service : undefined, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value }, photo)
+      const r = await send(session.access_token, { venue: venue.id, kind, date: kind === 'menu' ? date : undefined, service: kind === 'menu' ? service : undefined, topic, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value }, photo)
       setResult(r)
       setText(r.transcription ?? '')
       if (!r.transcription) setDone(r)
@@ -160,6 +173,18 @@ export function Send() {
               </div>
             </Field>
 
+            {kind === 'other' && (
+              <Field label="About">
+                <div role="radiogroup" aria-label="What it's about" className="flex flex-wrap gap-2">
+                  {TOPICS.map(([t, label]) => (
+                    <button key={t} type="button" role="radio" aria-checked={topic === t} onClick={() => set('topic', t)} className="chip" data-on={topic === t || undefined}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
+
             {kind === 'menu' && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Day">
@@ -208,7 +233,10 @@ export function Send() {
               )}
             </Field>
 
-            <Field label={kind === 'photo' ? 'A note (optional)' : photo ? 'Or type it (optional)' : 'Or type it'} hint={kind === 'menu' || kind === 'prices' ? 'One item per line, with its price if shown.' : undefined}>
+            <Field
+              label={kind === 'photo' ? 'A note (optional)' : kind === 'other' ? 'What’s wrong, and what’s right' : photo ? 'Or type it (optional)' : 'Or type it'}
+              hint={kind === 'menu' || kind === 'prices' ? 'One item per line, with its price if shown.' : kind === 'other' ? 'How you know helps: a notice, a sign, the website, or you were there.' : undefined}
+            >
               <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={5} className="w-full rounded-lg border border-ink/15 bg-canvas p-3 text-base leading-6 text-ink focus:border-ink/50 focus:outline-none sm:text-sm" aria-label="Text" />
             </Field>
 

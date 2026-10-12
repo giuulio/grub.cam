@@ -20,9 +20,12 @@
 //
 // A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a
 // person: a model checks it (vet()) and, when it passes and the sender's daily allowance has room, the row is `queued`
-// and the photos Action (.github/workflows/photos.yml) is started (GITHUB_DISPATCH_TOKEN: a fine-grained token with
-// Actions read and write on the repo; GITHUB_REPO, default giuulio/grub.cam). That Action makes its sizes, commits them
-// and adds the photo ahead of the venue's others, credited to the sender's name. Anything else waits for a person.
+// and the photos Action (.github/workflows/photos.yml) is started (dispatch_workflow(), migration 0031, with the GitHub
+// token in Vault). That Action makes its sizes, commits them and adds the photo ahead of the venue's others, credited
+// to the sender's name. Anything else waits for a person.
+//
+// A correction ("Report a change": kind "other") says what it's about (`topic`: hours, prices, menu, formal, diet,
+// location, closed, other), so the queue can say it.
 //
 // Every submission from the form has a signed-in sender: a Supabase Auth user (Google sign-in) with an
 // @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email. Contributors' token posts
@@ -40,8 +43,9 @@ import { base64, costOf, moderate, priceOf, respond, REVIEW_CHECK, TRANSCRIPTION
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
+const TOPICS = ['hours', 'prices', 'menu', 'formal', 'diet', 'location', 'closed', 'other']
 const MAX_PHOTO = 5 * 1024 * 1024
-const PER_HOUR = 12 // submissions from one address
+const PER_HOUR = 12 // submissions from one account (not one IP: a college's Wi-Fi can be one address)
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
 const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
 // No daily cap unless one is set: OpenAI's project budget is the limit
@@ -129,17 +133,10 @@ async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | nu
   return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
 }
 
-/** Starts the photos Action, which publishes what's queued (photos and menus); its hourly run catches anything this misses. */
+/** Starts the photos Action, which publishes what's queued (photos and menus), through the database (migration 0031); pg_cron's hourly start catches anything this misses. */
 async function dispatchPublish() {
-  const token = Deno.env.get('GITHUB_DISPATCH_TOKEN')
-  if (!token) return
-  const repo = Deno.env.get('GITHUB_REPO') ?? 'giuulio/grub.cam'
-  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/photos.yml/dispatches`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'grub.cam submit' },
-    body: JSON.stringify({ ref: 'main' }),
-  }).catch((e) => (console.warn(`dispatch: ${(e as Error).message}`), null))
-  if (res && !res.ok) console.warn(`dispatch ${res.status}: ${(await res.text()).slice(0, 300)}`)
+  const { error } = await sb.rpc('dispatch_workflow', { workflow: 'photos.yml' })
+  if (error) console.warn(`dispatch: ${error.message}`)
 }
 
 /**
@@ -329,6 +326,8 @@ Deno.serve(async (req) => {
   if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('date as YYYY-MM-DD')
   const service = field('service') || null
   if (service && !MEALS.includes(service)) return fail('unknown meal')
+  const topic = kind === 'other' ? field('topic') || null : null
+  if (topic && !TOPICS.includes(topic)) return fail('unknown topic')
   const note = field('note').slice(0, 4000) || null
   const file = form.get('photo')
   const photo = file instanceof File && file.size > 0 ? file : null
@@ -339,14 +338,13 @@ Deno.serve(async (req) => {
   // The photos Action can't read HEIC (the page converts it to JPEG where the browser can)
   if (kind === 'photo' && !/^image\/(jpeg|png|webp)$/.test(photo!.type)) return fail('send the photo as a JPEG, PNG or WebP')
 
+  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).gte('created_at', new Date(Date.now() - 3600 * 1000).toISOString())
+  if ((count ?? 0) >= PER_HOUR) return fail('that is plenty for one hour; thank you', 429)
+  // Kept with the row, hashed, for spotting one machine behind several accounts
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('cf-connecting-ip') ?? ''
   const ipHash = ip ? await sha256(ip + (Deno.env.get('IP_SALT') ?? '')) : null
-  if (ipHash) {
-    const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('ip_hash', ipHash).gte('created_at', new Date(Date.now() - 3600 * 1000).toISOString())
-    if ((count ?? 0) >= PER_HOUR) return fail('that is plenty for one hour; thank you', 429)
-  }
 
-  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, ...(kind === 'photo' ? { credit: sender.name } : {}) }).select('id').single()
+  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, topic, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, ...(kind === 'photo' ? { credit: sender.name } : {}) }).select('id').single()
   if (error) return fail(error.message, 500)
   const id: string = row.id
 

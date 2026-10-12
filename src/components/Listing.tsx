@@ -120,7 +120,7 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
   if (formal) {
     const facts: [string, string | undefined][] = [['When', formalWhen(v, v.formal).join('; ')], ['Price', v.formal && formalPrice(v.formal)], ['Dress', v.formal && formalDress(v.formal)], ['Booking', v.formal && formalBooking(v.formal)]]
     const known = facts.filter((f): f is [string, string] => !!f[1])
-    if (!known.length) return <Gap to={sendPath(v, 'other')} send="Tell us" icon={NoteAdd} compact={compact}>Times and price not known yet.</Gap>
+    if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us" icon={NoteAdd} compact={compact}>Times and price not known yet.</Gap>
     if (compact) return <p>{known.map((f) => f[1]).join(' · ')}</p>
     return (
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">

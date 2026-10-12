@@ -3,16 +3,17 @@ name: Ingest menus
 # Fetches every scripted source from this week's Monday until a week comes back empty and saves it to Supabase.
 # Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY; with CF_DEPLOY_HOOK (a Workers Builds deploy hook) set it then rebuilds
 # the site, so the prerendered pages, sitemap and llms.txt carry the new menus.
+# Started every two hours from 04:37 to 18:37 UTC by Supabase's pg_cron (migration 0031), not GitHub's cron, which on
+# this repo ran late or not at all.
 on:
   workflow_dispatch:
-  schedule:
-    # Every two hours from 04:37 to 18:37 UTC, off the quarter-hour: GitHub delays or drops runs scheduled at busy minutes
-    # (with '15 5,11,17' nothing ran before 11:10 UTC for four days, and the evening run came 3–5 hours late), so schedule
-    # more often than needed and a late or missing run matters little.
-    - cron: '37 4,6,8,10,12,14,16,18 * * *'
 
 permissions:
   contents: read
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
 
 jobs:
   ingest:

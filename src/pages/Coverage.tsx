@@ -5,10 +5,10 @@ import { ChipSelect } from '../components/Controls.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { SitePicker } from '../components/SitePicker.tsx'
 import { VenueThumb } from '../components/VenuePhoto.tsx'
-import { menuNote, menuWindow, overallCoverage, venueGaps, type Counter, type Gap } from '../lib/coverage.ts'
+import { gapPath, menuNote, menuWindow, overallCoverage, venueGaps, type Counter, type Gap } from '../lib/coverage.ts'
 import { useReady } from '../lib/data.tsx'
 import { BowTie } from '../lib/icons.ts'
-import { REPO_URL, sendPath, SITE_NAME, siteName, sitePath, venuePath } from '../lib/site.ts'
+import { REPO_URL, SITE_NAME, siteName, sitePath, venuePath } from '../lib/site.ts'
 import type { Site, Venue } from '../lib/types.ts'
 
 /** Rows shown at a time, before "Show more" (the front page's) */
@@ -182,7 +182,7 @@ function GapRow({ venue: v, gaps }: { venue: Venue; gaps: Gap[] }) {
         <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2" aria-label={`Missing from ${v.name}`}>
           {gaps.map((g) => (
             <li key={g.kind}>
-              <Link to={sendPath(v, g.send)} className="inline-flex items-center gap-2 font-semibold text-cta hover:underline">
+              <Link to={gapPath(v, g)} className="inline-flex items-center gap-2 font-semibold text-cta hover:underline">
                 <Icon of={GAP_ICON[g.kind]} className="size-5" />
                 {g.label}
               </Link>

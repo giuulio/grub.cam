@@ -25,9 +25,9 @@ Source quirks worth preserving:
 
 There are several publication routes: scripted public sources; hand-entered data; trusted contributors' scripts; sender-confirmed menus; vetted venue photos; and checked reviews. Prices, hours, notes and anything held back wait for a person.
 
-`/send?venue=<id>&kind=menu|prices|hours|photo|other` links from venue gaps, Coverage and the footer. `src/lib/submit.ts` shrinks uploaded images to 1600px. The submit function validates a member's bearer token through Auth and requires `@cam.ac.uk`, stores evidence in the private `submissions` bucket and creates a row (`0024`, member identity in `0026`). Contributor-token posts have their own validation. Uploaded board/list photos are private evidence, not public photos.
+`/send?venue=<id>&kind=menu|prices|hours|photo|other[&topic=…]` links from venue gaps, Coverage and the footer. A correction (`other`, “Report a change”) picks a `topic` (hours, prices, menu, formal, diet, location, closed, other; `0031`), which gap links fill in and the queue shows. Each account may send 12 an hour; the hashed IP is kept but not limited, since a college's Wi-Fi can be one address. `src/lib/submit.ts` shrinks uploaded images to 1600px. The submit function validates a member's bearer token through Auth and requires `@cam.ac.uk`, stores evidence in the private `submissions` bucket and creates a row (`0024`, member identity in `0026`). Contributor-token posts have their own validation. Uploaded board/list photos are private evidence, not public photos.
 
-For menus, price lists and hours, the Responses API produces the ingest text body, whether anything was readable and any uncertainty. The sender can fix and confirm the text, or mark it wrong. A normal confirmation waits as `needs_review` unless it is a menu eligible for automatic publication; wrong text waits for a person with that reason. Without a usable model transcription it stays `received`.
+For menus, price lists and hours, the Responses API produces the ingest text body, whether anything was readable and any uncertainty. The sender can fix and confirm the text, or mark it wrong. A normal confirmation waits as `needs_review` unless it is a menu eligible for automatic publication; wrong text waits for a person with that reason. Without a usable model transcription it stays `received`. A reading still unconfirmed after a day (when the sender can no longer confirm it) moves to `needs_review` by pg_cron's hourly `hand_over_unconfirmed()`.
 
 ### Member menus
 
@@ -39,7 +39,7 @@ Rejecting a published member menu removes its days where they still belong to th
 
 A member grants CC BY 4.0 and is credited using their Google account's name (`memberName()`). `vet()` checks that the image is a real photo of the venue, has no recognisable face or unsuitable content, and supplies alt text. Automatic queuing allows fewer than three queued/approved member photos in the preceding 24 hours and no member photo row created for that venue in that window. Failed checks or unavailable models send the photo to `needs_review`.
 
-`GITHUB_DISPATCH_TOKEN` starts the publishing workflow for a queued menu or photo; the hourly 23-past run catches missed dispatches. `submissions -- photos` writes image variants to `public/photos` and adds an unapproved row ahead of the venue's older photos. The Action commits the files to main, which starts a deploy. `submissions -- live --wait 720` approves rows only when the site serves their files; otherwise the next run checks again. This preserves the old photo during deployment. Manual approval follows the same path; when approving locally, commit the generated files and run `live` after deployment. Rejecting a photo unapproves it so the previous one can show.
+The submit function starts the publishing workflow for a queued menu or photo through `dispatch_workflow()` (migration 0031, the GitHub token in Vault as `github_dispatch_token`); pg_cron's hourly 23-past start catches missed dispatches. `submissions -- photos` writes image variants to `public/photos` and adds an unapproved row ahead of the venue's older photos. The Action commits the files to main, which starts a deploy. `submissions -- live --wait 720` approves rows only when the site serves their files; otherwise the next run checks again. This preserves the old photo during deployment. Manual approval follows the same path; when approving locally, commit the generated files and run `live` after deployment. Rejecting a photo unapproves it so the previous one can show.
 
 ### Review queue and manual approval
 
@@ -47,7 +47,7 @@ A member grants CC BY 4.0 and is credited using their Google account's name (`me
 
 Approval validates through `parseManual`, `parsePrices` or `parseHours`, using the same database calls as hand ingest (`method: user`, or `contributor`). Menus upsert days; prices replace the list; hours replace slots unless `--keep-hours` is passed. Slot provenance records the submission. Notes (`kind: other`) require acting on the note rather than publishing it with `approve`.
 
-`.github/workflows/queue.yml` runs at 07:00 and 18:00 UTC and keeps one open “Review queue” issue. `submissions -- digest` includes kind, venue, age, reason, action commands, held-back review counts and model spend. It excludes personal details, evidence and review words because the repo is public. Queue changes trigger a comment for email notification; spend-only changes do not.
+pg_cron starts `.github/workflows/queue.yml` at 07:00 and 18:00 UTC; it keeps one open “Review queue” issue. `submissions -- digest` includes kind, venue, age, reason, action commands, held-back review counts and model spend. It excludes personal details, evidence and review words because the repo is public. Queue changes trigger a comment for email notification; spend-only changes do not.
 
 ### Contributors and limits
 

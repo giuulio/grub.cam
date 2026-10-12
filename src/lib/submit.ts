@@ -2,6 +2,8 @@
 // and costs the model little) and/or text, then confirming the transcription it comes back with.
 
 export type SubmitKind = 'menu' | 'prices' | 'hours' | 'photo' | 'other'
+/** What a correction (kind `other`) is about, so the queue can say it. */
+export type Topic = 'hours' | 'prices' | 'menu' | 'formal' | 'diet' | 'location' | 'closed' | 'other'
 /** `queued`: a member's photo that passed its check, going up within minutes; `reason`: why one waits for a person instead; `unsure`: what the model couldn't read. */
 export type SubmitResult = { id: string; status: 'received' | 'transcribed' | 'needs_review' | 'queued'; transcription: string | null; by?: 'openai'; spec?: string; reason?: string | null; unsure?: string | null }
 
@@ -39,7 +41,7 @@ async function call(token: string, init: RequestInit): Promise<SubmitResult> {
   return body as SubmitResult
 }
 
-export function send(token: string, fields: { venue: string; kind: SubmitKind; date?: string; service?: string; note?: string; website?: string }, photo?: File): Promise<SubmitResult> {
+export function send(token: string, fields: { venue: string; kind: SubmitKind; date?: string; service?: string; topic?: Topic; note?: string; website?: string }, photo?: File): Promise<SubmitResult> {
   const form = new FormData()
   for (const [k, v] of Object.entries(fields)) if (v) form.set(k, v)
   if (photo) form.set('photo', photo, photo.name)

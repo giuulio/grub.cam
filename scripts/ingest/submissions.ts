@@ -45,7 +45,7 @@ const db = connect()
 
 const short = (id: string) => id.slice(0, 8)
 const line = (s: Submission) =>
-  `${short(s.id)}  ${s.status.padEnd(12)} ${s.kind.padEnd(6)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${s.photo_path ? '  photo' : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
+  `${short(s.id)}  ${s.status.padEnd(12)} ${(s.topic ? `${s.kind}:${s.topic}` : s.kind).padEnd(14)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${s.photo_path ? '  photo' : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
 
 async function one(id: string): Promise<Submission> {
   const rows = await db.submissions({})
@@ -168,7 +168,9 @@ async function menuHold(s: Submission): Promise<string | null> {
   return null
 }
 
-const KIND_WORD: Record<Submission['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'photo of the venue', other: 'note' }
+const KIND_WORD: Record<Submission['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'photo of the venue', other: 'correction' }
+/** "correction (hours)": a correction says what it's about */
+const what = (s: Submission) => `${KIND_WORD[s.kind]}${s.topic ? ` (${s.topic})` : ''}`
 
 /**
  * What's waiting for a person, as Markdown for the review issue: no email addresses, notes or photos (the repo, and
@@ -186,9 +188,9 @@ async function digest(): Promise<string> {
     for (const s of rows) {
       const v = await db.venue(s.venue_id).catch(() => null)
       const days = Math.floor((Date.now() - Date.parse(s.created_at)) / 86400000)
-      const why = s.review_note ?? (s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
+      const why = s.review_note ?? (s.kind === 'other' ? 'a correction to read' : s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
       const where = v ? `[${v.name}, ${v.siteName}](https://grub.cam/${s.venue_id})` : s.venue_id
-      out.push(`| \`${short(s.id)}\` | ${KIND_WORD[s.kind]}${s.photo_path ? ' (photo)' : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
+      out.push(`| \`${short(s.id)}\` | ${what(s)}${s.photo_path ? ' (photo)' : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
     }
   }
   // Reviews held back: which venue, the stars and why, never the words (they're held back for a reason) or who
@@ -215,6 +217,7 @@ switch (command) {
     const dir = values.dir ?? join(homedir(), 'grub-data', 'submissions')
     mkdirSync(dir, { recursive: true })
     console.log(line(s))
+    console.log(`page: https://grub.cam/${s.venue_id}`)
     if (s.date || s.service) console.log(`for: ${[s.date, s.service].filter(Boolean).join(' ')}`)
     if (s.user_email ?? s.contact) console.log(`from: ${s.user_email ?? s.contact}`)
     if (s.note) console.log(`\nnote:\n${s.note}`)

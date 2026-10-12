@@ -12,6 +12,8 @@ export type Submission = {
   kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other'
   date: string | null
   service: string | null
+  /** kind other: what the correction is about (hours, prices, menu, formal, diet, location, closed, other) */
+  topic: string | null
   note: string | null
   photo_path: string | null
   contact: string | null
