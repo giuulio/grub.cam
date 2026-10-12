@@ -65,7 +65,7 @@ export function prompt(c: Context, structured = false): string {
   if (c.note) lines.push(`The sender also wrote: "${c.note.replace(/"/g, "'")}" — it may be the text itself, typed, or a note about the photo.`)
   if (c.current)
     lines.push(
-      `What the site lists now, in the same format:\n"""\n${c.current}\n"""\nIf the photo or the text gives only part of it, or a correction to it ("Monday closes at 2", "the latte is now £3"), answer with the whole list: the change made, everything else kept as it is. If they give a whole new list, answer with theirs alone.`,
+      `What the site lists now, in the same format:\n"""\n${c.current}\n"""\nIf the photo or the text gives only part of it, or a correction to it ("Monday closes at 2", "the latte is now £3"), answer with the whole list: the change made, everything else (headings too: none added) kept as it is. If they give a whole new list, answer with theirs alone.`,
     )
   lines.push('', BODY_SPEC[c.kind])
   if (!structured) lines.push('', 'If the image shows none of this, reply with exactly: NOTHING')
