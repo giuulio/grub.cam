@@ -160,7 +160,7 @@ function HelpCard({ venue }: { venue: Venue }) {
   return (
     <RailCard>
       <h2 className="text-lg font-semibold">Help fill this in</h2>
-      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once someone has checked it.</p>
+      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once you've checked what we read.</p>
       <ul className="mt-3 space-y-2">
         {missing.map(([label, to]) => (
           <li key={label} className="flex items-start gap-3">

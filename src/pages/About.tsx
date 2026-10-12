@@ -46,7 +46,7 @@ export function About() {
         <h2 className="title mt-12 text-2xl leading-tight sm:text-3xl">Help build it</h2>
         <ul className="mt-6 space-y-6">
           <Way icon={NoteAdd} action="Send something in" to="/send">
-            In a hall, café or bar? Its board, price list or opening times, as a photo or typed out, with your Cambridge account. A model reads it, you check what it read, and it goes up once a person has looked.
+            In a hall, café or bar? Its board, price list or opening times, as a photo or typed out, with your Cambridge account. A model reads it, you check what it read, and it goes up within minutes.
           </Way>
           <Way icon={Code} action="Write a scraper" href={`${REPO_URL}/tree/main/scripts/ingest/sources`}>
             {byHand} dining {byHand === 1 ? 'venue publishes' : 'venues publish'} a menu online that’s copied in by hand each week. An adapter in <code className="rounded bg-ink/6 px-1.5 py-0.5 text-[0.9em]">scripts/ingest/sources</code> would keep it current; the code, and how each venue publishes, is on GitHub.

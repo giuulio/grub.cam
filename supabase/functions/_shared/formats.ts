@@ -46,7 +46,8 @@ bar | Fri, Sat | 19:00-00:00
 Rules: one line per meal and set of days, "meal | days | times", with an optional fourth field "term", "vacation" or "all" when the board says which, and an optional fifth field for a short note printed on the board. Meals: breakfast, brunch, lunch, dinner, formal (formal hall), snacks (a café's opening hours), bar. Days as ranges or lists ("Mon-Fri", "Sat, Sun", "daily"). Times as 24-hour "HH:MM-HH:MM"; a start alone (e.g. "19:30") when only a start is printed. Nothing else: no commentary, no markdown fences.`,
 }
 
-export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; note?: string }
+/** `current`: what the site lists now for a price list or hours, in the same format, so a correction to part of it comes back whole. */
+export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; note?: string; current?: string }
 
 const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
 
@@ -62,6 +63,10 @@ export function prompt(c: Context, structured = false): string {
   ]
   if (c.kind === 'menu' && c.date) lines.push(`The sender says it is for ${c.date}${c.service ? ` ${c.service}` : ''}; use that date and meal unless the board clearly shows another.`)
   if (c.note) lines.push(`The sender also wrote: "${c.note.replace(/"/g, "'")}" — it may be the text itself, typed, or a note about the photo.`)
+  if (c.current)
+    lines.push(
+      `What the site lists now, in the same format:\n"""\n${c.current}\n"""\nIf the photo or the text gives only part of it, or a correction to it ("Monday closes at 2", "the latte is now £3"), answer with the whole list: the change made, everything else kept as it is. If they give a whole new list, answer with theirs alone.`,
+    )
   lines.push('', BODY_SPEC[c.kind])
   if (!structured) lines.push('', 'If the image shows none of this, reply with exactly: NOTHING')
   return lines.join('\n')

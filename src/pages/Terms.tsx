@@ -29,7 +29,7 @@ export function Terms() {
         <Part title="Sending things in and reviewing">
           <p>
             What you send (a photo of a board, a price list, opening times, a photo of a venue, a correction) should be something you saw yourself, and a
-            photo of a venue should have no one's face in it. A menu you've checked goes up within minutes; prices, hours and anything else once a person
+            photo of a venue should have no one's face in it. A menu, price list or opening times you've checked goes up within minutes, and anything else once a person
             has looked. A photo of a venue that passes its check goes up credited to your name, and by sending it you license it under CC BY 4.0.
           </p>
           <p>

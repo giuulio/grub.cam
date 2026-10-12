@@ -38,12 +38,12 @@ flowchart TB
   submit <--> openai
   submit --> bucket
   web -- adapters --> ingest
-  submit -- "queued: menus, vetted photos" --> publish
-  submit -- "needs review: prices, hours, held back" --> queue
+  submit -- "queued: menus, prices, hours, vetted photos" --> publish
+  submit -- "needs review: notes, held back" --> queue
   submit -- "contributors' rows" --> ingest
   queue --> you
   ingest --> db
-  publish -- menus --> db
+  publish -- "menus, prices, hours" --> db
   you --> db
   publish -- "photo files, committed" --> site
   db -- "prerendered at build" --> site
@@ -56,10 +56,10 @@ What happens to each thing a member sends, from [`/send`](https://grub.cam/send)
 | Sent in | The model | Then |
 |---|---|---|
 | **Menu** (photo of the board, or typed) | Transcribes it into the menu text format; the sender checks and fixes it | Up within minutes when it parses, is for that venue, is dated yesterday to a week ahead, the venue's menu isn't scripted and the sender has sent fewer than 6 that day; otherwise a person looks |
-| **Price list**, **hours** | Transcribes them; the sender checks | A person approves (`npm run submissions -- approve <id>`) |
+| **Price list**, **hours** | Transcribes them, given what the site lists now, so part of a board or a typed change comes back as the whole list; the sender checks; a changed reading of a photo is checked against it | Up within minutes when it parses and is for that venue (6 of each a day per member); what it replaced is kept, and `npm run submissions -- reject <id>` puts it back |
 | **Photo of the venue** | Checks it's a real photo of the venue with no recognisable face, and writes its alt text | Up within minutes when it passes (3 a day per member, 1 a day per venue), credited to the member's name under CC BY 4.0; the venue keeps its old photo until the new one's files are deployed |
 | **Review** (1–5, optional words) | A rating alone goes straight up; words go through OpenAI's moderation and a check that they're about the venue and name no one | Shown anonymously once a venue has 5 |
-| **Something else** | — | A person reads it |
+| **Correction** (“Report a change”: hours, prices, menu, formal hall, diet, location, closed) | — | A person reads it; hours, prices and menus are steered to their own kinds, which go up by themselves |
 
 Nothing a model is unsure of goes up unseen: whatever doesn't pass waits, with the reason, in the [Review queue](../../issues?q=is%3Aissue+is%3Aopen+%22Review+queue%22) issue. Model calls are logged with their cost. With an enforced OpenAI project spend limit, reaching it stops further model calls and sends anything needing a model check to a person; setting only an alert threshold does not stop calls.
 

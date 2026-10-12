@@ -15,8 +15,13 @@
 // own transcription; the ingest Action approves theirs.
 //
 // A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
-// menu or the sender has sent MENUS_PER_DAY today: it's `queued`, and the photos Action (`submissions -- menus`) checks
-// it parses, is for its venue and is dated yesterday to a week ahead, then publishes it; one that isn't waits for a person.
+// menu or the sender has sent MENUS_PER_DAY today: it's `queued`, and the photos Action (`submissions -- publish`)
+// checks it parses, is for its venue and is dated yesterday to a week ahead, then publishes it; one that isn't waits
+// for a person. A price list or hours goes the same way (LISTS_PER_DAY), and when the sender changed the model's
+// reading of a photo, a model first checks the changed text still says what the photo does (checkReading()). The model
+// reading them is given what the site lists now, so a photo of part of a board, or a typed correction ("Monday closes
+// at 2"), comes back as the whole list with the change made. AUTO_KINDS (default "menu,prices,hours") says which kinds
+// go up without a person; "menu" alone has prices and hours wait for one again.
 //
 // A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a
 // person: a model checks it (vet()) and, when it passes and the sender's daily allowance has room, the row is `queued`
@@ -48,6 +53,8 @@ const MAX_PHOTO = 5 * 1024 * 1024
 const PER_HOUR = 12 // submissions from one account (not one IP: a college's Wi-Fi can be one address)
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
 const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
+const LISTS_PER_DAY = 6 // and their price lists, and their hours, each
+const AUTO_KINDS = (Deno.env.get('AUTO_KINDS') ?? 'menu,prices,hours').split(',').map((k) => k.trim())
 // No daily cap unless one is set: OpenAI's project budget is the limit
 const DAILY_USD = Deno.env.get('LLM_DAILY_USD') ? Number(Deno.env.get('LLM_DAILY_USD')) : Infinity
 const MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-6.1-sol'
@@ -88,7 +95,7 @@ async function underBudget(): Promise<boolean> {
   return spent < DAILY_USD
 }
 
-type Purpose = 'transcribe' | 'vet_photo' | 'review'
+type Purpose = 'transcribe' | 'vet_photo' | 'review' | 'check_reading'
 
 /**
  * One call to the model, logged with its tokens and cost against what it was for (`ref`); its parsed answer, or null
@@ -188,7 +195,7 @@ async function venueOf(id: string): Promise<Venue | null> {
  */
 async function confirm(sender: { id: string }, body: { id?: string; transcription?: string; wrong?: boolean }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
-  const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, created_at, user_id').eq('id', body.id).maybeSingle()
+  const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, photo_path, created_at, user_id').eq('id', body.id).maybeSingle()
   if (!row || row.user_id !== sender.id) return fail('no such submission', 404)
   if (!['received', 'transcribed'].includes(row.status)) return fail('already reviewed', 409)
   if (Date.now() - new Date(row.created_at).getTime() > 24 * 3600 * 1000) return fail('too late to change', 409)
@@ -199,11 +206,76 @@ async function confirm(sender: { id: string }, body: { id?: string; transcriptio
   const text = body.transcription.trim().slice(0, 20000)
   if (!text.includes('\n---\n')) return fail('the text needs its header and a --- line')
   const edited = text !== (row.transcription ?? '').trim()
-  const auto = row.kind === 'menu' && (await menuCanGoUp(row.venue_id, sender.id))
-  const status = auto ? 'queued' : 'needs_review'
-  await sb.from('submissions').update({ transcription: text, status, ...(edited ? { transcribed_by: 'sender' } : {}) }).eq('id', body.id)
-  if (auto) await dispatchPublish()
-  return json({ id: body.id, status })
+  const hold = await holdOf(row, sender.id, text, edited)
+  const status = hold === null ? 'queued' : 'needs_review'
+  await sb.from('submissions').update({ transcription: text, status, review_note: hold || null, ...(edited ? { transcribed_by: 'sender' } : {}) }).eq('id', body.id)
+  if (status === 'queued') await dispatchPublish()
+  return json({ id: body.id, status, reason: hold || null })
+}
+
+/**
+ * Why a member's confirmed reading waits for a person, or null when it can go up without one; '' when it simply isn't
+ * a kind that does (AUTO_KINDS). A menu: menuCanGoUp(). A price list or hours: the sender's day has room, and a reading
+ * of a photo they changed still says what the photo does.
+ */
+async function holdOf(row: { id: string; kind: Kind; venue_id: string; photo_path: string | null }, userId: string, text: string, edited: boolean): Promise<string | null> {
+  if (!AUTO_KINDS.includes(row.kind)) return ''
+  if (row.kind === 'menu') return (await menuCanGoUp(row.venue_id, userId)) ? null : ''
+  if (row.kind !== 'prices' && row.kind !== 'hours') return ''
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', row.kind).in('status', ['queued', 'approved']).gte('created_at', day)
+  if ((count ?? 0) >= LISTS_PER_DAY) return 'you have sent a few today'
+  if (!edited || !row.photo_path) return null
+  const venue = await venueOf(row.venue_id)
+  const check = venue && (await checkReading(row.id, row.kind, venue, row.photo_path, text))
+  return !check ? 'no model could check your changes' : check.ok ? null : check.reason.slice(0, 300) || 'your changes don’t match the photo'
+}
+
+/** Whether a reading the sender changed still says what their photo does; null when no model could look. */
+async function checkReading(id: string, kind: 'prices' | 'hours', venue: Venue, path: string, text: string): Promise<ReviewCheck | null> {
+  const { data: file } = await sb.storage.from('submissions').download(path)
+  if (!file) return null
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const current = await currentText(kind, venue.id)
+  const what = kind === 'prices' ? 'price list' : 'opening hours'
+  const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
+  const lines = [
+    `A member photographed the ${what} at ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}, a model read it into the text below, and the member then changed that text. It will go on the venue's page without anyone else looking.`,
+    `It can (ok: true) when every price, time and item in it is as the photo shows, or is from the list the site had before (when one is given below). Leaving things out, fixing spelling or capitals, and reordering are fine. Not (ok: false) when a price, a time or an item differs from the photo, or is neither on the photo nor in the earlier list; then say which line, in one short sentence to the member.`,
+    `The text:\n"""\n${text.split('\n---\n')[1] ?? text}\n"""`,
+  ]
+  if (current) lines.push(`The list the site had before:\n"""\n${current}\n"""`)
+  return ask<ReviewCheck>('check_reading', lines.join('\n\n'), REVIEW_CHECK, { base64: base64(bytes), mime: file.type || 'image/jpeg' }, { submission_id: id })
+}
+
+const DIET_CODE: Record<string, string> = { vegan: 'VE', vegetarian: 'V', plant_based: 'PB', halal: 'H', gluten_free: 'GF', dairy_free: 'DF', kosher: 'kosher', pescatarian: 'pescatarian' }
+const gbp = (n: number | string | null) => (n == null ? '' : `£${Number(n).toFixed(2)}`)
+/** Fields joined as a line of the format, empty trailing ones dropped (down to `keep`). */
+const fields = (f: string[], keep: number) => {
+  while (f.length > keep && !f.at(-1)) f.pop()
+  return f.join(' | ')
+}
+
+/** What the site lists now for a venue's prices or hours, in the format a reading comes back in; null when nothing. */
+async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<string | null> {
+  if (kind === 'hours') {
+    const { data } = await sb.from('service_slots').select('meal, days, start_time, end_time, period, note').eq('venue_id', venueId).order('meal')
+    if (!data?.length) return null
+    return data.map((s) => fields([s.meal, (s.days as string[]).map((d) => d[0].toUpperCase() + d.slice(1)).join(', '), `${String(s.start_time).slice(0, 5)}-${String(s.end_time).slice(0, 5)}`, s.period, s.note ?? ''], 4)).join('\n')
+  }
+  const { data } = await sb.from('venue_prices').select('section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
+  if (!data?.length) return null
+  const lines: string[] = []
+  let heading: string | undefined
+  for (const p of data) {
+    const head = p.section ? `## ${p.section}${p.services?.length ? ` | ${p.services.join(', ')}` : ''}` : undefined
+    if (head && head !== heading) lines.push(head)
+    heading = head
+    const tags = ((p.tags ?? []) as string[]).filter((t) => !(t === 'vegetarian' && p.tags.includes('vegan'))).map((t) => DIET_CODE[t]).filter(Boolean)
+    const price = p.price_max_gbp != null ? `${gbp(p.price_gbp)}-${gbp(p.price_max_gbp)}` : gbp(p.price_gbp)
+    lines.push(fields([tags.length ? `${p.name} (${tags.join(', ')})` : p.name, price, gbp(p.non_member_gbp), p.course ?? ''], 2))
+  }
+  return lines.join('\n')
 }
 
 /** Whether a member's menu for this venue can go up without a person: no script fetches the venue's, and they've sent fewer than MENUS_PER_DAY today. */
@@ -365,7 +437,8 @@ Deno.serve(async (req) => {
   if (!['menu', 'prices', 'hours'].includes(kind)) return json({ id, status: 'received', transcription: null })
   const t = kind as Transcribable
   const siteName = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
-  const got = await transcribe(id, { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, note: note ?? undefined }, image)
+  const current = t === 'menu' ? null : await currentText(t, venue.id)
+  const got = await transcribe(id, { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, note: note ?? undefined, current: current ?? undefined }, image)
   if (!got) return json({ id, status: 'received', transcription: null, spec: BODY_SPEC[t] })
   const text = header(t, { site: venue.site, venue: venue.slug, source: `submission ${id}: ${photo ? 'photo' : 'text'} sent from the venue's page on grub.cam`, observed: today() }) + got.body + '\n'
   await sb.from('submissions').update({ transcription: text, transcribed_by: 'openai', model: MODEL, unsure: got.unsure || null, status: 'transcribed' }).eq('id', id)

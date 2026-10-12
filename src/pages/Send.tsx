@@ -185,6 +185,16 @@ export function Send() {
               </Field>
             )}
 
+            {/* Hours, prices and a menu go up by themselves sent as what they are, with the photo or the change typed */}
+            {(topic === 'hours' || topic === 'prices' || topic === 'menu') && (
+              <p className="rounded-lg bg-cta-bg px-4 py-3 text-sm text-ink">
+                Send it as {KINDS.find(([k]) => k === topic)![1].toLowerCase()} instead and it goes up by itself once you’ve checked what we read: a photo of the board, or just the change typed.{' '}
+                <button type="button" onClick={() => setParams((p) => { const n = new URLSearchParams(p); n.set('kind', topic); n.delete('topic'); return n }, { replace: true })} className="link cursor-pointer font-semibold">
+                  Send as {KINDS.find(([k]) => k === topic)![1].toLowerCase()}
+                </button>
+              </p>
+            )}
+
             {kind === 'menu' && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Day">
@@ -249,7 +259,7 @@ export function Send() {
             {error && <p role="alert" className="text-sm text-error">{error}</p>}
             <div className="flex flex-wrap items-center gap-4">
               <button type="submit" disabled={!venue || busy === 'sending'} className="btn btn-primary">{busy === 'sending' ? 'Reading…' : 'Send'}</button>
-              <span className="text-sm text-muted">Menus go up once you confirm them; anything else once someone has checked it. <Link to="/terms" className="link">Terms</Link></span>
+              <span className="text-sm text-muted">Menus, prices and hours go up once you confirm what we read; anything else once someone has read it. <Link to="/terms" className="link">Terms</Link></span>
             </div>
           </form>
         )}
@@ -284,9 +294,9 @@ function Thanks({ result, kind, credit, venue }: { result: SubmitResult; kind: S
       <h2 className="title text-2xl">Thank you</h2>
       <p className="text-muted">
         {result.status === 'queued'
-          ? kind === 'menu'
-            ? 'It’s going up: the venue’s page shows this menu within a few minutes.'
-            : `It's going up: the venue's page shows it within a few minutes, credited to ${credit ?? 'you'}.`
+          ? kind === 'photo'
+            ? `It's going up: the venue's page shows it within a few minutes, credited to ${credit ?? 'you'}.`
+            : `It’s going up: the venue’s page shows ${kind === 'menu' ? 'this menu' : kind === 'prices' ? 'these prices' : 'these hours'} within a few minutes.`
           : result.reason
             ? `A person will look at it before it goes up, usually within a day: ${result.reason.replace(/\.?$/, '.')}`
             : result.status === 'needs_review'

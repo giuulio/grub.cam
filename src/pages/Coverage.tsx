@@ -75,7 +75,7 @@ export function CoveragePage() {
           {rows.length} {rows.length === 1 ? 'venue' : 'venues'} with something missing
         </h2>
         <p className="mt-2 max-w-3xl text-base text-muted sm:text-[1.0625rem]">
-          {gapCount} {gapCount === 1 ? 'thing' : 'things'} to send in, most worth having first. Each is a link: from where you are, with your Cambridge account, send a photo of it or type out what it says, and it goes up once someone has checked it.
+          {gapCount} {gapCount === 1 ? 'thing' : 'things'} to send in, most worth having first. Each is a link: from where you are, with your Cambridge account, send a photo of it or type out what it says, and it goes up once you've checked what we read.
         </p>
 
         <div className="card-row mt-5 flex items-center gap-2 overflow-x-auto">

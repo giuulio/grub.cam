@@ -32,7 +32,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run submissions -- menus
+      - run: npm run submissions -- publish
       # Even when a menu or one photo fails, publish and commit the others
       - if: ${{ !cancelled() }}
         run: npm run submissions -- photos

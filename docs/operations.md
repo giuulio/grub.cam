@@ -23,17 +23,21 @@ Source quirks worth preserving:
 
 ## Submissions
 
-There are several publication routes: scripted public sources; hand-entered data; trusted contributors' scripts; sender-confirmed menus; vetted venue photos; and checked reviews. Prices, hours, notes and anything held back wait for a person.
+There are several publication routes: scripted public sources; hand-entered data; trusted contributors' scripts; sender-confirmed menus, price lists and hours; vetted venue photos; and checked reviews. Corrections and anything held back wait for a person. `AUTO_KINDS` (function secret, default `menu,prices,hours`) says which confirmed kinds go up without one; `menu` alone makes prices and hours wait again.
 
 `/send?venue=<id>&kind=menu|prices|hours|photo|other[&topic=…]` links from venue gaps, Coverage and the footer. A correction (`other`, “Report a change”) picks a `topic` (hours, prices, menu, formal, diet, location, closed, other; `0031`), which gap links fill in and the queue shows. Each account may send 12 an hour; the hashed IP is kept but not limited, since a college's Wi-Fi can be one address. `src/lib/submit.ts` shrinks uploaded images to 1600px. The submit function validates a member's bearer token through Auth and requires `@cam.ac.uk`, stores evidence in the private `submissions` bucket and creates a row (`0024`, member identity in `0026`). Contributor-token posts have their own validation. Uploaded board/list photos are private evidence, not public photos.
 
-For menus, price lists and hours, the Responses API produces the ingest text body, whether anything was readable and any uncertainty. The sender can fix and confirm the text, or mark it wrong. A normal confirmation waits as `needs_review` unless it is a menu eligible for automatic publication; wrong text waits for a person with that reason. Without a usable model transcription it stays `received`. A reading still unconfirmed after a day (when the sender can no longer confirm it) moves to `needs_review` by pg_cron's hourly `hand_over_unconfirmed()`.
+For menus, price lists and hours, the Responses API produces the ingest text body, whether anything was readable and any uncertainty. The sender can fix and confirm the text, or mark it wrong. A confirmation is queued when its kind publishes automatically (below), otherwise `needs_review`; wrong text waits for a person with that reason. Without a usable model transcription it stays `received`. A reading still unconfirmed after a day (when the sender can no longer confirm it) moves to `needs_review` by pg_cron's hourly `hand_over_unconfirmed()`.
 
 ### Member menus
 
-`menuCanGoUp()` queues a confirmed menu when no script fetches the venue's menu and the member has fewer than six queued/approved menu submissions in the preceding 24 hours. `.github/workflows/photos.yml` runs `submissions -- menus`; `menuHold()` checks that it parses, contains dishes, belongs to that venue, covers only yesterday through seven days ahead in London dates, and is still not scripted. Failures move to `needs_review` with a reason; passing menus are saved through the manual-menu parser.
+`menuCanGoUp()` queues a confirmed menu when no script fetches the venue's menu and the member has fewer than six queued/approved menu submissions in the preceding 24 hours. `.github/workflows/photos.yml` runs `submissions -- publish`; `menuHold()` checks that it parses, contains dishes, belongs to that venue, covers only yesterday through seven days ahead in London dates, and is still not scripted. Failures move to `needs_review` with a reason; passing menus are saved through the manual-menu parser.
 
 Rejecting a published member menu removes its days where they still belong to the member-ingest method; a script's or hand-copied menu for those days stays. The same rejection path can remove a contributor's published menu.
+
+### Member price lists and hours
+
+The model reading a price list or hours is given the venue's current list (`currentText()`), so a photo of part of a board or a typed change (“Monday closes at 2”) comes back as the whole list, with the change made. On confirmation, `holdOf()` queues it when the member has sent fewer than six of that kind in 24 hours and, if they changed the reading of a photo, `checkReading()` (the check model, purpose `check_reading`) finds every line on the photo or in the earlier list. `submissions -- publish` (the photos Action) then checks it parses, is for its venue and has no price over £100, keeps the rows it replaces in `submissions.replaced` (`0032`), and saves it. `reject <id>` on a published one puts those rows back, unless the venue's list has been replaced again since.
 
 ### Venue photos
 
@@ -45,7 +49,7 @@ The submit function starts the publishing workflow for a queued menu or photo th
 
 `submissions -- list` lists waiting rows; `show <id>` downloads evidence under `~/grub-data/submissions/` and prints the transcription/prompt. When APIs are unavailable, use the prompt from `_shared/formats.ts` with the photo, save the checked text, then `transcribe <id> file.txt` and `approve <id>`.
 
-Approval validates through `parseManual`, `parsePrices` or `parseHours`, using the same database calls as hand ingest (`method: user`, or `contributor`). Menus upsert days; prices replace the list; hours replace slots unless `--keep-hours` is passed. Slot provenance records the submission. Notes (`kind: other`) require acting on the note rather than publishing it with `approve`.
+Approval validates through `parseManual`, `parsePrices` or `parseHours`, using the same database calls as hand ingest (`method: user`, or `contributor`). Menus upsert days; prices replace the list; hours replace slots unless `--keep-hours` is passed; either keeps what it replaced for `reject`. Slot provenance records the submission. Notes (`kind: other`) require acting on the note rather than publishing it with `approve`.
 
 pg_cron starts `.github/workflows/queue.yml` at 07:00 and 18:00 UTC; it keeps one open “Review queue” issue. `submissions -- digest` includes kind, venue, age, reason, action commands, held-back review counts and model spend. It excludes personal details, evidence and review words because the repo is public. Queue changes trigger a comment for email notification; spend-only changes do not.
 

@@ -29,6 +29,8 @@ export type Submission = {
   /** kind photo: the sender's name, which it's credited to, and the model's description of it */
   credit: string | null
   alt: string | null
+  /** prices/hours, once published: the rows it replaced, so rejecting it puts them back */
+  replaced: Record<string, unknown>[] | null
   created_at: string
 }
 
@@ -97,6 +99,20 @@ export function connect() {
       if (error) throw new Error(`service_slots ${venue}: ${error.message}`)
       return data as { meal: string; days: string[]; start_time: string; end_time: string; period: string; note: string | null }[]
     },
+    /** A venue's price list or slots as stored, every column: what a member's list replaces, kept to put back. */
+    async rowsOf(table: 'venue_prices' | 'service_slots', venue: string): Promise<Record<string, unknown>[]> {
+      const { data, error } = await sb.from(table).select('*').eq('venue_id', venue)
+      if (error) throw new Error(`${table} ${venue}: ${error.message}`)
+      return data
+    },
+    /** Puts a venue's price list or slots back as they were (rowsOf()), in place of what's there now. */
+    async restoreRows(table: 'venue_prices' | 'service_slots', venue: string, rows: Record<string, unknown>[]) {
+      const { error } = await sb.from(table).delete().eq('venue_id', venue)
+      if (error) throw new Error(`${table} ${venue}: ${error.message}`)
+      if (!rows.length) return
+      const { error: insertError } = await sb.from(table).insert(rows)
+      if (insertError) throw new Error(`${table} ${venue}: ${insertError.message}`)
+    },
     /** Submissions, newest last; `status` narrows, `trusted` keeps only contributors' rows. */
     async submissions(filter: { status?: Submission['status'][]; trusted?: boolean; id?: string } = {}): Promise<Submission[]> {
       let q = sb.from('submissions').select('*').order('created_at')
@@ -107,7 +123,7 @@ export function connect() {
       if (error) throw new Error(`submissions: ${error.message}`)
       return data as Submission[]
     },
-    async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note'>> & { reviewed_at?: string }) {
+    async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note' | 'replaced'>> & { reviewed_at?: string }) {
       const { error } = await sb.from('submissions').update(patch).eq('id', id)
       if (error) throw new Error(`submissions ${id}: ${error.message}`)
     },
