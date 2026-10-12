@@ -1,4 +1,4 @@
-// Signing in with a Cambridge account (Microsoft, through Supabase Auth), for sending things in. The data client in
+// Signing in with a Cambridge account (Google, the University's Raven OAuth2, through Supabase Auth), for sending things in. The data client in
 // data.tsx keeps no session; this one does, in localStorage, so a sender stays signed in across visits.
 import { createClient, type Session } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
@@ -16,21 +16,21 @@ export async function ownReview(venueId: string): Promise<{ rating: number; body
 /** Only University accounts get in: the database refuses any other address, this is the same rule up front. */
 export const isCamEmail = (email: string | undefined) => !!email && /@cam\.ac\.uk$/i.test(email)
 
-/** Microsoft sign-in, pinned to the University tenant by the dashboard's Azure settings; back to `returnTo` afterwards. */
+/** Google sign-in, offering the @cam.ac.uk account (`hd`; the database enforces it); back to `returnTo` afterwards. */
 export function signIn(returnTo: string) {
-  return auth.signInWithOAuth({ provider: 'azure', options: { scopes: 'email openid profile', redirectTo: `${location.origin}${returnTo}` } })
+  return auth.signInWithOAuth({ provider: 'google', options: { queryParams: { hd: 'cam.ac.uk' }, redirectTo: `${location.origin}${returnTo}` } })
 }
 
 export const signOut = () => auth.signOut()
 
-// Whether Microsoft sign-in is switched on in the dashboard (Authentication → Providers → Azure), read once from
+// Whether Google sign-in is switched on (Authentication → Providers → Google, `npm run auth:google`), read once from
 // Supabase's public auth settings: until it is, the ways to sign in stay hidden rather than leading to an error, and
 // they appear by themselves once it's on.
 let enabled: Promise<boolean> | undefined
 const signInEnabled = () =>
   (enabled ??= fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } })
     .then((r) => r.json())
-    .then((s: { external?: Record<string, boolean> }) => !!s.external?.azure)
+    .then((s: { external?: Record<string, boolean> }) => !!s.external?.google)
     .catch(() => false))
 
 /** Whether signing in works yet (see above); `undefined` until known. */
@@ -44,7 +44,7 @@ export function useSignInEnabled(): boolean | undefined {
   return on
 }
 
-/** The account's name as Microsoft gives it: what a member's photo is credited to (the submit function reads the same). */
+/** The account's name as Google gives it: what a member's photo is credited to (the submit function reads the same). */
 export const memberName = (session: Session | null | undefined): string | null => {
   const meta = session?.user.user_metadata ?? {}
   return String(meta.full_name ?? meta.name ?? '').trim() || null

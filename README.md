@@ -18,7 +18,7 @@ flowchart TB
   member["Member in the venue<br/>@cam.ac.uk"]
   contrib["Contributor's script<br/>members-only menus"]
 
-  auth["Supabase Auth<br/>Microsoft, Cambridge tenant"]
+  auth["Supabase Auth<br/>Google, @cam.ac.uk only"]
   submit["submit<br/>Edge Function"]
   openai["OpenAI<br/>transcribe · vet photo · moderate"]
   bucket[("Private bucket<br/>photos sent in")]
@@ -75,20 +75,23 @@ npm run dev
 
 ## Switching on sending in
 
-Microsoft sign-in setup is still pending (12 Oct 2026). The member workflows above are implemented but need it configured.
+Google sign-in was switched on on 12 Oct 2026. These are the steps, for setting it up again or on another project.
 
 Reading needs no account and no keys beyond the publishable one. Sending in needs three things set up once:
 
-1. **Microsoft sign-in.** Register the app in an Entra directory you control or have permission to register apps in ([Microsoft's prerequisites](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app)). A personal Microsoft account needs access to such a directory; signing in with one alone is not sufficient. The maintainer's Cambridge account could not access app registration when checked on 12 Oct 2026. In [entra.microsoft.com](https://entra.microsoft.com), select the directory, then Entra ID → App registrations → New registration: any name; supported account types *Accounts in any organizational directory (multitenant)*; redirect URI, platform Web, `https://leghyhbkovkyipgoygko.supabase.co/auth/v1/callback`. Then:
-   - *Certificates & secrets* → New client secret; copy its **Value** (note when it expires).
-   - *Token configuration* → Add optional claim → ID → `email` and `xms_edov` (or add them to `optionalClaims.idToken` in the Manifest), so Supabase gets a verified address.
-   - *API permissions*: Microsoft Graph `openid`, `email`, `profile` (delegated) only.
+1. **Google sign-in.** Every member has a CRSid@cam.ac.uk Google account, and signing in with it is the University's own route for a site outside UIS ("Raven OAuth2", [UIS's guide](https://docs.raven.cam.ac.uk/en/latest/creating-oauth2-client-credentials/)): a college or personal site registers with an ordinary Google account (UIS recommends a shared one tied to a role address), with no approval. In [console.cloud.google.com](https://console.cloud.google.com), create a project, then in Google Auth Platform:
+   - *Branding*: app name Grub, a support email, home page `https://grub.cam`, privacy policy `https://grub.cam/terms`, authorised domains `grub.cam` and `leghyhbkovkyipgoygko.supabase.co`. No logo: one needs Google's brand verification.
+   - *Audience*: External, then **Publish app**. While it's in Testing only listed test users can sign in; asking only for the basic scopes, publishing needs no verification.
+   - *Data access*: `openid`, `.../auth/userinfo.email` and `.../auth/userinfo.profile` only.
+   - *Clients* → Create client → Web application, authorised redirect URI `https://leghyhbkovkyipgoygko.supabase.co/auth/v1/callback`. Copy its Client ID and Client secret.
 
-   Put `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and a Supabase [personal access token](https://supabase.com/dashboard/account/tokens) as `SUPABASE_ACCESS_TOKEN` in `.env`, then `npm run auth:azure`. It turns the provider on pinned to the University's tenant and sets the site and redirect URLs (`-- --check` shows what's set). The site's **Sign in** appears by itself once it's on. Whatever the provider, the database refuses any address that isn't `@cam.ac.uk`. If Cambridge's tenant answers "Need admin approval" the first time someone signs in, ask UIS to approve the app: it asks for nothing beyond the sign-in scopes.
+   Put them as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, and a Supabase [personal access token](https://supabase.com/dashboard/account/tokens) as `SUPABASE_ACCESS_TOKEN`, in `.env`, then `npm run auth:google`. It turns the provider on and sets the site and redirect URLs (`-- --check` shows what's set); pasting the ID and secret into the dashboard (Authentication → Sign In / Providers → Google) and setting URL Configuration by hand does the same. The site's **Sign in** appears by itself once it's on, and asks Google for the cam.ac.uk account; whatever account someone picks, the database refuses any address that isn't `@cam.ac.uk`. If a member is told their institution blocks the app, ask UIS (raven-support@uis.cam.ac.uk) to allow its client ID: it asks for nothing beyond the sign-in scopes.
+
+   Microsoft (Entra) was the first plan, but UIS registers apps for Cambridge's tenant itself and adds them to an allowlist, so an outside app likely needs their approval, and the maintainer's account can't register apps; it stays an option if UIS ever takes it on.
 2. **The models.** `supabase secrets set OPENAI_API_KEY=…`. Boards, price lists and hours are read by `gpt-6.1-sol` (`OPENAI_MODEL`); photos and reviews are checked by `gpt-6-luna` (`OPENAI_CHECK_MODEL`). Their prices are built in, so spend is counted; for any other model set `OPENAI_PRICE` / `OPENAI_CHECK_PRICE` ("2/10", dollars per million input/output tokens), and compare on real boards with `npm run models:compare`. In the OpenAI project's Limits → Spend, set a monthly spend limit and enable **Enforce a hard limit**. An alert threshold alone does not cap spending ([OpenAI's guide](https://developers.openai.com/api/docs/guides/spend-limits)). The application has no monthly cap; `LLM_DAILY_USD` optionally checks daily spend before calls. Optional: `OPENAI_REASONING`, `IP_SALT`. If the OpenAI project allows only selected models, allow those two and `omni-moderation-latest`. Without a key, transcriptions and photo/review checks wait for a person; rating-only reviews need no model.
 3. **Publishing within minutes.** A fine-grained GitHub token with *Actions: read and write* on this repo, as `supabase secrets set GITHUB_DISPATCH_TOKEN=…`, lets the function start the publishing Action the moment a menu or photo is queued. Without it, the Action's hourly run picks them up. All three Actions need repository secrets `VITE_SUPABASE_URL` and `SUPABASE_SECRET_KEY`; the ingest Action also uses `CF_DEPLOY_HOOK` to rebuild the site.
 
-`npm run submissions -- smoke [--photo venue.jpg] [--review]` then checks the submission API without Microsoft: a throwaway `@cam.ac.uk` account (no email is sent) sends a menu, and optionally a photo and a review, through the deployed function, and removes the account, submissions and evidence afterwards (model-call logs remain). It does not test Microsoft sign-in or the publishing/deploy cycle.
+`npm run submissions -- smoke [--photo venue.jpg] [--review]` then checks the submission API without Google: a throwaway `@cam.ac.uk` account (no email is sent) sends a menu, and optionally a photo and a review, through the deployed function, and removes the account, submissions and evidence afterwards (model-call logs remain). It does not test Google sign-in or the publishing/deploy cycle.
 
 ## Data
 

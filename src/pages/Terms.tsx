@@ -17,7 +17,7 @@ export function Terms() {
         <Part title="Using grub.cam">
           <p>
             {SITE_NAME} is a free, independent guide to where you can eat and drink across Cambridge colleges and the University. Reading it needs no account.
-            Sending something in or reviewing a venue needs you to sign in with your University of Cambridge (@cam.ac.uk) Microsoft account.
+            Sending something in or reviewing a venue needs you to sign in with your University of Cambridge (@cam.ac.uk) Google account.
           </p>
           <p>
             Menus, hours and prices come from what each venue publishes, transcriptions of its notices, and people who send corrections. They can be
@@ -58,7 +58,7 @@ export function Terms() {
           <p>We don't use cookies or analytics. If you only read the site, we collect nothing about you.</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              If you sign in, we keep your Cambridge email address and the name your Microsoft account gives, with what you send and your reviews. Your
+              If you sign in, we keep your Cambridge email address and the name your Google account gives, with what you send and your reviews. Your
               address is never shown; your name is shown only with a photo of a venue you sent. Your sign-in is remembered in your own browser.
             </li>
             <li>
@@ -75,7 +75,7 @@ export function Terms() {
             <li>Your light or dark theme is remembered in your own browser.</li>
             <li>“Near me” asks your browser for your location only when you press it, uses it to centre the map, and never sends it to us.</li>
             <li>
-              Pages come from Cloudflare, venue data and sign-in from Supabase (our database) and Microsoft, and maps from Apple (or, if Apple's can't load,
+              Pages come from Cloudflare, venue data and sign-in from Supabase (our database) and Google, and maps from Apple (or, if Apple's can't load,
               OpenFreeMap). Like any web service, they receive your IP address when your browser asks them for something.
             </li>
             <li>Reports go to GitHub, under GitHub's own terms and privacy statement.</li>

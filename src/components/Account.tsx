@@ -5,7 +5,7 @@ import { memberName, signIn, signOut, useSession, useSignInEnabled } from '../li
 import { Icon } from './Icon.tsx'
 
 /**
- * The header's account button, at its end as Airbnb's: "Sign in" (Microsoft, a Cambridge account) back to the page
+ * The header's account button, at its end as Airbnb's: "Sign in" (Google, a Cambridge account) back to the page
  * you're on, or, signed in, your initials, opening your name and address, sending something in, and signing out.
  * Nothing until the session is known, so a prerendered page and its first render agree.
  */
@@ -35,7 +35,7 @@ export function AccountButton() {
   const round = 'flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink/5 text-ink transition-colors hover:bg-ink/10 sm:h-12'
   const canSignIn = useSignInEnabled()
   if (session === undefined) return <span aria-hidden="true" className="size-11 sm:size-12" />
-  // Microsoft sign-in not switched on yet: nothing to offer
+  // Google sign-in not switched on yet: nothing to offer
   if (!session && !canSignIn) return null
   if (!session)
     return (

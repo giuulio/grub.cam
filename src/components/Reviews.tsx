@@ -105,7 +105,7 @@ function YourReview({ venue }: { venue: Venue }) {
   }, [user, venue.id])
 
   if (session === undefined) return null
-  // Microsoft sign-in not switched on yet: no way in to offer
+  // Google sign-in not switched on yet: no way in to offer
   if (!session && !canSignIn) return null
   if (!session)
     return (

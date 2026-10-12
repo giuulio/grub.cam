@@ -24,7 +24,7 @@
 // Actions read and write on the repo; GITHUB_REPO, default giuulio/grub.cam). That Action makes its sizes, commits them
 // and adds the photo ahead of the venue's others, credited to the sender's name. Anything else waits for a person.
 //
-// Every submission from the form has a signed-in sender: a Supabase Auth user (Microsoft sign-in, University tenant) with an
+// Every submission from the form has a signed-in sender: a Supabase Auth user (Google sign-in) with an
 // @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email. Contributors' token posts
 // don't need one.
 //
@@ -172,7 +172,7 @@ async function senderOf(req: Request): Promise<{ id: string; email: string; name
   if (error || !data.user) return { error: 'your sign-in has expired; sign in again' }
   const email = data.user.email ?? ''
   if (!/@cam\.ac\.uk$/i.test(email)) return { error: 'only University of Cambridge accounts (@cam.ac.uk) can send things in' }
-  // Microsoft's display name for the account, as the app reads it too (memberName() in src/lib/auth.ts)
+  // Google's display name for the account, as the app reads it too (memberName() in src/lib/auth.ts)
   const meta = data.user.user_metadata ?? {}
   const name = String(meta.full_name ?? meta.name ?? '').trim().slice(0, 80) || null
   return { id: data.user.id, email, name }

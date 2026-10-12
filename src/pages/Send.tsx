@@ -104,10 +104,10 @@ export function Send() {
         {session === undefined ? null : !session || !isCamEmail(email) ? (
           <section className="mt-8 space-y-4" aria-labelledby="sign-in">
             <h2 id="sign-in" className="title text-2xl">Sign in with your Cambridge account</h2>
-            <p className="text-muted">Only University members can send things in, so we know what we're told comes from someone who was there. Microsoft sign-in with your @cam.ac.uk account; we keep your address with what you send and nothing else.</p>
+            <p className="text-muted">Only University members can send things in, so we know what we're told comes from someone who was there. Google sign-in with your @cam.ac.uk account; we keep your address with what you send and nothing else.</p>
             {session && !isCamEmail(email) && <p role="alert" className="text-sm text-error">{email} isn't a University account.</p>}
             {canSignIn === false ? (
-              // Microsoft sign-in isn't switched on in the dashboard yet
+              // Google sign-in isn't switched on yet
               <p className="rounded-lg bg-cta-bg px-4 py-3 text-ink">Signing in opens in the next few days. Until then, nothing can be sent from here.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-3">

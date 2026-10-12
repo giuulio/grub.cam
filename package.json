@@ -13,7 +13,7 @@
     "ingest:hours": "tsx scripts/ingest/hours.ts",
     "submissions": "tsx scripts/ingest/submissions.ts",
     "reviews": "tsx scripts/ingest/reviews.ts",
-    "auth:azure": "tsx scripts/auth-azure.ts",
+    "auth:google": "tsx scripts/auth-google.ts",
     "models:compare": "tsx scripts/ingest/compare-models.ts",
     "search:snapshot": "tsx scripts/search-snapshot.ts",
     "test": "vitest run",

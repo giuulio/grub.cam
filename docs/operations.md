@@ -1,6 +1,6 @@
 # Operations
 
-[AGENTS.md](../AGENTS.md) lists commands and data rules. [README](../README.md#switching-on-sending-in) is the canonical setup guide for Microsoft sign-in, model secrets and publishing. Microsoft auth setup is still pending; the member workflows below describe what is implemented for when it is configured.
+[AGENTS.md](../AGENTS.md) lists commands and data rules. [README](../README.md#switching-on-sending-in) is the canonical setup guide for Google sign-in, model secrets and publishing. Google sign-in has been on since 12 Oct 2026.
 
 ## Ingest and reference data
 
@@ -37,7 +37,7 @@ Rejecting a published member menu removes its days where they still belong to th
 
 ### Venue photos
 
-A member grants CC BY 4.0 and is credited using their Microsoft name (`memberName()`). `vet()` checks that the image is a real photo of the venue, has no recognisable face or unsuitable content, and supplies alt text. Automatic queuing allows fewer than three queued/approved member photos in the preceding 24 hours and no member photo row created for that venue in that window. Failed checks or unavailable models send the photo to `needs_review`.
+A member grants CC BY 4.0 and is credited using their Google account's name (`memberName()`). `vet()` checks that the image is a real photo of the venue, has no recognisable face or unsuitable content, and supplies alt text. Automatic queuing allows fewer than three queued/approved member photos in the preceding 24 hours and no member photo row created for that venue in that window. Failed checks or unavailable models send the photo to `needs_review`.
 
 `GITHUB_DISPATCH_TOKEN` starts the publishing workflow for a queued menu or photo; the hourly 23-past run catches missed dispatches. `submissions -- photos` writes image variants to `public/photos` and adds an unapproved row ahead of the venue's older photos. The Action commits the files to main, which starts a deploy. `submissions -- live --wait 720` approves rows only when the site serves their files; otherwise the next run checks again. This preserves the old photo during deployment. Manual approval follows the same path; when approving locally, commit the generated files and run `live` after deployment. Rejecting a photo unapproves it so the previous one can show.
 
@@ -92,13 +92,13 @@ Files live at `public/photos/<site>/<venue>/<id>-<width>.webp`; site photos use 
 
 ## Accounts
 
-For current status and all setup steps, see [README](../README.md#switching-on-sending-in). Reading needs no account. The intended Azure provider is pinned to Cambridge tenant `49a50445-bdfa-4b79-ade3-547b4f3986e9`; registration can live in an Entra directory the maintainer controls, configured for organizational multitenant accounts. On 12 Oct 2026, the maintainer's Cambridge account could not access app registration; this does not establish a rule for every University account.
+For current status and all setup steps, see [README](../README.md#switching-on-sending-in). Reading needs no account. Members sign in with Google: every member has a CRSid@cam.ac.uk Google Workspace account, and UIS documents this as "Raven OAuth2" for sites outside UIS, registered with an ordinary Google account and no approval. `signIn()` passes `hd: cam.ac.uk` so Google offers that account; `hd` is only a hint, so the database's check is what enforces it. Microsoft (Entra) was dropped on 12 Oct 2026: UIS registers apps for Cambridge's tenant through its Application Factory and an allowlist, so an outside app likely needs their approval, and the maintainer's account could not register apps.
 
-`npm run auth:azure` uses the Management API to configure the provider and redirect URLs. `-- --check` reads config only; it does not prove end-to-end sign-in works. `useSignInEnabled()` reads `/auth/v1/settings` and hides sign-in offers until enabled. The account button returns to the page it started from; `SignInError` displays `error_description` under the header.
+`npm run auth:google` uses the Management API to configure the provider and redirect URLs. `-- --check` reads config only; it does not prove end-to-end sign-in works. `useSignInEnabled()` reads `/auth/v1/settings` and hides sign-in offers until enabled. The account button returns to the page it started from; `SignInError` displays `error_description` under the header.
 
-`submit` has `verify_jwt = false` in `supabase/config.toml` because it validates user bearer tokens through Auth itself and separately supports contributor tokens. Migration `0026` rejects new auth users outside `@cam.ac.uk`; `isCamEmail()` checks on the client too. Regular member sign-in uses Microsoft, not email magic links.
+`submit` has `verify_jwt = false` in `supabase/config.toml` because it validates user bearer tokens through Auth itself and separately supports contributor tokens. Migration `0026` rejects new auth users outside `@cam.ac.uk`; `isCamEmail()` checks on the client too. Regular member sign-in uses Google, not email magic links. The email provider stays on (signups need confirmation, so it gives no way in) because the smoke test signs in through it.
 
-`submissions -- smoke [--venue v] [--photo f.jpg] [--review]` checks the deployed function without Microsoft using an admin-created throwaway account (no email sent). It sends a typed menu and marks it wrong, optionally vets a venue photo then rejects it, and saves/removes a review. It deletes the account, submissions and evidence afterwards; model-call logs remain. It checks the submission API, not Microsoft's OAuth flow or a full publication/deploy cycle.
+`submissions -- smoke [--venue v] [--photo f.jpg] [--review]` checks the deployed function without Google using an admin-created throwaway account (no email sent). It sends a typed menu and marks it wrong, optionally vets a venue photo then rejects it, and saves/removes a review. It deletes the account, submissions and evidence afterwards; model-call logs remain. It checks the submission API, not Google's OAuth flow or a full publication/deploy cycle.
 
 ## Deployment and indexing
 

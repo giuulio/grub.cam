@@ -14,8 +14,8 @@ Cambridge college and University menus and hours, live. Vite + React 19 + TypeSc
 | `npm run ingest:hours -- hours.txt [...] [--dry] [--keep]` | Save a venue's opening hours → `service_slots`, replacing its slots unless `--keep` (format at the top of `scripts/ingest/hours.ts`) |
 | `npm run submissions -- list \| show <id> \| transcribe <id> file.txt \| approve <id> \| approve --trusted \| reject <id> "why"` | The queue of what people sent in from `/send` ([review queue](docs/operations.md#submissions)) |
 | `npm run models:compare -- <dir> --model a=in/out [...]` | Which OpenAI model transcribes boards best: each model on each photo in `<dir>` against its hand-checked `.txt`, scored per line, with cost (format at the top of `scripts/ingest/compare-models.ts`) |
-| `npm run submissions -- smoke [--venue v] [--photo f.jpg] [--review]` | Check the deployed submission API with a throwaway account and clean up; no Microsoft sign-in or publication/deploy test ([details](docs/operations.md#accounts)) |
-| `npm run auth:azure [-- --check]` | Switches on Microsoft sign-in pinned to the University's tenant and sets the site and redirect URLs, through the Management API (`SUPABASE_ACCESS_TOKEN`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` in `.env`; [README setup](README.md#switching-on-sending-in)) |
+| `npm run submissions -- smoke [--venue v] [--photo f.jpg] [--review]` | Check the deployed submission API with a throwaway account and clean up; no Google sign-in or publication/deploy test ([details](docs/operations.md#accounts)) |
+| `npm run auth:google [-- --check]` | Switches on Google sign-in (the University's Raven OAuth2) and sets the site and redirect URLs, through the Management API (`SUPABASE_ACCESS_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in `.env`; [README setup](README.md#switching-on-sending-in)) |
 | `npm run submissions -- digest` | What waits for you, as Markdown (no personal data): the queue Action (`.github/workflows/queue.yml`, 07:00 and 18:00 UTC) keeps it as the body of the open "Review queue" issue, commenting when it changes so GitHub emails you |
 | `npm run reviews -- list [--all] \| approve <id> \| hide <id> "why"` | Members' reviews held back by the check (their words and author, for you alone), or all of them; publish one, or take one down for good |
 | `npm test` | Vitest (time logic, filters, search against a real-data snapshot, SEO output, adapters against saved pages) |
@@ -29,7 +29,7 @@ Cambridge college and University menus and hours, live. Vite + React 19 + TypeSc
 
 - [Design and page behaviour](docs/design.md): routes, layout, controls, maps and visual conventions.
 - [Operations](docs/operations.md): ingest quirks, submissions, reviews, photos, auth and deployment.
-- [Microsoft setup and status](README.md#switching-on-sending-in): the setup instructions live there.
+- [Google sign-in setup and status](README.md#switching-on-sending-in): the setup instructions live there.
 
 Keep these references current when behaviour changes. Keep AGENTS focused on commands, invariants and where code lives; detailed walkthroughs belong in the linked docs.
 
@@ -94,6 +94,6 @@ Schema change: add `supabase/migrations/NNNN_name.sql`, then `set -a && . ./.env
 
 Cloudflare Workers serves static `dist/`; pushes to main build and deploy it. Every route is prerendered, with a real 404 and no SPA fallback. New venues need a build before their URLs exist. Canonical origin is `SITE_URL` in `src/lib/site.ts`. Preserve `splitHoisted()`: React can hoist the title and photo preload in either order; both must reach `<head>`.
 
-Microsoft sign-in setup is pending; see [README](README.md#switching-on-sending-in). The intended provider is Azure pinned to Cambridge's tenant. `submit` has `verify_jwt = false` because it validates user tokens through Auth itself and also accepts contributor tokens; migration `0026` independently rejects non-`@cam.ac.uk` accounts. Reading needs no account.
+Google sign-in is on (12 Oct 2026); setup in [README](README.md#switching-on-sending-in). Members sign in with their @cam.ac.uk Google account (Raven OAuth2); not Microsoft, whose Cambridge tenant likely needs UIS to approve an outside app. `submit` has `verify_jwt = false` because it validates user tokens through Auth itself and also accepts contributor tokens; migration `0026` independently rejects non-`@cam.ac.uk` accounts. Reading needs no account.
 
 The submit function does not save menus, hours, price lists or venue photos directly into public data: publication uses the ingest parsers and queue scripts. Reviews are checked and saved by the function. Keep private submission evidence and personal details out of the public Review queue issue. Model spend is logged; the application has no monthly cap. An OpenAI monthly cap requires **Enforce a hard limit**; `LLM_DAILY_USD` optionally checks daily spend before calls. See [operations](docs/operations.md) for the full workflow.

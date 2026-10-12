@@ -1,5 +1,5 @@
 // npm run submissions -- smoke [--venue clare/buttery] [--photo venue.jpg] [--review]
-// Sends something in as a member would, through the deployed `submit` function, without Microsoft: a throwaway
+// Sends something in as a member would, through the deployed `submit` function, without Google: a throwaway
 // @cam.ac.uk account made through the admin API (no email is sent), signed in with a magic-link token it never mails,
 // then a typed menu (read by the model when OPENAI_API_KEY is set, then marked wrong so nothing is published),
 // optionally a photo of the venue (the model's verdict, then rejected at once, before the photos Action could take it)
