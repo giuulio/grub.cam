@@ -299,12 +299,13 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
     if (e && container.current) showItems(e, [...e.pins.values()].map((p) => p.annotation), container.current, inset, maxZoom, true)
   }
 
+  const oneSite = embedded && new Set(mapped.map((r) => r.venue.site.slug)).size === 1
   return (
     <>
       <div ref={container} className={`venue-map transition-opacity duration-300 ${shown ? '' : 'opacity-0'}`} aria-label="Map of food and drink in Cambridge" />
       {mapped.map((r) => {
         const el = anchors.get(r.venue.id)
-        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
+        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} oneSite={oneSite} onSelect={onSelect} />, el, r.venue.id)
       })}
       {!shown && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
       <MapActions controls={controls} ready={ready} locating={locating} canShowAll={mapped.length > 0} onLocate={locate} onShowAll={showAll} note={locationNote} />

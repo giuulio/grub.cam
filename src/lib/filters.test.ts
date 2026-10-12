@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, dishTags, mainDishes, matchesDiet, nextService, sectionOf, weekHours, type Filters } from './filters.ts'
+import { applyFilters, DEFAULT_FILTERS, dishTags, mainDishes, matchesDiet, mealHours, nextService, sectionOf, weekHours, type Filters } from './filters.ts'
 import type { Slot, Venue, VenueType } from './types.ts'
 
 const base: Venue = {
@@ -94,6 +94,25 @@ describe('nextService', () => {
     expect(at(12 * 60 + 30)).toBe('lunch')
     expect(at(15 * 60)).toBe('dinner')
     expect(nextService({ status: { kind: 'unknown' }, days: v.menu })?.service).toBe('lunch')
+  })
+})
+
+describe('mealHours', () => {
+  it('rows meal by meal, days with the same times together', () => {
+    // St Edmund's Dining Hall
+    const slot = (meal: Slot['meal'], days: Slot['days'], start: string, end: string): Slot => ({ meal, days, start, end, period: 'term' })
+    const rows = mealHours([
+      slot('dinner', ['mon', 'tue', 'wed', 'thu', 'fri'], '18:30', '19:45'),
+      slot('lunch', ['sun'], '12:30', '13:30'),
+      slot('lunch', ['sat'], '11:00', '12:30'),
+      slot('lunch', ['mon', 'tue', 'wed', 'thu', 'fri'], '12:30', '13:30'),
+      slot('breakfast', ['wed'], '08:00', '09:30'),
+    ])
+    expect(rows).toEqual([
+      { meal: 'breakfast', times: [{ start: '08:00', end: '09:30', days: ['wed'] }] },
+      { meal: 'lunch', times: [{ start: '12:30', end: '13:30', days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sun'] }, { start: '11:00', end: '12:30', days: ['sat'] }] },
+      { meal: 'dinner', times: [{ start: '18:30', end: '19:45', days: ['mon', 'tue', 'wed', 'thu', 'fri'] }] },
+    ])
   })
 })
 

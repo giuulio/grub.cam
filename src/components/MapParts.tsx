@@ -26,9 +26,10 @@ export type MapProps = { results: Ranked[]; selected?: string; highlight?: strin
 /**
  * A venue's pin, as Apple marks its own places: a disc in its type's colour (or its two types') with the type's glyph,
  * and its name beside it in that colour, shown when the map places it (`data-label` on the pin's anchor: see
- * `placeLabels`). Venues side by side get narrower targets so none overlap.
+ * `placeLabels`). Venues side by side get narrower targets so none overlap. `oneSite`: the map's pins are all one
+ * site's, so names go without it.
  */
-export function MapPin({ r, selected, shared, onSelect }: { r: Ranked; selected: boolean; shared: boolean; onSelect: (id: string) => void }) {
+export function MapPin({ r, selected, shared, oneSite = false, onSelect }: { r: Ranked; selected: boolean; shared: boolean; oneSite?: boolean; onSelect: (id: string) => void }) {
   const v = r.venue
   const types = venueTypes(v)
   const Glyph = TYPE_ICON[types[0]]
@@ -42,7 +43,7 @@ export function MapPin({ r, selected, shared, onSelect }: { r: Ranked; selected:
       <span className={`venue-pin ${selected ? 'is-selected' : ''}`} style={{ background: pinFill(types) }}>
         <Glyph weight="Filled" aria-hidden="true" focusable="false" className="venue-pin-glyph" />
       </span>
-      <span aria-hidden="true" className="venue-pin-label">{pinLabel(v)}</span>
+      <span aria-hidden="true" className="venue-pin-label">{pinLabel(v, oneSite)}</span>
     </button>
     </span>
   )

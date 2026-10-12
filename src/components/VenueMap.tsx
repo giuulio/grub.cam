@@ -245,12 +245,13 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
     e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom, duration: 300 })
   }
 
+  const oneSite = embedded && new Set(mapped.map((r) => r.venue.site.slug)).size === 1
   return (
     <>
       <div ref={container} className="venue-map" aria-label="Map of food and drink in Cambridge" />
       {mapped.map((r) => {
         const el = anchors.get(r.venue.id)
-        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} onSelect={onSelect} />, el, r.venue.id)
+        return el && createPortal(<MapPin r={r} selected={lit(r.venue.id)} shared={offsets.has(r.venue.id)} oneSite={oneSite} onSelect={onSelect} />, el, r.venue.id)
       })}
       {!loaded && !error && <p className="pointer-events-none absolute top-1/2 right-0 left-0 z-400 text-center text-sm text-muted">Loading map…</p>}
       <MapActions controls={controls} ready={ready} locating={locating} canShowAll={results.some((r) => hasLocation(r.venue))} onLocate={locate} onShowAll={showAll} note={error || locationNote} />

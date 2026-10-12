@@ -29,6 +29,8 @@
   --color-cta: var(--cta);
   --color-cta-bg: var(--cta-bg);
   --color-error: var(--error);
+  --color-notice: var(--notice);
+  --color-notice-bg: var(--notice-bg);
 }
 
 :root {
@@ -49,6 +51,8 @@
   --cta: #00807a;
   --cta-bg: #d1f9f1;
   --error: #dd3025; /* Dark Crest */
+  --notice: #6b4500; /* a day's change to the usual: amber, not the error's red */
+  --notice-bg: #fff1d1;
   --pill-bg: #eceef1; /* Slate 1, Slate 3 on it */
   --pill-ink: #546072;
 }
@@ -71,6 +75,8 @@
     --cta: #8ee8d8;
     --cta-bg: #133844;
     --error: #ffc392; /* Warm Crest */
+    --notice: #ffd98a;
+    --notice-bg: #3a2e12;
     --pill-bg: #546072; /* Slate 3, Slate 1 on it */
     --pill-ink: #eceef1;
   }
@@ -93,6 +99,8 @@
   --cta: #8ee8d8;
   --cta-bg: #133844;
   --error: #ffc392;
+  --notice: #ffd98a;
+  --notice-bg: #3a2e12;
   --pill-bg: #546072;
   --pill-ink: #eceef1;
 }
@@ -261,6 +269,10 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   background: var(--sheen), var(--pin, var(--muted));
   color: var(--pin-ink, #fff);
 }
+
+/* Text in a type's colour, deepened toward the ink so it reads as text (a menu's course and section headings): darker
+   on the light page, lighter on the dark one. */
+.type-ink { color: color-mix(in srgb, var(--pin, var(--muted)) 60%, var(--ink)); }
 
 /* Where a venue has no photo yet: its type, as a tile the size of one. */
 .type-tile {

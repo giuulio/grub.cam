@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Calendar, Flag, Global, Leaf, Map as MapIcon, NoteAdd } from 'reicon-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
-import { GapCard, SEND_EITHER } from '../components/GapCard.tsx'
+import { GapCard, GapLine, SEND_EITHER } from '../components/GapCard.tsx'
 import { RatingSummary, Reviews } from '../components/Reviews.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
@@ -11,9 +11,10 @@ import { ListNote, PriceList } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
-import { gapPath, menuGap, venueGaps } from '../lib/coverage.ts'
+import { gapPath, menuGap, venueGaps, type Gap } from '../lib/coverage.ts'
 import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
-import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
+import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
+import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, siteName, venuePath } from '../lib/site.ts'
@@ -21,9 +22,9 @@ import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
-import { openStatus } from '../lib/time/openNow.ts'
+import { openStatus, withDayTimes } from '../lib/time/openNow.ts'
 import { isFullTerm } from '../lib/time/termDates.ts'
-import { isFormalOnly, venueTypes, type Channel, type DietTag, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { isFormalOnly, venueTypes, type Channel, type Day, type DietTag, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 /**
@@ -77,7 +78,7 @@ export function VenuePage() {
           <RailCard>
             <section aria-label="Opening hours">
               <p className="mb-4 text-lg empty:hidden">
-                <Status s={openStatus(venue.slots, now)} now={now} meal={new Set(venue.slots.map((s) => s.meal)).size > 1} />
+                <Status s={openStatus(withDayTimes(venue.slots, venue.menu), now)} now={now} meal={new Set(venue.slots.map((s) => s.meal)).size > 1} />
               </p>
               <Hours venue={venue} now={now} />
             </section>
@@ -150,17 +151,25 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
 }
 
 /**
- * What this page is still missing, each a link to send it (a photo or the text) from the venue: the gaps made plain to the
- * members who can fill them. Nothing when it's all here.
+ * What this page is still missing that it doesn't already ask for where it would be, each a link to send it (a photo or
+ * the text): the menu, a café's or bar's list and the hours each have their own, so they aren't asked for twice; formal
+ * hall's details, a photo and unknown diets are here. Nothing when there's nothing else to ask.
  */
 function HelpCard({ venue }: { venue: Venue }) {
-  // The same list /coverage shows for it, so the two never disagree
-  const missing = venueGaps(venue).map((g): [label: string, to: string] => [g.label, gapPath(venue, g)])
+  const types = venueTypes(venue)
+  // From the list /coverage shows for it, so the two never disagree
+  const elsewhere = (g: Gap) =>
+    g.kind === 'menu' || g.kind === 'hours' || (g.kind === 'prices' && (types.some((t) => t !== 'hall') || venue.menu.some((d) => d.items.length)))
+  const missing = venueGaps(venue)
+    .filter((g) => !elsewhere(g))
+    .map((g): [label: string, to: string] => [g.label, gapPath(venue, g)])
+  // Which diets it caters for, unless it's a bar
+  if (!venue.dietary.tags.length && types.some((t) => t !== 'bar')) missing.push(['The diet options', sendPath(venue, 'other', { topic: 'diet' })])
   if (!missing.length) return null
   return (
     <RailCard>
       <h2 className="text-lg font-semibold">Help fill this in</h2>
-      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, from where you are, with your Cambridge account; it goes up once you've checked what we read.</p>
+      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, sent with your Cambridge account. It goes up once we’ve checked it.</p>
       <ul className="mt-3 space-y-2">
         {missing.map(([label, to]) => (
           <li key={label} className="flex items-start gap-3">
@@ -188,9 +197,13 @@ function useMenuDate(venue: Venue, now: LocalNow) {
   return { asked, date, setDate, fetched, dates }
 }
 
-/** Beside the menu on wider screens: every date with a menu, always in view. On a phone it opens from the date instead. */
+/**
+ * Beside the menu on wider screens: every date with a menu, always in view. On a phone it opens from the date instead.
+ * Nothing until there's a date to pick: a month of greyed-out days only pushed the map down.
+ */
 function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
   const { date, setDate, dates } = useMenuDate(venue, now)
+  if (!dates.length) return null
   return (
     <div className="hidden border-t border-ink/10 pt-6 md:block">
       <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={setDate} />
@@ -201,13 +214,21 @@ function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
 function Heading({ venue }: { venue: Venue }) {
   return (
     <header className="order-1 min-w-0">
-      <h1 className="title text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
+      {/* Its site over its name, in Dark Cherry as on every row: "Hall" alone doesn't say whose */}
+      <Link to={`/${venue.site.slug}`} className="text-lg font-semibold text-site-ink hover:underline">
+        {siteName(venue.site)}
+      </Link>
+      <h1 className="title mt-1 text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
-        <Link to={`/${venue.site.slug}`} className="link text-ink">
-          {venue.site.short_name ?? venue.site.name}
-        </Link>
         {venueTypes(venue).map((t) => <TypeLabel key={t} type={t} className="gap-2" />)}
-        {holdsFormal(venue) && <span>Formal hall</span>}
+        {holdsFormal(venue) && (
+          <span className="inline-flex items-center gap-2">
+            <span className="type-mark size-5">
+              <Icon of={BowTie} className="size-[60%]" />
+            </span>
+            Formal hall
+          </span>
+        )}
         {venue.rating && (
           <a href="#reviews" className="text-ink hover:underline">
             <RatingSummary venue={venue} />
@@ -227,7 +248,7 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
   for (const t of types) {
     const title = t === types[0] ? 'Menu' : TYPE_LABEL[t]
     if (t === 'hall') {
-      const menu = <DatedMenu key="menu" title={title} venue={venue} now={now} prices={groups.hall} />
+      const menu = <DatedMenu key="menu" title={title} type="hall" venue={venue} now={now} prices={groups.hall} />
       const formal = holdsFormal(venue) && (
         <Section key="formal" title="Formal hall">
           <FormalHall venue={venue} formal={venue.formal ?? {}} />
@@ -236,21 +257,24 @@ function Sections({ venue, now }: { venue: Venue; now: LocalNow }) {
       out.push(...(formalOnly ? [formal, menu] : [menu, formal]))
     } else
       out.push(
-        <Section key={t} title={title}>
+        <Section key={t} title={title} type={t}>
           <FixedMenu venue={venue} type={t} lines={groups[t] ?? []} terms={venue.price_terms} />
         </Section>,
       )
   }
   // A café or bar that posts dishes by date too
   if (types[0] !== 'hall' && venue.menu.some((d) => d.items.length))
-    out.push(<DatedMenu key="daily" title="Daily menu" venue={venue} now={now} />)
+    out.push(<DatedMenu key="daily" title="Daily menu" type={types[0]} venue={venue} now={now} />)
   return out
 }
 
-/** A section of the page: its title, with what controls it beside it (a menu's date), then what it holds. */
-function Section({ id, title, aside, children }: { id?: string; title: string; aside?: ReactNode; children: ReactNode }) {
+/**
+ * A section of the page: its title, with what controls it beside it (a menu's date), then what it holds. `type`: the
+ * kind of venue a menu is for, whose colour its course and section headings take.
+ */
+function Section({ id, title, type, aside, children }: { id?: string; title: string; type?: VenueType; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section id={id} className={id ? 'scroll-mt-[calc(var(--header-h,0px)+1.5rem)]' : undefined}>
+    <section id={id} data-type={type} className={id ? 'scroll-mt-[calc(var(--header-h,0px)+1.5rem)]' : undefined}>
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         <h2 className="title flex-1 text-3xl">{title}</h2>
         {aside}
@@ -292,7 +316,7 @@ function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueTyp
  * The menu for one date (?date=, default today), with a calendar of every date that has one. A Dining venue that has
  * never posted dishes shows its posted list (`prices`) instead, or why there's no menu.
  */
-function DatedMenu({ title, venue, now, prices }: { title: string; venue: Venue; now: LocalNow; prices?: VenuePrice[] }) {
+function DatedMenu({ title, type, venue, now, prices }: { title: string; type: VenueType; venue: Venue; now: LocalNow; prices?: VenuePrice[] }) {
   const { snapshot } = useReady()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const { asked, date, setDate, fetched, dates } = useMenuDate(venue, now)
@@ -300,7 +324,7 @@ function DatedMenu({ title, venue, now, prices }: { title: string; venue: Venue;
   if (!dates.length && !asked) {
     if (prices?.length)
       return (
-        <Section title={title}>
+        <Section title={title} type={type}>
           <div className="space-y-6">
             <MissingMenu venue={venue} published={false} />
             <PriceList lines={prices} terms={venue.price_terms} />
@@ -309,7 +333,7 @@ function DatedMenu({ title, venue, now, prices }: { title: string; venue: Venue;
         </Section>
       )
     // A build-time page only knows this week; in the browser, wait for the history before saying there's none
-    return <Section title={title}>{fetched || snapshot ? <MissingMenu venue={venue} /> : null}</Section>
+    return <Section title={title} type={type}>{fetched || snapshot ? <MissingMenu venue={venue} /> : null}</Section>
   }
 
   // A build-time page can't know what "today" will be when it's read
@@ -344,22 +368,33 @@ function DatedMenu({ title, venue, now, prices }: { title: string; venue: Venue;
     </div>
   )
   return (
-    <Section title={title} aside={day}>
+    <Section title={title} type={type} aside={day}>
       {calendarOpen && (
         <div className="mt-4 md:hidden">
           <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
         </div>
       )}
+      {/* A Dining menu with no price list: said once, over the dishes the prices would be beside */}
+      {venue.type === 'hall' && !venue.prices?.length && (
+        <div className="mb-8">
+          <GapLine to={sendPath(venue, 'prices')} action="Send the price list">
+            <span className="font-semibold">No prices here yet.</span> <span className="text-muted">Seen what they charge?</span>
+          </GapLine>
+        </div>
+      )}
       <div>
         {days?.some((d) => d.items.length) ? (
-          <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} />
+          <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} now={!snapshot && date === now.date ? now : undefined} />
         ) : (
-          <p className="text-muted">{failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}</p>
-        )}
-        {/* A Dining menu with no price list: say so where the prices would be, with the way to send one */}
-        {venue.type === 'hall' && !venue.prices?.length && (
-          <p className="mt-6 text-sm text-muted">
-            Prices aren’t posted here yet. <HelpLink venue={venue} kind="prices">Send the price list</HelpLink>
+          <p className="text-muted">
+            {failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}
+            {/* Today's can still be sent in */}
+            {days && !failed && !snapshot && date === now.date && !venue.menu_scripted && (
+              <>
+                {'. '}
+                <HelpLink venue={venue} kind="menu">Send today’s menu</HelpLink>
+              </>
+            )}
           </p>
         )}
       </div>
@@ -426,25 +461,26 @@ const sentence = (parts: (string | false | null | undefined)[]) => {
   return s ? s[0].toUpperCase() + s.slice(1) : undefined
 }
 
-/** Diets, its website, and how to report a change (where it is, and what's missing, are the rail's). */
+/**
+ * Diets when known, its website, and how to report a change, in a line (where it is, and what's missing, including
+ * diets, are the rail's).
+ */
 function Details({ venue }: { venue: Venue }) {
   const website = venue.url ?? venue.site.official_dining_url
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
-    <ul className="order-4 grid gap-x-8 gap-y-3 text-[1.0625rem] sm:grid-cols-2 md:mt-8 md:border-t md:border-ink/10 md:pt-6">
-        <Fact icon={Leaf} known={!!diets}>
-          {diets ? `${diets} options` : (
-            <>
-              Diet options not known yet. <Link to={sendPath(venue, 'other', { topic: 'diet' })} className="link">Tell us</Link>
-            </>
-          )}
-        </Fact>
+    <ul className="order-4 flex flex-col gap-x-8 gap-y-3 text-[1.0625rem] sm:flex-row sm:flex-wrap sm:items-baseline md:mt-8 md:border-t md:border-ink/10 md:pt-6">
+        {diets && (
+          <Fact icon={Leaf} known>
+            {diets} options
+          </Fact>
+        )}
         {website && (
           <Fact icon={Global} known>
             <ExternalLink href={website} className="" />
           </Fact>
         )}
-        <li className="border-t border-ink/10 pt-3 sm:col-span-2 md:border-0 md:pt-0">
+        <li className="border-t border-ink/10 pt-3 sm:border-0 sm:pt-0">
           <Link to={sendPath(venue, 'other')} className="flex items-center gap-3 text-[0.9375rem] text-muted transition-colors hover:text-ink">
             <Icon of={Flag} />
             Report a change
@@ -478,17 +514,46 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   const shown = walkIn.length ? walkIn : period
   const seasonal = venue.slots.some((s) => s.period !== 'all')
   const label = seasonal && ((current.length ? inTerm : !inTerm) ? 'In term' : 'Out of term')
+  // Today's hours stand out, once the page knows what today is (a prerendered page shows them all alike)
+  const today = (days: Day[]) => snapshot || days.includes(now.day)
+  const changedToday = snapshot ? [] : withDayTimes(venue.slots, venue.menu).filter((s) => s.date === now.date)
+  // None known: the status line over this says so (a prerendered page, which has none, says it here), and the way to send them
+  if (!venue.slots.length)
+    return (
+      <p className="text-muted">
+        {snapshot && 'Hours not published. '}
+        <HelpLink venue={venue} kind="hours">Send the opening times</HelpLink>
+      </p>
+    )
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-3 text-[0.9375rem] text-muted">
-        <h2 className="font-semibold text-ink">{walkIn.length ? 'Hours' : 'Formal hall'}</h2>
+        <h2 className="font-semibold text-ink">{walkIn.length || !shown.length ? 'Hours' : 'Formal hall'}</h2>
         {label && <span>{label}</span>}
       </div>
-      {shown.length ? (
+      {shown.length && new Set(shown.map((s) => s.meal)).size > 1 ? (
+        // A meal to a row, named, its times beside it and their days after (under them, in a rail too narrow for both):
+        // what's served today in ink, the rest quieter
+        <div className="@container">
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3.5 gap-y-1.5 tabular-nums @min-[17rem]:grid-cols-[auto_auto_minmax(0,1fr)]">
+            {mealHours(shown).map(({ meal, times }) => (
+              <Fragment key={meal}>
+                <dt className={`font-medium ${today(times.flatMap((t) => t.days)) ? 'text-ink' : 'text-muted'}`}>{MEAL_LABEL[meal]}</dt>
+                {times.map((t, n) => (
+                  <Fragment key={t.start}>
+                    <dd className={`whitespace-nowrap ${n ? 'col-start-2' : ''} ${today(t.days) ? 'text-ink' : 'text-muted'}`}>{t.start}–{t.end}</dd>
+                    <dd className="col-start-2 -mt-1.5 text-sm text-muted @min-[17rem]:col-start-auto @min-[17rem]:mt-0">{formatDays(t.days, true)}</dd>
+                  </Fragment>
+                ))}
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+      ) : shown.length ? (
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 tabular-nums">
           {weekHours(shown).map((row) => (
             // Today's row stands out, once the page knows what today is
-            <div key={row.days.join()} className={`contents ${!snapshot && row.days.includes(now.day) ? 'text-ink' : 'text-muted'}`}>
+            <div key={row.days.join()} className={`contents ${today(row.days) ? 'text-ink' : 'text-muted'}`}>
               <dt className="whitespace-nowrap">{formatDays(row.days)}</dt>
               {/* A time to a line, so a day of three meals doesn't wrap mid-list */}
               <dd>
@@ -505,6 +570,12 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
         </p>
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}
+      {/* The table is the usual week; today's menus can change it (the status line over it already counts the change) */}
+      {changedToday.length > 0 && (
+        <p className="mt-3 text-[0.9375rem] font-medium text-notice tabular-nums">
+          Today: {changedToday.map((s) => `${MEAL_LABEL[s.meal]} ${s.start}–${s.end}`).join(', ')}
+        </p>
+      )}
     </div>
   )
 }

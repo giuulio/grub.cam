@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dishPrice, formatPrice, headlinePrices, priceHeads, mealPrices, postedOn, priceGroups } from './prices.ts'
+import { coursePrice, dishPrice, formatPrice, headlinePrices, priceHeads, mealPrices, postedOn, priceGroups } from './prices.ts'
 import type { VenuePrice } from './types.ts'
 
 const line = (name: string, price: number, more: Partial<VenuePrice> = {}): VenuePrice => ({ section: null, name, price_gbp: price, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-08', source: 'noticeboard', ...more })
@@ -16,6 +16,20 @@ describe('mealPrices', () => {
     expect(Object.keys(lunch.course)).toEqual(['main', 'soup'])
     expect(lunch.items.map((p) => p.name)).toEqual(['Crisps'])
     expect(mealPrices(list, 'formal')).toEqual({ course: {}, items: [] })
+  })
+})
+
+describe('coursePrice', () => {
+  const side = (name: string, price_gbp?: number) => ({ name, tags: [], course: 'side' as const, price_gbp })
+  it('says a price every dish in the course shares once, in its heading', () => {
+    expect(coursePrice([side('Rice', 0.99), side('Peas', 0.99)])).toEqual({ price: { gbp: 0.99, second: undefined, text: undefined }, shared: { gbp: 0.99, second: undefined, text: undefined } })
+    expect(coursePrice([side('Rice', 0.38), side('Peas', 0.82)])).toEqual({ price: undefined })
+    expect(coursePrice([side('Rice', 0.99)])).toEqual({ price: undefined })
+  })
+  it('heads a course with its listed price when a dish has none of its own', () => {
+    const lunch = mealPrices(list, 'lunch')
+    expect(coursePrice([{ name: 'Pie', tags: [], course: 'main' }], lunch.course.main).price).toEqual({ gbp: 3.75, max: undefined, second: 5.65 })
+    expect(coursePrice([{ name: 'Pie', tags: [], course: 'main', price_gbp: 4 }], lunch.course.main).price).toBeUndefined()
   })
 })
 

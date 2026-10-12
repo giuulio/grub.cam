@@ -117,17 +117,19 @@ export function SiteThumb({ site, className = 'size-16 rounded-lg', sizes = '4re
 // A page's banner, venue's or site's: across the page's column (76rem), as wide as Luma's against its height
 const BANNER = 'block aspect-5/2 w-full sm:rounded-[1.25rem] lg:aspect-7/2'
 const BANNER_SIZES = '(min-width: 1312px) 76rem, 100vw'
+// Its type's tile, until it has a photo: a band, not a photo's height of empty colour
+const BANNER_TILE = 'block h-28 w-full sm:h-32 sm:rounded-[1.25rem]'
 
 /**
  * The venue page's banner: its photo across the page, credited under it (a member's by name, over its foot); its
- * type's tile until it has one. In its top corner, the way to send a better one, which replaces it once checked.
+ * type's tile, as a short band, until it has one. In its top corner, the way to send a better one, which replaces it once checked.
  */
 export function VenueBanner({ venue }: { venue: Venue }) {
   const photo = venuePhoto(venue)
   const member = photo && byMember(photo)
   return (
     <figure className="relative -mx-4 mb-8 sm:mx-0">
-      <VenueImage venue={venue} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} overlay={member && <MemberCredit photo={photo} />} />
+      <VenueImage venue={venue} sizes={BANNER_SIZES} eager icon="size-10" className={photo ? BANNER : BANNER_TILE} overlay={member && <MemberCredit photo={photo} />} />
       <Link
         to={sendPath(venue, 'photo')}
         className="absolute top-3 right-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-canvas/90 px-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition-colors hover:bg-canvas sm:top-4 sm:right-4"

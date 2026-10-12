@@ -27,11 +27,28 @@ export function mealPrices(prices: VenuePrice[] | undefined, meal: Meal): MealPr
 
 export const fromList = (p: VenuePrice): Price => ({ gbp: p.price_gbp ?? undefined, max: p.price_max_gbp ?? undefined, second: p.non_member_gbp ?? undefined })
 
+/** The dish's own price, as printed on the menu. */
+export const ownPrice = (dish: Dish): Price | undefined =>
+  dish.price_gbp != null || dish.price_text ? { gbp: dish.price_gbp, second: dish.price2_gbp, text: dish.price_text } : undefined
+
 /** The dish's own price as printed, else its course's price from the list. */
 export function dishPrice(dish: Dish, m: MealPrices): Price | undefined {
-  if (dish.price_gbp != null || dish.price_text) return { gbp: dish.price_gbp, second: dish.price2_gbp, text: dish.price_text }
+  const own = ownPrice(dish)
+  if (own) return own
   const p = m.course[dish.course ?? 'other']
   return p && fromList(p)
+}
+
+const samePrice = (a?: Price, b?: Price) => !!a && !!b && a.gbp === b.gbp && a.second === b.second && a.text === b.text
+
+/**
+ * A course's price for its heading, said once for the dishes under it: theirs when they all cost the same (`shared`:
+ * their rows then go without), else the list's for the course (`list`) when any of them has no price of its own.
+ */
+export function coursePrice(dishes: Dish[], list?: VenuePrice): { price?: Price; shared?: Price } {
+  const own = dishes.map(ownPrice)
+  if (dishes.length > 1 && own.every((p) => samePrice(p, own[0]))) return { price: own[0], shared: own[0] }
+  return { price: list && own.some((p) => !p) ? fromList(list) : undefined }
 }
 
 const DINING: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']

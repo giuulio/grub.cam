@@ -29,6 +29,9 @@ describe('pin names', () => {
     expect(pinLabel({ name: 'Coffee Shop and Bar', site: { name: 'Fitzwilliam', short_name: 'Fitz' } })).toBe('Fitz · Coffee Shop and Bar')
     expect(pinLabel({ name: 'Fiona’s', site })).toBe('Fiona’s')
   })
+  it('leaves the college out on a map of one site, whose page names it', () => {
+    expect(pinLabel({ name: 'Hall', site }, true)).toBe('Hall')
+  })
   it('places names right, else left, never over a pin or another name, and only inside the map', () => {
     const map = { width: 400, height: 300 }
     expect(placeLabels([{ id: 'a', x: 100, y: 100, width: 60 }], map)).toEqual(new Map([['a', 'right']]))

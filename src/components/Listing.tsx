@@ -7,7 +7,7 @@ import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/form
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
 import { sendPath, siteName, sitePath, venuePath } from '../lib/site.ts'
 import { addDaysISO, dayLabel, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
-import { slotApplies } from '../lib/time/openNow.ts'
+import { slotApplies, withDayTimes } from '../lib/time/openNow.ts'
 import { isFormalOnly, venueTypes, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 import { Status } from './Status.tsx'
@@ -101,7 +101,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
 function nextToday(r: Ranked, now: LocalNow): string | undefined {
   const s = r.status
   const named = s.kind === 'open' || s.kind === 'opening' ? s.slot : undefined
-  const next = r.venue.slots
+  const next = withDayTimes(r.venue.slots, r.venue.menu)
     .filter((x) => slotApplies(x, now.date) && hhmmToMinutes(x.start) > now.minutes && !(named && x.meal === named.meal && x.start === named.start))
     .sort(slotOrder)[0]
   if (!next || !named || next.meal === named.meal) return undefined

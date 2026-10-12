@@ -45,7 +45,7 @@ export function Reviews({ venue }: { venue: Venue }) {
   const [all, setAll] = useState(false)
   const shown = all ? reviews : reviews?.slice(0, REVIEWS_SHOWN)
   return (
-    <div className="space-y-8">
+    <div className={venue.rating ? 'space-y-8' : 'space-y-4'}>
       {!venue.rating ? (
         <p className="text-muted">Reviews show here once 5 members have rated it.</p>
       ) : failed ? (
@@ -109,9 +109,10 @@ function YourReview({ venue }: { venue: Venue }) {
   if (!session && !canSignIn) return null
   if (!session)
     return (
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl bg-cta-bg p-5">
+      // Quieter than the page's gaps, which come first: a line and a secondary pill, not another Light Blue card
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <p className="min-w-0 flex-1 text-[1.0625rem]">Been here? Rate it out of 5, with a few words if you like. Your name isn’t shown.</p>
-        <button type="button" onClick={() => signIn(`${location.pathname}#reviews`)} className="btn btn-primary h-12 rounded-full px-6 text-base font-bold sm:h-12">
+        <button type="button" onClick={() => signIn(`${location.pathname}#reviews`)} className="btn btn-secondary rounded-full px-5">
           Sign in to rate it
         </button>
       </div>

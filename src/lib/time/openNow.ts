@@ -27,11 +27,37 @@ export function servedService<D extends Pick<MenuDay, 'date' | 'service'>>(days:
   })
 }
 
-/** Does this slot apply on the given date, considering term/vacation? */
+/** Does this slot apply on the given date, considering term/vacation, and a day's change (`withDayTimes`)? */
 export function slotApplies(slot: Slot, date: string): boolean {
+  if (slot.date) return slot.date === date
+  if (slot.except?.includes(date)) return false
   if (!slot.days.includes(dayOfISO(date))) return false
   if (slot.period === 'all') return true
   return slot.period === 'term' ? isFullTerm(date) : !isFullTerm(date)
+}
+
+/** The times a menu's note gives its meal that day, "Dinner 18:00–18:45 this Monday": the first range in it. */
+export function noteTimes(note?: string): { start: string; end: string } | undefined {
+  const m = note?.match(/\b(\d{1,2}):(\d{2})\s*[–—-]\s*(\d{1,2}):(\d{2})\b/)
+  return m ? { start: `${m[1].padStart(2, '0')}:${m[2]}`, end: `${m[3].padStart(2, '0')}:${m[4]}` } : undefined
+}
+
+/**
+ * A venue's hours with the changes its menus post for their day (St Edmund's "Dinner 18:00–18:45 this Monday"): on
+ * that date the meal is served at those times instead of its usual ones. The week's table keeps the usual hours;
+ * what's open now, and a menu's heading, use these.
+ */
+export function withDayTimes(slots: Slot[], days: Pick<MenuDay, 'date' | 'service' | 'note'>[]): Slot[] {
+  let out = slots
+  for (const d of days) {
+    const t = noteTimes(d.note)
+    if (!t) continue
+    const usual = out.filter((s) => s.meal === d.service && slotApplies(s, d.date))
+    if (usual.some((s) => s.start === t.start && s.end === t.end)) continue
+    out = out.map((s) => (usual.includes(s) ? { ...s, except: [...(s.except ?? []), d.date] } : s))
+    out.push({ meal: d.service, days: [dayOfISO(d.date)], ...t, period: 'all', date: d.date })
+  }
+  return out
 }
 
 function slotEndMinutes(slot: Slot): number {

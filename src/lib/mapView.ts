@@ -107,10 +107,13 @@ export const LABEL_ZOOM = 15
 export const zoomFor = (widthPx: number, longitudeDelta: number) => Math.log2((360 * widthPx) / (256 * longitudeDelta))
 
 const GENERIC = new Set(['hall', 'dining', 'servery', 'cafe', 'café', 'bar', 'buttery', 'kitchen', 'coffee', 'shop', 'canteen', 'cafeteria', 'refectory', 'room', 'and', 'the', '&', '/', 'great'])
-/** A pin's name on the map: the venue's, with its college's first where the name alone says nothing ("Pembroke · Hall"). */
-export function pinLabel(v: { name: string; site: { name: string; short_name?: string | null } }): string {
+/**
+ * A pin's name on the map: the venue's, with its college's first where the name alone says nothing ("Pembroke · Hall").
+ * `oneSite`: every pin on the map is the same site's (a site's or venue's page), which the page already names.
+ */
+export function pinLabel(v: { name: string; site: { name: string; short_name?: string | null } }, oneSite = false): string {
   const words = v.name.toLowerCase().replace(/[()"']/g, '').split(/\s+/).filter(Boolean)
-  return words.every((w) => GENERIC.has(w)) ? `${v.site.short_name ?? v.site.name} · ${v.name}` : v.name
+  return !oneSite && words.every((w) => GENERIC.has(w)) ? `${v.site.short_name ?? v.site.name} · ${v.name}` : v.name
 }
 
 export type LabelSide = 'right' | 'left'

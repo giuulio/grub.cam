@@ -51,18 +51,36 @@ export function ListNote({ tags, prices, note }: { tags: DietTag[]; prices?: Ven
   )
 }
 
-/** A course or section heading, with the price columns' headings beside it (alone when there's no heading). */
-export function GroupHead({ label, heads }: { label?: string; heads: string[] }) {
+/**
+ * A course or section heading, with the price columns' headings beside it (alone when there's no heading); or, when
+ * the whole course has one price (`price`, in `columns` columns), that price, said once for every dish under it, with
+ * the columns' headings over it.
+ */
+export function GroupHead({ label, heads, price, columns = 0 }: { label?: string; heads: string[]; price?: Price; columns?: number }) {
   if (!label && !heads.length) return null
+  const cells = heads.map((h) => (
+    <span key={h} className={`${PRICE_COL} text-xs whitespace-nowrap text-muted`}>
+      {h}
+    </span>
+  ))
+  // Smaller than the dishes under it, so it reads as their heading, not one of them; in the venue's type colour (from
+  // the menu's `data-type`), so a long menu's courses stand apart
+  const title = <h4 className="type-ink flex-1 text-base font-semibold">{label}</h4>
+  if (!price)
+    return (
+      <div className="mb-1 flex items-baseline gap-4">
+        {title}
+        {cells}
+      </div>
+    )
   return (
-    <div className="mb-1 flex items-baseline gap-4">
-      {/* Quieter than the dishes under it, so it reads as their heading, not one of them */}
-      <h4 className="flex-1 text-[0.9375rem] font-semibold text-muted">{label}</h4>
-      {heads.map((h) => (
-        <span key={h} className={`${PRICE_COL} text-xs whitespace-nowrap text-muted`}>
-          {h}
-        </span>
-      ))}
+    <div className="mb-1">
+      {cells.length > 0 && <div className="flex justify-end gap-4">{cells}</div>}
+      <div className="flex items-baseline gap-4 text-[1.0625rem] sm:text-lg">
+        {title}
+        <span title={price.text} className={`${PRICE_COL} font-medium`}>{formatPrice(price)}</span>
+        {columns > 1 && <span className={`${PRICE_COL} text-muted`}>{price.second != null && formatGbp(price.second)}</span>}
+      </div>
     </div>
   )
 }
@@ -70,7 +88,7 @@ export function GroupHead({ label, heads }: { label?: string; heads: string[] })
 /** A dish or a line of a price list: its name leads, in a medium weight, its price lined up at the right, as TheFork's menus. */
 export function Row({ name, tags = [], soldOut, price, columns }: { name: string; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
-    <li className="flex items-baseline gap-4 py-2 text-[1.0625rem] sm:text-lg">
+    <li className="flex items-baseline gap-4 py-1.5 text-[1.0625rem] sm:text-lg">
       <span className="min-w-0 flex-1">
         <span className={soldOut ? 'text-muted line-through' : 'font-medium text-ink'}>{name}</span>
         {tags.map((t) => (
@@ -102,10 +120,16 @@ export function PriceText({ price, className = '' }: { price: Price; className?:
   )
 }
 
-/** A diet code as printed after a dish (VG, H, GF): small and quiet, so the dish name leads. */
+// Meat-free codes on Green, so a vegetarian can run down a menu for them; the rest on grey
+const GREEN: DietTag[] = ['vegan', 'plant_based', 'vegetarian']
+
+/** A diet code after a dish (VG, H, GF), as a small tag: easy to find down a menu, small enough that the dish name leads. */
 export function Code({ tag, className = '' }: { tag: DietTag; className?: string }) {
   return (
-    <abbr title={DIET_LABEL[tag]} className={`text-[0.8125rem] font-semibold tracking-wide text-muted no-underline ${className}`}>
+    <abbr
+      title={DIET_LABEL[tag]}
+      className={`relative -top-px inline-block rounded-[0.3125rem] px-1.5 text-xs leading-[1.375rem] font-semibold tracking-wide no-underline ${GREEN.includes(tag) ? 'bg-open/15 text-open-ink' : 'bg-ink/7 text-muted'} ${className}`}
+    >
       {DIET_SHORT[tag]}
     </abbr>
   )

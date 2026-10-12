@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Slot } from '../types.ts'
 import type { LocalNow } from './clock.ts'
 import { formatDays } from './clock.ts'
-import { openStatus, servedService, slotApplies } from './openNow.ts'
+import { noteTimes, openStatus, servedService, slotApplies, withDayTimes } from './openNow.ts'
 
 const slot = (p: Partial<Slot>): Slot => ({
   meal: 'lunch',
@@ -94,6 +94,13 @@ describe('formatDays', () => {
     expect(formatDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).toBe('Daily')
     expect(formatDays(['mon', 'wed', 'thu', 'sat', 'sun'])).toBe('Mon, Wed, Thu, Sat, Sun')
   })
+  it('says a run with one day out of it as that', () => {
+    expect(formatDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sun'])).toBe('Daily except Sat')
+    expect(formatDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sun'], true)).toBe('Except Sat')
+    expect(formatDays(['mon', 'tue', 'thu', 'fri'])).toBe('Mon–Fri except Wed')
+    expect(formatDays(['tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).toBe('Tue–Sun')
+    expect(formatDays(['mon', 'wed', 'thu'])).toBe('Mon, Wed, Thu')
+  })
 })
 
 describe('servedService', () => {
@@ -109,5 +116,29 @@ describe('servedService', () => {
   it("doesn't file two menus under one brunch", () => {
     const days = servedService([{ date: '2026-10-10', service: 'breakfast' }, { date: '2026-10-10', service: 'lunch' }], week)
     expect(days.map((d) => d.service)).toEqual(['brunch', 'lunch'])
+  })
+})
+
+describe('a day’s changed hours', () => {
+  // St Edmund's: dinner is usually 18:30–19:45 on weekdays; Monday 12 Oct 2026's menu says 18:00–18:45
+  const dinner = slot({ meal: 'dinner', start: '18:30', end: '19:45' })
+  const days = [{ date: '2026-10-12', service: 'dinner' as const, note: 'Dinner 18:00–18:45 this Monday' }]
+  const at = (date: string, day: LocalNow['day'], hhmm: string): LocalNow => ({ date, day, minutes: Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)) })
+
+  it('reads the times a note gives', () => {
+    expect(noteTimes('Dinner 18:00–18:45 this Monday')).toEqual({ start: '18:00', end: '18:45' })
+    expect(noteTimes('Brunch 9:30-12:00')).toEqual({ start: '09:30', end: '12:00' })
+    expect(noteTimes('Welcome Formal, 19:00')).toBeUndefined()
+    expect(noteTimes(undefined)).toBeUndefined()
+  })
+  it('serves the meal at those times that day, and as usual on others', () => {
+    const slots = withDayTimes([dinner], days)
+    expect(openStatus(slots, at('2026-10-12', 'mon', '19:00')).kind).toBe('closed')
+    expect(openStatus(slots, at('2026-10-12', 'mon', '18:10'))).toMatchObject({ kind: 'open', closesInMin: 35 })
+    expect(openStatus(slots, at('2026-10-13', 'tue', '19:00'))).toMatchObject({ kind: 'open', closesInMin: 45 })
+  })
+  it('leaves the hours alone when the note gives the usual times', () => {
+    const same = [{ date: '2026-10-12', service: 'dinner' as const, note: 'Dinner 18:30–19:45' }]
+    expect(withDayTimes([dinner], same)).toEqual([dinner])
   })
 })

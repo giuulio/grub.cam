@@ -8,7 +8,11 @@ export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 export type VenueType = 'hall' | 'cafe' | 'bar'
 
-export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all' }
+/**
+ * A meal's usual hours on some days of the week. `date` and `except` are never stored: they're a one-off change a
+ * day's menu posts ("Dinner 18:00–18:45 this Monday"), the change on its date and the usual hours not (`withDayTimes`).
+ */
+export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all'; date?: string; except?: string[] }
 
 /** What a venue is: its type (its icon), plus café or bar when it has those hours, as a café that's a bar by night does. */
 export function venueTypes(v: { type: VenueType; slots: Slot[] }): VenueType[] {

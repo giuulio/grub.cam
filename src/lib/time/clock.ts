@@ -51,8 +51,12 @@ export function formatISODate(iso: string, opts: Intl.DateTimeFormatOptions = { 
   return new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...opts }).format(new Date(Date.UTC(y, m - 1, d)))
 }
 
-/** Compress a day list to "Mon–Fri", "Sat, Sun", "Daily". */
-export function formatDays(days: Day[]): string {
+/**
+ * Compress a day list to "Mon–Fri", "Sat, Sun", "Daily"; a run with one day out of it as that ("Daily except Sat",
+ * "Mon–Fri except Wed"), shorter to read than the pieces either side of it. `inWeek`: in a table of the week's hours,
+ * where "Except Sat" says it.
+ */
+export function formatDays(days: Day[], inWeek = false): string {
   const idx = [...new Set(days)].map((d) => DAYS.indexOf(d)).sort((a, b) => a - b)
   if (idx.length === 7) return 'Daily'
   const runs: number[][] = []
@@ -60,6 +64,11 @@ export function formatDays(days: Day[]): string {
     const last = runs.at(-1)
     if (last && last.at(-1) === i - 1) last.push(i)
     else runs.push([i])
+  }
+  if (runs.length === 2 && runs[1][0] - runs[0].at(-1)! === 2 && idx.length >= 4) {
+    const out = DAY_LABEL[DAYS[runs[0].at(-1)! + 1]]
+    if (idx.length === 6) return `${inWeek ? 'Except' : 'Daily except'} ${out}`
+    return `${DAY_LABEL[DAYS[idx[0]]]}–${DAY_LABEL[DAYS[idx.at(-1)!]]} except ${out}`
   }
   return runs.map((r) => (r.length >= 3 ? `${DAY_LABEL[DAYS[r[0]]]}–${DAY_LABEL[DAYS[r.at(-1)!]]}` : r.map((i) => DAY_LABEL[DAYS[i]]).join(', '))).join(', ')
 }

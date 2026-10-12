@@ -1,6 +1,6 @@
 import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 import type { LocalNow } from './time/clock.ts'
-import { openStatus, statusRank, type OpenStatus } from './time/openNow.ts'
+import { openStatus, statusRank, withDayTimes, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
 import { compareSearchHits, normalizeSearch, searchVenues, type SearchHit } from './search.ts'
 
@@ -57,6 +57,24 @@ export function weekHours(slots: Slot[]): { days: Day[]; times: Slot[] }[] {
     else rows.set(key, { days: [day], times })
   }
   return [...rows.values()]
+}
+
+/**
+ * The week's hours meal by meal, for a venue that serves more than one: each meal's times, days with the same times
+ * run together ("Lunch 12:30–13:30 Daily except Sat; 11:00–12:30 Sat"), the times by first day. Asked "when's lunch",
+ * this answers in a row where `weekHours` takes the whole table.
+ */
+export function mealHours(slots: Slot[]): { meal: Meal; times: { start: string; end: string; days: Day[] }[] }[] {
+  return MEALS.flatMap((meal) => {
+    const times = new Map<string, { start: string; end: string; days: Day[] }>()
+    for (const s of slots.filter((x) => x.meal === meal)) {
+      const key = `${s.start}–${s.end}`
+      const t = times.get(key) ?? times.set(key, { start: s.start, end: s.end, days: [] }).get(key)!
+      t.days.push(...s.days.filter((d) => !t.days.includes(d)))
+    }
+    const sorted = [...times.values()].map((t) => ({ ...t, days: DAYS.filter((d) => t.days.includes(d)) })).sort((a, b) => DAYS.indexOf(a.days[0]) - DAYS.indexOf(b.days[0]))
+    return sorted.length ? [{ meal, times: sorted }] : []
+  })
 }
 
 export const TYPE_LABEL: Record<VenueType, string> = { hall: 'Dining', cafe: 'Café', bar: 'Bar' }
@@ -130,7 +148,8 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     if (f.sites?.length && !f.sites.includes(v.site.slug)) continue
     if (f.kind && v.site.kind !== f.kind) continue
     const meals = f.meal ? [f.meal] : undefined
-    const status = openStatus(v.slots, now, meals)
+    // Today's hours as its menus post them, where they've changed
+    const status = openStatus(withDayTimes(v.slots, v.menu), now, meals)
     // Site browsing can preview the next service; Explore and searches keep the explicit menu date.
     const date = !f.exactDate && !searching && f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
     const days = menuDaysFor(v, date, f.meal)

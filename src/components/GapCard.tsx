@@ -26,5 +26,21 @@ export function GapCard({ title, body, to, action, icon = NoteAdd, children }: {
   )
 }
 
+/**
+ * A gap in something the page does show, said in a line at the top of it: Light Blue, as a GapCard, what's missing,
+ * and the link to send it (a Dining menu without its prices).
+ */
+export function GapLine({ children, to, action }: { children: ReactNode; to: string; action: string }) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-cta-bg px-4 py-3 text-[0.9375rem]">
+      <Icon of={NoteAdd} className="size-5 text-cta" />
+      <span className="min-w-0 flex-1">{children}</span>
+      <Link to={to} className="font-semibold text-cta underline-offset-2 hover:underline">
+        {action}
+      </Link>
+    </p>
+  )
+}
+
 /** How anything gets in, said once: a photo or the text, either does. */
 export const SEND_EITHER = 'Send a photo of it, or type out what it says.'
