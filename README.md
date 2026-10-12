@@ -106,3 +106,9 @@ Reading needs no account and no keys beyond the publishable one. Sending in need
 - Menus from more contributors for members-only colleges
 - Dish history, favourites and alerts
 - Dated hours overrides (closures, vacations)
+
+## Licence
+
+The code is © Giulio Orlandi under the [GNU AGPL v3](LICENSE): you may run, change and share it, but if you run a changed copy as a service, you must offer its users the source under the same licence. Contributions are accepted under the same terms.
+
+The licence covers the code only. Photos in [`public/photos`](public/photos) keep their own licences and credits ([grub.cam/credits](https://grub.cam/credits)); menus, hours and prices belong to the colleges and the University that publish them; the fonts come from their npm packages under the SIL Open Font License.
