@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { Hours } from '../hours.ts'
 import type { MenuSource } from './source.ts'
+import type { SubmissionNotice } from './notifications.ts'
 
 type Method = 'script' | 'manual' | 'user' | 'contributor'
 
@@ -126,6 +127,16 @@ export function connect() {
     async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note' | 'replaced'>> & { reviewed_at?: string }) {
       const { error } = await sb.from('submissions').update(patch).eq('id', id)
       if (error) throw new Error(`submissions ${id}: ${error.message}`)
+    },
+    /** Every newly received submission, even if it has already been published. No private text or identity. */
+    async pendingNotices(): Promise<SubmissionNotice[]> {
+      const { data, error } = await sb.from('submissions').select('id, venue_id, kind, topic, created_at').is('notified_at', null).order('created_at').limit(100)
+      if (error) throw new Error(`submission notices: ${error.message}`)
+      return data as SubmissionNotice[]
+    },
+    async acknowledgeNotice(id: string) {
+      const { error } = await sb.from('submissions').update({ notified_at: new Date().toISOString() }).eq('id', id).is('notified_at', null)
+      if (error) throw new Error(`submission notice ${id}: ${error.message}`)
     },
     /** The photo sent with a submission, as bytes. */
     async submissionPhoto(path: string): Promise<Uint8Array> {

@@ -8,6 +8,7 @@
 //        npm run submissions -- publish [--dry]                             <- every member's menu, price list and hours queued, checked and published (the same Action; `menus` is the old name)
 //        npm run submissions -- reject <id> "why"                           <- a published photo or menu is taken down again, a price list's or hours' predecessor put back
 //        npm run submissions -- digest                                      <- what's waiting, as Markdown for the review issue (the queue Action)
+//        npm run submissions -- notify <issue>                              <- announce every new receipt on GitHub (the queue Action)
 //        npm run submissions -- smoke [--venue v] [--photo f.jpg] [--review] <- sends something in end to end as a throwaway member, then removes it (smoke.ts)
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
@@ -35,6 +36,7 @@ import { parseManual } from './manual.ts'
 import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
 import { parsePrices } from './prices.ts'
 import { SITE_URL } from '../../src/lib/site.ts'
+import { deliverNotices, githubDelivery } from './lib/notifications.ts'
 
 /** The licence a member grants by sending a photo of a venue (src/pages/Send.tsx says so). */
 const MEMBER_LICENCE = 'CC BY 4.0'
@@ -354,10 +356,16 @@ switch (command) {
   case 'digest':
     console.log(await digest())
     break
+  case 'notify': {
+    const rows = await db.pendingNotices()
+    const posted = await deliverNotices(rows, githubDelivery(args[0] ?? '', (id) => db.acknowledgeNotice(id)))
+    console.log(`${posted} new submission notifications; ${rows.length} acknowledged`)
+    break
+  }
   case 'smoke':
     await (await import('./smoke.ts')).smoke({ venue: values.venue ?? 'clare/buttery', photo: values.photo, review: values.review })
     break
   default:
-    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | live | publish | reject <id> "why" | digest | smoke')
+    console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | live | publish | reject <id> "why" | digest | notify <issue> | smoke')
     process.exitCode = 1
 }

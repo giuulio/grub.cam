@@ -3,7 +3,8 @@ name: Review queue
 # Keeps one issue, "Review queue", saying what members sent in that waits for a person (prices, hours, notes, anything
 # a model held back), so GitHub tells you when there's something to look at. No personal data goes in it (the repo is
 # public): `submissions -- digest` gives only what, where, how long and why, and the commands to act on each. Runs
-# at 07:00 and 18:00 UTC, started by Supabase's pg_cron (migration 0031); needs repository secrets VITE_SUPABASE_URL
+# on every new submission, with retries every ten minutes and a digest at 07:00 and 18:00 UTC (migration 0033).
+# Every receipt gets a comment, even if it publishes automatically; needs repository secrets VITE_SUPABASE_URL
 # and SUPABASE_SECRET_KEY.
 on:
   workflow_dispatch:
@@ -11,6 +12,11 @@ on:
 permissions:
   contents: read
   issues: write
+
+# Serialise delivery and acknowledgement so concurrent submissions cannot produce duplicate comments.
+concurrency:
+  group: review-queue
+  cancel-in-progress: false
 
 jobs:
   digest:
@@ -31,9 +37,13 @@ jobs:
       # has changed (the spend line aside) and isn't nothing, a one-line comment says so, which emails you
       - run: |
           number=$(gh issue list --state open --search 'in:title "Review queue"' --json number --jq '.[0].number')
-          if [ -z "$number" ]; then gh issue create --title 'Review queue' --body-file digest.md; exit 0; fi
+          if [ -z "$number" ]; then
+            url=$(gh issue create --title 'Review queue' --body-file digest.md)
+            number=${url##*/}
+          fi
           before=$(gh issue view "$number" --json body --jq .body | grep -v '^Model ')
           after=$(grep -v '^Model ' digest.md)
           gh issue edit "$number" --body-file digest.md
           waiting=$(grep -oE '^\*\*[0-9]+ (waiting|reviews? held back)[^*]*\*\*' digest.md | sed -E 's/\*\*//g; s/[.:]$//' | paste -sd ',' - | sed 's/,/, /g' || true)
           if [ "$before" != "$after" ] && [ -n "$waiting" ]; then gh issue comment "$number" --body "$waiting. The list is in the issue."; fi
+          npm run submissions -- notify "$number"
