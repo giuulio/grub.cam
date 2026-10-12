@@ -170,7 +170,7 @@ export function pages(data: Data, date: string): Page[] {
     const mine = data.venues.filter(TABS[s.path])
     return {
       path: s.path,
-      description: s.intro,
+      description: s.description,
       daily: mine.some(hasMenu),
       jsonLd: {
         '@context': 'https://schema.org',

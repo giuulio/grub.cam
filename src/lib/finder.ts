@@ -9,19 +9,19 @@ import { SITE_DESCRIPTION } from './site.ts'
 /** What the front page lists: every venue, one type, or formal hall (Dining's formal meal, booked ahead). */
 export type Scope = 'all' | VenueType | 'formal'
 
-/** `intro`: the sentence under the heading, and the tab's meta description */
-export type ScopeInfo = { scope: Scope; path: string; label: string; heading: string; intro: string; placeholder: string; noun: [one: string, many: string] }
+/** `description`: the tab's meta description */
+export type ScopeInfo = { scope: Scope; path: string; label: string; heading: string; description: string; placeholder: string; noun: [one: string, many: string] }
 
 /**
  * The tabs, in order. Each heading says what the site is for that kind of venue in the words people search for
  * ("Cambridge college bars"), in as few as it takes.
  */
 export const SCOPES: ScopeInfo[] = [
-  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge college menus, cafés and bars', intro: SITE_DESCRIPTION, placeholder: 'Colleges, cafés, bars, dishes…', noun: ['venue', 'venues'] },
-  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college dining halls', intro: "Every Cambridge college dining hall and University canteen: today's menus dish by dish, with prices, meal times, and what's open now.", placeholder: 'A college, or a dish on the menu…', noun: ['dining venue', 'dining venues'] },
-  { scope: 'cafe', path: '/cafes', label: 'Cafés', heading: 'Cambridge college and University cafés', intro: "Every Cambridge college and University café: opening hours, coffee and food prices as posted, and what's open now.", placeholder: 'A café or a college…', noun: ['café', 'cafés'] },
-  { scope: 'bar', path: '/bars', label: 'Bars', heading: 'Cambridge college bars', intro: "Every Cambridge college bar: opening hours, pint and drink prices as posted, and what's open now.", placeholder: 'A bar or a college…', noun: ['bar', 'bars'] },
-  { scope: 'formal', path: '/formal', label: 'Formal hall', heading: 'Cambridge college formal hall', intro: 'Formal hall at every Cambridge college that holds it: which nights, what it costs, dress code, guests and how to book.', placeholder: 'A college…', noun: ['formal hall', 'formal halls'] },
+  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge college menus, cafés and bars', description: SITE_DESCRIPTION, placeholder: 'Colleges, cafés, bars, dishes…', noun: ['venue', 'venues'] },
+  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college dining halls', description: "Every Cambridge college dining hall and University canteen: today's menus dish by dish, with prices, meal times, and what's open now.", placeholder: 'A college, or a dish on the menu…', noun: ['dining venue', 'dining venues'] },
+  { scope: 'cafe', path: '/cafes', label: 'Cafés', heading: 'Cambridge college and University cafés', description: "Every Cambridge college and University café: opening hours, coffee and food prices as posted, and what's open now.", placeholder: 'A café or a college…', noun: ['café', 'cafés'] },
+  { scope: 'bar', path: '/bars', label: 'Bars', heading: 'Cambridge college bars', description: "Every Cambridge college bar: opening hours, pint and drink prices as posted, and what's open now.", placeholder: 'A bar or a college…', noun: ['bar', 'bars'] },
+  { scope: 'formal', path: '/formal', label: 'Formal hall', heading: 'Cambridge college formal hall', description: 'Formal hall at every Cambridge college that holds it: which nights, what it costs, dress code, guests and how to book.', placeholder: 'A college…', noun: ['formal hall', 'formal halls'] },
 ]
 export const scopeInfo = (scope: Scope) => SCOPES.find((s) => s.scope === scope)!
 
