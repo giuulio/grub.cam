@@ -32,6 +32,15 @@ describe('parsePrices', () => {
       ['Marinara (GFA)', undefined], // not a code we know: kept as printed
     ])
   })
+  it('keeps posted descriptions and choices separate from names, diet codes and price tiers', () => {
+    const p = parsePrices('site: c\nvenue: cafe\nsource: email\nobserved: 2026-10-12\n---\n## Breakfast / lunch | snacks\nShakshuka (V) | £7.15 | £8.00 | | Tomato sauce, poached eggs and feta\nHerb Potato Rosti | £7.15 | | | Choose spinach and sumac, bacon, or beans and kale\nMain course | £4 | | main | Includes two sides')
+    expect(p.items).toEqual([
+      { section: 'Breakfast / lunch', services: ['snacks'], name: 'Shakshuka', tags: ['vegetarian'], price_gbp: 7.15, non_member_gbp: 8, description: 'Tomato sauce, poached eggs and feta' },
+      { section: 'Breakfast / lunch', services: ['snacks'], name: 'Herb Potato Rosti', price_gbp: 7.15, description: 'Choose spinach and sumac, bacon, or beans and kale' },
+      { section: 'Breakfast / lunch', services: ['snacks'], name: 'Main course', price_gbp: 4, course: 'main', description: 'Includes two sides' },
+    ])
+    expect(() => parsePrices('site: c\nvenue: cafe\nsource: s\nobserved: 2026-10-12\n---\nTea | 1 | | | Description | Extra')).toThrow(/expected/)
+  })
   it('rejects lines without a price, and a header without a date', () => {
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-08\n---\nSoup')).toThrow(/expected/)
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\n---\nSoup | 1')).toThrow(/observed/)

@@ -31,8 +31,9 @@ Tea | £1.50
 Main course | £3.75 | £5.65 | main
 Soup | £1.75 | | soup
 Hummus wrap (VE) | £4.00
+Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta
 
-Rules: one item per line, "name | price" (a board in capitals in sentence case: "Flat white", names such as "Americano" kept capitalised) with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96"). When the board shows two prices per item (members and non-members, students and staff), give both: "name | first price | second price", in the board's order. "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. Nothing else: no commentary, no markdown fences.`,
+Rules: one item per line, "name | price" (a board in capitals in sentence case: "Flat white", names such as "Americano" kept capitalised) with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96"). When the board shows two prices per item (members and non-members, students and staff), give both: "name | first price | second price", in the board's order. "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. When ingredients, a description or choices are printed beneath an item, put them in an optional fifth field, leaving unused price/course fields empty: "Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta". Preserve all choices and printed details; do not infer ingredients or diet tags. Nothing else: no commentary, no markdown fences.`,
   hours: `Opening hours, in this format (body only):
 
 breakfast | Mon-Fri | 08:00-09:30

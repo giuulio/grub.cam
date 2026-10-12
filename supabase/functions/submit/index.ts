@@ -263,7 +263,7 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
     if (!data?.length) return null
     return data.map((s) => fields([s.meal, (s.days as string[]).map((d) => d[0].toUpperCase() + d.slice(1)).join(', '), `${String(s.start_time).slice(0, 5)}-${String(s.end_time).slice(0, 5)}`, s.period, s.note ?? ''], 4)).join('\n')
   }
-  const { data } = await sb.from('venue_prices').select('section, name, price_gbp, price_max_gbp, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
+  const { data } = await sb.from('venue_prices').select('section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
   if (!data?.length) return null
   const lines: string[] = []
   let heading: string | undefined
@@ -273,7 +273,7 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
     heading = head
     const tags = ((p.tags ?? []) as string[]).filter((t) => !(t === 'vegetarian' && p.tags.includes('vegan'))).map((t) => DIET_CODE[t]).filter(Boolean)
     const price = p.price_max_gbp != null ? `${gbp(p.price_gbp)}-${gbp(p.price_max_gbp)}` : gbp(p.price_gbp)
-    lines.push(fields([tags.length ? `${p.name} (${tags.join(', ')})` : p.name, price, gbp(p.non_member_gbp), p.course ?? ''], 2))
+    lines.push(fields([tags.length ? `${p.name} (${tags.join(', ')})` : p.name, price, gbp(p.non_member_gbp), p.course ?? '', p.description ?? ''], 2))
   }
   return lines.join('\n')
 }

@@ -314,7 +314,7 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
       if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v)).join('\n')}`)
       if (v.prices?.length) {
         const when = v.prices.map((p) => p.observed_on).sort().at(-1)!
-        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp, v.price_terms?.tiers)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
+        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.description ? ` — ${p.description}` : ''}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp, v.price_terms?.tiers)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
         lines.push(`Prices as posted ${day(when)}:\n${list.join('\n')}`)
       }
       out.push(lines.join('\n'))

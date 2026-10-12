@@ -102,4 +102,8 @@ describe('seo', () => {
     expect(full).toContain('- Thu 8 Oct, lunch: Dhal [VG]')
     expect(hoursText([])).toBe('')
   })
+  it('keeps fixed-menu descriptions in the complete text export', () => {
+    const cafe: Venue = { ...caff, type: 'cafe', menu: [], prices: [{ section: 'Breakfast / lunch', name: 'Herb Potato Rosti', description: 'Choose spinach, bacon, or beans', price_gbp: 7.15, non_member_gbp: null, services: ['snacks'], course: null, tags: [], observed_on: '2026-10-12', source: 'email' }] }
+    expect(llmsFullTxt({ ...data, venues: [cafe] }, date, '12 Oct 2026')).toContain('Herb Potato Rosti — Choose spinach, bacon, or beans £7.15')
+  })
 })

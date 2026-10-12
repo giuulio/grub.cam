@@ -37,6 +37,8 @@ export type PriceCourse = z.infer<typeof PriceCourse>
 export const PriceItem = z.object({
   section: z.string().optional(),
   name: z.string().min(1),
+  /** Ingredients or choices printed below the item name. */
+  description: z.string().min(1).optional(),
   /** The first price posted, or the low end of a range; absent when only the second tier is priced */
   price_gbp: z.number().nonnegative().optional(),
   /** The top of a range ("£3.24–£3.96") */

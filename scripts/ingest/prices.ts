@@ -15,6 +15,7 @@
 //   Soup | £1.75 | | soup                  <- an empty field skips the non-member price
 //   Student's guest | | £21.00             <- or the first, when only the second tier is priced
 //   Hummus wrap (VE, GF) | £4               <- diet codes in brackets after the name become tags (V, VE/VG, GF, DF, H)
+//   Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta  <- optional fifth field: description or choices, as posted
 //   # comment
 // Lines without a course are sold at those meals as listed: the menu itself when the meal has no dishes posted (a fixed brunch).
 import { readFileSync } from 'node:fs'
@@ -63,13 +64,14 @@ export function parsePrices(text: string): PriceList {
       services = meals ? meals.split(',').map((m) => Meal.parse(m.trim().toLowerCase())) : undefined
       continue
     }
-    const [posted, price, nonMember, course, ...rest] = line.split('|').map((p) => p.trim())
-    if ((!price && !nonMember) || rest.length) throw new Error(`expected "name | price | non-member price | course": "${line}"`)
+    const [posted, price, nonMember, course, description, ...rest] = line.split('|').map((p) => p.trim())
+    if ((!price && !nonMember) || rest.length) throw new Error(`expected "name | price | non-member price | course | description": "${line}"`)
     const { name, tags } = tagsFromName(posted)
     items.push(
       PriceItem.parse({
         section,
         name,
+        ...(description ? { description } : {}),
         ...(tags.length ? { tags } : {}),
         ...(price ? parseRange(price) : {}),
         ...(nonMember ? { non_member_gbp: parseGbp(nonMember) } : {}),

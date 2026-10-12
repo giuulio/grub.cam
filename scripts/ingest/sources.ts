@@ -154,6 +154,9 @@ export const SOURCES: MenuSource[] = [
     notes: 'Needs a browser user agent (plain curl gets 403).',
   },
 
+  // Fixed menus supplied directly; transcribed with ingest:prices
+  { venue: 'gonville-and-caius/old-courts-cafe-bar', channel: 'email', cadence: 'fixed', notes: 'Caius Café breakfast/lunch menu supplied by the JCR Food & Bar representative on 12 Oct 2026; saved with ingest:prices. Hall menus remain separate.' },
+
   // Members only: need a collaborator in the college
   { venue: 'christs/upper-hall', channel: 'intranet', notes: 'https://intranet.christs.cam.ac.uk/upper-hall-menus' },
   { venue: 'clare/buttery', channel: 'intranet', notes: 'https://www.clare.cam.ac.uk/current-students/catering (Clare accounts only)' },

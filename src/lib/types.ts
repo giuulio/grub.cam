@@ -39,6 +39,7 @@ export type Site = { slug: string; name: string; short_name: string | null; kind
 export type VenuePrice = {
   section: string | null
   name: string
+  description?: string | null
   /** The first price posted; none when only the second tier's is (a student's guest, priced for students only) */
   price_gbp: number | null
   /** The top of a range ("£3.24–£3.96") */

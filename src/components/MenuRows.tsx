@@ -10,19 +10,20 @@ import { ExternalLink } from './ExternalLink.tsx'
 
 const PRICE_COL = 'min-w-16 shrink-0 text-right tabular-nums'
 
-/** A posted price list, section by section; unless `narrow`, sections flow into two columns on wide screens. */
+/** A posted price list: short sections can share two columns; a single section or descriptions use the full width. */
 export function PriceList({ lines, terms, narrow = false }: { lines: VenuePrice[]; terms?: PriceTerms | null; narrow?: boolean }) {
   const sections = [...new Set(lines.map((p) => p.section))].map((section) => ({ section, rows: lines.filter((p) => p.section === section) }))
   const columns = lines.some((p) => p.non_member_gbp != null) ? 2 : 1
   const heads = priceHeads(columns, terms)
+  const split = !narrow && sections.length > 1 && !lines.some((p) => p.description)
   return (
-    <div className={narrow ? 'space-y-4' : 'gap-x-12 lg:columns-2'}>
+    <div className={split ? 'gap-x-12 lg:columns-2' : 'space-y-6'}>
       {sections.map(({ section, rows }, n) => (
-        <div key={section ?? ''} className={narrow ? '' : 'mb-8 break-inside-avoid'}>
+        <div key={section ?? ''} className={split ? 'mb-8 break-inside-avoid' : ''}>
           <GroupHead label={section ?? undefined} heads={n === 0 || section ? heads : []} />
           <ul>
             {rows.map((p, i) => (
-              <Row key={i} name={p.name} tags={dishTags(p.tags)} price={fromList(p)} columns={columns} />
+              <Row key={i} name={p.name} description={p.description} tags={dishTags(p.tags)} price={fromList(p)} columns={columns} />
             ))}
           </ul>
         </div>
@@ -86,14 +87,15 @@ export function GroupHead({ label, heads, price, columns = 0 }: { label?: string
 }
 
 /** A dish or a line of a price list: its name leads, in a medium weight, its price lined up at the right, as TheFork's menus. */
-export function Row({ name, tags = [], soldOut, price, columns }: { name: string; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
+export function Row({ name, description, tags = [], soldOut, price, columns }: { name: string; description?: string | null; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
-    <li className="flex items-baseline gap-4 py-1.5 text-[1.0625rem] sm:text-lg">
+    <li className={`flex items-baseline gap-4 text-[1.0625rem] sm:text-lg ${description ? 'py-3' : 'py-1.5'}`}>
       <span className="min-w-0 flex-1">
-        <span className={soldOut ? 'text-muted line-through' : 'font-medium text-ink'}>{name}</span>
+        <span className={soldOut ? 'text-muted line-through' : description ? 'font-semibold text-ink' : 'font-medium text-ink'}>{name}</span>
         {tags.map((t) => (
           <Code key={t} tag={t} className="ml-1.5" />
         ))}
+        {description && <span className="mt-1 block text-base leading-relaxed text-muted">{description}</span>}
       </span>
       {soldOut ? (
         <span className={`${PRICE_COL} text-sm text-muted`}>Sold out</span>

@@ -12,6 +12,8 @@ The scripted sources cover 11 colleges, a separate Magdalene Formal Hall adapter
 
 Hand-transcribed sources use the same validated formats as submissions. Save text outside the repo, conventionally under `~/grub-data/menus/`, and run `ingest:manual`, `ingest:prices` or `ingest:hours`. Format documentation lives at the top of each script. `--dry` validates without writes. Reference data is edited in Supabase until an editor UI exists; schema changes are migrations.
 
+Fixed menu items can include a description or choices in the price format's optional fifth field: `Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta`. This is stored in `venue_prices.description` and displayed beneath the item name. Keep ingredients out of the name when they are printed as a separate description; preserve the source's choices and infer no dietary tags.
+
 Source quirks worth preserving:
 
 - PDFs: `curl -A "Mozilla/5.0" … | pdftotext -layout - -` extracts layout. Sway/Canva can be inspected with headless Chrome's `--dump-dom`.
