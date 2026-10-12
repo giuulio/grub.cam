@@ -147,10 +147,16 @@ function Count({ c, dates, gap }: { c: Counter; dates?: string; gap: Gap['kind']
         {dates && `, ${dates}`}
       </p>
       <div className="mt-3 h-1.5 overflow-hidden rounded-sm bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={c.of} aria-valuenow={c.have} aria-label={`${c.what}: ${c.have} of ${c.of} ${c.noun}`}>
-        <div className="h-full bg-action" style={{ width: `${Math.round(share * 100)}%` }} />
+        <div className="h-full" style={{ width: `${Math.round(share * 100)}%`, backgroundColor: meterColour(share) }} />
       </div>
     </li>
   )
+}
+
+/** A traffic light for how full a meter is: red when empty, through amber and yellow, to green when full (OKLCH hues; yellow a little lighter, else it reads as olive). */
+function meterColour(share: number) {
+  const light = 0.68 + 0.14 * (1 - Math.abs(2 * share - 1))
+  return `oklch(${light.toFixed(3)} 0.17 ${Math.round(25 + share * 120)})`
 }
 
 /**
@@ -161,7 +167,7 @@ function GapRow({ venue: v, gaps }: { venue: Venue; gaps: Gap[] }) {
   const note = gaps.some((g) => g.kind === 'menu') ? menuNote(v) : undefined
   return (
     <li className="flex gap-4 py-5 text-base sm:gap-6 sm:text-[1.0625rem]">
-      <Link to={venuePath(v)} aria-hidden="true" tabIndex={-1} className="shrink-0">
+      <Link to={venuePath(v)} aria-hidden="true" tabIndex={-1} className="shrink-0 self-start">
         <VenueThumb venue={v} className="size-20 rounded-xl sm:size-24" />
       </Link>
       <div className="min-w-0 flex-1 leading-snug">

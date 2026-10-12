@@ -51,7 +51,7 @@ export function VenueImage({ venue, sizes, className = '', icon = 'size-[40%]', 
   const img = <PhotoImg photo={photo} sizes={sizes} eager={eager} decorative={decorative} onFail={() => setFailed(photo.path)} className={overlay ? 'size-full rounded-[inherit]' : className} />
   if (!overlay) return img
   return (
-    <span className={`relative shrink-0 ${className}`}>
+    <span className={`relative block shrink-0 ${className}`}>
       {img}
       {overlay}
     </span>
@@ -87,7 +87,7 @@ export function VenueThumb({ venue, className = 'size-16' }: { venue: Venue; cla
       decorative
       className={`rounded-lg ${className}`}
       // The photo doesn't say what kind of venue it is: its mark does
-      overlay={<TypeMark type={venue.type} className="absolute -right-1 -bottom-1 size-5 ring-2 ring-canvas" label />}
+      overlay={<TypeMark type={venue.type} className="absolute right-1 bottom-1 size-5 ring-2 ring-white" label />}
     />
   )
 }
