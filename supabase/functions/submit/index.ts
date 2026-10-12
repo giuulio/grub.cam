@@ -16,7 +16,7 @@
 //
 // A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
 // menu or the sender has sent MENUS_PER_DAY today: it's `queued`, and the photos Action (`submissions -- publish`)
-// checks it parses, is for its venue and is dated yesterday to a week ahead, then publishes it; one that isn't waits
+// checks it parses, is for its venue and is dated yesterday or later (no future cutoff), then publishes it; one that isn't waits
 // for a person. A price list or hours goes the same way (LISTS_PER_DAY), and when the sender changed the model's
 // reading of a photo, a model first checks the changed text still says what the photo does (checkReading()). The model
 // reading them is given what the site lists now, so a photo of part of a board, or a typed correction ("Monday closes

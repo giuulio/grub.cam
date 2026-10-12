@@ -10,7 +10,7 @@ export type SourceContext = {
 
 /** Scrapes one venue's menu. Dates must come from the source, never from the requested week. */
 export type Adapter = {
-  /** Return menu days for the requested week (days outside it are dropped). */
+  /** Return published menu days for the requested week, or all available days. Every returned date is kept. */
   fetch(ctx: SourceContext): Promise<{ days: MenuDay[]; note?: string }>
 }
 
@@ -24,8 +24,6 @@ export type MenuSource = {
   notes?: string
   /** Scripted sources only; the rest are transcribed (`npm run ingest:manual`) or need a collaborator. */
   adapter?: Adapter
-  /** How many weeks ahead to ask for (default 9, a Full Term); a source that publishes a whole term's dates at once can look further. */
-  weeksAhead?: number
 }
 
 export function mergeDays(days: MenuDay[]): MenuDay[] {

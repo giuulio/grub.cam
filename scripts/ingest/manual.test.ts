@@ -4,6 +4,9 @@ import { parseManual } from './manual.ts'
 const header = 'site: trinity\nvenue: hall-servery\nsource: official PDF\n---\n'
 
 describe('manual menu cancellations', () => {
+  it('keeps published dates however far into the future', () => {
+    expect(parseManual(header + '2032-10-12 lunch\nPublished soup (V)\n').days[0].date).toBe('2032-10-12')
+  })
   it('keeps explicit cancellations without inventing dishes, and omits an empty unpublished meal', () => {
     const m = parseManual(header + '2026-10-13 lunch\nSoup (V)\n2026-10-13 dinner | No dinner – UG freshers formal hall\n2026-10-18 brunch\n')
     expect(m.days).toEqual([

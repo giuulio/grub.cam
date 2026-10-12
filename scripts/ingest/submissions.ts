@@ -15,8 +15,8 @@
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
 //
 // A member's menu (kind menu), once they've confirmed its text, is queued by the submit function and published by the
-// photos Action without a person (`menus`), when it reads, is for the venue it was sent for, its days run from yesterday
-// to a week ahead, and the venue's menu isn't fetched by a script; otherwise it waits for a person, saying why. A
+// photos Action without a person (`menus`), when it reads, is for the venue it was sent for, its days are yesterday
+// or later (no future cutoff), and the venue's menu isn't fetched by a script; otherwise it waits for a person, saying why. A
 // member's price list or hours goes the same way (since 0032), when it reads and is for its venue: the submit function
 // has already had a model check any reading the sender edited. What it replaces is kept with the row (`replaced`), and
 // rejecting it puts that back, unless the venue's list has been replaced again since.
@@ -161,7 +161,7 @@ const londonDate = (days = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: 'E
 
 /**
  * Why a member's menu can't go up without a person, or null when it can: it must parse, be for its venue, cover only
- * yesterday to a week ahead, and be for a venue no script fetches (a script's menu is the source's own).
+ * yesterday or later, and be for a venue no script fetches (a script's menu is the source's own). No future cutoff.
  */
 async function menuHold(s: Submission): Promise<string | null> {
   if (!s.transcription) return 'no text to publish'
@@ -173,9 +173,9 @@ async function menuHold(s: Submission): Promise<string | null> {
   }
   if (m.venue !== s.venue_id) return `the text is for ${m.venue}`
   if (!m.days.some((d) => d.items.length)) return 'no dishes in it'
-  const [from, to] = [londonDate(-1), londonDate(7)]
-  const off = m.days.find((d) => d.date < from || d.date > to)
-  if (off) return `it's for ${off.date}, outside yesterday to a week ahead`
+  const from = londonDate(-1)
+  const off = m.days.find((d) => d.date < from)
+  if (off) return `it's for ${off.date}, before yesterday`
   if ((await db.venue(s.venue_id)).menu_scripted) return 'a script fetches this venue’s menu'
   return null
 }

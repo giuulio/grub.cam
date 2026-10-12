@@ -76,7 +76,6 @@ export const SOURCES: MenuSource[] = [
     cadence: 'whole term, from the week before Full Term to the week after',
     notes: 'Student-run, built from College PDFs; "not guaranteed complete or correct".',
     adapter: peterhouse,
-    weeksAhead: 13,
   },
   {
     venue: 'robinson/garden-restaurant',
@@ -150,8 +149,8 @@ export const SOURCES: MenuSource[] = [
     venue: 'trinity/hall-servery',
     channel: 'pdf',
     url: 'https://www.trin.cam.ac.uk/download/hall-menu-this-week/',
-    cadence: 'weekly',
-    notes: 'Weekly Hall PDFs are public, with a separate next-week download. Use a browser download if HTTP fetches get 403. Check the rendered PDF: its text layer can retain removed dishes beneath cancellation notices or blank meals.',
+    cadence: 'weekly, current and next week',
+    notes: 'Import both this week and https://www.trin.cam.ac.uk/download/hall-menu-next-week/ whenever available. Use a browser download if HTTP fetches get 403. Check the rendered PDF: its text layer can retain removed dishes beneath cancellation notices or blank meals.',
   },
 
   // Fixed menus supplied directly; transcribed with ingest:prices
