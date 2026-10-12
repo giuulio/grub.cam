@@ -21,7 +21,7 @@ Chips
 ## Desserts
 Apple crumble £1.85
 
-Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order; keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. Nothing else: no commentary, no blank header, no markdown fences.`,
+Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order (a board in capitals in sentence case: "Roast chicken", names such as "Americano" kept capitalised); keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. Nothing else: no commentary, no blank header, no markdown fences.`,
   prices: `A price list, in this format (body only):
 
 ## Drinks
@@ -32,7 +32,7 @@ Main course | £3.75 | £5.65 | main
 Soup | £1.75 | | soup
 Hummus wrap (VE) | £4.00
 
-Rules: one item per line, "name | price" with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96"). When the board shows two prices per item (members and non-members, students and staff), give both: "name | first price | second price", in the board's order. "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. Nothing else: no commentary, no markdown fences.`,
+Rules: one item per line, "name | price" (a board in capitals in sentence case: "Flat white", names such as "Americano" kept capitalised) with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96"). When the board shows two prices per item (members and non-members, students and staff), give both: "name | first price | second price", in the board's order. "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. Nothing else: no commentary, no markdown fences.`,
   hours: `Opening hours, in this format (body only):
 
 breakfast | Mon-Fri | 08:00-09:30
