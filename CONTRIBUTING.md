@@ -32,7 +32,7 @@ Your rows are trusted: the ingest Action publishes them within a few hours (`npm
 
 ## 3. Write an adapter
 
-If your college publishes its menu on the open web (a page, a PDF, a JSON feed), the site can fetch it itself three times a day. Add it to `scripts/ingest/sources.ts`, write an adapter in `scripts/ingest/sources/<college>.ts` that returns `MenuDay[]` (dates must come from the source, never from the week asked for), save a copy of the page in `sources/fixtures/` and test the adapter against it. `npm run ingest -- --only <college> --dry` shows what it would save. See `AGENTS.md` for the conventions.
+If your college publishes its menu on the open web (a page, a PDF, a JSON feed), the site can fetch it itself every two hours. Add it to `scripts/ingest/sources.ts`, write an adapter in `scripts/ingest/sources/<college>.ts` that returns `MenuDay[]` (dates must come from the source, never from the week asked for), save a copy of the page in `sources/fixtures/` and test the adapter against it. `npm run ingest -- --only <college> --dry` shows what it would save. See `AGENTS.md` for the conventions.
 
 ## Code
 
