@@ -203,7 +203,8 @@ async function confirm(sender: { id: string }, body: { id?: string; transcriptio
     await sb.from('submissions').update({ status: 'needs_review', review_note: 'the sender says the reading is wrong' }).eq('id', body.id)
     return json({ id: body.id, status: 'needs_review' })
   }
-  const text = body.transcription.trim().slice(0, 20000)
+  const text = body.transcription.trim()
+  if (text.length > 20000) return fail('transcription too long (20,000 characters at most); split it into separate submissions')
   if (!text.includes('\n---\n')) return fail('the text needs its header and a --- line')
   const edited = text !== (row.transcription ?? '').trim()
   const hold = await holdOf(row, sender.id, text, edited)
@@ -400,7 +401,8 @@ Deno.serve(async (req) => {
   if (service && !MEALS.includes(service)) return fail('unknown meal')
   const topic = kind === 'other' ? field('topic') || null : null
   if (topic && !TOPICS.includes(topic)) return fail('unknown topic')
-  const note = field('note').slice(0, 4000) || null
+  const note = field('note') || null
+  if (note && note.length > 20000) return fail('text too long (20,000 characters at most); send a photo or split it into separate submissions')
   const file = form.get('photo')
   const photo = file instanceof File && file.size > 0 ? file : null
   if (!photo && !note) return fail('send a photo or some text')

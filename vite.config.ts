@@ -36,6 +36,6 @@ export default defineConfig(async ({ mode }) => ({
   plugins: [react(), tailwindcss()],
   define: { 'import.meta.env.VITE_GITHUB_STARS': JSON.stringify(mode === 'test' ? null : await githubStars()) },
   test: {
-    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
   },
 }))

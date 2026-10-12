@@ -47,6 +47,8 @@ Sections follow the venue's types:
 
 Missing menus and price lists use `GapCard`: Light Blue, brief explanation, photo or typed text accepted, one pill action. A Dining menu without a price list says so once, in a Light Blue `GapLine` at the top of the menu; today's menu on a day without one has an inline contribution link. `venueGaps()` drives both the rail's help and Coverage; the rail's help leaves out what the page already asks for where it would be (the menu, a café or bar list, hours), and adds unknown diets except for bars.
 
+An explicit dated meal cancellation (`No dinner – …` in the menu note, with no dishes) stays in the calendar and menu. Its heading says “Not served”, without the usual hours or prices; the note gives the published reason. Opening status excludes that meal on that date, and the hours rail includes the notice when it applies today. The usual weekly hours stay visible. A missing menu alone never means a cancelled service.
+
 Reviews use `Reviews.tsx`: anonymous ratings after five members, newest six written reviews then “Show all”, and the member's own form when signed in. Signed out, the prompt to rate is a line with a secondary pill, quieter than the page's gaps. `RatingSummary` appears beside venue names; SEO includes `aggregateRating` when available.
 
 ## Coverage and information pages

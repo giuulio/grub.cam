@@ -3,6 +3,7 @@ import type { Slot } from '../types.ts'
 import type { LocalNow } from './clock.ts'
 import { formatDays } from './clock.ts'
 import { noteTimes, openStatus, servedService, slotApplies, withDayTimes } from './openNow.ts'
+import { mealCancelled } from '../menuNotes.ts'
 
 const slot = (p: Partial<Slot>): Slot => ({
   meal: 'lunch',
@@ -140,5 +141,18 @@ describe('a day’s changed hours', () => {
   it('leaves the hours alone when the note gives the usual times', () => {
     const same = [{ date: '2026-10-12', service: 'dinner' as const, note: 'Dinner 18:30–19:45' }]
     expect(withDayTimes([dinner], same)).toEqual([dinner])
+  })
+  it('cancels only the named meal and date, keeping the usual week intact', () => {
+    const usual = [slot({}), dinner]
+    const changed = withDayTimes(usual, [{ date: '2026-10-13', service: 'dinner', note: 'No dinner – UG freshers formal hall' }])
+    expect(openStatus(changed, at('2026-10-13', 'tue', '19:00')).kind).toBe('closed')
+    expect(openStatus(changed, at('2026-10-13', 'tue', '12:30')).kind).toBe('open')
+    expect(openStatus(changed, at('2026-10-14', 'wed', '19:00')).kind).toBe('open')
+    expect(openStatus(usual, at('2026-10-13', 'tue', '19:00')).kind).toBe('open')
+  })
+  it('does not treat missing menu information or another meal’s cancellation as a closure', () => {
+    expect(mealCancelled({ service: 'dinner', note: 'No dinner menu published' })).toBe(false)
+    expect(mealCancelled({ service: 'lunch', note: 'No dinner – formal hall' })).toBe(false)
+    expect(mealCancelled({ service: 'dinner', note: 'No dinner' })).toBe(true)
   })
 })

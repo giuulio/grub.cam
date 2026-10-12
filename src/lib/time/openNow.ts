@@ -1,6 +1,7 @@
 import type { Meal, MenuDay, Slot } from '../types.ts'
 import { addDaysISO, dayOfISO, hhmmToMinutes, type LocalNow } from './clock.ts'
 import { isFullTerm } from './termDates.ts'
+import { mealCancelled } from '../menuNotes.ts'
 
 export type OpenStatus =
   | { kind: 'open'; slot: Slot; closesInMin: number; date: string }
@@ -50,6 +51,10 @@ export function noteTimes(note?: string): { start: string; end: string } | undef
 export function withDayTimes(slots: Slot[], days: Pick<MenuDay, 'date' | 'service' | 'note'>[]): Slot[] {
   let out = slots
   for (const d of days) {
+    if (mealCancelled(d)) {
+      out = out.map((s) => s.meal === d.service && slotApplies(s, d.date) ? { ...s, except: [...(s.except ?? []), d.date] } : s)
+      continue
+    }
     const t = noteTimes(d.note)
     if (!t) continue
     const usual = out.filter((s) => s.meal === d.service && slotApplies(s, d.date))

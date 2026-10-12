@@ -16,6 +16,7 @@ import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
+import { mealCancelled } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, siteName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
@@ -193,7 +194,7 @@ function useMenuDate(venue: Venue, now: LocalNow) {
   const date = isISODate(asked) ? asked : now.date
   const setDate = (d: string) => setParams(d === now.date ? {} : { date: d }, { replace: true })
   const fetched = useMenuDates(venue.id)
-  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length).map((d) => d.date)])].sort()
+  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length || mealCancelled(d)).map((d) => d.date)])].sort()
   return { asked, date, setDate, fetched, dates }
 }
 
@@ -383,7 +384,7 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
         </div>
       )}
       <div>
-        {days?.some((d) => d.items.length) ? (
+        {days?.some((d) => d.items.length || mealCancelled(d)) ? (
           <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} now={!snapshot && date === now.date ? now : undefined} />
         ) : (
           <p className="text-muted">
@@ -517,6 +518,7 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   // Today's hours stand out, once the page knows what today is (a prerendered page shows them all alike)
   const today = (days: Day[]) => snapshot || days.includes(now.day)
   const changedToday = snapshot ? [] : withDayTimes(venue.slots, venue.menu).filter((s) => s.date === now.date)
+  const cancelledToday = snapshot ? [] : venue.menu.filter((d) => d.date === now.date && mealCancelled(d))
   // None known: the status line over this says so (a prerendered page, which has none, says it here), and the way to send them
   if (!venue.slots.length)
     return (
@@ -571,9 +573,9 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}
       {/* The table is the usual week; today's menus can change it (the status line over it already counts the change) */}
-      {changedToday.length > 0 && (
+      {(changedToday.length > 0 || cancelledToday.length > 0) && (
         <p className="mt-3 text-[0.9375rem] font-medium text-notice tabular-nums">
-          Today: {changedToday.map((s) => `${MEAL_LABEL[s.meal]} ${s.start}–${s.end}`).join(', ')}
+          Today: {[...changedToday.map((s) => `${MEAL_LABEL[s.meal]} ${s.start}–${s.end}`), ...cancelledToday.map((d) => d.note)].join(', ')}
         </p>
       )}
     </div>

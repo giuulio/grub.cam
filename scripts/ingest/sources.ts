@@ -151,7 +151,7 @@ export const SOURCES: MenuSource[] = [
     channel: 'pdf',
     url: 'https://www.trin.cam.ac.uk/download/hall-menu-this-week/',
     cadence: 'weekly',
-    notes: 'Needs a browser user agent (plain curl gets 403).',
+    notes: 'Weekly Hall PDFs are public, with a separate next-week download. Use a browser download if HTTP fetches get 403. Check the rendered PDF: its text layer can retain removed dishes beneath cancellation notices or blank meals.',
   },
 
   // Fixed menus supplied directly; transcribed with ingest:prices

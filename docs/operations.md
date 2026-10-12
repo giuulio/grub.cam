@@ -12,6 +12,10 @@ The scripted sources cover 11 colleges, a separate Magdalene Formal Hall adapter
 
 Hand-transcribed sources use the same validated formats as submissions. Save text outside the repo, conventionally under `~/grub-data/menus/`, and run `ingest:manual`, `ingest:prices` or `ingest:hours`. Format documentation lives at the top of each script. `--dry` validates without writes. Reference data is edited in Supabase until an editor UI exists; schema changes are migrations.
 
+An explicitly cancelled meal is a dated menu note with no dishes: `2026-10-13 dinner | No dinner – UG freshers formal hall`. `ingest:manual` also recognises that notice on its own line. It preserves the cancellation and rejects contradictory dishes; a blank meal without a cancellation is omitted. Cancellations remove that date's service from opening status without changing the usual weekly hours. Trinity's public weekly PDFs can retain removed text behind blank meals and cancellation notices: transcribe the rendered page, not the extracted text alone.
+
+Member text and confirmed transcriptions accept up to 20,000 characters. Longer input is rejected with an error rather than silently cut; this also prevents a pasted weekly menu from losing its final day.
+
 Fixed menu items can include a description or choices in the price format's optional fifth field: `Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta`. This is stored in `venue_prices.description` and displayed beneath the item name. Keep ingredients out of the name when they are printed as a separate description; preserve the source's choices and infer no dietary tags.
 
 Source quirks worth preserving:

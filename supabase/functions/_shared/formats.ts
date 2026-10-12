@@ -21,7 +21,7 @@ Chips
 ## Desserts
 Apple crumble £1.85
 
-Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order (a board in capitals in sentence case: "Roast chicken", names such as "Americano" kept capitalised); keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. Nothing else: no commentary, no blank header, no markdown fences.`,
+Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order (a board in capitals in sentence case: "Roast chicken", names such as "Americano" kept capitalised); keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. An explicit cancellation belongs on that line as a note, with no dishes: "2026-10-13 dinner | No dinner – UG freshers formal hall". A blank meal with no dishes is not a cancellation; omit it. Nothing else: no commentary, no blank header, no markdown fences.`,
   prices: `A price list, in this format (body only):
 
 ## Drinks

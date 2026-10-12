@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
 import { servedService } from './time/openNow.ts'
+import { mealCancelled } from './menuNotes.ts'
 import type { Formal, MenuDay, Photo, Review, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
@@ -118,12 +119,12 @@ function useFetched<T>(key: string | undefined, run: () => Promise<T>): { data?:
   return { data: key ? (done.get(key) as T | undefined) : undefined, failed: !!key && failed.has(key) }
 }
 
-/** Every date the venue has a published menu for (with at least one dish), past and future, ascending. */
+/** Every date with dishes or an explicit meal cancellation, past and future, ascending. */
 export function useMenuDates(venueId: string): string[] | undefined {
   return useFetched(`dates:${venueId}`, async () => {
-    const r = await sb.from('menu_days').select('date, items:menu_items(count)').eq('venue_id', venueId).order('date').returns<{ date: string; items: { count: number }[] }[]>()
+    const r = await sb.from('menu_days').select('date, service, note, items:menu_items(count)').eq('venue_id', venueId).order('date').returns<(Pick<MenuDay, 'date' | 'service' | 'note'> & { items: { count: number }[] })[]>()
     if (r.error) throw new Error(r.error.message)
-    return [...new Set(r.data.filter((d) => d.items[0]?.count).map((d) => d.date))]
+    return [...new Set(r.data.filter((d) => d.items[0]?.count || mealCancelled(d)).map((d) => d.date))]
   }).data
 }
 

@@ -1,0 +1,20 @@
+import { describe, expect, it } from 'vitest'
+import { parseManual } from './manual.ts'
+
+const header = 'site: trinity\nvenue: hall-servery\nsource: official PDF\n---\n'
+
+describe('manual menu cancellations', () => {
+  it('keeps explicit cancellations without inventing dishes, and omits an empty unpublished meal', () => {
+    const m = parseManual(header + '2026-10-13 lunch\nSoup (V)\n2026-10-13 dinner | No dinner – UG freshers formal hall\n2026-10-18 brunch\n')
+    expect(m.days).toEqual([
+      { date: '2026-10-13', service: 'lunch', items: [{ name: 'Soup', tags: ['vegetarian'], course: 'main' }] },
+      { date: '2026-10-13', service: 'dinner', note: 'No dinner – UG freshers formal hall', items: [] },
+    ])
+  })
+  it('recognises a cancellation transcribed on a separate line', () => {
+    expect(parseManual(header + '2026-10-17 dinner\nNo dinner – matriculation dinner\n').days[0]).toMatchObject({ items: [], note: 'No dinner – matriculation dinner' })
+  })
+  it('rejects contradictory dishes and a cancellation', () => {
+    expect(() => parseManual(header + '2026-10-13 dinner | No dinner – formal hall\nSoup')).toThrow(/cancelled meal/)
+  })
+})

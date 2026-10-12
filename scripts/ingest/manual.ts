@@ -8,6 +8,7 @@
 //   fetched: 2026-10-07T20:40:00Z  <- optional, when it was read (defaults to now)
 //   ---
 //   2026-10-05 lunch            <- starts a service block (date + breakfast|brunch|lunch|dinner)
+//   2026-10-13 dinner | No dinner – UG freshers formal hall <- a cancelled meal, with no dishes
 //   ## Sides                    <- optional course heading for following lines (soup/main/side/dessert/other)
 //   Carrot & coconut soup (VG)  <- dish; (V)/(VG)/(H)/(GF)/(PB) markers become tags; trailing £x.xx becomes price
 //   Roast pork £3.60 | note     <- anything after " | " is appended to the dish name in brackets
@@ -17,6 +18,7 @@ import { parseArgs } from 'node:util'
 import { Meal, MenuDay, type Dish } from '../schema.ts'
 import { connect } from './lib/db.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromName } from './lib/tags.ts'
+import { mealCancelled } from '../../src/lib/menuNotes.ts'
 
 export type ManualMenu = { venue: string; source_url: string; fetched_at: string; days: MenuDay[] }
 
@@ -47,6 +49,10 @@ export function parseManual(text: string): ManualMenu {
       continue
     }
     if (!cur) throw new Error(`dish before any service line: "${line}"`)
+    if (mealCancelled({ service: cur.service, note: line })) {
+      cur.note = line
+      continue
+    }
     const [namePart, ...noteParts] = line.split(' | ')
     const price = parsePrice(namePart)
     const { name, tags } = tagsFromName(cleanName(namePart.replace(/£\s*\d+(?:\.\d{1,2})?(\s*\/\s*£\s*\d+(?:\.\d{1,2})?)?/g, '')))
@@ -56,11 +62,12 @@ export function parseManual(text: string): ManualMenu {
   }
   const site = meta.site ?? meta.college
   if (!site || !meta.venue || !meta.source) throw new Error('header needs site, venue and source')
+  if (days.some((d) => mealCancelled(d) && d.items.length)) throw new Error('a cancelled meal cannot also have dishes')
   return {
     venue: `${site}/${meta.venue}`,
     source_url: meta.source,
     fetched_at: meta.fetched ?? new Date().toISOString(),
-    days: days.filter((d) => d.items.length).map((d) => MenuDay.parse(d)),
+    days: days.filter((d) => d.items.length || mealCancelled(d)).map((d) => MenuDay.parse(d)),
   }
 }
 

@@ -5,6 +5,7 @@ import { hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { noteTimes, slotApplies, withDayTimes } from '../lib/time/openNow.ts'
 import type { Dish, MenuDay, PriceTerms, Slot, VenuePrice } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
+import { mealCancelled } from '../lib/menuNotes.ts'
 import { GroupHead, ListNote, PriceList, PriceText, Row } from './MenuRows.tsx'
 
 type Course = NonNullable<Dish['course']>
@@ -21,16 +22,16 @@ const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side
  * explained, the venue's way (`terms`).
  */
 export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow }) {
-  const posted = days.filter((d) => d.items.length)
+  const posted = days.filter((d) => d.items.length || mealCancelled(d))
+  const served = withDayTimes(slots, days)
   // A meal served that day with no dishes posted, but its own posted list (St Catharine's breakfast, a fixed brunch):
   // the list is its menu. Lines sold at every meal aren't one.
   const fixed = MEALS.filter(
-    (m) => !posted.some((d) => d.service === m) && slots.some((s) => s.meal === m && slotApplies(s, date)) && (prices ?? []).some((p) => p.services?.includes(m)),
+    (m) => !posted.some((d) => d.service === m) && served.some((s) => s.meal === m && slotApplies(s, date)) && (prices ?? []).some((p) => p.services?.includes(m)),
   ).map((m): MenuDay => ({ date, service: m, items: [] }))
   const shown = [...posted, ...fixed]
     .sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
-    .map((day) => ({ day, prices: mealPrices(prices, day.service) }))
-  const served = withDayTimes(slots, days)
+    .map((day) => ({ day, prices: mealPrices(mealCancelled(day) ? undefined : prices, day.service) }))
   const times = (from: Slot[], meal: Slot['meal']) => from.filter((s) => s.meal === meal && slotApplies(s, date)).sort((a, b) => a.start.localeCompare(b.start))
   // Over today: every sitting of it has ended (a meal past midnight never is)
   const over = (meal: Slot['meal']) => {
@@ -46,7 +47,8 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
       <div>
         {shown.map(({ day, prices: mp }) => {
           const span = (from: Slot[]) => times(from, day.service).map((s) => `${s.start}–${s.end}`).join(', ')
-          const hours = span(served)
+          const cancelled = mealCancelled(day)
+          const hours = cancelled ? '' : span(served)
           const usual = span(slots)
           // The day's own times, when its note gives some other than the usual
           const changed = !!noteTimes(day.note) && hours !== usual
@@ -65,7 +67,7 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
                   {over(day.service) && <span className="ml-3 font-sans text-base font-normal text-muted group-open:hidden">Served earlier</span>}
                 </h3>
                 {mp.meal && <PriceText price={fromList(mp.meal)} className="group-[:not([open])]:hidden" />}
-                {hours && <span className={`tabular-nums ${changed ? 'font-semibold text-notice' : 'text-muted'}`}>{hours}</span>}
+                {cancelled ? <span className="font-semibold text-notice">Not served</span> : hours && <span className={`tabular-nums ${changed ? 'font-semibold text-notice' : 'text-muted'}`}>{hours}</span>}
                 <Icon of={ChevronDown} className="size-5 -translate-y-px self-center text-muted transition-transform group-open:rotate-180" />
               </summary>
               {changed ? (
@@ -77,7 +79,7 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
                   </span>
                 </p>
               ) : (
-                day.note && <p className="mt-2 text-sm text-muted">{day.note}</p>
+                day.note && <p className={`mt-2 text-sm ${cancelled ? 'text-notice' : 'text-muted'}`}>{day.note}</p>
               )}
               {day.items.length ? (
                 <Dishes items={day.items} prices={mp} terms={terms} />
