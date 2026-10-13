@@ -134,7 +134,7 @@ export const SOURCES: MenuSource[] = [
     channel: 'canva',
     url: 'https://www.canva.com/design/DAFvirNLKtg/view',
     cadence: 'weekly, same design overwritten',
-    notes: 'Embedded on https://www.lucy.cam.ac.uk/dining-hall-and-cafe. Daily posts on instagram.com/lucycavfood. Read from a screenshot: as text its columns scramble.',
+    notes: 'Embedded on https://www.lucy.cam.ac.uk/dining-hall-and-cafe. Daily posts on instagram.com/lucycavfood. Read from a screenshot: as text its columns scramble. Canva puts a bot check in front of GitHub\'s runners (not got round): run it from a machine it doesn\'t challenge, or transcribe it.',
     documents: lucyCavendish,
   },
   { venue: 'newnham/buttery', channel: 'html', url: 'https://newn.cam.ac.uk/weekly-menus', cadence: 'weekly', notes: 'Today only: https://newn.cam.ac.uk/todays-menu', documents: newnham },

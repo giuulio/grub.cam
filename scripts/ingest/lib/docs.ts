@@ -34,6 +34,8 @@ export type DocRef = {
   screenshot?: boolean
   /** browser: the menu's part of the page's text (between()), so a cookie notice or the viewer's buttons aren't a change */
   extract?: (text: string) => string
+  /** The site to name in a message (`--only <site>`) */
+  site?: string
   /** Told to the model about this document */
   hint?: string
   /** A week of a repeating cycle: dated as the week of Monday `week`, then copied to each Monday of `repeats` */
@@ -119,6 +121,8 @@ function changedAt(prev: StoredDoc | undefined, scheme: string, now: string, rea
   return now
 }
 
+const venueSite = (ref: DocRef) => ref.site ?? 'its site'
+
 type Fetched = { status: 'same'; validators?: StoredDoc['validators'] } | { status: 'new'; doc: Doc; hash: string; validators: StoredDoc['validators'] }
 
 /** The document, or `same` when nothing says it has changed since `prev` (always fetched afresh with `reread`). */
@@ -133,6 +137,9 @@ async function fetchDoc(ref: DocRef, prev: StoredDoc | undefined, reread: boolea
     const html = await renderedHtml(ref.url)
     const text = pageText(html)
     const body = ref.extract ? ref.extract(text) : text
+    // A bot check isn't got round: it's the source refusing us
+    if (!body.trim() && /just a moment|verif(y|ication)|captcha|are you (a )?(human|robot)/i.test(text.slice(0, 2000)))
+      throw new FetchError(`the page asks this machine to prove it's a person (a bot check, not got round): read it from a machine it doesn't challenge (npm run ingest -- --only ${venueSite(ref)}), or by hand`)
     // A page that didn't draw (or no longer has the menu where it was) is a failure to fetch it, never a change
     if (!body.trim()) throw new FetchError(`its menu wasn't on the page Chrome drew (${html.length} bytes, ${text ? `starting "${text.slice(0, 80).replace(/\s+/g, ' ')}"` : `no text: "${html.slice(0, 160).replace(/\s+/g, ' ')}"`})`)
     const hash = `${scheme}:${sha(body)}`

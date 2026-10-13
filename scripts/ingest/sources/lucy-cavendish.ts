@@ -6,13 +6,16 @@ const EMBED = `${LUCY_CANVA}?embed`
 
 /**
  * A Canva design overwritten each week, a column a day: drawn by Chrome and read from a screenshot (as text its
- * columns come out scrambled), only when its text has changed.
+ * columns come out scrambled), only when its text has changed. Canva puts a bot check in front of GitHub's runners
+ * (13 Oct 2026: "Just a moment… Verification"), which isn't got round: the scheduled run reports it in Source health,
+ * and it's read from a machine Canva doesn't challenge (`npm run ingest -- --only lucy-cavendish`) or by hand.
  */
 export const lucyCavendish: DocSource = {
   async documents() {
     return [{
       key: LUCY_CANVA,
       url: EMBED,
+      site: 'lucy-cavendish',
       kind: 'browser',
       screenshot: true,
       label: "Lucy Cavendish's weekly catering menu, a Canva design",

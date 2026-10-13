@@ -43,7 +43,7 @@ Nine colleges publish their menus as documents rather than data: Fitzwilliam, Tr
 - **Price lists** are checked on the venue's first run of the day. A document first seen while the venue lists prices from it is taken as what the site lists; once it changes, the model's reading replaces the lines whose source is that document (others, such as the Cavendish Café's member photos, stay), refused when it has a price over £100, unnamed columns, or fewer than half the lines it had.
 - **Adapters with `fallback`** (Darwin, Robinson, Selwyn, St John's, Wolfson and University Catering): when the adapter breaks on its page (not when the page can't be fetched), the model reads the page's text instead, once per version of it; the source still counts as failing, so the adapter gets fixed.
 
-Queens' is public but behind a CAPTCHA (its page redirects scripts to SiteGround's `sgcaptcha`), also in headless Chrome: it stays hand-transcribed, never got round.
+Lucy Cavendish's Canva is read fine from a home connection, but Canva puts a bot check ("Just a moment… Verification") in front of GitHub's runners: the scheduled run reports it in Source health rather than getting round it, so read it with `npm run ingest -- --only lucy-cavendish` from your machine, or transcribe it. Queens' is public but behind a CAPTCHA (its page redirects scripts to SiteGround's `sgcaptcha`), also in headless Chrome: it stays hand-transcribed, never got round.
 
 ## Submissions
 
