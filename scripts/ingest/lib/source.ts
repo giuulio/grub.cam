@@ -3,7 +3,7 @@ import type { Channel, MenuDay } from '../../schema.ts'
 export type SourceContext = {
   /** ISO week being fetched, e.g. 2026-W41 */
   week: string
-  /** Mon..Sun ISO dates of that week */
+  /** The dates wanted from that week: Mon..Sun, or (when a run checks only the next days) those from today on. Never index it by weekday. */
   dates: string[]
   today: string
 }

@@ -20,7 +20,9 @@ export const homerton: Adapter = {
       let w: Week
       try {
         w = await fetchJson<Week>(`https://www.homerton.cam.ac.uk/api/cafeteria-menu?weekOffset=${offset}`)
-      } catch {
+      } catch (e) {
+        // A later week that isn't there ends the list; this week failing is the source failing (a 403 said nothing else)
+        if (offset === 0) throw e
         break
       }
       for (const d of w.days) {
@@ -31,7 +33,7 @@ export const homerton: Adapter = {
           if (items.length) days.push({ date, service, items })
         }
       }
-      if (w.days.length && w.days.at(-1)!.date.slice(0, 10) > ctx.dates[6]) break
+      if (w.days.length && w.days.at(-1)!.date.slice(0, 10) > ctx.dates.at(-1)!) break
     }
     return { days, note: 'Prices are University-card (member) prices.' }
   },

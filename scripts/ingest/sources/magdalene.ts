@@ -1,6 +1,6 @@
 import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
-import { WEEKDAYS, weekMonday } from '../lib/dates.ts'
+import { WEEKDAYS, addDays, weekMonday } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
@@ -75,7 +75,7 @@ export const magdalene: Adapter = {
     for (const daySec of menu.sections) {
       const idx = WEEKDAYS.indexOf(daySec.name.trim().toLowerCase())
       if (idx < 0) continue
-      const date = ctx.dates[idx]
+      const date = addDays(monday, idx)
       const direct = list(daySec.hasMenuItem)
       if (direct.length) days.push({ date, service: 'lunch', items: direct.map((i) => dish(i, 'lunch')) })
       for (const sub of list(daySec.hasMenuSection)) {
@@ -102,7 +102,7 @@ export const magdaleneFormal: Adapter = {
       if (idx < 0) continue
       const items: Dish[] = list(daySec.hasMenuItem).map((i) => menu.toDish(i, 'main'))
       for (const sub of list(daySec.hasMenuSection)) items.push(...list(sub.hasMenuItem).map((i) => menu.toDish(i, courseFromHeading(sub.name))))
-      if (items.length) days.push({ date: ctx.dates[idx], service: 'formal', items })
+      if (items.length) days.push({ date: addDays(monday, idx), service: 'formal', items })
     }
     return { days, note: `Source menu "${menu.title}" on viewthe.menu.` }
   },

@@ -1,15 +1,18 @@
 name: Ingest menus
 
-# Fetches every scripted source from this week's Monday until a week comes back empty and saves it to Supabase.
-# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY; with CF_DEPLOY_HOOK (a Workers Builds deploy hook) set it then rebuilds
-# the site, so the prerendered pages, sitemap and llms.txt carry the new menus.
-# Started every two hours from 04:37 to 18:37 UTC by Supabase's pg_cron (migration 0031), not GitHub's cron, which on
-# this repo ran late or not at all.
+# Checks the scripted sources and saves what changed to Supabase: each source's first run of the day fetches every
+# published week, one every four hours the next two weeks, the rest today and tomorrow (scripts/ingest/index.ts).
+# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY; with CF_DEPLOY_HOOK (a Workers Builds deploy hook)
+# set it rebuilds the site when a menu changed, so the prerendered pages, sitemap and llms.txt carry the new menus.
+# Keeps one issue, "Source health", listing sources that have failed twice in a row, and comments there when one
+# starts failing or recovers (which emails you). Started every half hour from 06:07 to 19:37 UTC by Supabase's pg_cron
+# (migration 0042), not GitHub's cron, which on this repo ran late or not at all.
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: ingest
@@ -18,10 +21,13 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
+    # Each request times out and each source has a budget; this is the backstop, so a hang can't hold up the next runs
+    timeout-minutes: 20
     env:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -29,10 +35,26 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run ingest
+      - id: ingest
+        run: npm run ingest -- --report "$RUNNER_TEMP"
       # Contributors' submissions (their own scripts, posted with a token) are trusted: publish what's waiting
-      - if: ${{ !cancelled() }}
+      - id: trusted
+        if: ${{ !cancelled() }}
         run: npm run submissions -- approve --trusted
-      # Even if one source failed, the others were saved: rebuild anyway. Skipped until the hook exists.
-      - if: ${{ !cancelled() }}
+      # Even if one source failed, the others were saved: rebuild if anything was. Skipped until the hook exists.
+      - if: ${{ !cancelled() && (steps.ingest.outputs.changed == 'true' || steps.trusted.outputs.published == 'true') }}
         run: '[ -z "$CF_DEPLOY_HOOK" ] || curl -fsS -X POST "$CF_DEPLOY_HOOK" > /dev/null'
+      # One open issue, its body the failing sources, made the first time; edited only when that changes (the time
+      # aside), with a comment when a source starts failing or recovers, since an edited body notifies no one
+      - if: ${{ !cancelled() }}
+        run: |
+          [ -f "$RUNNER_TEMP/health.md" ] || exit 0
+          number=$(gh issue list --state open --search 'in:title "Source health"' --json number --jq '.[0].number')
+          if [ -z "$number" ]; then
+            url=$(gh issue create --title 'Source health' --body-file "$RUNNER_TEMP/health.md")
+            number=${url##*/}
+          fi
+          before=$(gh issue view "$number" --json body --jq .body | grep -v '^Checked ' || true)
+          after=$(grep -v '^Checked ' "$RUNNER_TEMP/health.md" || true)
+          if [ "$before" != "$after" ]; then gh issue edit "$number" --body-file "$RUNNER_TEMP/health.md"; fi
+          if [ -f "$RUNNER_TEMP/health-comment.md" ]; then gh issue comment "$number" --body-file "$RUNNER_TEMP/health-comment.md"; fi

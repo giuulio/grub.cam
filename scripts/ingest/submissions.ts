@@ -28,7 +28,7 @@
 // of the venue's (or site's) others, credited to the sender's name under CC BY 4.0, the licence the form grants, but
 // unapproved until `live` finds its files served, so the page keeps its old photo until the deploy is done. The submit
 // function queues the ones a model has passed.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -364,16 +364,20 @@ switch (command) {
       : [await one(args[0] ?? '')]
     if (!rows.length) console.log(command === 'photos' ? 'no photos queued' : 'nothing trusted waiting')
     let failures = 0
+    let published = 0
     for (const s of rows) {
       try {
         const what = await publish(s, !!values.dry)
         if (!values.dry) await db.updateSubmission(s.id, { status: 'approved', reviewed_at: new Date().toISOString() })
+        published++
         console.log(`✓ ${short(s.id)} ${subjectOf(s)} ${s.kind}: ${what}${values.dry ? ' (dry)' : ''}`)
       } catch (e) {
         failures++
         console.error(`✗ ${short(s.id)} ${subjectOf(s)}: ${(e as Error).message}`)
       }
     }
+    // The ingest Action rebuilds the site only when its run or this one saved something
+    if (values.trusted && process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `published=${published > 0 && !values.dry}\n`)
     if (failures) process.exitCode = 1
     break
   }

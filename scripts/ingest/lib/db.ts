@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { Hours } from '../hours.ts'
 import type { SavedPrice } from '../prices.ts'
+import type { SourceCheck } from './checks.ts'
 import type { MenuSource } from './source.ts'
 import type { PriceTerms } from '../../../src/lib/types.ts'
 import type { SubmissionNotice } from './notifications.ts'
@@ -69,7 +70,8 @@ export function connect() {
   const sb = createClient(url, key, { auth: { persistSession: false } })
 
   return {
-    async saveMenu(venue: string, sourceUrl: string, fetchedAt: string, method: Method, days: MenuDay[]) {
+    /** Saves (replaces) these days; a script passes each day's `hash` (checks.ts dayHash) to be skipped next time if unchanged. */
+    async saveMenu(venue: string, sourceUrl: string, fetchedAt: string, method: Method, days: (MenuDay & { hash?: string })[]) {
       const { error } = await sb.rpc('save_menu', { p_venue_id: venue, p_source_url: sourceUrl, p_fetched_at: fetchedAt, p_method: method, p_days: days })
       if (error) throw new Error(`save_menu ${venue}: ${error.message}`)
     },
@@ -241,22 +243,44 @@ export function connect() {
       const { error } = await sb.from('photos').update({ approved: true }).eq('id', id)
       if (error) throw new Error(`photos ${id}: ${error.message}`)
     },
-    /** How many services after `date` are saved for this venue. */
-    async savedAfter(venue: string, date: string): Promise<number> {
-      const { count, error } = await sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)
+    /** How many services after `date` (up to `upTo`, if given) are saved for this venue. */
+    async savedAfter(venue: string, date: string, upTo?: string): Promise<number> {
+      let q = sb.from('menu_days').select('*', { count: 'exact', head: true }).eq('venue_id', venue).gt('date', date)
+      if (upTo) q = q.lte('date', upTo)
+      const { count, error } = await q
       if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
       return count ?? 0
     },
-    /** Copies how each venue publishes its menu to `venues`, for the app. Returns the ids that matched no venue. */
+    /** Each saved day's hash (`date|service` → content_hash, null when saved by hand) from `from` to `to`. */
+    async savedHashes(venue: string, from: string, to: string): Promise<Map<string, string | null>> {
+      const { data, error } = await sb.from('menu_days').select('date, service, content_hash').eq('venue_id', venue).gte('date', from).lte('date', to).range(0, 4999)
+      if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
+      return new Map(data.map((d) => [`${d.date}|${d.service}`, d.content_hash]))
+    },
+    async sourceChecks(): Promise<SourceCheck[]> {
+      const { data, error } = await sb.from('source_checks').select('*')
+      if (error) throw new Error(`source_checks: ${error.message}`)
+      return data
+    },
+    async saveCheck(check: SourceCheck) {
+      const { error } = await sb.from('source_checks').upsert(check)
+      if (error) throw new Error(`source_checks ${check.venue_id}: ${error.message}`)
+    },
+    /** Copies how each venue publishes its menu to `venues`, for the app, where it differs. Returns the ids that matched no venue. */
     async syncSources(sources: MenuSource[]): Promise<string[]> {
-      const missing = await Promise.all(
+      const { data, error } = await sb.from('venues').select('id, menu_channel, menu_url, menu_scripted').in('id', sources.map((s) => s.venue))
+      if (error) throw new Error(`venues: ${error.message}`)
+      const saved = new Map(data.map((v) => [v.id, v]))
+      await Promise.all(
         sources.map(async (s) => {
-          const { data, error } = await sb.from('venues').update({ menu_channel: s.channel, menu_url: s.url ?? null, menu_scripted: !!s.adapter }).eq('id', s.venue).select('id')
+          const want = { menu_channel: s.channel, menu_url: s.url ?? null, menu_scripted: !!s.adapter }
+          const v = saved.get(s.venue)
+          if (!v || (v.menu_channel === want.menu_channel && v.menu_url === want.menu_url && v.menu_scripted === want.menu_scripted)) return
+          const { error } = await sb.from('venues').update(want).eq('id', s.venue)
           if (error) throw new Error(`venues ${s.venue}: ${error.message}`)
-          return data.length ? [] : [s.venue]
         }),
       )
-      return missing.flat()
+      return sources.filter((s) => !saved.has(s.venue)).map((s) => s.venue)
     },
     async logRun(run: { venue_id: string; method: Method; started_at: string; status: 'ok' | 'empty' | 'error'; days?: number; dishes?: number; error?: string }) {
       const { error } = await sb.from('ingest_runs').insert(run)
