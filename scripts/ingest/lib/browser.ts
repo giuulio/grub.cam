@@ -1,10 +1,13 @@
 // Pages that only a browser draws (Clare Hall's Sway, Lucy Cavendish's Canva): headless Chrome renders them, for
 // their text or a screenshot. These are JavaScript apps, not bot checks; a page that challenges a browser is left
-// alone. Chrome is CHROME_PATH, or wherever it's installed (GitHub's Ubuntu runners have google-chrome).
+// alone. Chrome is CHROME_PATH, or wherever it's installed (GitHub's Ubuntu runners have google-chrome). On Linux it
+// runs without its sandbox: Ubuntu 24.04's AppArmor stops it starting there (13 Oct 2026: an empty page, no screenshot),
+// and the runner is thrown away after the job.
 import { execFile } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { FetchError } from './http.ts'
 
 const CANDIDATES = [
   process.env.CHROME_PATH,
@@ -25,18 +28,28 @@ function chrome(): string {
 async function withChrome<T>(argsIn: (dir: string) => string[], then: (stdout: string, dir: string) => T): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), 'grub-chrome-'))
   const args = argsIn(dir)
+  let stderr = ''
   try {
     const stdout = await new Promise<string>((resolve, reject) => {
       const flags = [
         '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
         `--user-data-dir=${join(dir, 'profile')}`, '--virtual-time-budget=15000',
-        ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []),
       ]
-      execFile(chrome(), [...flags, ...args], { timeout: TIMEOUT_MS, maxBuffer: 64 << 20 }, (err, out) =>
-        err ? reject(new Error(`Chrome couldn't render ${args.at(-1)}: ${err.message.split('\n')[0]}`)) : resolve(out),
-      )
+      execFile(chrome(), [...flags, ...args], { timeout: TIMEOUT_MS, maxBuffer: 64 << 20 }, (err, out, errors) => {
+        if (err) reject(new FetchError(`Chrome couldn't render ${args.at(-1)}: ${err.message.split('\n')[0]}`))
+        else {
+          stderr = errors
+          resolve(out)
+        }
+      })
     })
-    return then(stdout, dir)
+    try {
+      return then(stdout, dir)
+    } catch (e) {
+      const why = stderr.split('\n').find((l) => /error|fatal/i.test(l))?.trim()
+      throw new FetchError(`Chrome drew nothing for ${args.at(-1)} (${(e as Error).message}${why ? `; ${why.slice(0, 200)}` : ''})`)
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

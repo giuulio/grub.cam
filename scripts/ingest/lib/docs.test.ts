@@ -95,10 +95,10 @@ describe('reading documents', () => {
 })
 
 describe("a rendered page's menu", () => {
-  it('is its text from the menu to what follows it, or all of it when the start is gone', () => {
+  it('is its text from the menu to what follows it, or nothing when the menu is not there', () => {
     const text = 'But first, cookies\nAccept all\nLucy Cavendish Catering: 12th October\nMon\nSoup\nWeekly Catering Newsletter\nWelcome!'
     expect(between(text, /lucy cavendish catering/i, /^weekly catering newsletter$/i)).toBe('Lucy Cavendish Catering: 12th October\nMon\nSoup')
-    expect(between(text, /clare hall/i)).toBe(text)
+    expect(between(text, /clare hall/i)).toBe('')
   })
 })
 

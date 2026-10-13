@@ -13,7 +13,7 @@ import type { PriceList } from '../prices.ts'
 import { renderedHtml, screenshot } from './browser.ts'
 import { dayHash } from './checks.ts'
 import { addDays, fromISODate } from './dates.ts'
-import { fetchFile, type Download, type Validators } from './http.ts'
+import { FetchError, fetchFile, type Download, type Validators } from './http.ts'
 import type { ModelReader, Venue } from './model.ts'
 
 /** A document as a source lists it. */
@@ -90,11 +90,11 @@ export function pageText(html: string): string {
     .join('\n')
 }
 
-/** The lines from the first matching `start` to just before `end`; the whole text when `start` isn't there. */
+/** The lines from the first matching `start` to just before `end`; nothing when `start` isn't there (the page didn't draw its menu). */
 export function between(text: string, start: RegExp, end?: RegExp): string {
   const lines = text.split('\n')
   const from = lines.findIndex((l) => start.test(l))
-  if (from < 0) return text
+  if (from < 0) return ''
   const to = end ? lines.findIndex((l, i) => i > from && end.test(l)) : -1
   return lines.slice(from, to < 0 ? undefined : to).join('\n')
 }
@@ -132,6 +132,8 @@ async function fetchDoc(ref: DocRef, prev: StoredDoc | undefined, reread: boolea
   if (ref.kind === 'browser') {
     const text = pageText(await renderedHtml(ref.url))
     const body = ref.extract ? ref.extract(text) : text
+    // A page that didn't draw (or no longer has the menu where it was) is a failure to fetch it, never a change
+    if (!body.trim()) throw new FetchError(`its menu wasn't on the page Chrome drew (${text.split('\n').length} lines${text ? `, starting "${text.slice(0, 80).replace(/\s+/g, ' ')}"` : ''})`)
     const hash = `${scheme}:${sha(body)}`
     if (known?.hash === hash) return { status: 'same' }
     const files: Download[] = ref.screenshot ? [{ url: ref.url, mime: 'image/png', bytes: await screenshot(ref.url) }] : []
