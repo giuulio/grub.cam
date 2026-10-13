@@ -130,10 +130,11 @@ async function fetchDoc(ref: DocRef, prev: StoredDoc | undefined, reread: boolea
     return known?.hash === hash ? { status: 'same' } : { status: 'new', doc: { ...ref, body: ref.text, files: [] }, hash, validators: null }
   }
   if (ref.kind === 'browser') {
-    const text = pageText(await renderedHtml(ref.url))
+    const html = await renderedHtml(ref.url)
+    const text = pageText(html)
     const body = ref.extract ? ref.extract(text) : text
     // A page that didn't draw (or no longer has the menu where it was) is a failure to fetch it, never a change
-    if (!body.trim()) throw new FetchError(`its menu wasn't on the page Chrome drew (${text.split('\n').length} lines${text ? `, starting "${text.slice(0, 80).replace(/\s+/g, ' ')}"` : ''})`)
+    if (!body.trim()) throw new FetchError(`its menu wasn't on the page Chrome drew (${html.length} bytes, ${text ? `starting "${text.slice(0, 80).replace(/\s+/g, ' ')}"` : `no text: "${html.slice(0, 160).replace(/\s+/g, ' ')}"`})`)
     const hash = `${scheme}:${sha(body)}`
     if (known?.hash === hash) return { status: 'same' }
     const files: Download[] = ref.screenshot ? [{ url: ref.url, mime: 'image/png', bytes: await screenshot(ref.url) }] : []
