@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Code, Flag, Instagram, NoteAdd, type IconComponent } from 'reicon-react'
-import { GitHubIcon } from '../components/Header.tsx'
+import { GitHubIcon } from '../components/GitHub.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { menuGap, menuWindow, overallCoverage } from '../lib/coverage.ts'
 import { useReady } from '../lib/data.tsx'
@@ -36,7 +36,7 @@ export function About() {
         </p>
         <p className="mt-4">
           Right now: {venues.length} venues at {colleges} colleges and {sites.length - colleges} University sites, and {menus.have} of {menus.of} dining halls have their menu for {menuWindow(data, true)}, {dishes.toLocaleString('en-GB')} dishes.{' '}
-          <Link to="/coverage" className="link">
+          <Link to="/contribute#coverage" className="link">
             See what’s missing
           </Link>
           .

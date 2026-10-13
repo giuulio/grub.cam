@@ -32,12 +32,12 @@ export function PriceList({ lines, terms, narrow = false }: { lines: VenuePrice[
   )
 }
 
-/** Under a list: how the venue's prices work (`note`), what its diet codes mean, and when and where its prices were posted. */
-export function ListNote({ tags, prices, note }: { tags: DietTag[]; prices?: VenuePrice[]; note?: string }) {
+/** Under a list: how the venue's prices work (`note`), what its diet codes mean, when and where its prices were posted, and who sent them in (`by`). */
+export function ListNote({ tags, prices, note, by }: { tags: DietTag[]; prices?: VenuePrice[]; note?: string; by?: string }) {
   const used = (Object.keys(DIET_SHORT) as DietTag[]).filter((t) => tags.includes(t))
   const posted = prices?.length ? postedOn(prices) : undefined
   const link = prices?.map((p) => p.source.match(/https?:\/\/[^\s)]+/)?.[0]).find(Boolean)
-  if (!used.length && !posted && !note) return null
+  if (!used.length && !posted && !note && !by) return null
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
       {note && <p className="w-full text-ink">{note}</p>}
@@ -46,11 +46,23 @@ export function ListNote({ tags, prices, note }: { tags: DietTag[]; prices?: Ven
           <Code tag={t} /> {DIET_LABEL[t]}
         </span>
       ))}
-      {posted && <span>Prices as posted {formatISODate(posted, { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+      {(posted || by) && (
+        <span>
+          {posted ? `Prices as posted ${formatISODate(posted, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Prices'}
+          {by && (
+            <>
+              , sent in by <SentBy by={by} />
+            </>
+          )}
+        </span>
+      )}
       {link && <ExternalLink href={link} />}
     </div>
   )
 }
+
+/** Whoever sent it in, said plainly: what's on a page has someone behind it. */
+export const SentBy = ({ by }: { by: string }) => <span className="font-medium text-ink">{by}</span>
 
 /**
  * A course or section heading, with the price columns' headings beside it (alone when there's no heading); or, when

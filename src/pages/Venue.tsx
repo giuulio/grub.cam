@@ -7,12 +7,13 @@ import { GapCard, GapLine, SEND_EITHER } from '../components/GapCard.tsx'
 import { RatingSummary, Reviews } from '../components/Reviews.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
-import { ListNote, PriceList } from '../components/MenuRows.tsx'
+import { ListNote, PriceList, SentBy } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
 import { gapPath, menuGap, venueGaps, type Gap } from '../lib/coverage.ts'
-import { useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
+import { useMenuCredits, useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
+import { sentBy } from '../lib/contributors.ts'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
@@ -158,7 +159,7 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
  */
 function HelpCard({ venue }: { venue: Venue }) {
   const types = venueTypes(venue)
-  // From the list /coverage shows for it, so the two never disagree
+  // From the list /contribute shows for it, so the two never disagree
   const elsewhere = (g: Gap) =>
     g.kind === 'menu' || g.kind === 'hours' || (g.kind === 'prices' && (types.some((t) => t !== 'hall') || venue.menu.some((d) => d.items.length)))
   const missing = venueGaps(venue)
@@ -285,6 +286,9 @@ function Section({ id, title, type, aside, children }: { id?: string; title: str
   )
 }
 
+/** Who sent the venue's price list or hours, where members did. */
+const creditOf = (v: Venue, what: 'prices' | 'hours') => sentBy(v.credits?.filter((c) => c.what === what))
+
 const HelpLink = ({ venue, kind, children = 'Send it' }: { venue: Venue; kind: 'menu' | 'prices' | 'hours'; children?: ReactNode }) => (
   <Link to={sendPath(venue, kind)} className="link text-ink">
     {children}
@@ -308,7 +312,7 @@ function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueTyp
   return (
     <div className="space-y-2">
       <PriceList lines={lines} terms={terms} />
-      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} note={terms?.note} />
+      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} note={terms?.note} by={creditOf(venue, 'prices')} />
     </div>
   )
 }
@@ -322,6 +326,7 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
   const [calendarOpen, setCalendarOpen] = useState(false)
   const { asked, date, setDate, fetched, dates } = useMenuDate(venue, now)
   const { days, failed } = useMenuOn(venue, date)
+  const menuBy = sentBy(useMenuCredits(venue, date))
   if (!dates.length && !asked) {
     if (prices?.length)
       return (
@@ -329,7 +334,7 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
           <div className="space-y-6">
             <MissingMenu venue={venue} published={false} />
             <PriceList lines={prices} terms={venue.price_terms} />
-            <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} />
+            <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} by={creditOf(venue, 'prices')} />
           </div>
         </Section>
       )
@@ -385,7 +390,14 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
       )}
       <div>
         {days?.some((d) => d.items.length || mealCancelled(d)) ? (
-          <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} now={!snapshot && date === now.date ? now : undefined} />
+          <>
+            <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} now={!snapshot && date === now.date ? now : undefined} pricesBy={creditOf(venue, 'prices')} />
+            {menuBy && (
+              <p className="mt-2 text-sm text-muted">
+                This menu was sent in by <SentBy by={menuBy} />
+              </p>
+            )}
+          </>
         ) : (
           <p className="text-muted">
             {failed ? "Couldn't load this menu" : days ? 'No menu published for this day' : 'Loading…'}
@@ -519,6 +531,7 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
   const today = (days: Day[]) => snapshot || days.includes(now.day)
   const changedToday = snapshot ? [] : withDayTimes(venue.slots, venue.menu).filter((s) => s.date === now.date)
   const cancelledToday = snapshot ? [] : venue.menu.filter((d) => d.date === now.date && mealCancelled(d))
+  const by = creditOf(venue, 'hours')
   // None known: the status line over this says so (a prerendered page, which has none, says it here), and the way to send them
   if (!venue.slots.length)
     return (
@@ -572,6 +585,11 @@ function Hours({ venue, now }: { venue: Venue; now: LocalNow }) {
         </p>
       )}
       {!current.length && shown.length > 0 && <p className="mt-2 text-sm text-muted">{inTerm ? 'Term' : 'Out-of-term'} hours not published</p>}
+      {by && (
+        <p className="mt-2 text-sm text-muted">
+          Sent in by <SentBy by={by} />
+        </p>
+      )}
       {/* The table is the usual week; today's menus can change it (the status line over it already counts the change) */}
       {(changedToday.length > 0 || cancelledToday.length > 0) && (
         <p className="mt-3 text-[0.9375rem] font-medium text-notice tabular-nums">

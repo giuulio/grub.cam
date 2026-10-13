@@ -183,7 +183,7 @@ export function pages(data: Data, date: string): Page[] {
     }
   })
   const about: Page = { path: '/about', description: 'What grub.cam is, where its opening hours and menus come from, and how to help build it.' }
-  const coverage: Page = { path: '/coverage', description: "What grub.cam has for Cambridge's college and University venues (menus this week, price lists, hours, photos), and every venue still missing something, with the way to send it in." }
+  const contribute: Page = { path: '/contribute', description: "Help fill in grub.cam: what it has for Cambridge's college and University venues, the colleges by how complete they are, who has sent in the most, and every venue still missing something, with the way to send it in." }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
   const sendPage: Page = { path: '/send', description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }
@@ -216,7 +216,7 @@ export function pages(data: Data, date: string): Page[] {
     jsonLd: [venueJsonLd(v, date), breadcrumbs([[siteName(v.site), sitePath(v.site)], [v.name, venuePath(v)]])],
     image: venueImage(v),
   }))
-  return [home, ...tabs, about, coverage, terms, credits, sendPage, ...sites, ...venues]
+  return [home, ...tabs, about, contribute, terms, credits, sendPage, ...sites, ...venues]
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')

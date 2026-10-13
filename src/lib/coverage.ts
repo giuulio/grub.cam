@@ -1,5 +1,5 @@
-// What grub.cam knows about each college (or University site), and what's missing: the /coverage page, the footer
-// count, the "Help fill this in" card on a venue's page, and the note on one that has never had a menu.
+// What grub.cam knows about each college (or University site), and what's missing: /contribute's list, the footer
+// count, the "Help fill this in" card on a venue's page, and why one has never had a menu (menuGap()).
 import type { Data } from './data.tsx'
 import { venuePhoto } from './photos.ts'
 import { sendPath } from './site.ts'
@@ -113,28 +113,64 @@ export type Gap = { kind: 'menu' | 'prices' | 'hours' | 'formal' | 'photo'; labe
 export const gapPath = (v: Pick<Venue, 'id'>, g: Gap) => sendPath(v, g.send, g.send === 'other' ? { topic: g.kind } : {})
 
 /**
- * What a venue is still missing, most worth having first: a dining hall's menu (the thing people come for; not asked
- * where a script fetches it), a café's or bar's price list and any venue's hours (what "open now" rests on), then a
- * hall's price list, formal hall's price or time, and a photo. Empty when it's all here.
+ * How much the site gains by one thing sent in, at a venue of this type: a dining hall's menu (the thing people come
+ * for) most, then a café's or bar's price list and any venue's hours (what "open now" rests on), then a hall's price
+ * list, formal hall's price or time, a photo, or any other correction. What gaps are ordered by, /contribute's college
+ * table weighs and its leaderboard scores.
  */
-export function venueGaps(v: Venue): Gap[] {
-  const gaps: Gap[] = []
-  if (servesMeals(v) && !v.menu_scripted && !hasMenu(v)) gaps.push({ kind: 'menu', label: 'The menu board', send: 'menu', weight: 4 })
-  if (!v.prices?.length) gaps.push({ kind: 'prices', label: v.type === 'bar' ? 'The drinks list' : 'The price list', send: 'prices', weight: v.type === 'hall' ? 1 : 3 })
-  if (!v.slots.length) gaps.push({ kind: 'hours', label: 'The opening times', send: 'hours', weight: 3 })
-  if (holdsFormal(v) && (v.formal?.price_gbp == null || !v.slots.some((s) => s.meal === 'formal'))) gaps.push({ kind: 'formal', label: 'Formal hall: the price or the time', send: 'other', weight: 1 })
-  if (!venuePhoto(v)) gaps.push({ kind: 'photo', label: 'A photo of the venue', send: 'photo', weight: 1 })
-  return gaps.sort((a, b) => b.weight - a.weight)
+export function gapWeight(kind: Gap['kind'] | 'other', type: VenueType): number {
+  if (kind === 'menu') return 4
+  if (kind === 'prices') return type === 'hall' ? 1 : 3
+  return kind === 'hours' ? 3 : 1
 }
 
+/** Something a venue could have, and whether it has it. */
+export type Need = Gap & { have: boolean }
+
 /**
- * Why a dining venue's menu isn't here, for whoever could change that: for members only (a photo of the board is the
- * only way in), online but copied by hand (a script would keep it current), or not published anywhere known.
+ * Everything a venue could have, most worth having first: a dining hall's menu (unless a script fetches it and has
+ * none: not the members' to send), its price list, hours, formal hall's price and time where it holds one, and a photo.
  */
-export function menuNote(v: Venue): { text: string; script?: boolean } | undefined {
-  const gap = menuGap(v)
-  if (!gap || v.menu_scripted) return undefined
-  if (gap === 'members') return { text: 'Its menu is for members only, so a photo of the board is the only way it gets here.' }
-  if (gap === 'unpublished') return { text: 'Its menu isn’t published anywhere we know of: a photo of the board is the only way.' }
-  return { text: 'Its menu is online, but copied here by hand each week; a script would keep it current.', script: true }
+export function venueNeeds(v: Venue): Need[] {
+  const needs: Need[] = []
+  const need = (kind: Gap['kind'], label: string, send: Gap['send'], have: boolean) => needs.push({ kind, label, send, weight: gapWeight(kind, v.type), have })
+  if (servesMeals(v) && (hasMenu(v) || !v.menu_scripted)) need('menu', 'The menu board', 'menu', hasMenu(v))
+  need('prices', v.type === 'bar' ? 'The drinks list' : 'The price list', 'prices', !!v.prices?.length)
+  need('hours', 'The opening times', 'hours', v.slots.length > 0)
+  if (holdsFormal(v)) need('formal', 'Formal hall: the price or the time', 'other', v.formal?.price_gbp != null && v.slots.some((s) => s.meal === 'formal'))
+  need('photo', 'A photo of the venue', 'photo', !!venuePhoto(v))
+  return needs.sort((a, b) => b.weight - a.weight)
+}
+
+/** What a venue is still missing, most worth having first; empty when it's all here. */
+export const venueGaps = (v: Venue): Gap[] => venueNeeds(v).filter((n) => !n.have).map(({ kind, label, send, weight }) => ({ kind, label, send, weight }))
+
+/**
+ * How much of what a college's (or University site's) venues could have is here: by weight, or for one kind of thing
+ * by count; `missing`: how many things aren't, and `venues`: which, venue by venue, most worth having first.
+ */
+export type Progress = { site: Site; have: number; of: number; missing: number; venues: { venue: Venue; gaps: Gap[] }[] }
+
+/**
+ * Every college (or University site) by how complete it is, most first; then fewest missing, then by name. `what`:
+ * one kind of thing only (photos, menus, …); a site with none of it to have is left out.
+ */
+export function siteProgress({ sites, venues }: Pick<Data, 'sites' | 'venues'>, kind: Site['kind'], what?: Gap['kind']): Progress[] {
+  const share = (p: Progress) => p.have / p.of
+  return sitesOf({ sites, venues }, kind)
+    .map(({ site, venues: mine }): Progress => {
+      const each = mine.map((venue) => ({ venue, needs: venueNeeds(venue).filter((n) => !what || n.kind === what) }))
+      const needs = each.flatMap((e) => e.needs)
+      const weight = (n: Need) => (what ? 1 : n.weight)
+      const lacking = each.map(({ venue, needs: n }) => ({ venue, gaps: n.filter((x) => !x.have) })).filter((v) => v.gaps.length)
+      return {
+        site,
+        have: needs.reduce((n, x) => n + (x.have ? weight(x) : 0), 0),
+        of: needs.reduce((n, x) => n + weight(x), 0),
+        missing: needs.filter((x) => !x.have).length,
+        venues: lacking.sort((a, b) => b.gaps.reduce((n, g) => n + g.weight, 0) - a.gaps.reduce((n, g) => n + g.weight, 0) || a.venue.name.localeCompare(b.venue.name)),
+      }
+    })
+    .filter((p) => p.of)
+    .sort((a, b) => share(b) - share(a) || a.missing - b.missing || (a.site.short_name ?? a.site.name).localeCompare(b.site.short_name ?? b.site.name))
 }

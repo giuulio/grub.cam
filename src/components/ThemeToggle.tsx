@@ -39,7 +39,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={() => change(theme === 'dark' ? 'light' : 'dark')}
       className={`icon-btn ${className}`}
     >
-      <Icon of={theme === 'dark' ? Moon : Sun} className="size-5" />
+      <Icon of={theme === 'dark' ? Moon : Sun} className="size-6" />
     </button>
   )
 }

@@ -20,9 +20,9 @@ const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side
  * fold to their heading, so the one being served, or next, is first in view; once every meal is over, none fold.
  * Prices from the venue's posted list (its Dining lines, `priceGroups`) sit next to the dishes they apply to, or in the
  * heading for one price per meal; anything else it sells at that meal is folded below. Price columns are headed, and
- * explained, the venue's way (`terms`).
+ * explained, the venue's way (`terms`), and credited to the member who sent the list (`pricesBy`), if one did.
  */
-export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow }) {
+export function DayMenu({ days, slots, date, prices, terms, now, pricesBy }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow; pricesBy?: string }) {
   const posted = days.filter((d) => d.items.length || mealCancelled(d))
   const served = withDayTimes(slots, days)
   // A meal served that day with no dishes posted, but its own posted list (St Catharine's breakfast, a fixed brunch):
@@ -103,7 +103,7 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
           )
         })}
       </div>
-      <ListNote tags={used} prices={listed} note={terms?.note} />
+      <ListNote tags={used} prices={listed} note={terms?.note} by={listed.length ? pricesBy : undefined} />
     </div>
   )
 }

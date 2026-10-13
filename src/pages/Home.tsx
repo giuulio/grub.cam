@@ -367,7 +367,7 @@ function CoverageLine({ scope }: { scope: Scope }) {
       </div>
       <p>
         {c.what}: {c.have} of {c.of} {c.noun}.{' '}
-        <Link to="/coverage" className="link text-ink">Help fill the gaps</Link>
+        <Link to="/contribute" className="link text-ink">Help fill the gaps</Link>
       </p>
     </div>
   )

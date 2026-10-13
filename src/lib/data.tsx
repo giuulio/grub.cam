@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useReducer, useRef, type ReactNod
 import { addDaysISO, toLocalNow } from './time/clock.ts'
 import { servedService } from './time/openNow.ts'
 import { mealCancelled } from './menuNotes.ts'
-import type { Formal, MenuDay, Photo, Review, Site, Venue, VenuePrice } from './types.ts'
+import type { Contribution, Credit, Formal, MenuDay, Photo, Review, Site, Venue, VenuePrice } from './types.ts'
 
 const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 
@@ -29,7 +29,7 @@ const MENU_DAYS = 7
 export async function load(): Promise<Data> {
   const today = toLocalNow().date
   const menuTo = addDaysISO(today, MENU_DAYS)
-  const [c, m, r] = await Promise.all([
+  const [c, m, r, k] = await Promise.all([
     sb
       .from('sites')
       .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos(kind, position, path, widths, width, height, color, alt, credit, licence, source, submission_id), slots:service_slots(meal, days, start:start_time, end:end_time, period)), photos(position, path, widths, width, height, color, alt, credit, licence, source)')
@@ -45,10 +45,14 @@ export async function load(): Promise<Data> {
       .returns<MenuDayRow[]>(),
     // Venues with at least 5 published reviews; the site still loads without them (before migration 0030, say)
     sb.from('venue_ratings').select('venue_id, reviews, average').returns<{ venue_id: string; reviews: number; average: number }[]>(),
+    // Who sent the price lists, hours and this week's menus, where a member did; nor do these stop it loading (0039)
+    sb.from('venue_credits').select('what, venue_id, date, service, author, at').or(`date.is.null,and(date.gte.${today},date.lt.${menuTo})`).returns<(Credit & { venue_id: string })[]>(),
   ])
   if (c.error) throw new Error(c.error.message)
   if (m.error) throw new Error(m.error.message)
   const ratings = new Map((r.error ? [] : r.data).map((x) => [x.venue_id, { reviews: x.reviews, average: x.average }]))
+  const credits = new Map<string, Credit[]>()
+  for (const { venue_id, ...credit } of k.error ? [] : k.data) credits.set(venue_id, [...(credits.get(venue_id) ?? []), credit])
 
   const menus = new Map<string, MenuDay[]>()
   for (const d of m.data) menus.set(d.venue_id, [...(menus.get(d.venue_id) ?? []), d])
@@ -63,7 +67,7 @@ export async function load(): Promise<Data> {
       // Only approved photos are readable (RLS); menu-board photos are sources, not shown
       const photos = v.photos.filter((p) => p.kind === 'venue').sort((a, b) => a.position - b.position)
       const formal = v.formal ? { ...v.formal, book_by: v.formal.book_by?.slice(0, 5) ?? null } : undefined
-      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal, photos, menu: servedService(menus.get(v.id) ?? [], slots), rating: ratings.get(v.id) })
+      venues.push({ ...v, site, slots, prices: v.prices.sort((a, b) => a.position - b.position), formal, photos, menu: servedService(menus.get(v.id) ?? [], slots), rating: ratings.get(v.id), credits: credits.get(v.id) })
     }
   }
   // Freshness = latest menu fetch, not page-load time.
@@ -126,6 +130,27 @@ export function useMenuDates(venueId: string): string[] | undefined {
     if (r.error) throw new Error(r.error.message)
     return [...new Set(r.data.filter((d) => d.items[0]?.count || mealCancelled(d)).map((d) => d.date))]
   }).data
+}
+
+/** Who sent the venue's menus on one date, where members did: from the up-front window when it covers the date, else fetched. */
+export function useMenuCredits(venue: Venue, date: string): Credit[] {
+  const { menuFrom, menuTo } = useReady()
+  const loaded = date >= menuFrom && date < menuTo
+  const r = useFetched(loaded ? undefined : `credits:${venue.id}:${date}`, async () => {
+    const q = await sb.from('venue_credits').select('what, date, service, author, at').eq('venue_id', venue.id).eq('what', 'menu').eq('date', date).returns<Credit[]>()
+    if (q.error) throw new Error(q.error.message)
+    return q.data
+  })
+  return (loaded ? venue.credits?.filter((c) => c.what === 'menu' && c.date === date) : r.data) ?? []
+}
+
+/** Members' approved submissions under their names, newest first: /contribute's leaderboard and what was just added. */
+export function useContributions(): { data?: Contribution[]; failed: boolean } {
+  return useFetched('contributions', async () => {
+    const q = await sb.from('contributions').select('id, venue_id, kind, topic, date, service, author, member, created_at, published_at').order('published_at', { ascending: false }).returns<Contribution[]>()
+    if (q.error) throw new Error(q.error.message)
+    return q.data
+  })
 }
 
 /** The venue's menus on one date: from the up-front window when it covers the date, else fetched. */

@@ -6,7 +6,7 @@ import { useReady } from '../lib/data.tsx'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { mealNow, readableLines, type Readable } from '../lib/reading.ts'
 import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
-import { isCamEmail, memberName, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
+import { creditName, isCamEmail, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
 import { MAX_PHOTOS, send, shrink, type SubmitKind, type SubmitResult, type Topic } from '../lib/submit.ts'
 import { formatISODate } from '../lib/time/clock.ts'
 import type { Meal, Venue } from '../lib/types.ts'
@@ -140,16 +140,18 @@ export function Send() {
 
   const here = `/send?${params}`
   const email = session?.user.email
-  const name = memberName(session)
+  // What it goes up under, on the venue's page and on Contribute
+  const name = creditName(session)
 
   return (
     <>
       <title>{`Send what you see · ${SITE_NAME}`}</title>
-      <div className="mx-auto max-w-xl">
+      {/* As wide as the header's search above it, edge to edge */}
+      <div className="mx-auto max-w-[46rem]">
         {session === undefined ? null : !session || !isCamEmail(email) ? (
           <section aria-labelledby="sign-in" className="space-y-4">
             <h1 id="sign-in" className="title text-4xl">Send what you see</h1>
-            <p className="text-muted">Sign in with your Cambridge account (@cam.ac.uk) to send a menu, prices or hours. Your address stays with what you send.</p>
+            <p className="text-muted">Sign in with your Cambridge account (@cam.ac.uk) to send a menu, prices or hours. What you send goes up under your name; your address is never shown.</p>
             {session && !isCamEmail(email) && <p role="alert" className="text-sm text-error">{email} isn't a University account.</p>}
             {canSignIn === false ? (
               // Google sign-in isn't switched on yet
@@ -285,7 +287,7 @@ export function Send() {
                 {busy ? 'Sending…' : 'Send'}
               </button>
               <p className="text-xs text-muted">
-                As {email} · <button type="button" onClick={() => signOut()} className="link cursor-pointer">Not you?</button> · <Link to="/terms" className="link">Terms</Link>
+                Goes up as <span className="font-medium text-ink">{name}</span> ({email}) · <button type="button" onClick={() => signOut()} className="link cursor-pointer">Not you?</button> · <Link to="/terms" className="link">Terms</Link>
               </p>
             </div>
           </form>
@@ -431,7 +433,7 @@ function Thanks({ result, kind, credit, venue, again }: { result: SubmitResult; 
   const up = result.status === 'queued'
   const what = kind === 'menu' ? 'The menu' : kind === 'prices' ? 'The prices' : kind === 'hours' ? 'The hours' : kind === 'photo' ? 'Your photo' : 'It'
   const message: ReactNode = up
-    ? `${what} ${kind === 'prices' || kind === 'hours' ? 'are' : 'is'} on ${venue?.name ?? 'the venue'}’s page within minutes${kind === 'photo' ? `, credited to ${credit ?? 'you'}` : ''}.`
+    ? `${what} ${kind === 'prices' || kind === 'hours' ? 'are' : 'is'} on ${venue?.name ?? 'the venue'}’s page within minutes, ${kind === 'photo' ? 'credited to' : 'sent in by'} ${credit ?? 'you'}.`
     : result.reason
       ? `A person checks it first: ${result.reason.replace(/\.?$/, '.')}`
       : result.status === 'received'
@@ -447,6 +449,15 @@ function Thanks({ result, kind, credit, venue, again }: { result: SubmitResult; 
           <Link to={venuePath(venue)} className="btn btn-primary">See {venue.name}</Link>
           <button type="button" onClick={again} className="btn btn-secondary">Send another</button>
         </div>
+      )}
+      {up && (
+        <p className="text-sm text-muted">
+          It counts towards the{' '}
+          <Link to="/contribute#leaderboard" className="link">
+            leaderboard
+          </Link>{' '}
+          once it’s up.
+        </p>
       )}
     </section>
   )

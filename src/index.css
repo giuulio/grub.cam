@@ -23,6 +23,13 @@
   --color-action-ink: var(--action-ink);
   --color-accent: #8ee8d8; /* Cambridge Blue */
   --color-accent-ink: #133844; /* Cambridge Dark Blue */
+  /* The top three contributors: light discs, dark figures, the same in either theme */
+  --color-gold: #f3cd5e;
+  --color-gold-ink: #4d3900;
+  --color-silver: #d9dee5;
+  --color-silver-ink: #323a45;
+  --color-bronze: #e6b38a;
+  --color-bronze-ink: #4f2c12;
   --color-open: var(--open);
   --color-open-ink: var(--open-ink);
   --color-site-ink: var(--site-ink);
@@ -203,6 +210,12 @@ select option, select optgroup {
   .search-glow {
     border-color: color-mix(in srgb, var(--ink) 12%, transparent);
     box-shadow: 0 1px 3px #1338440f, 0 6px 30px color-mix(in srgb, #8ee8d8 60%, transparent);
+  }
+  /* The header's controls beside the search: as tall as it and edged as it is (a hairline, a faint shadow), so they sit
+     level with it rather than looming; their words and icons as large as what's typed in it. */
+  .header-pill {
+    @apply flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-ink/12 bg-canvas text-lg font-semibold text-ink transition-colors hover:bg-ink/5 sm:h-14;
+    box-shadow: 0 1px 3px #1338440f;
   }
   .search-glow:focus-within {
     border-color: #5fcfbd;

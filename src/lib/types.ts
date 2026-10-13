@@ -136,6 +136,26 @@ export type Venue = {
   menu: MenuDay[]
   /** Members' reviews, once there are at least 5 published (`venue_ratings`): how many and their average out of 5. */
   rating?: { reviews: number; average: number }
+  /** Who sent the price list, hours and loaded menu days shown, where a member did (`venue_credits`) */
+  credits?: Credit[]
+}
+
+/** A member who sent something a venue's page shows now: its price list, its hours, or a menu day (`venue_credits`). */
+export type Credit = { what: 'prices' | 'hours' | 'menu'; date: string | null; service: Meal | null; author: string; at: string }
+
+/** A member's approved submission, under their name (`contributions`): the leaderboard and what was just added. */
+export type Contribution = {
+  id: string
+  venue_id: string
+  kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other'
+  topic: string | null
+  date: string | null
+  service: Meal | null
+  author: string
+  /** One member's rows, whatever name they went up under */
+  member: string
+  created_at: string
+  published_at: string
 }
 
 /** A member's published review, as the site shows it: anonymous (`venue_reviews`). */

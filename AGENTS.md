@@ -51,6 +51,7 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 | Accounts and sending in | `src/lib/auth.ts`, `src/lib/submit.ts`, `src/pages/Send.tsx`, `src/lib/reading.ts`, `supabase/functions/submit/` |
 | Model calls and prompts | `supabase/functions/_shared/openai.ts`, `supabase/functions/_shared/formats.ts` |
 | Reviews | `src/components/Reviews.tsx`, `scripts/ingest/reviews.ts` |
+| Contribute: college table, leaderboard, names | `src/pages/Contribute.tsx`, `src/lib/contributors.ts`, `src/lib/coverage.ts` (`venueNeeds()`, `gapWeight()`, `siteProgress()`), views in migration `0039` |
 | SEO and prerendering | `src/lib/seo.ts`, `src/entry-server.tsx`, `scripts/prerender.ts` |
 
 ## Data rules
@@ -64,13 +65,14 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 - `servedService()` maps a source's meal to the venue's actual service when appropriate (Corpus calls Saturday brunch “Lunch”). Apply it when menus load.
 - Store prices as posted. `venues.price_terms.tiers` names the columns in their source order, from a list's `columns:` line; a list with two prices a line never goes up with its columns unnamed. `note` explains other rules. Never compute prices from a percentage: show the rule. A list line can be a range, a second-tier price only, a course/whole-meal price or an item sold at selected services. Formal details are filled only when the source states them plainly.
 - Use verified venue or containing-building coordinates with a `location_source`, never a college centroid or invented room point. Venues without coordinates remain in lists.
+- What a member sends goes up under their name: `submissions.credit`, set by the submit function when it's sent (the Google name, else the CRSid), shown on the venue's page and on `/contribute`. Reviews stay anonymous.
 - Photos must be ours, licensed by a contributor or openly licensed on Commons, with credit and no recognisable people. A building or court is acceptable when no room photo is available; say what it shows in the alt text. Never copy photos from Google Maps, social media or college websites.
 
 ## Database and loading
 
 `sites` → `venues` → `service_slots` / `formals`. `menu_days` is unique per venue/date/service; its `menu_items` are replaced per saved day and linked to `dishes` (one per site + `dish_key(name)`). `dish_stats` tracks history. `ingest_runs` is service-role only. `venue_prices` is replaced per venue; `save_menu()` and `save_prices()` are service-role RPCs. Moving a venue id cascades to its related rows.
 
-Price columns: `menu_items.price_gbp` / `price2_gbp`; `venue_prices.price_gbp`, `price_max_gbp`, `non_member_gbp`, plus `services`, `course`, `tags`. `formals` holds days, gowns, dress, guests, booking and posted prices; its other text columns are research notes. `photos` has a venue or site subject; only approved rows are public. Public readers have SELECT access under RLS; member submission and review writes use the submit function, while account sessions use Supabase Auth. Review views expose no author and no venue with fewer than five published ratings.
+Price columns: `menu_items.price_gbp` / `price2_gbp`; `venue_prices.price_gbp`, `price_max_gbp`, `non_member_gbp`, plus `services`, `course`, `tags`. `formals` holds days, gowns, dress, guests, booking and posted prices; its other text columns are research notes. `photos` has a venue or site subject; only approved rows are public. Public readers have SELECT access under RLS; member submission and review writes use the submit function, while account sessions use Supabase Auth. Review views expose no author and no venue with fewer than five published ratings. `contributions` and `venue_credits` (`0039`) expose a member's name with what they sent that went up, and nothing else of a submission.
 
 `load()` fetches sites, venues, slots, prices, photos, ratings and seven days of menus. The browser keeps prerendered HTML until this resolves. Menu dates and individual past/future days load on demand. Prerendered pages omit clock-dependent output (`snapshot`).
 

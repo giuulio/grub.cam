@@ -28,7 +28,7 @@ const date = '2026-10-08'
 
 describe('seo', () => {
   it('lists home and its tabs, about, coverage, terms, photo credits, send, each site and each venue', () => {
-    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/dining', '/cafes', '/bars', '/formal', '/about', '/coverage', '/terms', '/credits', '/send', '/jesus', '/jesus/caff'])
+    expect(pages(data, date).map((p) => p.path)).toEqual(['/', '/dining', '/cafes', '/bars', '/formal', '/about', '/contribute', '/terms', '/credits', '/send', '/jesus', '/jesus/caff'])
   })
 
   it('describes a venue with its hours, and gives schema.org hours, menus by date then meal, where it is and its breadcrumb', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coverage, menuGap, menuNote, menuWindow, overallCoverage, tabCoverage, venueGaps } from './coverage.ts'
+import { coverage, menuGap, menuWindow, overallCoverage, siteProgress, tabCoverage, venueGaps } from './coverage.ts'
 import type { Site, Venue } from './types.ts'
 
 const site: Site = { slug: 'c', name: 'C', short_name: null, kind: 'college', official_dining_url: null }
@@ -104,16 +104,43 @@ describe('venueGaps', () => {
   })
 })
 
-describe('menuNote', () => {
-  it('says why a menu is missing, and when a script would help', () => {
-    expect(menuNote(hall)?.text).toMatch(/members only/)
-    expect(menuNote({ ...hall, menu_channel: 'pdf' })).toMatchObject({ script: true })
-    expect(menuNote({ ...hall, menu_channel: 'none' })?.text).toMatch(/isn’t published/)
-    expect(menuNote({ ...hall, menu_channel: 'html', menu_scripted: true })).toBeUndefined()
-    expect(menuNote({ ...hall, menu_channel: null })).toBeUndefined()
+describe('siteProgress', () => {
+  const slot = { meal: 'lunch' as const, days: ['mon' as const], start: '12:00', end: '14:00', period: 'all' as const }
+  const other: Site = { ...site, slug: 'd', name: 'D' }
+  const third: Site = { ...site, slug: 'e', name: 'E' }
+  const uni: Site = { ...site, slug: 'w', name: 'W', kind: 'university' }
+  // C's hall has its menu (4) and hours (3) of menu, hours, prices and photo (4 + 3 + 1 + 1)
+  const cHall = { ...hall, slots: [slot], menu: [{ date: '2026-10-08', service: 'lunch' as const, items: [dish] }] }
+  // D's café has its hours (3) of prices, hours and photo (3 + 3 + 1)
+  const dCafe = { ...hall, id: 'd/cafe', site: other, type: 'cafe' as const, menu_channel: null, slots: [slot] }
+  // E's hall has a script that has fetched nothing: not the members' to send, so not counted
+  const eHall = { ...hall, id: 'e/hall', site: third, menu_scripted: true, slots: [slot] }
+  const progress = siteProgress({ sites: [site, other, third, uni], venues: [cHall, dCafe, eHall, { ...dCafe, id: 'w/cafe', site: uni }] }, 'college')
+
+  it('ranks colleges by the weight of what their venues have, out of what they could', () => {
+    expect(progress.map((p) => [p.site.slug, p.have, p.of, p.missing])).toEqual([
+      ['c', 7, 9, 2],
+      ['e', 3, 5, 2],
+      ['d', 3, 7, 2],
+    ])
+  })
+  it('says which venues are missing what, most worth having first', () => {
+    expect(progress[0].venues.map((v) => [v.venue.id, v.gaps.map((g) => g.kind)])).toEqual([['c/hall', ['prices', 'photo']]])
+  })
+  it('counts one kind of thing alone, leaving out sites with none of it to have', () => {
+    const menus = siteProgress({ sites: [site, other, third], venues: [cHall, dCafe, eHall] }, 'college', 'menu')
+    expect(menus.map((p) => [p.site.slug, p.have, p.of, p.missing])).toEqual([['c', 1, 1, 0]])
+    const photos = siteProgress({ sites: [site, other, third], venues: [cHall, dCafe, eHall] }, 'college', 'photo')
+    expect(photos.map((p) => [p.site.slug, p.have, p.of, p.venues.length])).toEqual([
+      ['c', 0, 1, 1],
+      ['d', 0, 1, 1],
+      ['e', 0, 1, 1],
+    ])
+  })
+  it('keeps to colleges or to University sites', () => {
+    expect(siteProgress({ sites: [site, uni], venues: [cHall, { ...dCafe, id: 'w/cafe', site: uni }] }, 'university').map((p) => p.site.slug)).toEqual(['w'])
   })
 })
-
 describe('overallCoverage', () => {
   it('counts menus for dining halls, price lists for cafés and bars, hours and photos for every venue', () => {
     const menu = [{ date: '2026-10-08', service: 'lunch' as const, items: [dish] }]

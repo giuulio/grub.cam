@@ -36,8 +36,9 @@
 // location, closed, other), so the queue can say it.
 //
 // Every submission from the form has a signed-in sender: a Supabase Auth user (Google sign-in) with an
-// @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email. Contributors' token posts
-// don't need one.
+// @cam.ac.uk address, read from the Authorization bearer token; the row keeps their id and email, and the name it goes up
+// under (`credit`, migration 0039: shown on the venue's page and on /contribute, so a wrong menu has someone behind it).
+// Contributors' token posts don't need one.
 //
 // A review (action "review": venue, rating 1–5, optional words; or remove) is a signed-in member's, one per venue. A
 // rating alone is published; words are checked first (OpenAI's moderation, free, then OPENAI_CHECK_MODEL asking
@@ -208,16 +209,17 @@ async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: 
 }
 
 /** The signed-in sender behind the request's bearer token, when it's a user's (not the anon key) and a University address. */
-async function senderOf(req: Request): Promise<{ id: string; email: string; name: string | null } | { error: string }> {
+async function senderOf(req: Request): Promise<{ id: string; email: string; name: string } | { error: string }> {
   const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
   if (!jwt || jwt === Deno.env.get('SUPABASE_ANON_KEY')) return { error: 'sign in with your Cambridge account to send things in' }
   const { data, error } = await sb.auth.getUser(jwt)
   if (error || !data.user) return { error: 'your sign-in has expired; sign in again' }
   const email = data.user.email ?? ''
   if (!/@cam\.ac\.uk$/i.test(email)) return { error: 'only University of Cambridge accounts (@cam.ac.uk) can send things in' }
-  // Google's display name for the account, as the app reads it too (memberName() in src/lib/auth.ts)
+  // What everything they send goes up under: Google's display name for the account, else their CRSid, as the app
+  // reads it too (creditName() in src/lib/auth.ts)
   const meta = data.user.user_metadata ?? {}
-  const name = String(meta.full_name ?? meta.name ?? '').trim().slice(0, 80) || null
+  const name = String(meta.full_name ?? meta.name ?? '').trim().slice(0, 80) || email.split('@')[0]
   return { id: data.user.id, email, name }
 }
 
@@ -455,7 +457,7 @@ Deno.serve(async (req) => {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('cf-connecting-ip') ?? ''
   const ipHash = ip ? await sha256(ip + (Deno.env.get('IP_SALT') ?? '')) : null
 
-  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, topic, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, ...(kind === 'photo' ? { credit: sender.name } : {}) }).select('id').single()
+  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, topic, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, credit: sender.name }).select('id').single()
   if (error) return fail(error.message, 500)
   const id: string = row.id
 

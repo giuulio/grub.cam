@@ -12,7 +12,7 @@ export function Terms() {
       <title>{`Terms and privacy · ${SITE_NAME}`}</title>
       <div className="max-w-2xl leading-relaxed">
         <h1 className="title text-4xl">Terms and privacy</h1>
-        <p className="mt-3 text-muted">Last updated 12 October 2026.</p>
+        <p className="mt-3 text-muted">Last updated 13 October 2026.</p>
 
         <Part title="Using grub.cam">
           <p>
@@ -30,7 +30,8 @@ export function Terms() {
           <p>
             What you send (a photo of a board, a price list, opening times, a photo of a venue, a correction) should be something you saw yourself, and a
             photo of a venue should have no one's face in it. A menu, price list or opening times you've checked goes up within minutes, and anything else once a person
-            has looked. A photo of a venue that passes its check goes up credited to your name, and by sending it you license it under CC BY 4.0.
+            has looked. Whatever goes up, goes up under your name, on the venue's page and on Contribute, so that what's here has someone behind it. By
+            sending a photo of a venue you license it under CC BY 4.0.
           </p>
           <p>
             A review should be your own experience of the venue: its food, drink, prices, service or space, as bluntly as you like, but naming or
@@ -59,7 +60,8 @@ export function Terms() {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               If you sign in, we keep your Cambridge email address and the name your Google account gives, with what you send and your reviews. Your
-              address is never shown; your name is shown only with a photo of a venue you sent. Your sign-in is remembered in your own browser.
+              address is never shown. Your name (your CRSid, if your account gives none) is shown with what you send once it goes up: on the venue's
+              page, and on Contribute with how much you've sent in. Reviews stay anonymous. Your sign-in is remembered in your own browser.
             </li>
             <li>
               Photos and text you send, and the words of a review, are read by OpenAI's models to transcribe or check them. OpenAI doesn't keep them to train
@@ -89,7 +91,7 @@ export function Terms() {
               Report it
             </a>{' '}
             or see{' '}
-            <Link to="/coverage" className="underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+            <Link to="/contribute#coverage" className="underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
               what's missing
             </Link>
             .

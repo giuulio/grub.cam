@@ -61,7 +61,7 @@ What happens to each thing a member sends, from [`/send`](https://grub.cam/send)
 | **Review** (1–5, optional words) | A rating alone goes straight up; words go through OpenAI's moderation and a check that they're about the venue and name no one | Shown anonymously once a venue has 5 |
 | **Correction** (“Report a change”: hours, prices, menu, formal hall, diet, location, closed) | — | A person reads it; hours, prices and menus are steered to their own kinds, which go up by themselves |
 
-Nothing a model is unsure of goes up unseen: whatever doesn't pass waits, with the reason, in the [Review queue](../../issues?q=is%3Aissue+is%3Aopen+%22Review+queue%22) issue. Model calls are logged with their cost. With an enforced OpenAI project spend limit, reaching it stops further model calls and sends anything needing a model check to a person; setting only an alert threshold does not stop calls.
+Everything goes up under the sender's name (the name their Cambridge account gives), on the venue's page and on [Contribute](https://grub.cam/contribute), where members are ranked by what they've filled in. Nothing a model is unsure of goes up unseen: whatever doesn't pass waits, with the reason, in the [Review queue](../../issues?q=is%3Aissue+is%3Aopen+%22Review+queue%22) issue. Model calls are logged with their cost. With an enforced OpenAI project spend limit, reaching it stops further model calls and sends anything needing a model check to a person; setting only an alert threshold does not stop calls.
 
 ## Run it
 

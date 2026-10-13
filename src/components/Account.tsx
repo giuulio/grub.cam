@@ -32,15 +32,15 @@ export function AccountButton() {
     setOpen(false)
   }
 
-  const round = 'flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink/5 text-ink transition-colors hover:bg-ink/10 sm:h-12'
+  const round = 'header-pill'
   const canSignIn = useSignInEnabled()
-  if (session === undefined) return <span aria-hidden="true" className="size-11 sm:size-12" />
+  if (session === undefined) return <span aria-hidden="true" className="size-12 sm:size-14" />
   // Google sign-in not switched on yet: nothing to offer
   if (!session && !canSignIn) return null
   if (!session)
     return (
-      <button type="button" onClick={() => signIn(pathname + search)} aria-label="Sign in with your Cambridge account" title="Sign in with your Cambridge account" className={`${round} gap-2 px-3 text-base font-bold sm:px-5`}>
-        <Icon of={User} className="size-5 sm:hidden" />
+      <button type="button" onClick={() => signIn(pathname + search)} aria-label="Sign in with your Cambridge account" title="Sign in with your Cambridge account" className={`${round} w-12 gap-2 sm:w-auto sm:px-6`}>
+        <Icon of={User} className="size-6 sm:hidden" />
         <span className="max-sm:hidden">Sign in</span>
       </button>
     )
@@ -48,7 +48,7 @@ export function AccountButton() {
   const name = memberName(session)
   return (
     <div ref={box} className="relative">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label={`Your account: ${name ?? email}`} title={name ?? email} className={`${round} w-11 text-[0.9375rem] font-bold sm:w-12`}>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label={`Your account: ${name ?? email}`} title={name ?? email} className={`${round} w-12 text-base font-bold sm:w-14`}>
         {initials(name ?? email)}
       </button>
       {open && (

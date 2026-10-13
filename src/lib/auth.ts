@@ -44,11 +44,14 @@ export function useSignInEnabled(): boolean | undefined {
   return on
 }
 
-/** The account's name as Google gives it: what a member's photo is credited to (the submit function reads the same). */
+/** The account's name as Google gives it. */
 export const memberName = (session: Session | null | undefined): string | null => {
   const meta = session?.user.user_metadata ?? {}
   return String(meta.full_name ?? meta.name ?? '').trim() || null
 }
+
+/** What everything a member sends goes up under: their name, else their CRSid (the submit function's `credit`). */
+export const creditName = (session: Session | null | undefined): string | null => memberName(session) ?? session?.user.email?.split('@')[0] ?? null
 
 /** The current session, kept up to date; `undefined` until known. */
 export function useSession(): Session | null | undefined {

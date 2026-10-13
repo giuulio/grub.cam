@@ -3,12 +3,13 @@ import { Link } from 'react-router'
 import { coverage, menuWindow } from '../lib/coverage.ts'
 import { useData } from '../lib/data.tsx'
 import { SCOPES } from '../lib/finder.ts'
-import { ISSUES_URL, SITE_NAME } from '../lib/site.ts'
+import { ISSUES_URL, REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
+import { GITHUB_STARS } from './GitHub.tsx'
 
 /**
  * Laid out as Tripadvisor's: columns of links (the site, where to browse, how to help) and how fresh the menus are;
- * then ©, the terms, and that grub.cam isn't the University's. No GitHub link: the header has it.
+ * then ©, the terms, and that grub.cam isn't the University's. GitHub, with its stars, is here and not in the header.
  * The Find column is the front page's tabs.
  */
 export function Footer() {
@@ -21,7 +22,6 @@ export function Footer() {
       <Container className="grid gap-x-8 gap-y-10 pt-12 pb-10 sm:grid-cols-2 lg:grid-cols-4">
         <FooterLinks title={`About ${SITE_NAME}`}>
           <Link to="/about">About</Link>
-          <Link to="/coverage">Coverage</Link>
           <Link to="/credits">Photo credits</Link>
           <Link to="/terms">Terms and privacy</Link>
         </FooterLinks>
@@ -29,15 +29,20 @@ export function Footer() {
           {SCOPES.map((s) => <Link key={s.scope} to={s.path}>{s.scope === 'all' ? 'Everything' : s.label}</Link>)}
         </FooterLinks>
         <FooterLinks title="Help build it">
+          <Link to="/contribute">Contribute</Link>
           <Link to="/send">Send a menu, prices or a correction</Link>
+          <Link to="/contribute#coverage">Coverage</Link>
           <a href={ISSUES_URL} target="_blank" rel="noopener">Report an issue</a>
+          <a href={REPO_URL} target="_blank" rel="noopener">
+            Code on GitHub{GITHUB_STARS ? ` · ${GITHUB_STARS} ${GITHUB_STARS === 1 ? 'star' : 'stars'}` : ''}
+          </a>
         </FooterLinks>
         <div>
           <h2 className="text-muted">The menus</h2>
           <p className="mt-4 max-w-xs">Menus and opening hours for Cambridge college and University dining halls, cafés and bars.</p>
           {data.status === 'ready' && menus && (
             <p className="mt-3 max-w-xs">
-              <Link to="/coverage" className="link">
+              <Link to="/contribute" className="link">
                 {menuWindow(data, true)}: {menus.have} of {menus.of} colleges
               </Link>
               {updated && <span className="text-muted">, updated {updated}</span>}
@@ -45,7 +50,6 @@ export function Footer() {
           )}
         </div>
       </Container>
-      {/* GitHub is linked once, in the header */}
       <Container className="pb-10">
         <div className="min-w-0">
           <p className="text-sm text-muted">© {new Date().getFullYear()} {SITE_NAME}</p>

@@ -7,7 +7,7 @@ import { DataProvider, useData, type State } from './lib/data.tsx'
 import { SCOPES } from './lib/finder.ts'
 import { useScrollMemory } from './lib/useScrollMemory.ts'
 import { About } from './pages/About.tsx'
-import { CoveragePage } from './pages/Coverage.tsx'
+import { ContributePage } from './pages/Contribute.tsx'
 import { FromExplore, Home } from './pages/Home.tsx'
 import { NotFound } from './pages/NotFound.tsx'
 import { SitePage } from './pages/Site.tsx'
@@ -43,6 +43,12 @@ function Layout() {
   )
 }
 
+/** Coverage became part of Contribute: an old link keeps its filters. */
+function FromCoverage() {
+  const { search } = useLocation()
+  return <Navigate to={`/contribute${search}`} replace />
+}
+
 export default function App({ data }: { data: State }) {
   return (
     <DataProvider value={data}>
@@ -51,12 +57,13 @@ export default function App({ data }: { data: State }) {
           {/* The front page's tabs, each its own address */}
           {SCOPES.map((s) => (s.path === '/' ? <Route key={s.scope} index element={<Home scope={s.scope} />} /> : <Route key={s.scope} path={s.path.slice(1)} element={<Home scope={s.scope} />} />))}
           <Route path="about" element={<About />} />
-          <Route path="coverage" element={<CoveragePage />} />
+          <Route path="contribute" element={<ContributePage />} />
           <Route path="terms" element={<Terms />} />
           <Route path="credits" element={<Credits />} />
           <Route path="send" element={<Send />} />
           {/* Pages the front page replaced (public/_redirects does the same for links from outside) */}
           <Route path="explore" element={<FromExplore />} />
+          <Route path="coverage" element={<FromCoverage />} />
           {['directory', 'colleges', 'university'].map((p) => <Route key={p} path={p} element={<Navigate to="/" replace />} />)}
           <Route path=":slug" element={<SitePage />} />
           <Route path=":site/:venue" element={<VenuePage />} />
