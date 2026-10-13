@@ -9,6 +9,7 @@ import type { MenuDay } from '../../schema.ts'
 import { parseManual } from '../manual.ts'
 import { parsePrices, type PriceList } from '../prices.ts'
 import type { connect } from './db.ts'
+import { NoModel } from './docs.ts'
 
 export type Venue = { id: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string }
 /** What the model is given: the document's text and/or its files, what it is, and (a cycle's week) which Monday it's dated as. */
@@ -33,13 +34,23 @@ export function modelReader(db: ReturnType<typeof connect>): ModelReader | undef
   const daily = process.env.LLM_DAILY_USD ? Number(process.env.LLM_DAILY_USD) : Infinity
 
   async function ask(kind: 'menu' | 'prices', r: Reading): Promise<Transcription> {
-    if (daily !== Infinity && (await db.spentToday(UNPRICED_USD)) >= daily) throw new Error(`today's model spending has reached LLM_DAILY_USD ($${daily})`)
+    if (daily !== Infinity && (await db.spentToday(UNPRICED_USD)) >= daily) throw new NoModel(`today's model spending has reached LLM_DAILY_USD ($${daily})`)
     const lines = [
       prompt({ kind, venue: { name: r.venue.name, type: r.venue.type, site: r.venue.site }, asBoard: kind === 'menu', today: r.today, week: r.week, source: `${r.about} (${r.url})`, photos: r.files.length }, true),
     ]
     if (r.text) lines.push('', `The document's text:\n"""\n${r.text}\n"""`)
     const images: Image[] = r.files.map((f) => ({ base64: base64(f.bytes), mime: f.mime, name: f.name }))
-    const { value, usage } = await respond<Transcription>({ key: key!, model, text: lines.join('\n'), images, schema: TRANSCRIPTION, maxOutput: MAX_OUTPUT, reasoning: process.env.OPENAI_REASONING || undefined })
+    let answer: Awaited<ReturnType<typeof respond<Transcription>>>
+    try {
+      answer = await respond<Transcription>({ key: key!, model, text: lines.join('\n'), images, schema: TRANSCRIPTION, maxOutput: MAX_OUTPUT, reasoning: process.env.OPENAI_REASONING || undefined })
+    } catch (e) {
+      // OpenAI refusing the key, rate-limiting, down, or unreachable is the model's problem, not the document's: it waits.
+      // An answer cut short or refused is about the document, and marks it unreadable.
+      const message = (e as Error).message
+      if (/^openai \d{3}:|^openai: no answer|fetch failed/i.test(message)) throw new NoModel(`the model couldn't be asked: ${message}`)
+      throw e
+    }
+    const { value, usage } = answer
     await db.logModelCall({ purpose: 'read_source', model, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, price) ?? null, ok: value.readable && value.verdict === 'publish', venue_id: r.venue.id, source_url: r.url })
     if (!value.readable || !value.body.trim()) throw new Error(`the model found no ${kind === 'menu' ? 'menu' : 'price list'} in it${value.unsure ? `: ${value.unsure}` : ''}`)
     if (value.verdict !== 'publish') throw new Error(`the model wouldn't vouch for its reading: ${value.retry || value.unsure || 'no reason given'}`)

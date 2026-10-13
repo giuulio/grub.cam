@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MenuDay } from '../../schema.ts'
 import { dayHash } from './checks.ts'
-import { between, checkDays, docChanges, expandWeeks, readMenuDocs, type DocRef, type DocSource, type StoredDoc } from './docs.ts'
+import { between, checkDays, docChanges, expandWeeks, NoModel, readMenuDocs, type DocRef, type DocSource, type StoredDoc } from './docs.ts'
 import type { ModelReader, Venue } from './model.ts'
 
 const venue: Venue = { id: 'test/hall', name: 'Test Hall', type: 'hall', site: 'Test College' }
@@ -85,6 +85,12 @@ describe('reading documents', () => {
     const reworded = await readMenuDocs(venue, noParser, [page('2026-10-13 Pie\n')], stored(first.rows), { today }, { now: new Date('2026-10-13T09:00:00Z'), model })
     expect(reworded.read.model).toBe(1)
     expect(reworded.days[0].since).toBeNull()
+  })
+  it("waits, rather than marking it unreadable, when OpenAI can't be asked (a refused key, an outage)", async () => {
+    const down: ModelReader = { menu: async () => { throw new NoModel('the model couldn\'t be asked: openai 401: Incorrect API key provided') }, prices: async () => { throw new Error('no') } }
+    const run = await readMenuDocs(venue, noParser, [page('2026-10-13 Pie')], new Map(), { today }, { now: new Date(), model: down })
+    expect(run.rows).toEqual([])
+    expect(run.errors).toEqual(["the menu page: the model couldn't be asked: openai 401: Incorrect API key provided"])
   })
   it('skips fetching while the listing fingerprint is the same', async () => {
     const { model } = fakeModel()

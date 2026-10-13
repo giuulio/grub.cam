@@ -210,10 +210,13 @@ export type DocRun = { days: DocDay[]; rows: StoredDoc[]; errors: string[]; read
 
 const fileName = (f: Download) => basename(new URL(f.url).pathname) || 'document'
 
-/** No OPENAI_API_KEY: the document waits (it isn't marked unreadable), and is read once there's a key. */
+/**
+ * The model can't be asked (no OPENAI_API_KEY, a key OpenAI refuses, OpenAI down, today's LLM_DAILY_USD spent): the
+ * document waits (it isn't marked unreadable), and is read once the model can be asked.
+ */
 export class NoModel extends Error {
-  constructor(parserError?: Error) {
-    super(`${parserError ? `the parser couldn't read it (${parserError.message}), and ` : ''}there's no OPENAI_API_KEY for the model`)
+  constructor(why: Error | string = "there's no OPENAI_API_KEY for the model") {
+    super(typeof why === 'string' ? why : `the parser couldn't read it (${why.message}), and there's no OPENAI_API_KEY for the model`)
   }
 }
 
@@ -301,6 +304,7 @@ export async function readPriceDocs(venue: Venue, src: PriceSource, refs: DocRef
         run.rows.push({ ...base, status: 'ok', read_by: 'model', result: r.list, unsure: r.unsure || null, error: null, read_at: now })
         run.lists.push({ ref, list: r.list })
       } catch (e) {
+        if (e instanceof NoModel) throw e
         run.rows.push({ ...base, status: 'failed', read_by: null, result: null, unsure: null, error: (e as Error).message, read_at: now })
       }
     } catch (e) {
