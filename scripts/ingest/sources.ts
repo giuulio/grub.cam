@@ -1,6 +1,7 @@
-// How each venue (college or University) publishes its menu. Scripted sources have an adapter and are
-// fetched by `npm run ingest`; the rest are transcribed by hand or need a collaborator in the college.
-// Checked 7 Oct 2026 (colleges), 8 Oct 2026 (University).
+// How each venue (college or University) publishes its menu. Scripted sources have an adapter, or (menus published as
+// documents: PDFs, a page, a Sway or Canva) `documents`, read by a parser or the model; a University café's price list
+// can be a document too (`prices`). All are fetched by `npm run ingest`; the rest are transcribed by hand or need a
+// collaborator in the college. Checked 7 Oct 2026 (colleges), 8 Oct 2026 (University); documents 13 Oct 2026.
 import type { MenuSource } from './lib/source.ts'
 import { corpus } from './sources/corpus.ts'
 import { darwin } from './sources/darwin.ts'
@@ -14,9 +15,19 @@ import { selwyn } from './sources/selwyn.ts'
 import { stJohns } from './sources/st-johns.ts'
 import { ucsWeekly } from './sources/ucs.ts'
 import { wolfson } from './sources/wolfson.ts'
+import { churchill } from './sources/churchill.ts'
+import { clareHall } from './sources/clare-hall.ts'
+import { fitzwilliam } from './sources/fitzwilliam.ts'
+import { lucyCavendish } from './sources/lucy-cavendish.ts'
+import { newnham } from './sources/newnham.ts'
+import { pembroke } from './sources/pembroke.ts'
+import { botanicGardenPrices, cavendishPrices, courtyardKitchenPrices, kettlesYardPrices, madingleyPrices, occidentePrices } from './sources/price-lists.ts'
+import { stCatharines } from './sources/st-catharines.ts'
+import { stEdmunds } from './sources/st-edmunds.ts'
+import { trinity } from './sources/trinity.ts'
 
 // University Catering pages that post this week's lunch, all in the same format
-const ucs = (venue: string, url: string, notes?: string): MenuSource => ({ venue, channel: 'html', url, cadence: 'weekly, current week only (Mon–Fri lunch)', notes, adapter: ucsWeekly(url) })
+const ucs = (venue: string, url: string, notes?: string): MenuSource => ({ venue, channel: 'html', url, cadence: 'weekly, current week only (Mon–Fri lunch)', notes, adapter: ucsWeekly(url), fallback: true })
 
 export const SOURCES: MenuSource[] = [
   // Scripted
@@ -28,7 +39,7 @@ export const SOURCES: MenuSource[] = [
     notes: 'Same vendor app as Jesus. Prices, allergens, diet categories.',
     adapter: corpus,
   },
-  { venue: 'darwin/servery', channel: 'html', url: 'https://www.darwin.cam.ac.uk/dine/weekly-menu/', cadence: 'weekly tabs, about 5 weeks ahead', adapter: darwin },
+  { venue: 'darwin/servery', channel: 'html', url: 'https://www.darwin.cam.ac.uk/dine/weekly-menu/', cadence: 'weekly tabs, about 5 weeks ahead', adapter: darwin, fallback: true },
   {
     venue: 'downing/servery-great-hall',
     channel: 'json',
@@ -84,74 +95,84 @@ export const SOURCES: MenuSource[] = [
     cadence: 'daily, about 2 weeks ahead',
     notes: '?date= returns the following day (in the evening at least); the adapter trusts the heading. Over the October clock change an evening run cannot reach the Monday (?date=2026-10-25 shows the 25th, ?date=2026-10-26 the 27th); daytime runs fetch it and saved days stay.',
     adapter: robinson,
+    fallback: true,
   },
-  { venue: 'selwyn/hall-servery', channel: 'html', url: 'https://www.sel.cam.ac.uk/current-members/hall-menu', cadence: 'daily, about 4 weeks ahead', adapter: selwyn },
-  { venue: 'st-johns/buttery', channel: 'html', url: 'https://menu.joh.cam/', cadence: 'rolling 7 days', adapter: stJohns },
-  { venue: 'wolfson/buttery-dining-hall', channel: 'html', url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus', cadence: 'rolling, about 2 days back and 3 ahead; a day is filled in meal by meal', adapter: wolfson },
+  { venue: 'selwyn/hall-servery', channel: 'html', url: 'https://www.sel.cam.ac.uk/current-members/hall-menu', cadence: 'daily, about 4 weeks ahead', adapter: selwyn, fallback: true },
+  { venue: 'st-johns/buttery', channel: 'html', url: 'https://menu.joh.cam/', cadence: 'rolling 7 days', adapter: stJohns, fallback: true },
+  { venue: 'wolfson/buttery-dining-hall', channel: 'html', url: 'https://www.wolfson.cam.ac.uk/food/cafeteria-menus', cadence: 'rolling, about 2 days back and 3 ahead; a day is filled in meal by meal', adapter: wolfson, fallback: true },
   ucs('west-cambridge/west-hub-canteen', 'https://www.catering.admin.cam.ac.uk/cafes/west-hub-canteen'),
   ucs('west-cambridge/greenwich-house-cafe', 'https://www.catering.admin.cam.ac.uk/cafes/greenwich-house-cafe', 'Hot dishes from the West Hub kitchen.'),
   ucs('west-cambridge/scholars-brew', 'https://www.catering.admin.cam.ac.uk/cafes/scholars-brew'),
 
-  // Public, transcribed by hand. PDFs: curl -A "Mozilla/5.0" URL | pdftotext -layout - -
-  // Sway/Canva: Chrome --headless=new --dump-dom URL
+  // Documents: read by a parser (Churchill, Newnham) or the model, only when they change (lib/docs.ts, 0043)
   {
     venue: 'churchill/dining-hall',
     channel: 'html',
     url: 'https://www.chu.cam.ac.uk/about/campus/dining-at-college/lunch-and-dinner-menu/',
     cadence: 'weekly, filled in day by day',
-    notes: 'Cloudflare blocks curl: use headless Chrome. One table per day, Lunch and Dinner columns; later days stay empty until posted.',
+    notes: 'One table per day, Lunch and Dinner columns; later days stay empty until posted. Cloudflare in front: plain fetches were answered on 13 Oct 2026.',
+    documents: churchill,
   },
   {
     venue: 'clare-hall/dining-hall',
     channel: 'sway',
     url: 'https://sway.cloud.microsoft/b7Zz74Q2g96EIhE9',
     cadence: 'weekly',
-    notes: 'Needs JavaScript to render.',
+    notes: 'Needs JavaScript to render: Chrome draws it and the model reads its text.',
+    documents: clareHall,
   },
   {
     venue: 'fitzwilliam/buttery',
     channel: 'pdf',
     url: 'https://www.fitz.cam.ac.uk/cafe-bar-and-buttery',
     cadence: 'weekly',
-    notes: 'PDF filenames are not dated; the date is inside the PDF and on the link text.',
+    notes: 'PDF filenames are not dated; the date is inside the PDF and on the link text. Formal Hall menus are PDFs on the same page.',
+    documents: fitzwilliam,
   },
   {
     venue: 'lucy-cavendish/warburton-hall-servery',
     channel: 'canva',
     url: 'https://www.canva.com/design/DAFvirNLKtg/view',
     cadence: 'weekly, same design overwritten',
-    notes: 'Embedded on https://www.lucy.cam.ac.uk/dining-hall-and-cafe. Daily posts on instagram.com/lucycavfood.',
+    notes: 'Embedded on https://www.lucy.cam.ac.uk/dining-hall-and-cafe. Daily posts on instagram.com/lucycavfood. Read from a screenshot: as text its columns scramble.',
+    documents: lucyCavendish,
   },
-  { venue: 'newnham/buttery', channel: 'html', url: 'https://newn.cam.ac.uk/weekly-menus', cadence: 'weekly', notes: 'Today only: https://newn.cam.ac.uk/todays-menu' },
+  { venue: 'newnham/buttery', channel: 'html', url: 'https://newn.cam.ac.uk/weekly-menus', cadence: 'weekly', notes: 'Today only: https://newn.cam.ac.uk/todays-menu', documents: newnham },
   {
     venue: 'pembroke/servery-trough',
     channel: 'pdf',
     url: 'https://www.pem.cam.ac.uk/college/catering/information-students/servery-menu',
     cadence: 'weekly, 3-week cycle',
-    notes: 'The page dates each cycle week (Week 1: w/c 5 Oct, 26 Oct, 16 Nov) and links its PDF once posted (Week 2 went up on 13 Oct): save each PDF for every week listed. The unlinked week_2.pdf/week_3.pdf on the server are from 2020.',
+    notes: 'The page dates each cycle week (Week 1: w/c 5 Oct, 26 Oct, 16 Nov) and links its PDF once posted (Week 2 went up on 13 Oct): each PDF is read once and copied to every week listed. The unlinked week_2.pdf/week_3.pdf on the server are from 2020.',
+    documents: pembroke,
   },
-  { venue: 'queens/cripps-dining-hall-cafeteria', channel: 'html', url: 'https://www.queens.cam.ac.uk/life-at-queens/catering/dining-hall/weekly-menu/', cadence: 'weekly' },
   {
     venue: 'st-catharines/hall-cafeteria',
     channel: 'pdf',
     url: 'https://www.caths.cam.ac.uk/students/college-facilities-and-forms/catering-for-our-community/cafeteria',
     cadence: 'weekly, 4-week cycle',
     notes: 'Each PDF is dated at the top. Dishes are listed by counter 1–3 with no key: tag only what a dish name says. Daily email list: https://lists.cam.ac.uk/sympa/subscribe/caths-menus',
+    documents: stCatharines,
   },
   {
     venue: 'st-edmunds/dining-hall',
     channel: 'pdf',
     url: 'https://my.st-edmunds.cam.ac.uk/category/menus/',
     cadence: 'weekly post linking lunch/supper PDFs',
-    notes: 'The post also lists one-off time changes.',
+    notes: 'The post also lists one-off time changes, read into that meal\'s note.',
+    documents: stEdmunds,
   },
   {
     venue: 'trinity/hall-servery',
     channel: 'pdf',
     url: 'https://www.trin.cam.ac.uk/download/hall-menu-this-week/',
     cadence: 'weekly, current and next week',
-    notes: 'Import both this week and https://www.trin.cam.ac.uk/download/hall-menu-next-week/ whenever available. Use a browser download if HTTP fetches get 403. Check the rendered PDF: its text layer can retain removed dishes beneath cancellation notices or blank meals.',
+    notes: 'This week and https://www.trin.cam.ac.uk/download/hall-menu-next-week/. Its text layer can retain removed dishes beneath cancellation notices or blank meals: the model is told to read the rendered page.',
+    documents: trinity,
   },
+
+  // Public, but behind a CAPTCHA (SiteGround's sgcaptcha, even in headless Chrome): transcribed by hand, never got round
+  { venue: 'queens/cripps-dining-hall-cafeteria', channel: 'html', url: 'https://www.queens.cam.ac.uk/life-at-queens/catering/dining-hall/weekly-menu/', cadence: 'weekly' },
 
   // Fixed menus supplied directly; transcribed with ingest:prices
   { venue: 'gonville-and-caius/old-courts-cafe-bar', channel: 'email', cadence: 'fixed', notes: 'Caius Café breakfast/lunch menu supplied by the JCR Food & Bar representative on 12 Oct 2026; saved with ingest:prices. Hall menus remain separate.' },
@@ -167,13 +188,15 @@ export const SOURCES: MenuSource[] = [
   { venue: 'murray-edwards/dome-dining-hall', channel: 'intranet', notes: 'My Medwards' },
   { venue: 'trinity-hall/cafeteria', channel: 'intranet', cadence: 'daily' },
 
-  // University: menus that aren't dated (fixed or seasonal) or aren't online; not ingested
-  { venue: 'west-cambridge/occidente', channel: 'html', url: 'https://www.catering.admin.cam.ac.uk/cafes/occidente-kitchen-and-bar', cadence: 'fixed', notes: 'Bistro menu with prices on the page.' },
+  // University: menus that aren't dated (fixed or seasonal) or aren't online. A price list on the venue's page is
+  // checked once a day and read when it changes (`prices`); the rest are hand-transcribed or not online
+  { venue: 'west-cambridge/occidente', channel: 'html', url: 'https://www.catering.admin.cam.ac.uk/cafes/occidente-kitchen-and-bar', cadence: 'fixed', notes: 'Bistro menu with prices on the page.', prices: occidentePrices },
   {
     venue: 'west-cambridge/cavendish-cafe',
     channel: 'none',
     cadence: 'daily',
-    notes: 'Daily hot lunch, not published online (reported). The seasonal café menu PDF linked from https://www.cdc.events/cavendish-cafe/ is its price list (ingest:prices).',
+    notes: 'Daily hot lunch, not published online (reported). The seasonal café menu PDF linked from https://www.cdc.events/cavendish-cafe/ is its price list, read when it changes; its drinks screen and lunch poster lines (member photos) stay.',
+    prices: cavendishPrices,
   },
   { venue: 'downing-site/pathology-cafe', channel: 'none', cadence: 'weekly', notes: 'Menu changes weekly; not published online.' },
   {
@@ -183,10 +206,10 @@ export const SOURCES: MenuSource[] = [
     notes: 'A Mon–Fri hot lunch with prices on a board in the servery, naming weekdays but not the week; not online. A member photo of 12 Oct 2026 was saved for that week only.',
   },
   { venue: 'biomedical-campus/cruk-cafe', channel: 'none', cadence: 'daily', notes: 'Daily menus printed in the café only.' },
-  { venue: 'fitzwilliam-museum/courtyard-kitchen', channel: 'pdf', url: 'https://www.cdc.events/events/courtyardkitchen/', cadence: 'seasonal' },
-  { venue: 'kettles-yard/garden-kitchen', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/gardenkitchenatkettlesyard', cadence: 'fixed' },
-  { venue: 'botanic-garden/garden-cafe', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/the-garden-cafe', cadence: 'fixed' },
-  { venue: 'madingley-hall/cafe', channel: 'pdf', url: 'https://madingleyhall.cam.ac.uk/dining/the-cafe/', cadence: 'fixed' },
+  { venue: 'fitzwilliam-museum/courtyard-kitchen', channel: 'pdf', url: 'https://www.cdc.events/events/courtyardkitchen/', cadence: 'seasonal', prices: courtyardKitchenPrices },
+  { venue: 'kettles-yard/garden-kitchen', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/gardenkitchenatkettlesyard', cadence: 'fixed', prices: kettlesYardPrices },
+  { venue: 'botanic-garden/garden-cafe', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/the-garden-cafe', cadence: 'fixed', prices: botanicGardenPrices },
+  { venue: 'madingley-hall/cafe', channel: 'pdf', url: 'https://madingleyhall.cam.ac.uk/dining/the-cafe/', cadence: 'fixed', prices: madingleyPrices },
 
   // No known menu
   { venue: 'sidney-sussex/servery-dining-hall', channel: 'none' },

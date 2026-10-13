@@ -3,6 +3,8 @@ import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { Hours } from '../hours.ts'
 import type { SavedPrice } from '../prices.ts'
 import type { SourceCheck } from './checks.ts'
+import type { StoredDoc } from './docs.ts'
+import type { Venue } from './model.ts'
 import type { MenuSource } from './source.ts'
 import type { PriceTerms } from '../../../src/lib/types.ts'
 import type { SubmissionNotice } from './notifications.ts'
@@ -257,6 +259,38 @@ export function connect() {
       if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
       return new Map(data.map((d) => [`${d.date}|${d.service}`, d.content_hash]))
     },
+    /** Each saved day from `from` to `to` (`date|service`): its hash, who saved it and when. */
+    async savedDays(venue: string, from: string, to: string): Promise<Map<string, { content_hash: string | null; method: string; fetched_at: string }>> {
+      const { data, error } = await sb.from('menu_days').select('date, service, content_hash, method, fetched_at').eq('venue_id', venue).gte('date', from).lte('date', to).range(0, 4999)
+      if (error) throw new Error(`menu_days ${venue}: ${error.message}`)
+      return new Map(data.map((d) => [`${d.date}|${d.service}`, d]))
+    },
+    async sourceDocuments(): Promise<StoredDoc[]> {
+      const { data, error } = await sb.from('source_documents').select('*').range(0, 4999)
+      if (error) throw new Error(`source_documents: ${error.message}`)
+      return data
+    },
+    async saveDocuments(rows: StoredDoc[]) {
+      if (!rows.length) return
+      const { error } = await sb.from('source_documents').upsert(rows)
+      if (error) throw new Error(`source_documents: ${error.message}`)
+    },
+    /** What the model is told a venue is: its name, type and site's name. */
+    async venues(ids: string[]): Promise<Map<string, Venue>> {
+      const { data, error } = await sb.from('venues').select('id, name, type, sites(name)').in('id', ids)
+      if (error) throw new Error(`venues: ${error.message}`)
+      return new Map(data.map((v) => [v.id, { id: v.id, name: v.name, type: v.type, site: (v.sites as unknown as { name: string }).name }]))
+    },
+    async logModelCall(call: { purpose: 'read_source'; model: string; input_tokens: number; output_tokens: number; cost_usd: number | null; ok: boolean; venue_id: string; source_url: string }) {
+      const { error } = await sb.from('model_calls').insert(call)
+      if (error) console.error(`model_calls: ${error.message}`)
+    },
+    /** Dollars spent on model calls since midnight UTC, a call of unknown cost counted as `unpriced`. */
+    async spentToday(unpriced: number): Promise<number> {
+      const { data, error } = await sb.from('model_calls').select('cost_usd').gte('at', `${new Date().toISOString().slice(0, 10)}T00:00:00Z`)
+      if (error) throw new Error(`model_calls: ${error.message}`)
+      return data.reduce((n, c) => n + (c.cost_usd == null ? unpriced : Number(c.cost_usd)), 0)
+    },
     async sourceChecks(): Promise<SourceCheck[]> {
       const { data, error } = await sb.from('source_checks').select('*')
       if (error) throw new Error(`source_checks: ${error.message}`)
@@ -273,7 +307,7 @@ export function connect() {
       const saved = new Map(data.map((v) => [v.id, v]))
       await Promise.all(
         sources.map(async (s) => {
-          const want = { menu_channel: s.channel, menu_url: s.url ?? null, menu_scripted: !!s.adapter }
+          const want = { menu_channel: s.channel, menu_url: s.url ?? null, menu_scripted: !!(s.adapter || s.documents) }
           const v = saved.get(s.venue)
           if (!v || (v.menu_channel === want.menu_channel && v.menu_url === want.menu_url && v.menu_scripted === want.menu_scripted)) return
           const { error } = await sb.from('venues').update(want).eq('id', s.venue)

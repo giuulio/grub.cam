@@ -2,8 +2,9 @@ name: Ingest menus
 
 # Checks the scripted sources and saves what changed to Supabase: each source's first run of the day fetches every
 # published week, one every four hours the next two weeks, the rest today and tomorrow (scripts/ingest/index.ts).
-# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY; with CF_DEPLOY_HOOK (a Workers Builds deploy hook)
-# set it rebuilds the site when a menu changed, so the prerendered pages, sitemap and llms.txt carry the new menus.
+# Needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY, and OPENAI_API_KEY for menus published as
+# documents (the runner's google-chrome draws Sway and Canva); with CF_DEPLOY_HOOK (a Workers Builds deploy hook) set it
+# rebuilds the site when a menu changed, so the prerendered pages, sitemap and llms.txt carry the new menus.
 # Keeps one issue, "Source health", listing sources that have failed twice in a row, and comments there when one
 # starts failing or recovers (which emails you). Started every half hour from 06:07 to 19:37 UTC by Supabase's pg_cron
 # (migration 0042), not GitHub's cron, which on this repo ran late or not at all.
@@ -27,6 +28,9 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+      # Reads menus published as documents (PDFs, a Sway, a Canva) when they change; without it they wait in Source health
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LLM_DAILY_USD: ${{ vars.LLM_DAILY_USD }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7

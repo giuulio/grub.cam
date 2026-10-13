@@ -3,6 +3,7 @@
 // of the time, the next two weeks every four hours, and every published week once a day.
 import { createHash } from 'node:crypto'
 import type { MenuDay } from '../../schema.ts'
+import type { StoredDoc } from './docs.ts'
 
 /** `soon`: today and tomorrow. `fortnight`: today to the end of next week. `all`: this week's Monday until a week ahead is empty. */
 export type Scope = 'soon' | 'fortnight' | 'all'
@@ -92,8 +93,11 @@ const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'
 const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\s+/g, ' ')
 
-/** The "Source health" issue's body: the scripted sources failing now. The repo is public: only venues, URLs and errors. */
-export function healthReport(venues: string[], checks: Map<string, SourceCheck>, now: Date): string {
+/**
+ * The "Source health" issue's body: the scripted sources failing now, and documents that couldn't be read (each
+ * waits until it changes, or `--reread`). The repo is public: only venues, URLs and errors.
+ */
+export function healthReport(venues: string[], checks: Map<string, SourceCheck>, now: Date, unread: StoredDoc[] = []): string {
   const failing = venues.map((v) => checks.get(v)).filter((c): c is SourceCheck => !!c && c.failures >= ALERT_AFTER)
   const lines = [
     failing.length
@@ -106,16 +110,22 @@ export function healthReport(venues: string[], checks: Map<string, SourceCheck>,
     for (const c of failing) lines.push(`| ${c.venue_id} | ${when(c.failing_since)} | ${c.failures} | ${when(c.ok_at)} | ${when(c.retry_at)} | ${cell(c.error ?? '')} |`)
     lines.push('', 'Saved menus stay up while a source fails. Fix the adapter in `scripts/ingest/sources/`, or try it with `npm run ingest -- --only <site>`.', '')
   }
+  if (unread.length) {
+    lines.push(`**${unread.length} ${unread.length === 1 ? 'document' : 'documents'} couldn't be read.**`, '', '| Source | Document | Tried | Why |', '|---|---|---|---|')
+    for (const d of unread) lines.push(`| ${d.venue_id} | [${cell(d.key.length > 60 ? d.key.slice(0, 57) + '…' : d.key)}](${d.url}) | ${when(d.read_at)} | ${cell(d.error ?? '')} |`)
+    lines.push('', 'Each is read again when it changes, or with `npm run ingest -- --only <site> --reread`; meanwhile its menus can be transcribed by hand (`ingest:manual`).', '')
+  }
   lines.push(`A source is listed after ${ALERT_AFTER} failures in a row. It's tried again at the next run, then after an hour, two, four and at most six; this issue gets a comment when one starts failing or recovers.`, '')
   lines.push(`Checked ${when(now.toISOString())} (London).`)
   return lines.join('\n') + '\n'
 }
 
-/** A comment when sources start failing or recover, which emails whoever watches the repo; undefined when neither. */
-export function healthComment(failing: SourceCheck[], recovered: string[]): string | undefined {
+/** A comment when sources start failing or recover, or a document can't be read, which emails whoever watches the repo; undefined when none of these. */
+export function healthComment(failing: SourceCheck[], recovered: string[], unread: StoredDoc[] = []): string | undefined {
   const lines = [
     ...failing.map((c) => `- **${c.venue_id}** has failed ${c.failures} times in a row: ${c.error}`),
     ...recovered.map((v) => `- **${v}** is fetching again.`),
+    ...unread.map((d) => `- **${d.venue_id}**: couldn't read [${d.key}](${d.url}): ${d.error}`),
   ]
   return lines.length ? lines.join('\n') + '\n' : undefined
 }

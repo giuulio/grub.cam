@@ -21,7 +21,7 @@ Chips
 ## Desserts
 Apple crumble £1.85
 
-Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order (a board in capitals in sentence case: "Roast chicken", names such as "Americano" kept capitalised); keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. An explicit cancellation belongs on that line as a note, with no dishes: "2026-10-13 dinner | No dinner – UG freshers formal hall". A blank meal with no dishes is not a cancellation; omit it. Nothing else: no commentary, no blank header, no markdown fences.`,
+Rules: the first line is the date (YYYY-MM-DD) and the meal, one of breakfast, brunch, lunch, dinner, formal. One dish per line, as printed, in its order (a board in capitals in sentence case: "Roast chicken", names such as "Americano" kept capitalised); keep diet codes in brackets after the name as printed (V, VG, VE, PB, H, GF, DF); a price at the end of the line as "£3.60". Course headings "## Soup", "## Mains", "## Sides", "## Desserts" only when the board groups dishes that way. If the board shows several meals or days, start a new "date meal" line for each. An explicit cancellation belongs on that line as a note starting "No <meal> –", with no dishes, however the board words it ("CLOSED FOR FORMAL HALL" is "2026-10-14 dinner | No dinner – closed for formal hall"): "2026-10-13 dinner | No dinner – UG freshers formal hall". A blank meal with no dishes is not a cancellation; omit it. Nothing else: no commentary, no blank header, no markdown fences.`,
   prices: `A price list, in this format (body only):
 
 columns: Members | Non-members
@@ -54,7 +54,21 @@ Rules: one line per meal and set of days, "meal | days | times", with an optiona
  * the whole section it changes. A menu's `date` and `service`: what the sender says it's for; with `asBoard`, only
  * where the board doesn't say (`today`, London's date, places a board's weekdays). `photos`: how many came together.
  */
-export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; asBoard?: boolean; today?: string; note?: string; current?: string; photos?: number }
+export type Context = {
+  kind: Transcribable
+  venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }
+  date?: string
+  service?: string
+  asBoard?: boolean
+  today?: string
+  note?: string
+  current?: string
+  photos?: number
+  /** Ingest reading the venue's own document (scripts/ingest/lib/model.ts): what it is, and how to read it */
+  source?: string
+  /** With `asBoard`: the Monday of the week its undated weekdays are (a repeating cycle's week), instead of this week */
+  week?: string
+}
 
 const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
 
@@ -68,10 +82,12 @@ export function prompt(c: Context, structured = false): string {
     `You transcribe what a photo of a board or notice, or a document (a PDF menu), says, exactly as printed, for a database of Cambridge college dining.`,
     `This is ${what} at ${c.venue.name}, a ${TYPE_WORD[c.venue.type]} at ${c.venue.site}.`,
   ]
+  if (c.source) lines.push(`It is the venue's own published document, not a member's photo: ${c.source}`)
   if (c.kind === 'menu' && c.asBoard && c.today) {
-    const monday = addDays(c.today, -((weekday(c.today) + 6) % 7))
+    const monday = c.week ?? addDays(c.today, -((weekday(c.today) + 6) % 7))
+    const which = c.week ? `the week of ${longDate(monday)} to ${longDate(addDays(monday, 6))}, whatever the board says` : `this week's (${longDate(monday)} to ${longDate(addDays(monday, 6))}) unless the board says which week`
     lines.push(
-      `Today is ${longDate(c.today)}. Take the days and meals from the board. Weekdays without dates are this week's (${longDate(monday)} to ${longDate(addDays(monday, 6))}) unless the board says which week.${c.date ? ` Where the board says neither day nor meal, it is for ${c.date}${c.service ? ` ${c.service}` : ''}.` : ''}`,
+      `Today is ${longDate(c.today)}. Take the days and meals from the board. Weekdays without dates are ${which}.${c.date ? ` Where the board says neither day nor meal, it is for ${c.date}${c.service ? ` ${c.service}` : ''}.` : ''}`,
     )
   } else if (c.kind === 'menu' && c.date) lines.push(`The sender says it is for ${c.date}${c.service ? ` ${c.service}` : ''}; use that date and meal unless the board clearly shows another.`)
   if ((c.photos ?? 0) > 1) lines.push(`There are ${c.photos} photos or documents, in order: parts of one board or several. Read them all into one answer, without repeating what two of them both show.`)

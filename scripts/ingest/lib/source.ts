@@ -1,4 +1,5 @@
 import type { Channel, MenuDay } from '../../schema.ts'
+import type { DocSource, PriceSource } from './docs.ts'
 
 export type SourceContext = {
   /** ISO week being fetched, e.g. 2026-W41 */
@@ -24,6 +25,12 @@ export type MenuSource = {
   notes?: string
   /** Scripted sources only; the rest are transcribed (`npm run ingest:manual`) or need a collaborator. */
   adapter?: Adapter
+  /** Instead of an adapter: menus published as documents (PDFs, a page, a Sway), read by a parser or the model (lib/docs.ts) */
+  documents?: DocSource
+  /** A posted price list published as a document, checked once a day and read by the model when it changes */
+  prices?: PriceSource
+  /** With an adapter: when it breaks on the page (not when the page can't be fetched), the model reads `url`'s text instead */
+  fallback?: boolean
 }
 
 export function mergeDays(days: MenuDay[]): MenuDay[] {
