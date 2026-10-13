@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { Hours } from '../hours.ts'
 import type { MenuSource } from './source.ts'
+import type { PriceTerms } from '../../../src/lib/types.ts'
 import type { SubmissionNotice } from './notifications.ts'
 
 type Method = 'script' | 'manual' | 'user' | 'contributor'
@@ -32,6 +33,8 @@ export type Submission = {
   alt: string | null
   /** prices/hours, once published: the rows it replaced, so rejecting it puts them back */
   replaced: Record<string, unknown>[] | null
+  /** prices, once published, when its `columns:` renamed the venue's price columns: the venue's price_terms before (0036) */
+  replaced_terms: { before: PriceTerms | null } | null
   created_at: string
 }
 
@@ -124,7 +127,7 @@ export function connect() {
       if (error) throw new Error(`submissions: ${error.message}`)
       return data as Submission[]
     },
-    async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note' | 'replaced'>> & { reviewed_at?: string }) {
+    async updateSubmission(id: string, patch: Partial<Pick<Submission, 'transcription' | 'transcribed_by' | 'status' | 'review_note' | 'replaced' | 'replaced_terms'>> & { reviewed_at?: string }) {
       const { error } = await sb.from('submissions').update(patch).eq('id', id)
       if (error) throw new Error(`submissions ${id}: ${error.message}`)
     },
@@ -148,6 +151,25 @@ export function connect() {
     async savePrices(venue: string, observedOn: string, source: string, items: PriceItem[]) {
       const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
       if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
+    },
+    async priceTerms(venue: string): Promise<PriceTerms | null> {
+      const { data, error } = await sb.from('venues').select('price_terms').eq('id', venue).single()
+      if (error) throw new Error(`venues ${venue}: ${error.message}`)
+      return data.price_terms as PriceTerms | null
+    },
+    /** Names the venue's price columns (`price_terms.tiers`), keeping the rest of its terms. Returns its terms before, when that changed them. */
+    async nameColumns(venue: string, tiers: string[]): Promise<{ before: PriceTerms | null } | undefined> {
+      const { data, error } = await sb.from('venues').select('price_terms').eq('id', venue).single()
+      if (error) throw new Error(`venues ${venue}: ${error.message}`)
+      const before = data.price_terms as PriceTerms | null
+      if (JSON.stringify(before?.tiers ?? null) === JSON.stringify(tiers)) return undefined
+      const { error: updateError } = await sb.from('venues').update({ price_terms: { ...before, tiers } }).eq('id', venue)
+      if (updateError) throw new Error(`venues ${venue}: ${updateError.message}`)
+      return { before }
+    },
+    async setPriceTerms(venue: string, terms: PriceTerms | null) {
+      const { error } = await sb.from('venues').update({ price_terms: terms }).eq('id', venue)
+      if (error) throw new Error(`venues ${venue}: ${error.message}`)
     },
     /** Whether the venue or site (`subject`: "<site>/<venue>" or "<site>") already has a photo from `source`, so a list can be run again without doubling up. */
     async hasPhoto(subject: string, source: string): Promise<boolean> {

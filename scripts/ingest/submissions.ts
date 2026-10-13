@@ -34,7 +34,7 @@ import { connect, type Submission } from './lib/db.ts'
 import { parseHours } from './hours.ts'
 import { parseManual } from './manual.ts'
 import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
-import { parsePrices } from './prices.ts'
+import { parsePrices, unnamedColumns } from './prices.ts'
 import { SITE_URL } from '../../src/lib/site.ts'
 import { deliverNotices, githubDelivery } from './lib/notifications.ts'
 
@@ -135,12 +135,16 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
   if (s.kind === 'prices') {
     const p = parsePrices(s.transcription)
     if (p.venue !== s.venue_id) throw new Error(`transcription is for ${p.venue}, the submission for ${s.venue_id}`)
+    const unnamed = unnamedColumns(p, (await db.priceTerms(p.venue))?.tiers)
+    if (unnamed) throw new Error(unnamed)
     const before = await db.rowsOf('venue_prices', p.venue)
     if (!dry) {
       await db.updateSubmission(s.id, { replaced: before })
       await db.savePrices(p.venue, p.observed_on, p.source, p.items)
+      const renamed = p.columns && (await db.nameColumns(p.venue, p.columns))
+      if (renamed) await db.updateSubmission(s.id, { replaced_terms: renamed })
     }
-    return `${p.items.length} prices, replacing ${before.length}`
+    return `${p.items.length} prices, replacing ${before.length}${p.columns ? `; columns ${p.columns.join(' | ')}` : ''}`
   }
   if (s.kind === 'hours') {
     const h = parseHours(s.transcription)
@@ -180,8 +184,11 @@ async function menuHold(s: Submission): Promise<string | null> {
   return null
 }
 
-/** Why a member's price list or hours can't go up without a person, or null when it can: it must read and be for its venue, prices no more than £100. */
-function listHold(s: Submission): string | null {
+/**
+ * Why a member's price list or hours can't go up without a person, or null when it can: it must read and be for its
+ * venue, prices no more than £100, and a list with two prices a line must say whose each is (or the venue already does).
+ */
+async function listHold(s: Submission): Promise<string | null> {
   if (!s.transcription) return 'no text to publish'
   try {
     if (s.kind === 'prices') {
@@ -190,6 +197,8 @@ function listHold(s: Submission): string | null {
       if (!p.items.length) return 'no prices in it'
       const odd = p.items.find((i) => Math.max(i.price_gbp ?? 0, i.price_max_gbp ?? 0, i.non_member_gbp ?? 0) > 100)
       if (odd) return `${odd.name} costs more than £100`
+      const unnamed = unnamedColumns(p, (await db.priceTerms(p.venue))?.tiers)
+      if (unnamed) return unnamed
     } else {
       const h = parseHours(s.transcription)
       if (h.venue !== s.venue_id) return `the text is for ${h.venue}`
@@ -295,7 +304,7 @@ switch (command) {
     if (!rows.length) console.log('no menus, price lists or hours queued')
     for (const s of rows) {
       try {
-        const hold = s.kind === 'menu' ? await menuHold(s) : listHold(s)
+        const hold = s.kind === 'menu' ? await menuHold(s) : await listHold(s)
         if (hold) {
           if (!values.dry) await db.updateSubmission(s.id, { status: 'needs_review', review_note: hold })
           console.log(`… ${short(s.id)} ${s.venue_id}: waits for a person: ${hold}`)
@@ -345,6 +354,14 @@ switch (command) {
         await db.restoreRows(table, s.venue_id, s.replaced)
         restored = `; the ${s.kind === 'prices' ? 'price list' : 'hours'} before it (${s.replaced.length} rows) put back`
       } else restored = `; the venue's ${s.kind === 'prices' ? 'price list' : 'hours'} changed again since, so nothing is put back`
+    }
+    // Columns it named go back too, unless they've been renamed since
+    if (s.kind === 'prices' && s.status === 'approved' && s.replaced_terms && s.transcription) {
+      const named = parsePrices(s.transcription).columns
+      if (JSON.stringify((await db.priceTerms(s.venue_id))?.tiers ?? null) === JSON.stringify(named ?? null)) {
+        await db.setPriceTerms(s.venue_id, s.replaced_terms.before)
+        restored += `; its column names (${named?.join(' | ')}) taken back${s.replaced_terms.before?.tiers ? `, to ${s.replaced_terms.before.tiers.join(' | ')}` : ''}`
+      }
     }
     await db.updateSubmission(s.id, { status: 'rejected', review_note: args[1] ?? null, reviewed_at: new Date().toISOString() })
     console.log(`✓ ${short(s.id)} rejected${args[1] ? `: ${args[1]}` : ''}${hidden ? '; its photo is down, the one before it shows again (after the next build)' : ''}${menus ? `; ${menus} of its menus taken down` : ''}${restored}`)

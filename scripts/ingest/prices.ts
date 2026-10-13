@@ -7,6 +7,9 @@
 //   source: Noticeboard outside the Dome   <- a URL, or where it was seen
 //   observed: 2026-10-08                   <- the day it was seen
 //   ---
+//   columns: Members | Non-members         <- whose each price column is, as the board heads them (a column headed only
+//                                             "£" is "Full price"); saved as the venue's price_terms.tiers. A list with two
+//                                             prices a line needs it unless the venue's columns are already named.
 //   ## Brunch | brunch                     <- section heading for the lines after it, and the meals they're sold at (default: all)
 //   Bacon rashers x 2 | 95p | £1.30        <- name | price | second price (optional); £3.75, 3.75 or 95p
 //   Sandwiches | £3.24-£3.96               <- a range, as posted
@@ -24,7 +27,24 @@ import { Meal, PriceCourse, PriceItem } from '../schema.ts'
 import { connect } from './lib/db.ts'
 import { tagsFromName } from './lib/tags.ts'
 
-export type PriceList = { venue: string; source: string; observed_on: string; items: PriceItem[] }
+export type PriceList = { venue: string; source: string; observed_on: string; items: PriceItem[]; columns?: string[] }
+
+/**
+ * Why a list can't go up as it is, or null: it has two prices a line but nothing says whose each is, neither its own
+ * `columns:` nor the venue's named columns (`tiers`). Guessing "Members, Others" put Pembroke's full price over its
+ * students' discounted one.
+ */
+export function unnamedColumns(p: PriceList, tiers?: string[] | null): string | null {
+  if (!p.items.some((i) => i.non_member_gbp != null) || (p.columns?.length ?? 0) >= 2 || (tiers?.length ?? 0) >= 2) return null
+  return 'two prices a line, but nothing says whose each is: add "columns: first | second", as the board heads them'
+}
+
+/** "Members | Non-members" as its one or two names. */
+function columnsOf(text: string): string[] {
+  const names = text.split('|').map((c) => c.trim())
+  if (!names.length || names.length > 2 || names.some((c) => !c)) throw new Error(`expected "columns: first | second": "${text}"`)
+  return names
+}
 
 /** "£3.24-£3.96" (or with an en dash) as its two ends; a single price as itself. */
 export function parseRange(s: string): { price_gbp: number; price_max_gbp?: number } {
@@ -53,11 +73,17 @@ export function parsePrices(text: string): PriceList {
   }
   if (!meta.site || !meta.venue || !meta.source || !/^\d{4}-\d{2}-\d{2}$/.test(meta.observed ?? '')) throw new Error('header needs site, venue, source and observed (YYYY-MM-DD)')
   const items: PriceItem[] = []
+  let columns = meta.columns ? columnsOf(meta.columns) : undefined
   let section: string | undefined
   let services: Meal[] | undefined
   for (const raw of body.split('\n')) {
     const line = raw.trim()
     if (!line || (line.startsWith('#') && !line.startsWith('## '))) continue
+    const named = line.match(/^columns:\s*(.*)$/i)
+    if (named) {
+      columns = columnsOf(named[1])
+      continue
+    }
     if (line.startsWith('## ')) {
       const [heading, meals] = line.slice(3).split('|').map((p) => p.trim())
       section = heading
@@ -80,7 +106,7 @@ export function parsePrices(text: string): PriceList {
       }),
     )
   }
-  return { venue: `${meta.site}/${meta.venue}`, source: meta.source, observed_on: meta.observed, items }
+  return { venue: `${meta.site}/${meta.venue}`, source: meta.source, observed_on: meta.observed, items, ...(columns ? { columns } : {}) }
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()!)) {
@@ -90,8 +116,13 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   for (const f of positionals) {
     try {
       const p = parsePrices(readFileSync(f, 'utf8'))
-      await db?.savePrices(p.venue, p.observed_on, p.source, p.items)
-      console.log(`✓ ${p.venue.padEnd(40)} ${String(p.items.length).padStart(3)} prices`)
+      if (db) {
+        const unnamed = unnamedColumns(p, (await db.priceTerms(p.venue))?.tiers)
+        if (unnamed) throw new Error(unnamed)
+        await db.savePrices(p.venue, p.observed_on, p.source, p.items)
+        if (p.columns) await db.nameColumns(p.venue, p.columns)
+      }
+      console.log(`✓ ${p.venue.padEnd(40)} ${String(p.items.length).padStart(3)} prices${p.columns ? ` (${p.columns.join(' | ')})` : ''}`)
     } catch (e) {
       console.error(`✗ ${f}: ${(e as Error).message}`)
       process.exitCode = 1

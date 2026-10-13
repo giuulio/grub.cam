@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGbp, parsePrices } from './prices.ts'
+import { parseGbp, parsePrices, unnamedColumns } from './prices.ts'
 
 describe('parsePrices', () => {
   it('reads sections, member and non-member prices', () => {
@@ -66,5 +66,22 @@ describe('second tier only', () => {
     const p = parsePrices("site: c\nvenue: hall\nsource: s\nobserved: 2026-10-09\n---\nStudent's first guest | | £21.00")
     expect(p.items).toEqual([{ section: undefined, name: "Student's first guest", non_member_gbp: 21 }])
     expect(() => parsePrices('site: c\nvenue: hall\nsource: s\nobserved: 2026-10-09\n---\nSoup | |')).toThrow(/expected/)
+  })
+})
+
+describe('price columns', () => {
+  const head = 'site: pembroke\nvenue: cafe-84\nsource: board\nobserved: 2026-10-13\n---\n'
+  it('reads whose each column is, in the body or the header', () => {
+    expect(parsePrices(head + 'columns: Full price | SFC rate\nSingle espresso | £2.20 | £1.32').columns).toEqual(['Full price', 'SFC rate'])
+    expect(parsePrices(head.replace('---', 'columns: Members | Non-members\n---') + 'Soup | £1.75 | £2.50').columns).toEqual(['Members', 'Non-members'])
+    expect(parsePrices(head + 'Tea | £1.30').columns).toBeUndefined()
+    expect(() => parsePrices(head + 'columns: A | B | C\nTea | £1')).toThrow(/columns/)
+  })
+  it('holds two prices a line that nothing names, unless the venue already names its columns', () => {
+    const two = parsePrices(head + 'Single espresso | £2.20 | £1.32')
+    expect(unnamedColumns(two)).toMatch(/whose each is/)
+    expect(unnamedColumns(two, ['Full price', 'SFC rate'])).toBeNull()
+    expect(unnamedColumns(parsePrices(head + 'columns: Full price | SFC rate\nSingle espresso | £2.20 | £1.32'))).toBeNull()
+    expect(unnamedColumns(parsePrices(head + 'Tea | £1.30'))).toBeNull()
   })
 })

@@ -242,7 +242,7 @@ async function checkReading(id: string, kind: 'prices' | 'hours', venue: Venue, 
   const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
   const lines = [
     `A member photographed the ${what} at ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}, a model read it into the text below, and the member then changed that text. It will go on the venue's page without anyone else looking.`,
-    `It can (ok: true) when every price, time and item in it is as the photo shows, or is from the list the site had before (when one is given below). Leaving things out, fixing spelling or capitals, and reordering are fine. Not (ok: false) when a price, a time or an item differs from the photo, or is neither on the photo nor in the earlier list; then say which line, in one short sentence to the member.`,
+    `It can (ok: true) when every price, time and item in it is as the photo shows, or is from the list the site had before (when one is given below). Leaving things out, fixing spelling or capitals, and reordering are fine. Not (ok: false) when a price, a time or an item differs from the photo, or is neither on the photo nor in the earlier list; then say which line, in one short sentence to the member. A "columns: first | second" line names whose each price column is: it's fine when it says what the board's column headings do (a column headed only "£" is "Full price"), not when it swaps them or names columns the board doesn't.`,
     `The text:\n"""\n${text.split('\n---\n')[1] ?? text}\n"""`,
   ]
   if (current) lines.push(`The list the site had before:\n"""\n${current}\n"""`)
@@ -266,7 +266,9 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
   }
   const { data } = await sb.from('venue_prices').select('section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
   if (!data?.length) return null
-  const lines: string[] = []
+  const { data: v } = await sb.from('venues').select('price_terms').eq('id', venueId).maybeSingle()
+  const tiers = (v?.price_terms as { tiers?: string[] } | null)?.tiers
+  const lines: string[] = tiers?.length && data.some((p) => p.non_member_gbp != null) ? [`columns: ${tiers.join(' | ')}`] : []
   let heading: string | undefined
   for (const p of data) {
     const head = p.section ? `## ${p.section}${p.services?.length ? ` | ${p.services.join(', ')}` : ''}` : undefined
