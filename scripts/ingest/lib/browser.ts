@@ -32,7 +32,9 @@ async function withChrome<T>(argsIn: (dir: string) => string[], then: (stdout: s
   try {
     const stdout = await new Promise<string>((resolve, reject) => {
       const flags = [
-        '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
+        '--headless=new', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
+        // Canva draws with WebGL: software rendering where there's no GPU (the runner), rather than none
+        ...(process.platform === 'linux' ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--disable-gpu']),
         `--user-data-dir=${join(dir, 'profile')}`, '--virtual-time-budget=15000',
         ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []),
       ]
@@ -47,8 +49,8 @@ async function withChrome<T>(argsIn: (dir: string) => string[], then: (stdout: s
     try {
       return then(stdout, dir)
     } catch (e) {
-      const why = stderr.split('\n').find((l) => /error|fatal/i.test(l))?.trim()
-      throw new FetchError(`Chrome drew nothing for ${args.at(-1)} (${(e as Error).message}${why ? `; ${why.slice(0, 200)}` : ''})`)
+      const why = stderr.split('\n').filter((l) => /error|fatal/i.test(l) && !/dbus|bus\.cc/i.test(l)).slice(0, 3).join(' / ').trim()
+      throw new FetchError(`Chrome drew nothing for ${args.at(-1)} (${(e as Error).message}${why ? `; ${why.slice(0, 400)}` : ''})`)
     }
   } finally {
     rmSync(dir, { recursive: true, force: true })
