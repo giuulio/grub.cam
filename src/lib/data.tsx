@@ -32,7 +32,7 @@ export async function load(): Promise<Data> {
   const [c, m, r, k] = await Promise.all([
     sb
       .from('sites')
-      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos(kind, position, path, widths, width, height, color, alt, credit, licence, source, submission_id), slots:service_slots(meal, days, start:start_time, end:end_time, period)), photos(position, path, widths, width, height, color, alt, credit, licence, source)')
+      .select('slug, name, short_name, kind, official_dining_url, aliases, venues(id, slug, name, aliases, type, url, where:where_text, serves, latitude, longitude, location_source, dietary, menu_channel, menu_url, menu_scripted, price_terms, prices:venue_prices(position, section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags, observed_on, source), formal:formals(days, gowns, dress_code, guests_allowed, guests_max, book_via, book_days_before, book_by, url, price_gbp, guest_gbp, prices_seen), photos(kind, position, path, widths, width, height, color, alt, credit, licence, source, submission_id), slots:service_slots(meal, days, start:start_time, end:end_time, period)), photos(position, path, widths, width, height, color, alt, credit, licence, source, submission_id)')
       .order('name')
       .order('sort_order', { referencedTable: 'venues' })
       .returns<SiteRow[]>(),
@@ -147,7 +147,7 @@ export function useMenuCredits(venue: Venue, date: string): Credit[] {
 /** Members' approved submissions under their names, newest first: /contribute's leaderboard and what was just added. */
 export function useContributions(): { data?: Contribution[]; failed: boolean } {
   return useFetched('contributions', async () => {
-    const q = await sb.from('contributions').select('id, venue_id, kind, topic, date, service, author, member, created_at, published_at').order('published_at', { ascending: false }).returns<Contribution[]>()
+    const q = await sb.from('contributions').select('id, venue_id, site, kind, topic, date, service, author, member, created_at, published_at').order('published_at', { ascending: false }).returns<Contribution[]>()
     if (q.error) throw new Error(q.error.message)
     return q.data
   })

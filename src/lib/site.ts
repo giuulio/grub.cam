@@ -12,6 +12,8 @@ export const venuePath = (v: Pick<Venue, 'slug' | 'site'>) => `/${v.site.slug}/$
 /** The way to add what's missing: /send, with the venue and what it is filled in. */
 export const sendPath = (v: Pick<Venue, 'id'>, kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other', more: Record<string, string> = {}) =>
   `/send?${new URLSearchParams({ venue: v.id, kind, ...more })}`
+/** Where a better photo of a site itself (its page's banner) is sent from. */
+export const sitePhotoPath = (s: Pick<Site, 'slug'>) => `/send?${new URLSearchParams({ site: s.slug, kind: 'photo' })}`
 
 /** "Jesus" -> "Jesus College"; Peterhouse and the Halls already are names; University sites are as stored. */
 export function siteName(s: Pick<Site, 'name' | 'kind'>): string {

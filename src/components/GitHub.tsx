@@ -1,4 +1,6 @@
+import { Star } from 'reicon-react'
 import { REPO_URL } from '../lib/site.ts'
+import { Icon } from './Icon.tsx'
 
 /** The repository's stars, read at build time (vite.config.ts); null when GitHub couldn't be reached. */
 export const GITHUB_STARS = import.meta.env.VITE_GITHUB_STARS as number | null
@@ -12,7 +14,7 @@ export function GitHubIcon({ className }: { className?: string }) {
   )
 }
 
-/** The repository as a pill, its mark and its stars, edged as the header's controls are (Contribute's "Open source"). */
+/** The repository as a pill, its mark and its stars (a star and the count), edged as the header's controls are (Contribute's "Open source"). */
 export function GitHubPill() {
   return (
     <a
@@ -21,10 +23,17 @@ export function GitHubPill() {
       rel="noopener"
       aria-label={`grub.cam on GitHub${GITHUB_STARS != null ? `, ${GITHUB_STARS} ${GITHUB_STARS === 1 ? 'star' : 'stars'}` : ''}`}
       title="grub.cam on GitHub"
-      className="header-pill gap-2.5 px-5 text-base font-bold sm:h-12"
+      className="header-pill gap-2.5 px-4 text-base font-bold sm:h-11"
     >
       <GitHubIcon className="size-5" />
-      {GITHUB_STARS != null ? `${GITHUB_STARS >= 1000 ? `${(GITHUB_STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : GITHUB_STARS} ${GITHUB_STARS === 1 ? 'star' : 'stars'}` : 'GitHub'}
+      {GITHUB_STARS != null ? (
+        <span className="flex items-center gap-1 tabular-nums">
+          <Icon of={Star} className="size-4" />
+          {GITHUB_STARS >= 1000 ? `${(GITHUB_STARS / 1000).toFixed(1).replace(/\.0$/, '')}k` : GITHUB_STARS}
+        </span>
+      ) : (
+        'GitHub'
+      )}
     </a>
   )
 }

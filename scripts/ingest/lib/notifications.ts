@@ -3,12 +3,14 @@ import { SITE_URL } from '../../../src/lib/site.ts'
 import type { Submission } from './db.ts'
 
 /** Deliberately excludes evidence, submitted words, model output and sender identity. */
-export type SubmissionNotice = Pick<Submission, 'id' | 'venue_id' | 'kind' | 'topic' | 'created_at'>
+export type SubmissionNotice = Pick<Submission, 'id' | 'venue_id' | 'site' | 'kind' | 'topic' | 'created_at'>
 const WORDS: Record<SubmissionNotice['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'venue photo', other: 'correction' }
 const marker = (id: string) => `<!-- grub-submission:${id} -->`
 
 export function noticeBody(s: SubmissionNotice): string {
-  return `New ${WORDS[s.kind]}${s.topic ? ` (${s.topic})` : ''} submitted for [${s.venue_id}](${SITE_URL}/${s.venue_id}).\n\nRead privately with \`npm run submissions -- show ${s.id}\`.\n\n${marker(s.id)}`
+  // A venue's, or (a photo for its page's banner) a site's own
+  const subject = s.venue_id ?? s.site
+  return `New ${s.venue_id ? WORDS[s.kind] : 'site photo'}${s.topic ? ` (${s.topic})` : ''} submitted for [${subject}](${SITE_URL}/${subject}).\n\nRead privately with \`npm run submissions -- show ${s.id}\`.\n\n${marker(s.id)}`
 }
 
 type Delivery = {

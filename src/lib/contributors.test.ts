@@ -10,6 +10,7 @@ let n = 0
 const row = (over: Partial<Contribution>): Contribution => ({
   id: `id${++n}`,
   venue_id: 'c/cafe',
+  site: null,
   kind: 'prices',
   topic: null,
   date: null,
@@ -58,6 +59,15 @@ describe('scored', () => {
       ['bob', '12:34', 1],
       ['ada', '12:35', 0],
       ['ada', '23:30', 1],
+    ])
+  })
+
+  it('scores a photo of a site itself as any photo, once a day for the site', () => {
+    const rows = scored([row({ kind: 'photo', venue_id: null, site: 'c' }), row({ kind: 'photo', venue_id: null, site: 'c', member: 'bob' }), row({ kind: 'photo' })], venues)
+    expect(rows.map((r) => [r.site ?? r.venue_id, r.member, r.points])).toEqual([
+      ['c', 'ada', 1],
+      ['c', 'bob', 0],
+      ['c/cafe', 'ada', 1],
     ])
   })
 

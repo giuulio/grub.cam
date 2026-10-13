@@ -56,7 +56,7 @@ export function Header() {
             to="/contribute"
             aria-label="Contribute"
             title="Add what you see, and see who has"
-            className="header-pill w-12 gap-2.5 border-transparent bg-action text-action-ink hover:bg-action hover:opacity-90 sm:w-auto sm:px-6"
+            className="header-pill w-12 gap-2.5 bg-action text-action-ink hover:bg-action hover:opacity-90 sm:w-auto sm:px-6"
           >
             <Icon of={AddCircle} className="size-6" />
             <span className="max-sm:hidden">Contribute</span>

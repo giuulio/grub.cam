@@ -18,11 +18,11 @@ export function scored(rows: Contribution[], venues: Pick<Venue, 'id' | 'type'>[
   return [...rows]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((r) => {
-      // A menu is for its day and meal; anything else, for the day it was sent
-      const key = [r.venue_id, r.kind, r.kind === 'menu' ? `${r.date ?? dayOf(r.created_at)} ${r.service ?? ''}` : dayOf(r.created_at)].join(' ')
+      // A menu is for its day and meal; anything else, for the day it was sent. A site's photo, for the site.
+      const key = [r.venue_id ?? `site:${r.site}`, r.kind, r.kind === 'menu' ? `${r.date ?? dayOf(r.created_at)} ${r.service ?? ''}` : dayOf(r.created_at)].join(' ')
       const first = !seen.has(key)
       seen.add(key)
-      return { ...r, points: first ? gapWeight(r.kind, type.get(r.venue_id) ?? 'cafe') : 0 }
+      return { ...r, points: first ? gapWeight(r.kind, (r.venue_id && type.get(r.venue_id)) || 'cafe') : 0 }
     })
 }
 

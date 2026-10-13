@@ -28,10 +28,10 @@ export function Terms() {
 
         <Part title="Sending things in and reviewing">
           <p>
-            What you send (a photo of a board, a price list, opening times, a photo of a venue, a correction) should be something you saw yourself, and a
-            photo of a venue should have no one's face in it. A menu, price list or opening times you've checked goes up within minutes, and anything else once a person
+            What you send (a photo of a board, a price list, opening times, a photo of a venue or a college, a correction) should be something you saw
+            yourself, and a photo of a venue or a college should have no one's face in it. A menu, price list or opening times you've checked goes up within minutes, and anything else once a person
             has looked. Whatever goes up, goes up under your name, on the venue's page and on Contribute, so that what's here has someone behind it. By
-            sending a photo of a venue you license it under CC BY 4.0.
+            sending a photo of a venue or a college you license it under CC BY 4.0.
           </p>
           <p>
             A review should be your own experience of the venue: its food, drink, prices, service or space, as bluntly as you like, but naming or

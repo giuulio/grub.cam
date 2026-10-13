@@ -10,7 +10,9 @@ type Method = 'script' | 'manual' | 'user' | 'contributor'
 /** A row of `submissions` as the CLI reads it (service role). */
 export type Submission = {
   id: string
-  venue_id: string
+  /** What it's about: a venue, or (a photo for its page's banner, 0040) a site itself */
+  venue_id: string | null
+  site: string | null
   kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other'
   date: string | null
   service: string | null
@@ -99,6 +101,11 @@ export function connect() {
       const v = data as unknown as { id: string; slug: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string; menu_scripted: boolean | null; sites: { name: string; short_name: string | null } | null }
       return { ...v, siteName: v.sites?.short_name ?? v.sites?.name ?? v.site }
     },
+    async site(slug: string) {
+      const { data, error } = await sb.from('sites').select('slug, name, short_name').eq('slug', slug).single()
+      if (error) throw new Error(`sites ${slug}: ${error.message}`)
+      return data as { slug: string; name: string; short_name: string | null }
+    },
     /** The venue's current slots, for the CLI to show before replacing them. */
     async slotsOf(venue: string) {
       const { data, error } = await sb.from('service_slots').select('meal, days, start_time, end_time, period, note').eq('venue_id', venue).order('meal')
@@ -135,7 +142,7 @@ export function connect() {
     },
     /** Every newly received submission, even if it has already been published. No private text or identity. */
     async pendingNotices(): Promise<SubmissionNotice[]> {
-      const { data, error } = await sb.from('submissions').select('id, venue_id, kind, topic, created_at').is('notified_at', null).order('created_at').limit(100)
+      const { data, error } = await sb.from('submissions').select('id, venue_id, site, kind, topic, created_at').is('notified_at', null).order('created_at').limit(100)
       if (error) throw new Error(`submission notices: ${error.message}`)
       return data as SubmissionNotice[]
     },
@@ -219,10 +226,10 @@ export function connect() {
       return data.length
     },
     /** Members' photos published but not yet shown: their rows wait, unapproved, until their files are served (`live`). Not one taken down since. */
-    async photosAwaitingDeploy(): Promise<{ id: string; path: string; widths: number[]; venue_id: string; submission_id: string }[]> {
-      const { data, error } = await sb.from('photos').select('id, path, widths, venue_id, submission_id, submissions!inner(status)').eq('approved', false).not('submission_id', 'is', null).eq('submissions.status', 'approved')
+    async photosAwaitingDeploy(): Promise<{ id: string; path: string; widths: number[]; venue_id: string | null; site: string | null; submission_id: string }[]> {
+      const { data, error } = await sb.from('photos').select('id, path, widths, venue_id, site, submission_id, submissions!inner(status)').eq('approved', false).not('submission_id', 'is', null).eq('submissions.status', 'approved')
       if (error) throw new Error(`photos awaiting deploy: ${error.message}`)
-      return data as unknown as { id: string; path: string; widths: number[]; venue_id: string; submission_id: string }[]
+      return data as unknown as { id: string; path: string; widths: number[]; venue_id: string | null; site: string | null; submission_id: string }[]
     },
     async approvePhoto(id: string) {
       const { error } = await sb.from('photos').update({ approved: true }).eq('id', id)

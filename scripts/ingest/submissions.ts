@@ -9,7 +9,7 @@
 //        npm run submissions -- reject <id> "why"                           <- a published photo or menu is taken down again, a price list's or hours' predecessor put back
 //        npm run submissions -- digest                                      <- what's waiting, as Markdown for the review issue (the queue Action)
 //        npm run submissions -- notify <issue>                              <- announce every new receipt on GitHub (the queue Action)
-//        npm run submissions -- smoke [--venue v] [--photo f.jpg] [--review] <- sends something in end to end as a throwaway member, then removes it (smoke.ts)
+//        npm run submissions -- smoke [--venue v] [--photo f.jpg [--site s]] [--review] <- sends something in end to end as a throwaway member, then removes it (smoke.ts)
 // The queue the `submit` Edge Function fills (supabase/functions/submit). A row's `transcription` is a complete file
 // in the ingest:manual (menu), ingest:prices (prices) or ingest:hours (hours) format; approve parses it with those same
 // parsers, so what can be saved by hand can be saved from here, and nothing else can.
@@ -21,10 +21,11 @@
 // has already had a model check any reading the sender edited. What it replaces is kept with the row (`replaced`), and
 // rejecting it puts that back, unless the venue's list has been replaced again since.
 //
-// A member's photo of the venue (kind photo) is published as ingest:photo would: its sizes written to public/photos
-// (commit them; the photos Action does) and its row added ahead of the venue's others, credited to the sender's name
-// under CC BY 4.0, the licence the form grants, but unapproved until `live` finds its files served, so the venue keeps
-// its old photo until the deploy is done. The submit function queues the ones a model has passed.
+// A member's photo of the venue (kind photo), or of a site itself for its page's banner (`site`, 0040), is published as
+// ingest:photo would: its sizes written to public/photos (commit them; the photos Action does) and its row added ahead
+// of the venue's (or site's) others, credited to the sender's name under CC BY 4.0, the licence the form grants, but
+// unapproved until `live` finds its files served, so the page keeps its old photo until the deploy is done. The submit
+// function queues the ones a model has passed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -42,18 +43,25 @@ import { deliverNotices, githubDelivery } from './lib/notifications.ts'
 const MEMBER_LICENCE = 'CC BY 4.0'
 
 const { values, positionals } = parseArgs({
-  options: { all: { type: 'boolean' }, trusted: { type: 'boolean' }, dry: { type: 'boolean' }, 'keep-hours': { type: 'boolean' }, dir: { type: 'string' }, wait: { type: 'string' }, venue: { type: 'string' }, photo: { type: 'string' }, review: { type: 'boolean' } },
+  options: { all: { type: 'boolean' }, trusted: { type: 'boolean' }, dry: { type: 'boolean' }, 'keep-hours': { type: 'boolean' }, dir: { type: 'string' }, wait: { type: 'string' }, venue: { type: 'string' }, site: { type: 'string' }, photo: { type: 'string' }, review: { type: 'boolean' } },
   allowPositionals: true,
 })
 const [command, ...args] = positionals
 const db = connect()
 
 const short = (id: string) => id.slice(0, 8)
+/** What it's about, as its page's path: a venue's id, or a site's slug (a photo for its page's banner, 0040) */
+const subjectOf = (s: Pick<Submission, 'venue_id' | 'site'>) => s.venue_id ?? s.site ?? ''
+/** The venue a menu, price list, hours or correction is for: only a photo can be a site's */
+const venueOf = (s: Submission) => {
+  if (!s.venue_id) throw new Error(`${short(s.id)} is a photo of ${s.site}, not of a venue`)
+  return s.venue_id
+}
 /** Every photo sent with it, first to last */
 const photosOf = (s: Submission) => s.photo_paths ?? (s.photo_path ? [s.photo_path] : [])
 const photoWord = (s: Submission) => (photosOf(s).length > 1 ? `${photosOf(s).length} photos` : photosOf(s).length ? 'photo' : '')
 const line = (s: Submission) =>
-  `${short(s.id)}  ${s.status.padEnd(12)} ${(s.topic ? `${s.kind}:${s.topic}` : s.kind).padEnd(14)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${photoWord(s) ? `  ${photoWord(s)}` : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
+  `${short(s.id)}  ${s.status.padEnd(12)} ${(s.topic ? `${s.kind}:${s.topic}` : s.kind).padEnd(14)} ${subjectOf(s).padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${photoWord(s) ? `  ${photoWord(s)}` : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
 
 async function one(id: string): Promise<Submission> {
   const rows = await db.submissions({})
@@ -66,22 +74,24 @@ async function one(id: string): Promise<Submission> {
 async function publishPhoto(s: Submission, dry: boolean): Promise<string> {
   if (!s.photo_path) throw new Error('no photo with it')
   const { variants, color } = await makeVariants(Buffer.from(await db.submissionPhoto(s.photo_path)))
-  const path = newPhotoPath(s.venue_id)
+  const subject = subjectOf(s)
+  const path = newPhotoPath(subject)
   const largest = variants.at(-1)!
   const sizes = `${variants.map((v) => v.width).join('/')} px, ${s.credit ?? 'no name'}`
   if (dry) return `${path}: ${sizes}`
   writeVariants(path, variants)
-  const v = await db.venue(s.venue_id)
+  // Its alt text is the model's; failing that, what it's of
+  const of = s.venue_id ? await db.venue(s.venue_id).then((v) => `${v.name}, ${v.siteName}`) : await db.site(subject).then((x) => x.name)
   await db.savePhoto(
     {
-      subject: s.venue_id,
+      subject,
       kind: 'venue',
       path,
       widths: variants.map((x) => x.width),
       width: largest.width,
       height: largest.height,
       color,
-      alt: s.alt || `${v.name}, ${v.siteName}`,
+      alt: s.alt || of,
       credit: s.credit,
       licence: MEMBER_LICENCE,
       source: 'sent in on grub.cam',
@@ -92,7 +102,7 @@ async function publishPhoto(s: Submission, dry: boolean): Promise<string> {
     },
     { first: true },
   )
-  return `${path}: ${sizes}; the venue's photo once deployed (commit public/photos; \`live\` turns it on)`
+  return `${path}: ${sizes}; the ${s.venue_id ? 'venue' : 'site'}'s photo once deployed (commit public/photos; \`live\` turns it on)`
 }
 
 /**
@@ -109,14 +119,14 @@ async function live(waitMs: number) {
     const served = await Promise.all(pending.map(async (p) => (await fetch(`${base}/${p.path}-${p.widths[0]}.webp?check=${Date.now()}`, { method: 'HEAD' }).catch(() => null))?.ok ?? false))
     for (const p of pending.filter((_, i) => served[i])) {
       await db.approvePhoto(p.id)
-      console.log(`✓ ${short(p.submission_id)} ${p.venue_id}: photo served, now shown`)
+      console.log(`✓ ${short(p.submission_id)} ${subjectOf(p)}: photo served, now shown`)
     }
     pending = pending.filter((_, i) => !served[i])
     if (!pending.length) return
     if (Date.now() > until) break
     await new Promise((r) => setTimeout(r, 15000))
   }
-  for (const p of pending) console.error(`✗ ${short(p.submission_id)} ${p.venue_id}: ${base}/${p.path} not served yet; the next run checks again`)
+  for (const p of pending) console.error(`✗ ${short(p.submission_id)} ${subjectOf(p)}: ${base}/${p.path} not served yet; the next run checks again`)
   process.exitCode = 1
 }
 
@@ -215,8 +225,8 @@ async function listHold(s: Submission): Promise<string | null> {
 
 /** Whether what a published price list or hours replaced can be put back: the venue's list is still this submission's. */
 async function stillCurrent(s: Submission): Promise<boolean> {
-  if (s.kind === 'prices') return (await db.rowsOf('venue_prices', s.venue_id)).every((r) => String(r.source).startsWith(`submission ${s.id}`))
-  return (await db.rowsOf('service_slots', s.venue_id)).every((r) => (r.prov as { submission?: string } | null)?.submission === s.id)
+  if (s.kind === 'prices') return (await db.rowsOf('venue_prices', venueOf(s))).every((r) => String(r.source).startsWith(`submission ${s.id}`))
+  return (await db.rowsOf('service_slots', venueOf(s))).every((r) => (r.prov as { submission?: string } | null)?.submission === s.id)
 }
 
 const KIND_WORD: Record<Submission['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'photo of the venue', other: 'correction' }
@@ -237,10 +247,10 @@ async function digest(): Promise<string> {
     out.push(`**${rows.length} waiting:** ${counts.map(([k, n]) => `${n} ${k}${n > 1 && !k.endsWith('s') ? 's' : ''}`).join(', ')}`, '')
     out.push('| id | what | venue | waiting | why |', '|---|---|---|---|---|')
     for (const s of rows) {
-      const v = await db.venue(s.venue_id).catch(() => null)
+      const v = s.venue_id ? await db.venue(s.venue_id).then((x) => ({ name: x.name, of: x.siteName })).catch(() => null) : await db.site(subjectOf(s)).then((x) => ({ name: x.name, of: 'its page' })).catch(() => null)
       const days = Math.floor((Date.now() - Date.parse(s.created_at)) / 86400000)
       const why = s.review_note ?? (s.kind === 'other' ? 'a correction to read' : s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
-      const where = v ? `[${v.name}, ${v.siteName}](https://grub.cam/${s.venue_id})` : s.venue_id
+      const where = v ? `[${v.name}, ${v.of}](https://grub.cam/${subjectOf(s)})` : subjectOf(s)
       out.push(`| \`${short(s.id)}\` | ${what(s)}${photoWord(s) ? ` (${photoWord(s)})` : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
     }
   }
@@ -268,7 +278,7 @@ switch (command) {
     const dir = values.dir ?? join(homedir(), 'grub-data', 'submissions')
     mkdirSync(dir, { recursive: true })
     console.log(line(s))
-    console.log(`page: https://grub.cam/${s.venue_id}`)
+    console.log(`page: https://grub.cam/${subjectOf(s)}`)
     if (s.date || s.service) console.log(`for: ${[s.date, s.service].filter(Boolean).join(' ')}`)
     if (s.user_email ?? s.contact) console.log(`from: ${s.user_email ?? s.contact}`)
     if (s.note) console.log(`\nnote:\n${s.note}`)
@@ -280,7 +290,7 @@ switch (command) {
     if (s.unsure) console.log(`\nthe model wasn't sure: ${s.unsure}`)
     if (s.transcription) console.log(`\ntranscription (${s.transcribed_by}${s.model ? `, ${s.model}` : ''}):\n${s.transcription}`)
     else if (['menu', 'prices', 'hours'].includes(s.kind)) {
-      const v = await db.venue(s.venue_id)
+      const v = await db.venue(venueOf(s))
       const t = s.kind as Transcribable
       console.log(`\n— paste the photo and this prompt into a chat model, save its answer under this header as a .txt, then: npm run submissions -- transcribe ${short(s.id)} file.txt —\n`)
       console.log(header(t, { site: v.site, venue: v.slug, source: `submission ${s.id}: ${photoWord(s) || 'text'} sent from the venue's page on grub.cam`, observed: s.created_at.slice(0, 10) }))
@@ -294,7 +304,7 @@ switch (command) {
     let text = readFileSync(args[1], 'utf8').trim() + '\n'
     if (!text.includes('\n---\n') && ['menu', 'prices', 'hours'].includes(s.kind)) {
       // a body alone: give it the header
-      const v = await db.venue(s.venue_id)
+      const v = await db.venue(venueOf(s))
       text = header(s.kind as Transcribable, { site: v.site, venue: v.slug, source: `submission ${s.id}`, observed: s.created_at.slice(0, 10) }) + text
     }
     await db.updateSubmission(s.id, { transcription: text, transcribed_by: 'operator', status: 'needs_review' })
@@ -310,15 +320,15 @@ switch (command) {
         const hold = s.kind === 'menu' ? await menuHold(s) : await listHold(s)
         if (hold) {
           if (!values.dry) await db.updateSubmission(s.id, { status: 'needs_review', review_note: hold })
-          console.log(`… ${short(s.id)} ${s.venue_id}: waits for a person: ${hold}`)
+          console.log(`… ${short(s.id)} ${subjectOf(s)}: waits for a person: ${hold}`)
           continue
         }
         const what = await publish(s, !!values.dry)
         if (!values.dry) await db.updateSubmission(s.id, { status: 'approved', reviewed_at: new Date().toISOString() })
-        console.log(`✓ ${short(s.id)} ${s.venue_id} ${s.kind}: ${what}${values.dry ? ' (dry)' : ''}`)
+        console.log(`✓ ${short(s.id)} ${subjectOf(s)} ${s.kind}: ${what}${values.dry ? ' (dry)' : ''}`)
       } catch (e) {
         process.exitCode = 1
-        console.error(`✗ ${short(s.id)} ${s.venue_id}: ${(e as Error).message}`)
+        console.error(`✗ ${short(s.id)} ${subjectOf(s)}: ${(e as Error).message}`)
       }
     }
     break
@@ -335,10 +345,10 @@ switch (command) {
       try {
         const what = await publish(s, !!values.dry)
         if (!values.dry) await db.updateSubmission(s.id, { status: 'approved', reviewed_at: new Date().toISOString() })
-        console.log(`✓ ${short(s.id)} ${s.venue_id} ${s.kind}: ${what}${values.dry ? ' (dry)' : ''}`)
+        console.log(`✓ ${short(s.id)} ${subjectOf(s)} ${s.kind}: ${what}${values.dry ? ' (dry)' : ''}`)
       } catch (e) {
         failures++
-        console.error(`✗ ${short(s.id)} ${s.venue_id}: ${(e as Error).message}`)
+        console.error(`✗ ${short(s.id)} ${subjectOf(s)}: ${(e as Error).message}`)
       }
     }
     if (failures) process.exitCode = 1
@@ -348,21 +358,21 @@ switch (command) {
     const s = await one(args[0] ?? '')
     const hidden = s.kind === 'photo' ? await db.hideSubmissionPhoto(s.id) : 0
     // A member's published menu: its days come down (only theirs: a script's or a hand-copied menu for the same day stays)
-    const menus = s.kind === 'menu' && s.status === 'approved' && s.transcription ? await db.deleteMenuDays(s.venue_id, parseManual(s.transcription).days, s.contributor_id ? 'contributor' : 'user') : 0
+    const menus = s.kind === 'menu' && s.status === 'approved' && s.transcription ? await db.deleteMenuDays(venueOf(s), parseManual(s.transcription).days, s.contributor_id ? 'contributor' : 'user') : 0
     // A published price list or hours: what it replaced goes back, unless the venue's has been replaced again since
     let restored = ''
     if ((s.kind === 'prices' || s.kind === 'hours') && s.status === 'approved' && s.replaced) {
       const table = s.kind === 'prices' ? 'venue_prices' : 'service_slots'
       if (await stillCurrent(s)) {
-        await db.restoreRows(table, s.venue_id, s.replaced)
+        await db.restoreRows(table, venueOf(s), s.replaced)
         restored = `; the ${s.kind === 'prices' ? 'price list' : 'hours'} before it (${s.replaced.length} rows) put back`
       } else restored = `; the venue's ${s.kind === 'prices' ? 'price list' : 'hours'} changed again since, so nothing is put back`
     }
     // Columns it named go back too, unless they've been renamed since
     if (s.kind === 'prices' && s.status === 'approved' && s.replaced_terms && s.transcription) {
       const named = parsePrices(s.transcription).columns
-      if (JSON.stringify((await db.priceTerms(s.venue_id))?.tiers ?? null) === JSON.stringify(named ?? null)) {
-        await db.setPriceTerms(s.venue_id, s.replaced_terms.before)
+      if (JSON.stringify((await db.priceTerms(venueOf(s)))?.tiers ?? null) === JSON.stringify(named ?? null)) {
+        await db.setPriceTerms(venueOf(s), s.replaced_terms.before)
         restored += `; its column names (${named?.join(' | ')}) taken back${s.replaced_terms.before?.tiers ? `, to ${s.replaced_terms.before.tiers.join(' | ')}` : ''}`
       }
     }
@@ -383,7 +393,7 @@ switch (command) {
     break
   }
   case 'smoke':
-    await (await import('./smoke.ts')).smoke({ venue: values.venue ?? 'clare/buttery', photo: values.photo, review: values.review })
+    await (await import('./smoke.ts')).smoke({ venue: values.venue ?? 'clare/buttery', site: values.site, photo: values.photo, review: values.review })
     break
   default:
     console.error('usage: npm run submissions -- list [--all] | show <id> | transcribe <id> file.txt | approve <id> | approve --trusted | photos | live | publish | reject <id> "why" | digest | notify <issue> | smoke')

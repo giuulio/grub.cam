@@ -52,11 +52,12 @@ async function call(token: string, init: RequestInit): Promise<SubmitResult> {
 /**
  * Sends the photos and/or text. A menu, price list or hours is read by the model there and then: `onText` gets the
  * reading so far as it's written (the function streams it, a JSON event a line), and the answer is its verdict.
- * `asBoard`: a menu's days and meals are the board's, `date` and `service` only where it doesn't say.
+ * `asBoard`: a menu's days and meals are the board's, `date` and `service` only where it doesn't say. `site` in place of
+ * `venue`: a photo of the site itself, for its page's banner.
  */
 export async function send(
   token: string,
-  fields: { venue: string; kind: SubmitKind; date?: string; service?: string; asBoard?: boolean; topic?: Topic; note?: string; website?: string },
+  fields: { venue?: string; site?: string; kind: SubmitKind; date?: string; service?: string; asBoard?: boolean; topic?: Topic; note?: string; website?: string },
   photos: File[],
   onText?: (soFar: string) => void,
 ): Promise<SubmitResult> {

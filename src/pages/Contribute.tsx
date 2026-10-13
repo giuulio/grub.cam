@@ -4,13 +4,13 @@ import { ArrowRight, Camera, ChevronDown, Clock, MenuBoard, Receipt, type IconCo
 import { ChipSelect, Segmented } from '../components/Controls.tsx'
 import { GitHubPill } from '../components/GitHub.tsx'
 import { Icon } from '../components/Icon.tsx'
-import { VenueThumb } from '../components/VenuePhoto.tsx'
+import { SiteThumb, VenueThumb } from '../components/VenuePhoto.tsx'
 import { ago, scored, SENT, standings, tally } from '../lib/contributors.ts'
 import { gapPath, siteProgress, type Gap, type Progress } from '../lib/coverage.ts'
 import { useContributions, useReady } from '../lib/data.tsx'
 import { BowTie } from '../lib/icons.ts'
 import { useNow } from '../lib/useNow.ts'
-import { SITE_NAME, sitePath, venuePath } from '../lib/site.ts'
+import { SITE_NAME, siteName, sitePath, venuePath } from '../lib/site.ts'
 import type { Site } from '../lib/types.ts'
 
 /** Rows of the list, and of the leaderboard, before "Show all" */
@@ -40,21 +40,19 @@ export function ContributePage() {
   return (
     <>
       <title>{`Contribute · ${SITE_NAME}`}</title>
-      {/* From a laptop two columns: what to do and the list on the left, the code and who has sent in the most on the
-          right; on a phone the leaderboard comes before the long list, and the code last */}
-      <div className="grid gap-x-16 gap-y-12 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="lg:col-start-1 lg:row-start-1">
-          <h1 className="title text-4xl leading-[1.1] sm:text-5xl">Contribute</h1>
-          <SendCard />
-        </div>
-        <div className="space-y-12 lg:col-start-2 lg:row-start-2">
+      <h1 className="title text-4xl leading-[1.1] sm:text-5xl">Contribute</h1>
+      {/* From a laptop two columns: what to do, then the list, on the left; who has sent in the most, what just went up
+          and the code on the right, from the top. On a phone the leaderboard comes before the long list */}
+      <div className="mt-6 grid gap-x-16 gap-y-12 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <SendCard />
+        <div className="space-y-12 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <Leaderboard />
           <JustAdded />
+          <OpenSource />
         </div>
         <div className="lg:col-start-1 lg:row-start-2">
           <Colleges />
         </div>
-        <OpenSource />
       </div>
     </>
   )
@@ -66,7 +64,7 @@ export function ContributePage() {
  */
 function SendCard() {
   return (
-    <Link to="/send" className="group mt-6 flex items-center gap-4 rounded-2xl bg-cta-bg p-5 sm:gap-5 sm:p-6">
+    <Link to="/send" className="group flex items-center gap-4 self-start rounded-2xl bg-cta-bg p-5 sm:gap-5 sm:p-6 lg:col-start-1 lg:row-start-1">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-canvas text-cta">
         <Icon of={Camera} className="size-6" />
       </span>
@@ -79,13 +77,13 @@ function SendCard() {
   )
 }
 
-/** The code, as the header had it (its stars), and what else helps: level with the card on the right, last on a phone. */
+/** The code, the rarer way to help, last: its GitHub pill (the stars the header had) and what help it wants. */
 function OpenSource() {
   return (
-    <aside aria-label="Open source" className="flex flex-wrap items-center gap-x-4 gap-y-3 lg:col-start-2 lg:row-start-1 lg:self-end lg:pb-5">
-      <GitHubPill />
-      <p className="min-w-0 flex-1 basis-56 text-[0.9375rem] text-muted">grub.cam is open source: star it, or help write the scripts that fetch each college’s menus.</p>
-    </aside>
+    <section aria-labelledby="code">
+      <Heading id="code" title="Open source" aside={<GitHubPill />} />
+      <p className="mt-2 text-muted">Star it, or help write the scripts that fetch each college’s menus.</p>
+    </section>
   )
 }
 
@@ -269,30 +267,34 @@ function Leaderboard() {
   )
 }
 
-/** What members put up most recently, newest first, each under the name of whoever sent it. */
+/** What members put up most recently, newest first, each under the name of whoever sent it: at a venue, or a site's own photo. */
 function JustAdded() {
-  const { venues, snapshot } = useReady()
+  const { venues, sites, snapshot } = useReady()
   const { data } = useContributions()
   // "5 min ago" moves on
   useNow()
-  const byId = new Map(venues.map((v) => [v.id, v]))
-  const recent = (data ?? []).filter((r) => byId.has(r.venue_id)).slice(0, 5)
+  const venueOf = new Map(venues.map((v) => [v.id, v]))
+  const siteOf = new Map(sites.map((s) => [s.slug, s]))
+  const recent = (data ?? [])
+    .map((r) => ({ r, venue: r.venue_id ? venueOf.get(r.venue_id) : undefined, site: r.site ? siteOf.get(r.site) : undefined }))
+    .filter((x) => x.venue || x.site)
+    .slice(0, 5)
   if (snapshot || !recent.length) return null
   return (
     <section aria-labelledby="recent">
       <Heading id="recent" title="Just added" />
       <ul className="mt-4 space-y-3.5">
-        {recent.map((r) => {
-          const v = byId.get(r.venue_id)!
+        {recent.map(({ r, venue: v, site }) => {
+          const to = v ? venuePath(v) : sitePath(site!)
           return (
             <li key={r.id} className="flex items-center gap-3">
-              <Link to={venuePath(v)} aria-hidden="true" tabIndex={-1} className="shrink-0">
-                <VenueThumb venue={v} className="size-10 rounded-lg" />
+              <Link to={to} aria-hidden="true" tabIndex={-1} className="shrink-0">
+                {v ? <VenueThumb venue={v} className="size-10 rounded-lg" /> : <SiteThumb site={site!} className="size-10 rounded-lg" />}
               </Link>
               <p className="min-w-0 text-[0.9375rem] leading-snug">
                 <span className="font-semibold">{r.author}</span> sent {SENT[r.kind]} for{' '}
-                <Link to={venuePath(v)} className="link">
-                  {v.name}
+                <Link to={to} className="link">
+                  {v ? v.name : siteName(site!)}
                 </Link>
                 <span className="text-muted"> · {ago(r.published_at)}</span>
               </p>

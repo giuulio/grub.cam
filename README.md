@@ -57,7 +57,7 @@ What happens to each thing a member sends, from [`/send`](https://grub.cam/send)
 |---|---|---|
 | **Menu** (photos or PDFs of the board, up to 10, or typed; a note for context) | Reads it into the menu text format as the sender watches, and decides whether it can go up as it is; if not, tells the sender what to send instead | Up within minutes when the model is confident, it parses, is for that venue, is dated yesterday or later, and the venue's menu isn't scripted; otherwise a person looks |
 | **Price list**, **hours** | Reads them, given what the site lists now, so part of a board or a typed change comes back as the whole list, and decides whether they can go up; if not, tells the sender what to send instead | Up within minutes when it parses and is for that venue; what it replaced is kept, and `npm run submissions -- reject <id>` puts it back |
-| **Photo of the venue** | Checks it's a real photo of the venue with no recognisable face, and writes its alt text | Up within minutes when it passes and no other member's photo of the venue went up that day (no limit on one member's), credited to the member's name under CC BY 4.0; the venue keeps its old photo until the new one's files are deployed |
+| **Photo of the venue**, or of a college or site for its page's banner | Checks it's a real photo of the venue (or of the college or site) with no recognisable face, and writes its alt text | Up within minutes when it passes and no other member's photo of it went up that day (no limit on one member's), credited to the member's name under CC BY 4.0; the venue keeps its old photo until the new one's files are deployed |
 | **Review** (1–5, optional words) | A rating alone goes straight up; words go through OpenAI's moderation and a check that they're about the venue and name no one | Shown anonymously once a venue has 5 |
 | **Correction** (“Report a change”: hours, prices, menu, formal hall, diet, location, closed) | — | A person reads it; hours, prices and menus are steered to their own kinds, which go up by themselves |
 
@@ -97,7 +97,7 @@ Reading needs no account and no keys beyond the publishable one. Sending in need
 
 - Everything lives in Supabase. Menus are fetched from public college and University sources every two hours (`scripts/ingest`), transcribed from PDFs and image menus, or sent in by members, and re-published with attribution.
 - [`scripts/ingest/sources.ts`](scripts/ingest/sources.ts) records how each venue publishes its menu.
-- Photos of venues are our own, members', or openly licensed from Wikimedia Commons, each credited ([grub.cam/credits](https://grub.cam/credits)).
+- Photos of venues and sites are our own, members', or openly licensed from Wikimedia Commons, each credited ([grub.cam/credits](https://grub.cam/credits)).
 - Something wrong? [Open an issue](https://github.com/giuulio/grub.cam/issues), or "Report a change" on the venue's page.
 
 ## Roadmap

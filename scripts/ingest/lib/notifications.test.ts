@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { deliverNotices, noticeBody, type SubmissionNotice } from './notifications.ts'
 
-const row: SubmissionNotice = { id: '6b8716a5-624b-4bc1-af90-a2b4c2f54303', venue_id: 'west-cambridge/cavendish-cafe', kind: 'prices', topic: null, created_at: '2026-10-12T15:00:00Z' }
+const row: SubmissionNotice = { id: '6b8716a5-624b-4bc1-af90-a2b4c2f54303', venue_id: 'west-cambridge/cavendish-cafe', site: null, kind: 'prices', topic: null, created_at: '2026-10-12T15:00:00Z' }
 
 describe('submission notifications', () => {
   it('announces receipt without leaking private text or identity, regardless of publication status', async () => {
@@ -14,6 +14,10 @@ describe('submission notifications', () => {
     expect(body).toContain('https://grub.cam/west-cambridge/cavendish-cafe')
     for (const value of [privateRow.note, privateRow.user_email, privateRow.transcription, privateRow.photo_path]) expect(body).not.toContain(value)
     expect(acknowledge).toHaveBeenCalledWith(row.id)
+  })
+
+  it('names a site photo by the site whose page it is for', () => {
+    expect(noticeBody({ ...row, venue_id: null, site: 'robinson', kind: 'photo' })).toContain('New site photo submitted for [robinson](https://grub.cam/robinson)')
   })
 
   it('does not duplicate a comment when the database acknowledgement failed after posting', async () => {

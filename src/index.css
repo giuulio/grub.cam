@@ -40,6 +40,12 @@
   --color-notice-bg: var(--notice-bg);
   --color-alert: var(--alert);
   --color-alert-bg: var(--alert-bg);
+  --color-edge: var(--edge);
+}
+
+/* The hairline round the search and the header's controls, one colour for all of them in either theme: the ink, faint */
+:root {
+  --edge: color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 :root {
@@ -208,13 +214,14 @@ select option, select optgroup {
   }
   /* The search, as the page's one main control: a soft Cambridge Blue glow, stronger while typing in it. */
   .search-glow {
-    border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+    border-color: var(--edge);
     box-shadow: 0 1px 3px #1338440f, 0 6px 30px color-mix(in srgb, #8ee8d8 60%, transparent);
   }
   /* The header's controls beside the search: as tall as it and edged as it is (a hairline, a faint shadow), so they sit
-     level with it rather than looming; their words and icons as large as what's typed in it. */
+     level with it rather than looming; their words and icons as large as what's typed in it. The fill stops inside the
+     hairline, so it shows the same round a filled one (Contribute) as round the rest. */
   .header-pill {
-    @apply flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-ink/12 bg-canvas text-lg font-semibold text-ink transition-colors hover:bg-ink/5 sm:h-14;
+    @apply flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-edge bg-canvas bg-clip-padding text-lg font-semibold text-ink transition-colors hover:bg-ink/5 sm:h-14;
     box-shadow: 0 1px 3px #1338440f;
   }
   .search-glow:focus-within {

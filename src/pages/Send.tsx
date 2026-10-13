@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { AlertCircle, Buildings, Camera, Clock, DocumentText, Flag, Gallery, MenuBoard, Receipt, Search, Sparkles, TickCircle, X } from 'reicon-react'
+import { AlertCircle, Buildings, Camera, Clock, DocumentText, Flag, Gallery, GraduationCap, MenuBoard, Receipt, Search, Sparkles, TickCircle, X } from 'reicon-react'
 import { Icon } from '../components/Icon.tsx'
 import { useReady } from '../lib/data.tsx'
 import { MEAL_LABEL } from '../lib/filters.ts'
 import { mealNow, readableLines, type Readable } from '../lib/reading.ts'
-import { SITE_NAME, siteName, venuePath } from '../lib/site.ts'
+import { SITE_NAME, siteName, sitePath, venuePath } from '../lib/site.ts'
 import { creditName, isCamEmail, signIn, signOut, useSession, useSignInEnabled } from '../lib/auth.ts'
 import { MAX_PHOTOS, send, shrink, type SubmitKind, type SubmitResult, type Topic } from '../lib/submit.ts'
 import { formatISODate } from '../lib/time/clock.ts'
@@ -38,18 +38,20 @@ const isPdf = (f: File) => f.type === 'application/pdf'
 
 /**
  * /send?venue=<site>/<venue>&kind=menu|prices|hours|photo|other[&date=&meal=]: what someone in a venue can tell us, in
- * one go. Photos of the board or PDFs (up to MAX_PHOTOS, from the camera or the library), with a note for context, or
+ * one go; /send?site=<site>&kind=photo: a better photo of a college or site itself, for its page's banner. Photos of the board or PDFs (up to MAX_PHOTOS, from the camera or the library), with a note for context, or
  * the text typed. An AI model reads them as the sender watches, and its verdict decides: up within minutes, or back to
  * the sender with what to send instead. A photo of the venue is checked by a model; a correction goes to a person.
  */
 export function Send() {
-  const { venues } = useReady()
+  const { venues, sites } = useReady()
   const now = useNow()
   const session = useSession()
   const canSignIn = useSignInEnabled()
   const [params, setParams] = useSearchParams()
   const venue = venues.find((v) => v.id === params.get('venue'))
-  const kind = (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu') as SubmitKind
+  // A photo of the site itself, for its page's banner: the one thing a site takes
+  const site = venue ? undefined : sites.find((s) => s.slug === params.get('site'))
+  const kind = (site ? 'photo' : (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu')) as SubmitKind
   const topic = kind === 'other' ? TOPICS.find(([t]) => t === params.get('topic'))?.[0] : undefined
   const set = (k: string, v?: string) => setParams((p) => { const n = new URLSearchParams(p); if (v) n.set(k, v); else n.delete(k); return n }, { replace: true })
 
@@ -105,7 +107,7 @@ export function Send() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!venue || !session) return
+    if (!(venue || site) || !session) return
     if (kind === 'photo' && !shown.length) return setError('Add the photo.')
     if (kind === 'other' && !note.trim()) return setError('Say what’s changed.')
     if (!shown.length && !note.trim()) return setError('Add a photo, or type it out.')
@@ -114,10 +116,10 @@ export function Send() {
     setError(undefined)
     try {
       // A menu's days and meals come from the board; where it says neither, it's for now's meal
-      const fallback = { date: params.get('date') ?? now.date, service: (params.get('meal') as Meal | null) ?? mealNow(venue, now) }
+      const fallback = kind === 'menu' && venue ? { date: params.get('date') ?? now.date, service: (params.get('meal') as Meal | null) ?? mealNow(venue, now), asBoard: true } : {}
       const r = await send(
         session.access_token,
-        { venue: venue.id, kind, ...(kind === 'menu' ? { ...fallback, asBoard: true } : {}), topic, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value },
+        { ...(venue ? { venue: venue.id } : { site: site!.slug }), kind, ...fallback, topic, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value },
         shown.map((s) => s.file),
         setLive,
       )
@@ -164,7 +166,7 @@ export function Send() {
             )}
           </section>
         ) : done ? (
-          <Thanks result={done} kind={kind} credit={name} venue={venue} again={again} />
+          <Thanks result={done} kind={kind} credit={name} place={venue ? { name: venue.name, to: venuePath(venue) } : site && { name: siteName(site), to: sitePath(site) }} again={again} />
         ) : busy && reads(kind) ? (
           <Reading kind={kind} files={shown} live={live} />
         ) : (
@@ -173,7 +175,7 @@ export function Send() {
               <h1 className="title text-4xl">Send what you see</h1>
               <p className="mt-2 flex items-center gap-2 text-muted">
                 <Icon of={Sparkles} className="size-4 shrink-0" />
-                {kind === 'photo' ? 'A photo of the room for its page.' : kind === 'other' ? 'Tell us what’s changed.' : 'AI reads it and puts it up in minutes.'}
+                {site ? `A photo of ${site.short_name ?? site.name} for the top of its page.` : kind === 'photo' ? 'A photo of the room for its page.' : kind === 'other' ? 'Tell us what’s changed.' : 'AI reads it and puts it up in minutes.'}
               </p>
             </div>
 
@@ -185,18 +187,29 @@ export function Send() {
                 </span>
                 <button type="button" onClick={() => set('venue')} className="link cursor-pointer text-sm text-muted">Change</button>
               </p>
+            ) : site ? (
+              <p className="flex items-center gap-3 rounded-xl border border-ink/10 px-4 py-3">
+                <Icon of={site.kind === 'college' ? GraduationCap : Buildings} className="size-5 shrink-0 text-muted" />
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-semibold">{siteName(site)}</span> <span className="text-muted">its page’s banner</span>
+                </span>
+                <button type="button" onClick={() => set('site')} className="link cursor-pointer text-sm text-muted">Change</button>
+              </p>
             ) : (
               <VenuePicker venues={venues} onPick={(id) => set('venue', id)} />
             )}
 
-            <div role="radiogroup" aria-label="What it is" className="flex flex-wrap gap-2">
-              {KINDS.map(([k, label, icon]) => (
-                <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => set('kind', k)} className="chip" data-on={kind === k || undefined}>
-                  <Icon of={icon} className="size-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
+            {/* A site takes only its photo */}
+            {!site && (
+              <div role="radiogroup" aria-label="What it is" className="flex flex-wrap gap-2">
+                {KINDS.map(([k, label, icon]) => (
+                  <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => set('kind', k)} className="chip" data-on={kind === k || undefined}>
+                    <Icon of={icon} className="size-4" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {kind === 'other' && (
               <div role="radiogroup" aria-label="What it's about" className="flex flex-wrap gap-2">
@@ -221,9 +234,9 @@ export function Send() {
             <input ref={library} type="file" accept={kind === 'photo' ? 'image/*' : 'image/*,application/pdf'} multiple={kind !== 'photo'} className="sr-only" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = '' }} />
             <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); add([...e.dataTransfer.files]) }} className="rounded-xl border-2 border-dashed border-ink/15 p-4">
               {kind === 'photo' && shown[0] && (
-                // How it will look at the top of the venue's page: cropped as the banner is, the name over its foot
+                // How it will look at the top of the page: cropped as the banner is, the name over its foot
                 <div className="relative mb-3">
-                  <img src={shown[0].url} alt="Your photo, cropped as the venue's banner" className="aspect-5/2 w-full rounded-lg object-cover" />
+                  <img src={shown[0].url} alt={`Your photo, cropped as ${site ? 'its page' : 'the venue'}’s banner`} className="aspect-5/2 w-full rounded-lg object-cover" />
                   <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-0.5 text-xs text-white backdrop-blur">
                     <Icon of={Camera} className="size-3.5" />
                     {name ?? 'A member'}
@@ -282,7 +295,7 @@ export function Send() {
             )}
 
             <div className="sticky bottom-0 z-10 -mx-4 space-y-2 border-t border-ink/10 bg-canvas/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-              <button type="submit" disabled={!venue || busy} className="btn btn-primary w-full justify-center sm:w-auto">
+              <button type="submit" disabled={!(venue || site) || busy} className="btn btn-primary w-full justify-center sm:w-auto">
                 <Icon of={reads(kind) ? Sparkles : Flag} />
                 {busy ? 'Sending…' : 'Send'}
               </button>
@@ -429,11 +442,12 @@ function dayLabel(text: string): string {
   return `${/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatISODate(date, { weekday: 'long', day: 'numeric', month: 'long' }) : date}${meal ? ` · ${MEAL_LABEL[meal as Meal] ?? meal}` : ''}`
 }
 
-function Thanks({ result, kind, credit, venue, again }: { result: SubmitResult; kind: SubmitKind; credit: string | null; venue?: Venue; again: () => void }) {
+/** `place`: the venue's or the site's page it's going up on. */
+function Thanks({ result, kind, credit, place, again }: { result: SubmitResult; kind: SubmitKind; credit: string | null; place?: { name: string; to: string }; again: () => void }) {
   const up = result.status === 'queued'
   const what = kind === 'menu' ? 'The menu' : kind === 'prices' ? 'The prices' : kind === 'hours' ? 'The hours' : kind === 'photo' ? 'Your photo' : 'It'
   const message: ReactNode = up
-    ? `${what} ${kind === 'prices' || kind === 'hours' ? 'are' : 'is'} on ${venue?.name ?? 'the venue'}’s page within minutes, ${kind === 'photo' ? 'credited to' : 'sent in by'} ${credit ?? 'you'}.`
+    ? `${what} ${kind === 'prices' || kind === 'hours' ? 'are' : 'is'} on ${place?.name ?? 'the venue'}’s page within minutes, ${kind === 'photo' ? 'credited to' : 'sent in by'} ${credit ?? 'you'}.`
     : result.reason
       ? `A person checks it first: ${result.reason.replace(/\.?$/, '.')}`
       : result.status === 'received'
@@ -444,9 +458,9 @@ function Thanks({ result, kind, credit, venue, again }: { result: SubmitResult; 
       <Icon of={up ? TickCircle : Clock} className={`size-10 ${up ? 'text-open-ink' : 'text-muted'}`} />
       <h1 className="title text-4xl">{up ? 'It’s going up' : 'Thanks'}</h1>
       <p className="text-muted">{message}</p>
-      {venue && (
+      {place && (
         <div className="flex flex-wrap gap-3 pt-2">
-          <Link to={venuePath(venue)} className="btn btn-primary">See {venue.name}</Link>
+          <Link to={place.to} className="btn btn-primary">See {place.name}</Link>
           <button type="button" onClick={again} className="btn btn-secondary">Send another</button>
         </div>
       )}

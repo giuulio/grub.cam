@@ -1,8 +1,10 @@
-// npm run submissions -- smoke [--venue clare/buttery] [--photo venue.jpg] [--review]
-// Sends something in as a member would, through the deployed `submit` function, without Google: a throwaway
+// npm run submissions -- smoke [--venue clare/buttery] [--photo venue.jpg [--site robinson]] [--review]
+// Sends something in as a member would, through the deployed `submit` function (or VITE_SUBMIT_FUNCTION's, a copy
+// being tried, as the app does), without Google: a throwaway
 // @cam.ac.uk account made through the admin API (no email is sent), signed in with a magic-link token it never mails,
 // then a typed menu (read by the model when OPENAI_API_KEY is set, then marked wrong so nothing is published),
-// optionally a photo of the venue (the model's verdict, then rejected at once, before the photos Action could take it)
+// optionally a photo of the venue, or with --site of the site itself for its banner (the model's verdict, then
+// rejected at once, before the photos Action could take it)
 // and a review (checked, then taken back). Everything it made is deleted at the end, the model calls' log aside.
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'node:crypto'
@@ -10,8 +12,9 @@ import { readFileSync } from 'node:fs'
 
 type Answer = { status?: string; error?: string; transcription?: string | null; unsure?: string | null; reason?: string | null; id?: string }
 
-export async function smoke(o: { venue: string; photo?: string; review?: boolean }) {
+export async function smoke(o: { venue: string; site?: string; photo?: string; review?: boolean }) {
   const url = process.env.VITE_SUPABASE_URL, secret = process.env.SUPABASE_SECRET_KEY, publishable = process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  const fn = `${url}/functions/v1/${process.env.VITE_SUBMIT_FUNCTION || 'submit'}`
   if (!url || !secret || !publishable) throw new Error('needs VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_KEY')
   const admin = createClient(url, secret, { auth: { persistSession: false } })
   const email = `grub-smoke-${randomBytes(4).toString('hex')}@cam.ac.uk`
@@ -34,7 +37,7 @@ export async function smoke(o: { venue: string; photo?: string; review?: boolean
 
     const call = async (body: FormData | object): Promise<Answer> => {
       const form = body instanceof FormData
-      const res = await fetch(`${url}/functions/v1/submit`, {
+      const res = await fetch(fn, {
         method: 'POST',
         headers: { authorization: `Bearer ${token}`, apikey: publishable, ...(form ? {} : { 'content-type': 'application/json' }) },
         body: form ? body : JSON.stringify(body),
@@ -43,7 +46,7 @@ export async function smoke(o: { venue: string; photo?: string; review?: boolean
     }
 
     // Signed out: refused
-    const anon = await fetch(`${url}/functions/v1/submit`, { method: 'POST', headers: { apikey: publishable }, body: new FormData() })
+    const anon = await fetch(fn, { method: 'POST', headers: { apikey: publishable }, body: new FormData() })
     check(anon.status === 401, `no sign-in is refused (${anon.status})`)
 
     // A typed menu
@@ -60,18 +63,19 @@ export async function smoke(o: { venue: string; photo?: string; review?: boolean
       check(flagged.status === 'needs_review', `marked wrong, so it waits for a person: ${flagged.error ?? flagged.status}`)
     } else if (sent.status === 'received') console.log('    no model read it (no OPENAI_API_KEY, the OpenAI budget spent, or the call failed: see the function’s logs)')
 
-    // A photo of the venue: the model's verdict, then rejected before anything could publish it
+    // A photo of the venue (or the site): the model's verdict, then rejected before anything could publish it
     if (o.photo) {
       const photo = new FormData()
-      photo.set('venue', o.venue)
+      if (o.site) photo.set('site', o.site)
+      else photo.set('venue', o.venue)
       photo.set('kind', 'photo')
       photo.set('photo', new Blob([readFileSync(o.photo)], { type: o.photo.endsWith('.png') ? 'image/png' : o.photo.endsWith('.webp') ? 'image/webp' : 'image/jpeg' }), 'photo.jpg')
       const t1 = Date.now()
       const vetted = await call(photo)
       if (vetted.id) await admin.from('submissions').update({ status: 'rejected', review_note: 'smoke test' }).eq('id', vetted.id)
-      check(!vetted.error, `photo sent: ${vetted.error ?? vetted.status}${vetted.reason ? `: ${vetted.reason}` : ''} (${((Date.now() - t1) / 1000).toFixed(1)} s)`)
-      const { data: row } = vetted.id ? await admin.from('submissions').select('alt, credit').eq('id', vetted.id).single() : { data: null }
-      if (row) console.log(`    alt: ${row.alt ?? '(none)'}; credit: ${row.credit ?? '(none)'}`)
+      check(!vetted.error, `${o.site ? `photo of ${o.site}` : 'photo'} sent: ${vetted.error ?? vetted.status}${vetted.reason ? `: ${vetted.reason}` : ''} (${((Date.now() - t1) / 1000).toFixed(1)} s)`)
+      const { data: row } = vetted.id ? await admin.from('submissions').select('alt, credit, venue_id, site').eq('id', vetted.id).single() : { data: null }
+      if (row) console.log(`    of: ${row.venue_id ?? `site ${row.site}`}; alt: ${row.alt ?? '(none)'}; credit: ${row.credit ?? '(none)'}`)
     }
 
     // A review with words, then taken back

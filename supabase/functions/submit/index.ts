@@ -27,7 +27,9 @@
 // one again.
 //
 // A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a person: a model checks
-// it (vet()) and, when it passes and no other member's photo of the venue went up in the last day, the row is `queued`
+// it (vet()) and, when it passes and no other member's photo of the venue went up in the last day, the row is `queued`.
+// A photo of a site (its page's banner: `site` in place of `venue`, migration 0040) goes the same way, its check asking
+// for the college or site rather than a room
 // and the photos Action (.github/workflows/photos.yml) is started (dispatch_workflow(), migration 0031, with the GitHub
 // token in Vault). That Action makes its sizes, commits them and adds the photo ahead of the venue's others, credited
 // to the sender's name. Anything else waits for a person.
@@ -81,6 +83,9 @@ const fail = (message: string, status = 400) => json({ error: message }, status)
 const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
 
 type Venue = { id: string; slug: string; name: string; type: 'hall' | 'cafe' | 'bar'; site: string; sites: { name: string; short_name: string | null } | null }
+type Site = { slug: string; name: string; short_name: string | null; kind: 'college' | 'university' }
+/** What a photo is of: a venue, or a site itself (its page's banner). */
+type Subject = { venue: Venue; site?: undefined } | { site: Site; venue?: undefined }
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())
 
@@ -169,13 +174,19 @@ function streamed(work: (send: (event: Record<string, unknown>) => void) => Prom
  * Whether a member's photo of a venue can go up without a person looking: the model's verdict, a reason the sender can
  * act on when it can't, and alt text. Null when no model could look.
  */
-async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | null> {
-  const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
+async function vet(id: string, about: Subject, photo: Image): Promise<Verdict | null> {
+  const { venue, site } = about
+  const shows = venue
+    ? `${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${venue.sites?.short_name ?? venue.sites?.name ?? venue.site}`
+    : `${site.name}, ${site.kind === 'college' ? 'a Cambridge college' : 'a University of Cambridge site'}, across the top of its page`
+  const what = venue
+    ? 'a dining hall, café, bar, servery, counter, seating or the building one is in'
+    : `${site.kind === 'college' ? 'the college' : 'the site'}: its buildings, a court, its gardens or grounds, or a hall or café in it`
   const text = [
-    `You check photos that members of the University of Cambridge send for the page of a place to eat or drink, before they replace its photo without anyone else looking.`,
-    `This one is meant to show ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}.`,
-    `It can go up (ok: true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows a dining hall, café, bar, servery, counter, seating or the building one is in; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
-    `The alt text says what the photo shows, e.g. "The servery counter with the day's hot dishes, from the queue".`,
+    `You check photos that members of the University of Cambridge send for the page of ${venue ? 'a place to eat or drink' : 'a college or University site'}, before they replace its photo without anyone else looking.`,
+    `This one is meant to show ${shows}.`,
+    `It can go up (ok: true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows ${what}; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
+    `The alt text says what the photo shows, e.g. ${venue ? `"The servery counter with the day's hot dishes, from the queue"` : `"First Court from the lawn, the chapel behind"`}.`,
   ].join('\n\n')
   const v = await ask<Verdict>('vet_photo', text, VERDICT, [photo], { submission_id: id })
   return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
@@ -188,15 +199,16 @@ async function dispatchPublish() {
 }
 
 /**
- * A member's photo of the venue: up within minutes when a model passes it and no other member's photo of the venue
- * went up in the last day, else queued for a person. Their own photos don't count: a second of the same venue goes up.
+ * A member's photo of the venue (or of the site): up within minutes when a model passes it and no other member's photo
+ * of it went up in the last day, else queued for a person. Their own photos don't count: a second of the same goes up.
  */
-async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: Image): Promise<Response> {
+async function photoOf(id: string, about: Subject, sender: { id: string }, photo: Image): Promise<Response> {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
-  // Two members swapping a venue's photo back and forth: the second waits for a person
-  const { count: others } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('venue_id', venue.id).eq('kind', 'photo').in('status', ['queued', 'approved']).neq('user_id', sender.id).gte('created_at', day)
-  const waitFor = (others ?? 0) > 0 ? 'this venue had a new photo today' : null
-  const verdict = await vet(id, venue, photo)
+  // Two members swapping a photo back and forth: the second waits for a person
+  const [column, value] = about.venue ? ['venue_id', about.venue.id] : ['site', about.site.slug]
+  const { count: others } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq(column, value).eq('kind', 'photo').in('status', ['queued', 'approved']).neq('user_id', sender.id).gte('created_at', day)
+  const waitFor = (others ?? 0) > 0 ? `this ${about.venue ? 'venue' : 'page'} had a new photo today` : null
+  const verdict = await vet(id, about, photo)
   const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: CHECK_MODEL } : {}) }
   if (verdict?.ok && !waitFor) {
     await sb.from('submissions').update({ ...patch, status: 'queued' }).eq('id', id)
@@ -226,6 +238,11 @@ async function senderOf(req: Request): Promise<{ id: string; email: string; name
 async function venueOf(id: string): Promise<Venue | null> {
   const { data } = await sb.from('venues').select('id, slug, name, type, site, sites(name, short_name)').eq('id', id).maybeSingle()
   return (data as Venue | null) ?? null
+}
+
+async function siteOf(slug: string): Promise<Site | null> {
+  const { data } = await sb.from('sites').select('slug, name, short_name, kind').eq('slug', slug).maybeSingle()
+  return (data as Site | null) ?? null
 }
 
 /**
@@ -434,8 +451,12 @@ Deno.serve(async (req) => {
   if (field('website')) return json({ id: crypto.randomUUID(), status: 'received' }) // honeypot: pretend
   const kind = field('kind') as Kind
   if (!KINDS.includes(kind)) return fail('kind must be menu, prices, hours, photo or other')
-  const venue = await venueOf(field('venue'))
-  if (!venue) return fail('no such venue', 404)
+  // A photo of a site itself names the site; anything else, a venue
+  const site = field('site') ? await siteOf(field('site')) : null
+  if (field('site') && !site) return fail('no such site', 404)
+  if (site && kind !== 'photo') return fail('a site takes a photo of it; anything else goes to one of its venues')
+  const venue = site ? null : await venueOf(field('venue'))
+  if (!site && !venue) return fail('no such venue', 404)
   const date = field('date') || null
   if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('date as YYYY-MM-DD')
   const service = field('service') || null
@@ -457,7 +478,7 @@ Deno.serve(async (req) => {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('cf-connecting-ip') ?? ''
   const ipHash = ip ? await sha256(ip + (Deno.env.get('IP_SALT') ?? '')) : null
 
-  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind, date, service, topic, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, credit: sender.name }).select('id').single()
+  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue?.id ?? null, site: site?.slug ?? null, kind, date, service, topic, note, user_id: sender.id, user_email: sender.email, contact: sender.email, ip_hash: ipHash, credit: sender.name }).select('id').single()
   if (error) return fail(error.message, 500)
   const id: string = row.id
 
@@ -475,7 +496,8 @@ Deno.serve(async (req) => {
   const stored = paths.length > 0 && !(await sb.from('submissions').update({ photo_path: paths[0], photo_paths: paths }).eq('id', id)).error
 
   if (kind === 'photo' && !stored) return fail('the photo did not save; try again', 500)
-  if (kind === 'photo') return photoOf(id, venue, sender, images[0])
+  if (kind === 'photo') return photoOf(id, site ? { site } : { venue: venue! }, sender, images[0])
+  if (!venue) return fail('no such venue', 404)
   if (!['menu', 'prices', 'hours'].includes(kind)) return json({ id, status: 'received', transcription: null })
   const t = kind as Transcribable
   const siteName = venue.sites?.short_name ?? venue.sites?.name ?? venue.site

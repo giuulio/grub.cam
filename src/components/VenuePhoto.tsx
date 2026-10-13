@@ -4,7 +4,7 @@ import { Buildings, Camera, GraduationCap } from 'reicon-react'
 import { TYPE_LABEL } from '../lib/filters.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { byMember, licenceUrl, photoSrc, sitePhoto, sourceUrl, venuePhoto } from '../lib/photos.ts'
-import { sendPath } from '../lib/site.ts'
+import { sendPath, sitePhotoPath } from '../lib/site.ts'
 import type { Photo, Site, Venue, VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 
@@ -97,7 +97,7 @@ export function VenueThumb({ venue, className = 'size-16' }: { venue: Venue; cla
  * plain tile with a mortarboard for a college and a building for a University site (`icon` sized). Decorative: the
  * row or page names the site. `sizes` is how wide it's shown; `eager` for a page's banner.
  */
-export function SiteImage({ site, sizes, className = '', icon = 'size-[40%]', eager = false }: { site: Site; sizes: string; className?: string; icon?: string; eager?: boolean }) {
+export function SiteImage({ site, sizes, className = '', icon = 'size-[40%]', eager = false, overlay }: { site: Site; sizes: string; className?: string; icon?: string; eager?: boolean; overlay?: ReactNode }) {
   const photo = sitePhoto(site)
   const [failed, setFailed] = useState<string>()
   if (!photo || failed === photo.path)
@@ -106,7 +106,14 @@ export function SiteImage({ site, sizes, className = '', icon = 'size-[40%]', ea
         <Icon of={site.kind === 'college' ? GraduationCap : Buildings} className={icon} />
       </span>
     )
-  return <PhotoImg photo={photo} sizes={sizes} eager={eager} decorative onFail={() => setFailed(photo.path)} className={`shrink-0 ${className}`} />
+  const img = <PhotoImg photo={photo} sizes={sizes} eager={eager} decorative onFail={() => setFailed(photo.path)} className={overlay ? 'size-full rounded-[inherit]' : `shrink-0 ${className}`} />
+  if (!overlay) return img
+  return (
+    <span className={`relative block shrink-0 ${className}`}>
+      {img}
+      {overlay}
+    </span>
+  )
 }
 
 /** A site in a list: a small square of its photo, rounded as `className` says (a list's thumbnail is `rounded-lg`). */
@@ -130,21 +137,28 @@ export function VenueBanner({ venue }: { venue: Venue }) {
   return (
     <figure className="relative -mx-4 mb-8 sm:mx-0">
       <VenueImage venue={venue} sizes={BANNER_SIZES} eager icon="size-10" className={photo ? BANNER : BANNER_TILE} overlay={member && <MemberCredit photo={photo} />} />
-      <Link
-        to={sendPath(venue, 'photo')}
-        className="absolute top-3 right-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-canvas/90 px-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition-colors hover:bg-canvas sm:top-4 sm:right-4"
-      >
-        <Icon of={Camera} className="size-4" />
-        {photo ? (
-          <span>
-            Have a better photo?<span className="max-sm:hidden"> Send it</span>
-          </span>
-        ) : (
-          'Add a photo'
-        )}
-      </Link>
+      <SendPhoto to={sendPath(venue, 'photo')} has={!!photo} />
       {photo && !member && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
+  )
+}
+
+/** In a banner's top corner, the way to send a better photo (or a first), which replaces it once a model has checked it. */
+function SendPhoto({ to, has }: { to: string; has: boolean }) {
+  return (
+    <Link
+      to={to}
+      className="absolute top-3 right-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-canvas/90 px-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition-colors hover:bg-canvas sm:top-4 sm:right-4"
+    >
+      <Icon of={Camera} className="size-4" />
+      {has ? (
+        <span>
+          Have a better photo?<span className="max-sm:hidden"> Send it</span>
+        </span>
+      ) : (
+        'Add a photo'
+      )}
+    </Link>
   )
 }
 
@@ -165,13 +179,18 @@ function MemberCredit({ photo }: { photo: Photo }) {
   )
 }
 
-/** A site's page banner, as a venue's: its photo across the top, credited under it; a plain tile until it has one. */
+/**
+ * A site's page banner, as a venue's: its photo across the top, credited under it (a member's by name, over its
+ * foot); a plain tile until it has one. In its top corner, the way to send a better one.
+ */
 export function SiteBanner({ site }: { site: Site }) {
   const photo = sitePhoto(site)
+  const member = photo && byMember(photo)
   return (
-    <figure className="-mx-4 mb-8 sm:mx-0">
-      <SiteImage site={site} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} />
-      {photo && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
+    <figure className="relative -mx-4 mb-8 sm:mx-0">
+      <SiteImage site={site} sizes={BANNER_SIZES} eager icon="size-12" className={BANNER} overlay={member && <MemberCredit photo={photo} />} />
+      <SendPhoto to={sitePhotoPath(site)} has={!!photo} />
+      {photo && !member && <PhotoCredit photo={photo} className="mt-2 px-4 sm:px-0" />}
     </figure>
   )
 }

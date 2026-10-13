@@ -146,7 +146,9 @@ export type Credit = { what: 'prices' | 'hours' | 'menu'; date: string | null; s
 /** A member's approved submission, under their name (`contributions`): the leaderboard and what was just added. */
 export type Contribution = {
   id: string
-  venue_id: string
+  /** Where it went up: a venue, or (a photo for its page's banner) a site itself */
+  venue_id: string | null
+  site: string | null
   kind: 'menu' | 'prices' | 'hours' | 'photo' | 'other'
   topic: string | null
   date: string | null
