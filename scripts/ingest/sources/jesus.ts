@@ -1,5 +1,6 @@
 import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
+import { addDays } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
@@ -9,10 +10,15 @@ const EVENTS: [number, MenuDay['service']][] = [
   [2, 'dinner'],
 ]
 
+/** Days ahead the College's own page offers (its datepicker's maxDate "+8W"). Past it, digiboard.php returns a menu
+ * for any date (into 2035, checked 12 Oct 2026), which would keep discovery going for ever. */
+export const JESUS_AHEAD = 56
+
 export const jesus: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
     for (const date of ctx.dates) {
+      if (date > addDays(ctx.today, JESUS_AHEAD)) break
       for (const [eventId, baseService] of EVENTS) {
         const html = await fetchText(`https://apps.jesus.cam.ac.uk/foodmenuview/digiboard.php?event_id=${eventId}&date=${date}`)
         const root = parse(html)

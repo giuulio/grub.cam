@@ -82,7 +82,7 @@ export const SOURCES: MenuSource[] = [
     channel: 'html',
     url: 'https://www.robinson.cam.ac.uk/college-life/garden-restaurant-menu',
     cadence: 'daily, about 2 weeks ahead',
-    notes: '?date= returns the following day; the adapter trusts the heading.',
+    notes: '?date= returns the following day (in the evening at least); the adapter trusts the heading. Over the October clock change an evening run cannot reach the Monday (?date=2026-10-25 shows the 25th, ?date=2026-10-26 the 27th); daytime runs fetch it and saved days stay.',
     adapter: robinson,
   },
   { venue: 'selwyn/hall-servery', channel: 'html', url: 'https://www.sel.cam.ac.uk/current-members/hall-menu', cadence: 'daily, about 4 weeks ahead', adapter: selwyn },
@@ -128,7 +128,7 @@ export const SOURCES: MenuSource[] = [
     channel: 'pdf',
     url: 'https://www.pem.cam.ac.uk/college/catering/information-students/servery-menu',
     cadence: 'weekly, 3-week cycle',
-    notes: 'Only the current cycle week is linked.',
+    notes: 'The page dates each cycle week (Week 1: w/c 5 Oct, 26 Oct, 16 Nov) and links its PDF once posted (Week 2 went up on 13 Oct): save each PDF for every week listed. The unlinked week_2.pdf/week_3.pdf on the server are from 2020.',
   },
   { venue: 'queens/cripps-dining-hall-cafeteria', channel: 'html', url: 'https://www.queens.cam.ac.uk/life-at-queens/catering/dining-hall/weekly-menu/', cadence: 'weekly' },
   {
@@ -136,7 +136,7 @@ export const SOURCES: MenuSource[] = [
     channel: 'pdf',
     url: 'https://www.caths.cam.ac.uk/students/college-facilities-and-forms/catering-for-our-community/cafeteria',
     cadence: 'weekly, 4-week cycle',
-    notes: 'Each PDF is dated at the top. Counters: 1 meat/fish, 2 vegetarian, 3 plant-based. Daily email list: https://lists.cam.ac.uk/sympa/subscribe/caths-menus',
+    notes: 'Each PDF is dated at the top. Dishes are listed by counter 1–3 with no key: tag only what a dish name says. Daily email list: https://lists.cam.ac.uk/sympa/subscribe/caths-menus',
   },
   {
     venue: 'st-edmunds/dining-hall',
@@ -176,6 +176,12 @@ export const SOURCES: MenuSource[] = [
     notes: 'Daily hot lunch, not published online (reported). The seasonal café menu PDF linked from https://www.cdc.events/cavendish-cafe/ is its price list (ingest:prices).',
   },
   { venue: 'downing-site/pathology-cafe', channel: 'none', cadence: 'weekly', notes: 'Menu changes weekly; not published online.' },
+  {
+    venue: 'west-cambridge/the-servery',
+    channel: 'none',
+    cadence: 'weekly',
+    notes: 'A Mon–Fri hot lunch with prices on a board in the servery, naming weekdays but not the week; not online. A member photo of 12 Oct 2026 was saved for that week only.',
+  },
   { venue: 'biomedical-campus/cruk-cafe', channel: 'none', cadence: 'daily', notes: 'Daily menus printed in the café only.' },
   { venue: 'fitzwilliam-museum/courtyard-kitchen', channel: 'pdf', url: 'https://www.cdc.events/events/courtyardkitchen/', cadence: 'seasonal' },
   { venue: 'kettles-yard/garden-kitchen', channel: 'pdf', url: 'https://www.thegardenkitchen.uk/gardenkitchenatkettlesyard', cadence: 'fixed' },
@@ -184,5 +190,5 @@ export const SOURCES: MenuSource[] = [
 
   // No known menu
   { venue: 'sidney-sussex/servery-dining-hall', channel: 'none' },
-  { venue: 'corpus-christi/leckhampton-dining-hall', channel: 'unknown', notes: 'Check whether the Corpus foodmenu `reference` parameter selects Leckhampton.' },
+  { venue: 'corpus-christi/leckhampton-dining-hall', channel: 'unknown', notes: 'Not on the Corpus foodmenu: its `reference` parameter is ignored (0–5 return the same cafeteria menu, checked 12 Oct 2026).' },
 ]

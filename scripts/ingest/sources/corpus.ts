@@ -1,15 +1,19 @@
 import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
+import { addDays } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
+import { JESUS_AHEAD } from './jesus.ts'
 
 const SERVICES: Record<string, MenuDay['service']> = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', brunch: 'brunch' }
 
 export const corpus: Adapter = {
   async fetch(ctx) {
     const days: MenuDay[] = []
+    // The same app as Jesus's, with the same eight weeks on the College's page
     for (const date of ctx.dates) {
+      if (date > addDays(ctx.today, JESUS_AHEAD)) break
       const html = await fetchText(`https://www.corpus.cam.ac.uk/foodmenu/menu/?reference=1&date=${date}`)
       const root = parse(html)
       for (const h3 of root.querySelectorAll('.accordion > h3')) {

@@ -26,6 +26,8 @@ Source quirks worth preserving:
 - St Catharine's PDFs contain the whole four-week cycle and each week's dates. Fitzwilliam and Lucy Cavendish also publish formal menus; save them at service `formal` on the room that holds them.
 - Queens' page has a BotDetect CAPTCHA, including in headless Chrome. Members-only sources need a collaborator.
 - Magdalene can fail locally because of keychain cross-signed certificates; retry with `NODE_USE_SYSTEM_CA=0`.
+- Jesus and Corpus run the same menu app, whose College pages offer dates up to eight weeks ahead. Since 12 Oct 2026 Jesus's endpoint answers any date with a menu (checked into 2035), so both adapters stop at today + 56 days; otherwise discovery never finds an empty week.
+- Pembroke's servery page dates every week of its three-week cycle and links each week's PDF once posted: save each PDF for every week it lists.
 
 ## Submissions
 
