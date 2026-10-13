@@ -84,4 +84,8 @@ describe('price columns', () => {
     expect(unnamedColumns(parsePrices(head + 'columns: Full price | SFC rate\nSingle espresso | £2.20 | £1.32'))).toBeNull()
     expect(unnamedColumns(parsePrices(head + 'Tea | £1.30'))).toBeNull()
   })
+  it('holds sizes given as columns: each size is its own item', () => {
+    expect(unnamedColumns(parsePrices(head + 'columns: Single | Double\nEspresso | £2.20 | £2.60'))).toMatch(/size/)
+    expect(unnamedColumns(parsePrices(head + 'columns: Members | Non-members\nEspresso | £2.20 | £2.60'))).toBeNull()
+  })
 })

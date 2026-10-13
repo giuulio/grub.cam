@@ -9,7 +9,8 @@
 //   ---
 //   columns: Members | Non-members         <- whose each price column is, as the board heads them (a column headed only
 //                                             "£" is "Full price"); saved as the venue's price_terms.tiers. A list with two
-//                                             prices a line needs it unless the venue's columns are already named.
+//                                             prices a line needs it unless the venue's columns are already named. Sizes
+//                                             ("Single | Double") are separate items, never columns.
 //   ## Brunch | brunch                     <- section heading for the lines after it, and the meals they're sold at (default: all)
 //   Bacon rashers x 2 | 95p | £1.30        <- name | price | second price (optional); £3.75, 3.75 or 95p
 //   Sandwiches | £3.24-£3.96               <- a range, as posted
@@ -35,9 +36,14 @@ export type PriceList = { venue: string; source: string; observed_on: string; it
  * students' discounted one.
  */
 export function unnamedColumns(p: PriceList, tiers?: string[] | null): string | null {
+  const sizes = p.columns?.find((c) => SIZE.test(c))
+  if (sizes) return `"${sizes}" is a size, not who pays: list each size as its own item ("Double espresso | £2.60")`
   if (!p.items.some((i) => i.non_member_gbp != null) || (p.columns?.length ?? 0) >= 2 || (tiers?.length ?? 0) >= 2) return null
   return 'two prices a line, but nothing says whose each is: add "columns: first | second", as the board heads them'
 }
+
+/** Column names that are sizes or versions of an item (The Buttery's espresso "Single | Double"), not who pays. */
+const SIZE = /^(single|double|triple|small|medium|regular|large|half|pint|glass|bottle|hot|iced|cold|\d+\s*(ml|cl|oz))$/i
 
 /** "Members | Non-members" as its one or two names. */
 function columnsOf(text: string): string[] {
