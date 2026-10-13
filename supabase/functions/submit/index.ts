@@ -17,16 +17,17 @@
 // own transcription; the ingest Action approves theirs.
 //
 // A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
-// menu or the sender has sent MENUS_PER_DAY today: it's `queued`, and the photos Action (`submissions -- publish`)
-// checks it parses, is for its venue and is dated yesterday or later (no future cutoff), then publishes it; one that isn't waits
-// for a person. A price list or hours goes the same way (LISTS_PER_DAY), and when the sender changed the model's
-// reading of a photo, a model first checks the changed text still says what the photo does (checkReading()). The model
-// reading them is given what the site lists now, so a photo of part of a board, or a typed correction ("Monday closes
-// at 2"), comes back as the whole list with the change made. AUTO_KINDS (default "menu,prices,hours") says which kinds
-// go up without a person; "menu" alone has prices and hours wait for one again.
+// menu: it's `queued`, and the photos Action (`submissions -- publish`) checks it parses, is for its venue and is dated
+// yesterday or later (no future cutoff), then publishes it; one that isn't waits for a person. There's no allowance
+// per sender: one member filling in a whole site in an afternoon is the point. A price list or hours goes the same way,
+// and when the sender changed the model's reading of a photo, a model first checks the changed text still says what
+// the photo does (checkReading()). The model reading them is given what the site lists now, so a photo of part of a
+// board, or a typed correction ("Monday closes at 2"), comes back as the whole list with the change made. AUTO_KINDS
+// (default "menu,prices,hours") says which kinds go up without a person; "menu" alone has prices and hours wait for
+// one again.
 //
-// A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a
-// person: a model checks it (vet()) and, when it passes and the sender's daily allowance has room, the row is `queued`
+// A photo of the venue (kind "photo", the "Have a better photo?" on its page) goes up without a person: a model checks
+// it (vet()) and, when it passes and no other member's photo of the venue went up in the last day, the row is `queued`
 // and the photos Action (.github/workflows/photos.yml) is started (dispatch_workflow(), migration 0031, with the GitHub
 // token in Vault). That Action makes its sizes, commits them and adds the photo ahead of the venue's others, credited
 // to the sender's name. Anything else waits for a person.
@@ -54,10 +55,6 @@ const TOPICS = ['hours', 'prices', 'menu', 'formal', 'diet', 'location', 'closed
 const MAX_PHOTO = 5 * 1024 * 1024
 const MAX_PDF = 10 * 1024 * 1024
 const MAX_PHOTOS = 10 // a board on several sheets, read together; a photo of the venue is one
-const PER_HOUR = 12 // submissions from one account (not one IP: a college's Wi-Fi can be one address)
-const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
-const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
-const LISTS_PER_DAY = 6 // and their price lists, and their hours, each
 const AUTO_KINDS = (Deno.env.get('AUTO_KINDS') ?? 'menu,prices,hours').split(',').map((k) => k.trim())
 // No daily cap unless one is set: OpenAI's project budget is the limit
 const DAILY_USD = Deno.env.get('LLM_DAILY_USD') ? Number(Deno.env.get('LLM_DAILY_USD')) : Infinity
@@ -190,15 +187,14 @@ async function dispatchPublish() {
 }
 
 /**
- * A member's photo of the venue: up within minutes when a model passes it and nothing says to wait (the sender's
- * daily allowance, another member's photo of the venue in the last day), else queued for a person.
+ * A member's photo of the venue: up within minutes when a model passes it and no other member's photo of the venue
+ * went up in the last day, else queued for a person. Their own photos don't count: a second of the same venue goes up.
  */
 async function photoOf(id: string, venue: Venue, sender: { id: string }, photo: Image): Promise<Response> {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
-  const { count: mine } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).eq('kind', 'photo').in('status', ['queued', 'approved']).gte('created_at', day)
   // Two members swapping a venue's photo back and forth: the second waits for a person
-  const { count: recent } = await sb.from('photos').select('*', { count: 'exact', head: true }).eq('venue_id', venue.id).not('submission_id', 'is', null).gte('created_at', day)
-  const waitFor = (mine ?? 0) >= PHOTOS_PER_DAY ? 'you have sent a few today' : (recent ?? 0) > 0 ? 'this venue had a new photo today' : null
+  const { count: others } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('venue_id', venue.id).eq('kind', 'photo').in('status', ['queued', 'approved']).neq('user_id', sender.id).gte('created_at', day)
+  const waitFor = (others ?? 0) > 0 ? 'this venue had a new photo today' : null
   const verdict = await vet(id, venue, photo)
   const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: CHECK_MODEL } : {}) }
   if (verdict?.ok && !waitFor) {
@@ -232,9 +228,9 @@ async function venueOf(id: string): Promise<Venue | null> {
 
 /**
  * A sender confirming (possibly edited) text. A menu goes up without a person when the venue's menu isn't a script's
- * and the sender's day has room (`queued`: the photos Action checks it reads and is for a sensible day, and publishes
- * it); anything else joins the review queue. `wrong`: the sender says the reading is wrong and leaves it to a person,
- * with the photo. Only while the row is fresh and unreviewed.
+ * (`queued`: the photos Action checks it reads and is for a sensible day, and publishes it); anything else joins the
+ * review queue. `wrong`: the sender says the reading is wrong and leaves it to a person, with the photo. Only while
+ * the row is fresh and unreviewed.
  */
 async function confirm(sender: { id: string }, body: { id?: string; transcription?: string; wrong?: boolean }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
@@ -250,7 +246,7 @@ async function confirm(sender: { id: string }, body: { id?: string; transcriptio
   if (text.length > 20000) return fail('transcription too long (20,000 characters at most); split it into separate submissions')
   if (!text.includes('\n---\n')) return fail('the text needs its header and a --- line')
   const edited = text !== (row.transcription ?? '').trim()
-  const hold = await holdOf(row, sender.id, text, edited)
+  const hold = await holdOf(row, text, edited)
   const status = hold === null ? 'queued' : 'needs_review'
   await sb.from('submissions').update({ transcription: text, status, review_note: hold || null, ...(edited ? { transcribed_by: 'sender' } : {}) }).eq('id', body.id)
   if (status === 'queued') await dispatchPublish()
@@ -259,16 +255,13 @@ async function confirm(sender: { id: string }, body: { id?: string; transcriptio
 
 /**
  * Why a member's confirmed reading waits for a person, or null when it can go up without one; '' when it simply isn't
- * a kind that does (AUTO_KINDS). A menu: menuWait(). A price list or hours: the sender's day has room, and a reading
- * of a photo they changed still says what the photo does.
+ * a kind that does (AUTO_KINDS). A menu: menuWait(). A price list or hours: a reading of a photo the sender changed
+ * still says what the photo does.
  */
-async function holdOf(row: { id: string; kind: Kind; venue_id: string; photo_path: string | null; photo_paths: string[] | null }, userId: string, text: string, edited: boolean): Promise<string | null> {
+async function holdOf(row: { id: string; kind: Kind; venue_id: string; photo_path: string | null; photo_paths: string[] | null }, text: string, edited: boolean): Promise<string | null> {
   if (!AUTO_KINDS.includes(row.kind)) return ''
-  if (row.kind === 'menu') return menuWait(row.venue_id, userId)
+  if (row.kind === 'menu') return menuWait(row.venue_id)
   if (row.kind !== 'prices' && row.kind !== 'hours') return ''
-  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
-  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', row.kind).in('status', ['queued', 'approved']).gte('created_at', day)
-  if ((count ?? 0) >= LISTS_PER_DAY) return 'you have sent a few today'
   if (!edited || !row.photo_path) return null
   const venue = await venueOf(row.venue_id)
   const check = venue && (await checkReading(row.id, row.kind, venue, row.photo_paths ?? [row.photo_path], text))
@@ -327,14 +320,11 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
   return lines.join('\n')
 }
 
-/** Why a member's menu for this venue waits for a person, or null when it can go up: no script fetches the venue's, and they've sent fewer than MENUS_PER_DAY today. */
-async function menuWait(venueId: string, userId: string): Promise<string | null> {
+/** Why a member's menu for this venue waits for a person, or null when it can go up: no script fetches the venue's. */
+async function menuWait(venueId: string): Promise<string | null> {
   const { data: v } = await sb.from('venues').select('menu_scripted').eq('id', venueId).maybeSingle()
   if (!v) return 'no such venue'
-  if (v.menu_scripted) return 'this venue’s menu is read from its own website'
-  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
-  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', 'menu').in('status', ['queued', 'approved']).gte('created_at', day)
-  return (count ?? 0) < MENUS_PER_DAY ? null : 'you have sent a few today'
+  return v.menu_scripted ? 'this venue’s menu is read from its own website' : null
 }
 
 /**
@@ -461,8 +451,6 @@ Deno.serve(async (req) => {
   // The photos Action can't read HEIC (the page converts it to JPEG where the browser can)
   if (kind === 'photo' && !/^image\/(jpeg|png|webp)$/.test(photos[0].type)) return fail('send the photo as a JPEG, PNG or WebP')
 
-  const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).gte('created_at', new Date(Date.now() - 3600 * 1000).toISOString())
-  if ((count ?? 0) >= PER_HOUR) return fail('that is plenty for one hour; thank you', 429)
   // Kept with the row, hashed, for spotting one machine behind several accounts
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('cf-connecting-ip') ?? ''
   const ipHash = ip ? await sha256(ip + (Deno.env.get('IP_SALT') ?? '')) : null
@@ -510,8 +498,8 @@ Deno.serve(async (req) => {
       await sb.from('submissions').update({ ...read, status: 'rejected', review_note: `the model asked for another try: ${reason}` }).eq('id', id)
       return { id, status: 'rejected', transcription: null, reason }
     }
-    // Up within minutes, unless something says a person should look (the sender's day, a script's venue)
-    const hold = await holdOf({ id, kind: t, venue_id: venue.id, photo_path: paths[0] ?? null, photo_paths: paths }, sender.id, text, false)
+    // Up within minutes, unless something says a person should look (a script's venue)
+    const hold = await holdOf({ id, kind: t, venue_id: venue.id, photo_path: paths[0] ?? null, photo_paths: paths }, text, false)
     const status = hold === null ? 'queued' : 'needs_review'
     await sb.from('submissions').update({ ...read, status, review_note: hold || null }).eq('id', id)
     if (status === 'queued') await dispatchPublish()
