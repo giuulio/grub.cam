@@ -56,7 +56,11 @@ async function withChrome<T>(argsIn: (dir: string) => string[], then: (stdout: s
 }
 
 /** The page's HTML once its scripts have run. */
-export const renderedHtml = (url: string) => withChrome(() => ['--dump-dom', url], (html) => html)
+export const renderedHtml = (url: string) =>
+  withChrome(() => ['--dump-dom', url], (html) => {
+    if (!html.trim()) throw new Error('an empty page')
+    return html
+  })
 
 /** A PNG of the page, `width` × `height` CSS pixels. */
 export const screenshot = (url: string, width = 1600, height = 2200) =>

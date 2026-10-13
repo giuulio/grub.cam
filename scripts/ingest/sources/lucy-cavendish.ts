@@ -1,6 +1,8 @@
 import { between, type DocSource } from '../lib/docs.ts'
 
 export const LUCY_CANVA = 'https://www.canva.com/design/DAFvirNLKtg/view'
+/** The same design as Lucy's site embeds it: no cookie notice or viewer around it, lighter to draw */
+const EMBED = `${LUCY_CANVA}?embed`
 
 /**
  * A Canva design overwritten each week, a column a day: drawn by Chrome and read from a screenshot (as text its
@@ -10,7 +12,7 @@ export const lucyCavendish: DocSource = {
   async documents() {
     return [{
       key: LUCY_CANVA,
-      url: LUCY_CANVA,
+      url: EMBED,
       kind: 'browser',
       screenshot: true,
       label: "Lucy Cavendish's weekly catering menu, a Canva design",
