@@ -9,6 +9,7 @@
 //   ---
 //   2026-10-05 lunch            <- starts a service block (date + breakfast|brunch|lunch|dinner)
 //   2026-10-13 dinner | No dinner – UG freshers formal hall <- a cancelled meal, with no dishes
+//   2026-10-13 lunch | ! Served at the top table after a leak <- "!" makes the note an alert, shown in red
 //   ## Sides                    <- optional course heading for following lines (soup/main/side/dessert/other)
 //   Carrot & coconut soup (VG)  <- dish; (V)/(VG)/(H)/(GF)/(PB) markers become tags; trailing £x.xx becomes price
 //   Roast pork £3.60 | note     <- anything after " | " is appended to the dish name in brackets
@@ -38,7 +39,9 @@ export function parseManual(text: string): ManualMenu {
     if (!line || line.startsWith('#') && !line.startsWith('## ')) continue
     const svc = line.match(/^(\d{4}-\d{2}-\d{2})\s+(\w+)(?:\s*\|\s*(.*))?$/)
     if (svc) {
-      cur = { date: svc[1], service: Meal.parse(svc[2].toLowerCase()), items: [], ...(svc[3] ? { note: svc[3] } : {}) }
+      const alert = svc[3]?.startsWith('!')
+      const note = alert ? svc[3].slice(1).trim() : svc[3]
+      cur = { date: svc[1], service: Meal.parse(svc[2].toLowerCase()), items: [], ...(note ? { note } : {}), ...(alert ? { alert } : {}) }
       days.push(cur)
       course = 'main'
       continue

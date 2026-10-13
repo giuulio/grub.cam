@@ -38,7 +38,7 @@ export async function load(): Promise<Data> {
       .returns<SiteRow[]>(),
     sb
       .from('menu_days')
-      .select(`venue_id, date, service, note, fetched_at, ${ITEMS}`)
+      .select(`venue_id, date, service, note, alert, fetched_at, ${ITEMS}`)
       .gte('date', today)
       .lt('date', menuTo)
       .order('position', { referencedTable: 'menu_items' })
@@ -133,7 +133,7 @@ export function useMenuOn(venue: Venue, date: string): { days?: MenuDay[]; faile
   const { menuFrom, menuTo } = useReady()
   const loaded = date >= menuFrom && date < menuTo
   const r = useFetched(loaded ? undefined : `menu:${venue.id}:${date}`, async () => {
-    const q = await sb.from('menu_days').select(`date, service, note, ${ITEMS}`).eq('venue_id', venue.id).eq('date', date).order('position', { referencedTable: 'menu_items' }).returns<MenuDay[]>()
+    const q = await sb.from('menu_days').select(`date, service, note, alert, ${ITEMS}`).eq('venue_id', venue.id).eq('date', date).order('position', { referencedTable: 'menu_items' }).returns<MenuDay[]>()
     if (q.error) throw new Error(q.error.message)
     return servedService(q.data, venue.slots)
   })

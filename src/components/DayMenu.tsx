@@ -1,4 +1,4 @@
-import { ChevronDown, Clock } from 'reicon-react'
+import { AlertCircle, ChevronDown, Clock } from 'reicon-react'
 import { dishTags, MEAL_LABEL, MEALS } from '../lib/filters.ts'
 import { coursePrice, fromList, mealPrices, ownPrice, priceHeads, type MealPrices } from '../lib/prices.ts'
 import { hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
@@ -15,7 +15,8 @@ const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side
 /**
  * One date's menus, meal by meal, one under another, each headed by its name and that day's hours (no tabs over them:
  * they only repeated the headings). A day whose menu posts other times for a meal ("Dinner 18:00–18:45 this Monday")
- * heads it with those, and says so in amber beside the usual ones. `now`, when the date is today: meals already over
+ * heads it with those, and says so in amber beside the usual ones; a note marked as an alert (a disruption: lunch moved
+ * after a leak) says so in red, an ordinary one ("Pie night") quietly. `now`, when the date is today: meals already over
  * fold to their heading, so the one being served, or next, is first in view; once every meal is over, none fold.
  * Prices from the venue's posted list (its Dining lines, `priceGroups`) sit next to the dishes they apply to, or in the
  * heading for one price per meal; anything else it sells at that meal is folded below. Price columns are headed, and
@@ -52,6 +53,8 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
           const usual = span(slots)
           // The day's own times, when its note gives some other than the usual
           const changed = !!noteTimes(day.note) && hours !== usual
+          const alert = !!day.alert && !!day.note
+          const tone = alert ? 'text-alert' : 'text-notice'
           return (
             <details
               key={day.service}
@@ -67,15 +70,15 @@ export function DayMenu({ days, slots, date, prices, terms, now }: { days: MenuD
                   {over(day.service) && <span className="ml-3 font-sans text-base font-normal text-muted group-open:hidden">Served earlier</span>}
                 </h3>
                 {mp.meal && <PriceText price={fromList(mp.meal)} className="group-[:not([open])]:hidden" />}
-                {cancelled ? <span className="font-semibold text-notice">Not served</span> : hours && <span className={`tabular-nums ${changed ? 'font-semibold text-notice' : 'text-muted'}`}>{hours}</span>}
+                {cancelled ? <span className={`font-semibold ${tone}`}>Not served</span> : hours && <span className={`tabular-nums ${changed ? `font-semibold ${tone}` : 'text-muted'}`}>{hours}</span>}
                 <Icon of={ChevronDown} className="size-5 -translate-y-px self-center text-muted transition-transform group-open:rotate-180" />
               </summary>
-              {changed ? (
-                <p className="mt-3 inline-flex items-start gap-2 rounded-lg bg-notice-bg px-3 py-2 text-[0.9375rem] font-medium text-notice">
-                  <Icon of={Clock} className="mt-0.5 size-4" />
+              {changed || alert ? (
+                <p className={`mt-3 inline-flex items-start gap-2 rounded-lg px-3 py-2 text-[0.9375rem] font-medium ${alert ? 'bg-alert-bg' : 'bg-notice-bg'} ${tone}`}>
+                  <Icon of={alert ? AlertCircle : Clock} className="mt-0.5 size-4" />
                   <span>
                     {day.note}
-                    {usual && <span className="font-normal"> · usually {usual}</span>}
+                    {changed && usual && <span className="font-normal"> · usually {usual}</span>}
                   </span>
                 </p>
               ) : (

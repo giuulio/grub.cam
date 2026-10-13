@@ -26,6 +26,8 @@ export const MenuDay = z.object({
   service: Meal,
   items: z.array(Dish),
   note: z.string().optional(),
+  /** The note is a disruption that day (lunch moved after a leak), shown in red; an ordinary note ("Pie night") isn't */
+  alert: z.boolean().optional(),
 })
 export type MenuDay = z.infer<typeof MenuDay>
 

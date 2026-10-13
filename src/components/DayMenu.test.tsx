@@ -14,3 +14,13 @@ it('shows a cancelled meal as a notice without its usual hours or fixed price li
   expect(html).not.toContain('17:30')
   expect(html).not.toContain('£5')
 })
+
+it('shows an alert in red with its note, and an ordinary note quietly', () => {
+  const slots = [{ meal: 'lunch' as const, days: ['tue' as const], start: '12:00', end: '14:00', period: 'all' as const }]
+  const day = { date: '2026-10-13', service: 'lunch' as const, items: [{ name: 'Soup', tags: [] }], note: 'Served at the top table after a leak' }
+  const alert = renderToStaticMarkup(<DayMenu date="2026-10-13" days={[{ ...day, alert: true }]} slots={slots} />)
+  expect(alert).toContain('bg-alert-bg')
+  expect(alert).toContain('Served at the top table after a leak')
+  expect(alert).toContain('12:00–14:00')
+  expect(renderToStaticMarkup(<DayMenu date="2026-10-13" days={[day]} slots={slots} />)).not.toContain('alert')
+})

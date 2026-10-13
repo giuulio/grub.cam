@@ -31,6 +31,8 @@
   --color-error: var(--error);
   --color-notice: var(--notice);
   --color-notice-bg: var(--notice-bg);
+  --color-alert: var(--alert);
+  --color-alert-bg: var(--alert-bg);
 }
 
 :root {
@@ -53,6 +55,8 @@
   --error: #dd3025; /* Dark Crest */
   --notice: #6b4500; /* a day's change to the usual: amber, not the error's red */
   --notice-bg: #fff1d1;
+  --alert: #9b1c13; /* a day's disruption (a meal moved after a leak): Dark Crest, deepened to read as text, on its tint */
+  --alert-bg: #fee6e3;
   --pill-bg: #eceef1; /* Slate 1, Slate 3 on it */
   --pill-ink: #546072;
 }
@@ -77,6 +81,8 @@
     --error: #ffc392; /* Warm Crest */
     --notice: #ffd98a;
     --notice-bg: #3a2e12;
+    --alert: #ffb4a6;
+    --alert-bg: #401714;
     --pill-bg: #546072; /* Slate 3, Slate 1 on it */
     --pill-ink: #eceef1;
   }
@@ -101,6 +107,8 @@
   --error: #ffc392;
   --notice: #ffd98a;
   --notice-bg: #3a2e12;
+  --alert: #ffb4a6;
+  --alert-bg: #401714;
   --pill-bg: #546072;
   --pill-ink: #eceef1;
 }

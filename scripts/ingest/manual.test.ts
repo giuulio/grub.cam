@@ -21,3 +21,10 @@ describe('manual menu cancellations', () => {
     expect(() => parseManual(header + '2026-10-13 dinner | No dinner – formal hall\nSoup')).toThrow(/cancelled meal/)
   })
 })
+
+describe('manual menu alerts', () => {
+  it('a leading "!" makes the note an alert, without the mark', () => {
+    const m = parseManual(header + '2026-10-13 lunch | ! Served at the top table after a leak\nSoup\n2026-10-13 dinner | Pie night\nPie\n')
+    expect(m.days.map((d) => [d.note, d.alert])).toEqual([['Served at the top table after a leak', true], ['Pie night', undefined]])
+  })
+})
