@@ -1,8 +1,10 @@
-// POST /functions/v1/submit — what someone in a venue sends from its page: a photo of the menu board, the price list
-// or the hours, and/or typed text. Stores the photo in the private `submissions` bucket, inserts the row, and has a
-// model transcribe it into the ingest text format for its kind; the sender then confirms that
-// text (action "confirm"), which queues it for review. Nothing is published from here: `npm run submissions -- approve`
-// does that, after a person has looked (or, for a member's photo of the venue, the photos Action: see below).
+// POST /functions/v1/submit — what someone in a venue sends from its page: photos of the menu board, the price list
+// or the hours (up to MAX_PHOTOS, or PDFs), with or without a note giving context, or typed text. Stores the files in
+// the private `submissions` bucket, inserts the row, and has a model transcribe them into the ingest text format for
+// its kind, streamed to the sender as it's written (stream=1). The page (auto=1) leaves the rest to the model's
+// verdict: confident, it's queued for the photos Action to publish (holdOf() permitting); not (a bad or irrelevant
+// photo, a guessed price), it's rejected and the sender is told what to send instead. Without auto=1 the sender
+// confirms the text (action "confirm"), as the page did before. Nothing is published from here.
 //
 // The models are OpenAI's (OPENAI_API_KEY), through the Responses API with answers in a fixed shape (_shared/openai.ts):
 // OPENAI_MODEL (default gpt-6.1-sol) reads boards, price lists and hours, where accuracy is what members feel;
@@ -44,12 +46,14 @@
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
-import { base64, costOf, moderate, priceOf, respond, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
+import { base64, costOf, moderate, partialString, priceOf, respond, respondStream, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
 const TOPICS = ['hours', 'prices', 'menu', 'formal', 'diet', 'location', 'closed', 'other']
 const MAX_PHOTO = 5 * 1024 * 1024
+const MAX_PDF = 10 * 1024 * 1024
+const MAX_PHOTOS = 10 // a board on several sheets, read together; a photo of the venue is one
 const PER_HOUR = 12 // submissions from one account (not one IP: a college's Wi-Fi can be one address)
 const PHOTOS_PER_DAY = 3 // a member's photos that go up without a person looking
 const MENUS_PER_DAY = 6 // a member's menus that go up without a person looking
@@ -102,12 +106,13 @@ type Purpose = 'transcribe' | 'vet_photo' | 'review' | 'check_reading'
  * when it can't be asked (no key, over budget) or the call fails. `good` says whether the answer was of use, for the
  * log. A photo's or a review's check uses the cheaper CHECK_MODEL.
  */
-async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Image | null, ref: { submission_id?: string; review_id?: string }, good: (v: T) => boolean = () => true): Promise<T | null> {
+async function ask<T>(purpose: Purpose, text: string, schema: Schema, images: Image[], ref: { submission_id?: string; review_id?: string }, good: (v: T) => boolean = () => true, onText?: (soFar: string) => void): Promise<T | null> {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key || !(await underBudget())) return null
   const [model, price] = purpose === 'transcribe' ? [MODEL, PRICE] : [CHECK_MODEL, CHECK_PRICE]
   try {
-    const { value, usage } = await respond<T>({ key, model, text, image: image ?? undefined, schema, maxOutput: MAX_OUTPUT, reasoning: Deno.env.get('OPENAI_REASONING') || undefined })
+    const o = { key, model, text, images, schema, maxOutput: MAX_OUTPUT, reasoning: Deno.env.get('OPENAI_REASONING') || undefined }
+    const { value, usage } = onText ? await respondStream<T>(o, onText) : await respond<T>(o)
     await sb.from('model_calls').insert({ purpose, model, input_tokens: usage.input, output_tokens: usage.output, cost_usd: costOf(usage, price) ?? null, ok: good(value), ...ref })
     return value
   } catch (e) {
@@ -116,12 +121,50 @@ async function ask<T>(purpose: Purpose, text: string, schema: Schema, image: Ima
   }
 }
 
-/** The model's body for the photo and/or text, or null when it couldn't (no key, over budget, failed, saw nothing). */
-async function transcribe(id: string, c: Parameters<typeof prompt>[0], photo: Image | null): Promise<{ body: string; unsure: string } | null> {
-  if (!photo && !c.note) return null
-  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, photo, { submission_id: id }, (t) => t.readable && !!t.body.trim())
-  const body = got?.readable ? cleanBody(got.body) : ''
-  return body ? { body, unsure: got!.unsure.trim() } : null
+/**
+ * The model's reading of the photos, PDFs and/or text, with its verdict: whether it goes up as it is, and what the
+ * sender should do when it can't (nothing to read is a retry too). Null when no model could be asked (no key, over
+ * budget, failed). `onBody`: the body so far, as the model writes it, for a sender watching.
+ */
+async function transcribe(id: string, c: Parameters<typeof prompt>[0], files: Image[], onBody?: (soFar: string) => void): Promise<{ body: string; unsure: string; publish: boolean; retry: string } | null> {
+  if (!files.length && !c.note) return null
+  const onText = onBody && ((json: string) => {
+    const body = partialString(json, 'body')
+    if (body) onBody(body)
+  })
+  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, files, { submission_id: id }, (t) => t.readable && !!t.body.trim(), onText)
+  if (!got) return null
+  const body = got.readable ? cleanBody(got.body) : ''
+  return { body, unsure: got.unsure.trim(), publish: !!body && got.verdict === 'publish', retry: got.retry.trim() }
+}
+
+const WHAT: Record<Transcribable, string> = { menu: 'a menu', prices: 'a price list', hours: 'opening hours' }
+
+/** A response written as it happens: one JSON event a line (application/x-ndjson). Keeps going if the sender leaves, so the row is still saved. */
+function streamed(work: (send: (event: Record<string, unknown>) => void) => Promise<void>): Response {
+  const enc = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: Record<string, unknown>) => {
+        try {
+          controller.enqueue(enc.encode(JSON.stringify(event) + '\n'))
+        } catch {
+          // the sender has gone: finish anyway
+        }
+      }
+      try {
+        await work(send)
+      } catch (e) {
+        send({ type: 'error', error: (e as Error).message })
+      }
+      try {
+        controller.close()
+      } catch {
+        // already closed
+      }
+    },
+  })
+  return new Response(stream, { headers: { ...cors, 'content-type': 'application/x-ndjson', 'cache-control': 'no-store' } })
 }
 
 /**
@@ -136,7 +179,7 @@ async function vet(id: string, venue: Venue, photo: Image): Promise<Verdict | nu
     `It can go up (ok: true) only if all of these hold: it is a real photograph (not a screenshot, meme, drawing, or mostly text such as a menu); it shows a dining hall, café, bar, servery, counter, seating or the building one is in; no person's face is recognisable (people far off, from behind or blurred are fine); nothing offensive, sexual, violent or mocking; no personal information readable; in focus and not mostly dark.`,
     `The alt text says what the photo shows, e.g. "The servery counter with the day's hot dishes, from the queue".`,
   ].join('\n\n')
-  const v = await ask<Verdict>('vet_photo', text, VERDICT, photo, { submission_id: id })
+  const v = await ask<Verdict>('vet_photo', text, VERDICT, [photo], { submission_id: id })
   return v && { ok: v.ok, reason: v.reason.slice(0, 300), alt: v.alt.slice(0, 200) }
 }
 
@@ -195,7 +238,7 @@ async function venueOf(id: string): Promise<Venue | null> {
  */
 async function confirm(sender: { id: string }, body: { id?: string; transcription?: string; wrong?: boolean }): Promise<Response> {
   if (!body.id || typeof body.transcription !== 'string') return fail('id and transcription needed')
-  const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, photo_path, created_at, user_id').eq('id', body.id).maybeSingle()
+  const { data: row } = await sb.from('submissions').select('id, kind, venue_id, status, transcription, photo_path, photo_paths, created_at, user_id').eq('id', body.id).maybeSingle()
   if (!row || row.user_id !== sender.id) return fail('no such submission', 404)
   if (!['received', 'transcribed'].includes(row.status)) return fail('already reviewed', 409)
   if (Date.now() - new Date(row.created_at).getTime() > 24 * 3600 * 1000) return fail('too late to change', 409)
@@ -216,37 +259,40 @@ async function confirm(sender: { id: string }, body: { id?: string; transcriptio
 
 /**
  * Why a member's confirmed reading waits for a person, or null when it can go up without one; '' when it simply isn't
- * a kind that does (AUTO_KINDS). A menu: menuCanGoUp(). A price list or hours: the sender's day has room, and a reading
+ * a kind that does (AUTO_KINDS). A menu: menuWait(). A price list or hours: the sender's day has room, and a reading
  * of a photo they changed still says what the photo does.
  */
-async function holdOf(row: { id: string; kind: Kind; venue_id: string; photo_path: string | null }, userId: string, text: string, edited: boolean): Promise<string | null> {
+async function holdOf(row: { id: string; kind: Kind; venue_id: string; photo_path: string | null; photo_paths: string[] | null }, userId: string, text: string, edited: boolean): Promise<string | null> {
   if (!AUTO_KINDS.includes(row.kind)) return ''
-  if (row.kind === 'menu') return (await menuCanGoUp(row.venue_id, userId)) ? null : ''
+  if (row.kind === 'menu') return menuWait(row.venue_id, userId)
   if (row.kind !== 'prices' && row.kind !== 'hours') return ''
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
   const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', row.kind).in('status', ['queued', 'approved']).gte('created_at', day)
   if ((count ?? 0) >= LISTS_PER_DAY) return 'you have sent a few today'
   if (!edited || !row.photo_path) return null
   const venue = await venueOf(row.venue_id)
-  const check = venue && (await checkReading(row.id, row.kind, venue, row.photo_path, text))
+  const check = venue && (await checkReading(row.id, row.kind, venue, row.photo_paths ?? [row.photo_path], text))
   return !check ? 'no model could check your changes' : check.ok ? null : check.reason.slice(0, 300) || 'your changes don’t match the photo'
 }
 
 /** Whether a reading the sender changed still says what their photo does; null when no model could look. */
-async function checkReading(id: string, kind: 'prices' | 'hours', venue: Venue, path: string, text: string): Promise<ReviewCheck | null> {
-  const { data: file } = await sb.storage.from('submissions').download(path)
-  if (!file) return null
-  const bytes = new Uint8Array(await file.arrayBuffer())
+async function checkReading(id: string, kind: 'prices' | 'hours', venue: Venue, paths: string[], text: string): Promise<ReviewCheck | null> {
+  const images: Image[] = []
+  for (const path of paths) {
+    const { data: file } = await sb.storage.from('submissions').download(path)
+    if (!file) return null
+    images.push({ base64: base64(new Uint8Array(await file.arrayBuffer())), mime: file.type || 'image/jpeg' })
+  }
   const current = await currentText(kind, venue.id)
   const what = kind === 'prices' ? 'price list' : 'opening hours'
   const where = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
   const lines = [
-    `A member photographed the ${what} at ${venue.name}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}, a model read it into the text below, and the member then changed that text. It will go on the venue's page without anyone else looking.`,
+    `A member photographed the ${what} at ${venue.name}${images.length > 1 ? ` (${images.length} photos)` : ''}, a ${{ hall: 'dining hall', cafe: 'café', bar: 'bar' }[venue.type]} at ${where}, a model read it into the text below, and the member then changed that text. It will go on the venue's page without anyone else looking.`,
     `It can (ok: true) when every price, time and item in it is as the photo shows, or is from the list the site had before (when one is given below). Leaving things out, fixing spelling or capitals, and reordering are fine. Not (ok: false) when a price, a time or an item differs from the photo, or is neither on the photo nor in the earlier list; then say which line, in one short sentence to the member. A "columns: first | second" line names whose each price column is: it's fine when it says what the board's column headings do (a column headed only "£" is "Full price"), not when it swaps them or names columns the board doesn't.`,
     `The text:\n"""\n${text.split('\n---\n')[1] ?? text}\n"""`,
   ]
   if (current) lines.push(`The list the site had before:\n"""\n${current}\n"""`)
-  return ask<ReviewCheck>('check_reading', lines.join('\n\n'), REVIEW_CHECK, { base64: base64(bytes), mime: file.type || 'image/jpeg' }, { submission_id: id })
+  return ask<ReviewCheck>('check_reading', lines.join('\n\n'), REVIEW_CHECK, images, { submission_id: id })
 }
 
 const DIET_CODE: Record<string, string> = { vegan: 'VE', vegetarian: 'V', plant_based: 'PB', halal: 'H', gluten_free: 'GF', dairy_free: 'DF', kosher: 'kosher', pescatarian: 'pescatarian' }
@@ -281,13 +327,14 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
   return lines.join('\n')
 }
 
-/** Whether a member's menu for this venue can go up without a person: no script fetches the venue's, and they've sent fewer than MENUS_PER_DAY today. */
-async function menuCanGoUp(venueId: string, userId: string): Promise<boolean> {
+/** Why a member's menu for this venue waits for a person, or null when it can go up: no script fetches the venue's, and they've sent fewer than MENUS_PER_DAY today. */
+async function menuWait(venueId: string, userId: string): Promise<string | null> {
   const { data: v } = await sb.from('venues').select('menu_scripted').eq('id', venueId).maybeSingle()
-  if (!v || v.menu_scripted) return false
+  if (!v) return 'no such venue'
+  if (v.menu_scripted) return 'this venue’s menu is read from its own website'
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
   const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', 'menu').in('status', ['queued', 'approved']).gte('created_at', day)
-  return (count ?? 0) < MENUS_PER_DAY
+  return (count ?? 0) < MENUS_PER_DAY ? null : 'you have sent a few today'
 }
 
 /**
@@ -310,7 +357,7 @@ async function checkReview(id: string, venue: Venue, rating: number, text: strin
     `It can be shown (ok: true) when it is about the venue: its food, drink, prices, service, queues, space or hours, praise or criticism, however blunt. Not when it names, describes or attacks a particular person (staff or anyone else), gives anyone's personal details, advertises something, is about something else entirely, or is gibberish.`,
     `The review:\n"""\n${text}\n"""`,
   ].join('\n\n')
-  return ask<ReviewCheck>('review', prompt, REVIEW_CHECK, null, { review_id: id })
+  return ask<ReviewCheck>('review', prompt, REVIEW_CHECK, [], { review_id: id })
 }
 
 /**
@@ -405,14 +452,14 @@ Deno.serve(async (req) => {
   if (topic && !TOPICS.includes(topic)) return fail('unknown topic')
   const note = field('note') || null
   if (note && note.length > 20000) return fail('text too long (20,000 characters at most); send a photo or split it into separate submissions')
-  const file = form.get('photo')
-  const photo = file instanceof File && file.size > 0 ? file : null
-  if (!photo && !note) return fail('send a photo or some text')
-  if (photo && photo.size > MAX_PHOTO) return fail('photo too big (5 MB at most)', 413)
-  if (photo && !/^image\/(jpeg|png|webp|heic|heif)$/.test(photo.type)) return fail('photo must be JPEG, PNG, WebP or HEIC')
-  if (kind === 'photo' && !photo) return fail('add the photo')
+  const photos = form.getAll('photo').filter((f): f is File => f instanceof File && f.size > 0)
+  if (!photos.length && !note) return fail('send a photo or some text')
+  if (photos.length > (kind === 'photo' ? 1 : MAX_PHOTOS)) return fail(kind === 'photo' ? 'one photo of the venue at a time' : `${MAX_PHOTOS} photos at most`, 413)
+  if (photos.some((p) => p.size > (p.type === 'application/pdf' ? MAX_PDF : MAX_PHOTO))) return fail('a file is too big (5 MB a photo, 10 MB a PDF)', 413)
+  if (photos.some((p) => !/^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/.test(p.type))) return fail('send photos as JPEG, PNG, WebP or HEIC, documents as PDF')
+  if (kind === 'photo' && !photos.length) return fail('add the photo')
   // The photos Action can't read HEIC (the page converts it to JPEG where the browser can)
-  if (kind === 'photo' && !/^image\/(jpeg|png|webp)$/.test(photo!.type)) return fail('send the photo as a JPEG, PNG or WebP')
+  if (kind === 'photo' && !/^image\/(jpeg|png|webp)$/.test(photos[0].type)) return fail('send the photo as a JPEG, PNG or WebP')
 
   const { count } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq('user_id', sender.id).gte('created_at', new Date(Date.now() - 3600 * 1000).toISOString())
   if ((count ?? 0) >= PER_HOUR) return fail('that is plenty for one hour; thank you', 429)
@@ -424,27 +471,64 @@ Deno.serve(async (req) => {
   if (error) return fail(error.message, 500)
   const id: string = row.id
 
-  let bytes: Uint8Array | null = null
-  let stored = false
-  if (photo) {
-    bytes = new Uint8Array(await photo.arrayBuffer())
-    const ext = photo.type.split('/')[1].replace('jpeg', 'jpg')
-    const path = `${id}.${ext}`
+  // Each photo in the bucket as <id>.jpg, <id>-2.jpg, …, in the order sent
+  const images: Image[] = []
+  const paths: string[] = []
+  for (const [n, photo] of photos.entries()) {
+    const bytes = new Uint8Array(await photo.arrayBuffer())
+    const path = `${id}${n ? `-${n + 1}` : ''}.${photo.type.split('/')[1].replace('jpeg', 'jpg')}`
     const up = await sb.storage.from('submissions').upload(path, bytes, { contentType: photo.type, upsert: false })
     if (up.error) console.warn(`upload ${path}: ${up.error.message}`)
-    else stored = !(await sb.from('submissions').update({ photo_path: path }).eq('id', id)).error
+    else paths.push(path)
+    images.push({ base64: base64(bytes), mime: photo.type, name: photo.name })
   }
+  const stored = paths.length > 0 && !(await sb.from('submissions').update({ photo_path: paths[0], photo_paths: paths }).eq('id', id)).error
 
   if (kind === 'photo' && !stored) return fail('the photo did not save; try again', 500)
-  const image: Image | null = bytes && photo ? { base64: base64(bytes), mime: photo.type } : null
-  if (kind === 'photo' && image) return photoOf(id, venue, sender, image)
+  if (kind === 'photo') return photoOf(id, venue, sender, images[0])
   if (!['menu', 'prices', 'hours'].includes(kind)) return json({ id, status: 'received', transcription: null })
   const t = kind as Transcribable
   const siteName = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
   const current = t === 'menu' ? null : await currentText(t, venue.id)
-  const got = await transcribe(id, { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, note: note ?? undefined, current: current ?? undefined }, image)
-  if (!got) return json({ id, status: 'received', transcription: null, spec: BODY_SPEC[t] })
-  const text = header(t, { site: venue.site, venue: venue.slug, source: `submission ${id}: ${photo ? 'photo' : 'text'} sent from the venue's page on grub.cam`, observed: today() }) + got.body + '\n'
-  await sb.from('submissions').update({ transcription: text, transcribed_by: 'openai', model: MODEL, unsure: got.unsure || null, status: 'transcribed' }).eq('id', id)
-  return json({ id, status: 'transcribed', transcription: text, by: 'openai', unsure: got.unsure || null })
+  const context = { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, asBoard: t === 'menu' && field('as_board') === '1', today: today(), note: note ?? undefined, current: current ?? undefined, photos: images.length }
+  // auto=1 (the page since 13 Oct 2026): the model's verdict decides, with no reading for the sender to confirm
+  const auto = field('auto') === '1'
+  // The reading, saved with the row; what the sender gets back
+  const finish = async (got: Awaited<ReturnType<typeof transcribe>>) => {
+    const sent = images.length ? `${images.length > 1 ? `${images.length} files` : images[0].mime === 'application/pdf' ? 'PDF' : 'photo'}${note ? ' and a note' : ''}` : 'text'
+    const text = got?.body ? header(t, { site: venue.site, venue: venue.slug, source: `submission ${id}: ${sent} sent from the venue's page on grub.cam`, observed: today() }) + got.body + '\n' : null
+    const read = { transcription: text, transcribed_by: 'openai', model: MODEL, unsure: got?.unsure || null }
+    // No model could look: it waits for a person, as before
+    if (!got || (!auto && !text)) return { id, status: 'received', transcription: null, spec: BODY_SPEC[t] }
+    if (!auto) {
+      await sb.from('submissions').update({ ...read, status: 'transcribed' }).eq('id', id)
+      return { id, status: 'transcribed', transcription: text, by: 'openai', unsure: got.unsure || null }
+    }
+    // Not something to put up: back to the sender, saying what to send instead
+    if (!got.publish || !text) {
+      const reason = got.retry.slice(0, 300) || `That doesn't read as ${WHAT[t]}: try a clearer photo of the whole board.`
+      await sb.from('submissions').update({ ...read, status: 'rejected', review_note: `the model asked for another try: ${reason}` }).eq('id', id)
+      return { id, status: 'rejected', transcription: null, reason }
+    }
+    // Up within minutes, unless something says a person should look (the sender's day, a script's venue)
+    const hold = await holdOf({ id, kind: t, venue_id: venue.id, photo_path: paths[0] ?? null, photo_paths: paths }, sender.id, text, false)
+    const status = hold === null ? 'queued' : 'needs_review'
+    await sb.from('submissions').update({ ...read, status, review_note: hold || null }).eq('id', id)
+    if (status === 'queued') await dispatchPublish()
+    return { id, status, transcription: text, reason: hold || null }
+  }
+  // stream=1: the reading as it's written, so the sender can watch it, then the same answer as without
+  if (field('stream') === '1')
+    return streamed(async (send) => {
+      send({ type: 'reading', id, photos: images.length })
+      let sent = 0
+      const got = await transcribe(id, context, images, (body) => {
+        // A line at a time, or every so often within a long one
+        if (body.length - sent < 40 && !body.endsWith('\n')) return
+        sent = body.length
+        send({ type: 'text', body })
+      })
+      send({ type: 'done', result: await finish(got) })
+    })
+  return json(await finish(await transcribe(id, context, images)))
 })

@@ -82,8 +82,8 @@ export async function smoke(o: { venue: string; photo?: string; review?: boolean
       check(removed.status === 'removed', `review taken back: ${removed.error ?? removed.status}`)
     }
   } finally {
-    const { data: rows } = await admin.from('submissions').select('id, photo_path').eq('user_id', userId)
-    const photos = (rows ?? []).flatMap((r) => (r.photo_path ? [r.photo_path as string] : []))
+    const { data: rows } = await admin.from('submissions').select('id, photo_path, photo_paths').eq('user_id', userId)
+    const photos = (rows ?? []).flatMap((r) => (r.photo_paths as string[] | null) ?? (r.photo_path ? [r.photo_path as string] : []))
     if (photos.length) await admin.storage.from('submissions').remove(photos)
     await admin.from('submissions').delete().eq('user_id', userId)
     await admin.auth.admin.deleteUser(userId)

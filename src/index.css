@@ -563,3 +563,30 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
 .venue-map[data-map-theme='dark'] .maplibregl-ctrl-attrib-button {
   filter: invert(1);
 }
+
+/* The Send page while a model reads the photos: a band of light sweeps down each photo, the reading's lines fade in as
+   they arrive with a caret after the last, and grey bars stand in before the first. Still, for reduced motion. */
+.scanning {
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--accent-ink, #133844) 0%, transparent) 40%, #8ee8d866 50%, transparent 60%) 0 0 / 100% 250% no-repeat;
+  animation: scanning 2.4s ease-in-out infinite;
+}
+@keyframes scanning {
+  from { background-position: 0 100%; }
+  to { background-position: 0 0%; }
+}
+.reading-line { animation: reading-in 0.35s ease-out both; }
+@keyframes reading-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+.reading-caret { animation: caret 1s steps(2) infinite; }
+@keyframes caret {
+  50% { opacity: 0; }
+}
+.reading-skeleton { animation: skeleton 1.4s ease-in-out infinite alternate; }
+@keyframes skeleton {
+  to { opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scanning { animation: none; background: #8ee8d822; }
+  .reading-line, .reading-caret, .reading-skeleton { animation: none; }
+}

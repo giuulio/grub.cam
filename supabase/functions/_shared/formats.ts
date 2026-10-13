@@ -48,8 +48,12 @@ bar | Fri, Sat | 19:00-00:00
 Rules: one line per meal and set of days, "meal | days | times", with an optional fourth field "term", "vacation" or "all" when the board says which, and an optional fifth field for a short note printed on the board. Meals: breakfast, brunch, lunch, dinner, formal (formal hall), snacks (a café's opening hours), bar. Days as ranges or lists ("Mon-Fri", "Sat, Sun", "daily"). Times as 24-hour "HH:MM-HH:MM"; a start alone (e.g. "19:30") when only a start is printed. Nothing else: no commentary, no markdown fences.`,
 }
 
-/** `current`: what the site lists now for a price list or hours, in the same format, so a correction to part of it comes back whole. */
-export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; note?: string; current?: string }
+/**
+ * `current`: what the site lists now for a price list or hours, in the same format, so a correction to part of it comes
+ * back whole. A menu's `date` and `service`: what the sender says it's for; with `asBoard`, only where the board doesn't
+ * say (`today`, London's date, places a board's weekdays). `photos`: how many came together.
+ */
+export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; asBoard?: boolean; today?: string; note?: string; current?: string; photos?: number }
 
 const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
 
@@ -60,19 +64,37 @@ const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
 export function prompt(c: Context, structured = false): string {
   const what = c.kind === 'menu' ? 'the menu' : c.kind === 'prices' ? 'the price list' : 'the opening hours'
   const lines = [
-    `You transcribe what a photo of a board or notice says, exactly as printed, for a database of Cambridge college dining.`,
+    `You transcribe what a photo of a board or notice, or a document (a PDF menu), says, exactly as printed, for a database of Cambridge college dining.`,
     `This is ${what} at ${c.venue.name}, a ${TYPE_WORD[c.venue.type]} at ${c.venue.site}.`,
   ]
-  if (c.kind === 'menu' && c.date) lines.push(`The sender says it is for ${c.date}${c.service ? ` ${c.service}` : ''}; use that date and meal unless the board clearly shows another.`)
+  if (c.kind === 'menu' && c.asBoard && c.today) {
+    const monday = addDays(c.today, -((weekday(c.today) + 6) % 7))
+    lines.push(
+      `Today is ${longDate(c.today)}. Take the days and meals from the board. Weekdays without dates are this week's (${longDate(monday)} to ${longDate(addDays(monday, 6))}) unless the board says which week.${c.date ? ` Where the board says neither day nor meal, it is for ${c.date}${c.service ? ` ${c.service}` : ''}.` : ''}`,
+    )
+  } else if (c.kind === 'menu' && c.date) lines.push(`The sender says it is for ${c.date}${c.service ? ` ${c.service}` : ''}; use that date and meal unless the board clearly shows another.`)
+  if ((c.photos ?? 0) > 1) lines.push(`There are ${c.photos} photos or documents, in order: parts of one board or several. Read them all into one answer, without repeating what two of them both show.`)
   if (c.note) lines.push(`The sender also wrote: "${c.note.replace(/"/g, "'")}" — it may be the text itself, typed, or a note about the photo.`)
   if (c.current)
     lines.push(
       `What the site lists now, in the same format:\n"""\n${c.current}\n"""\nIf the photo or the text gives only part of it, or a correction to it ("Monday closes at 2", "the latte is now £3"), answer with the whole list: the change made, everything else (headings too: none added) kept as it is. If they give a whole new list, answer with theirs alone.`,
     )
   lines.push('', BODY_SPEC[c.kind])
-  if (!structured) lines.push('', 'If the image shows none of this, reply with exactly: NOTHING')
+  if (structured)
+    lines.push(
+      '',
+      `Then decide whether it goes on the venue's page as it is, with no one checking it (verdict). publish only when what was sent clearly is ${what} and everything in your answer is read, not guessed: every date, meal, item and price. A small doubt about a description or an allergen note is fine; say it in unsure. retry when it is something else, or blurred, cut off, too far away or too dark to read, or when a price, a date or a name would be a guess; then say in retry, in one short sentence to the sender, what to do.`,
+    )
+  else lines.push('', 'If the image shows none of this, reply with exactly: NOTHING')
   return lines.join('\n')
 }
+
+const DAY = 86400000
+const utc = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)))
+const addDays = (iso: string, n: number) => new Date(utc(iso) + n * DAY).toISOString().slice(0, 10)
+/** 0 for Sunday, as Date's getUTCDay */
+const weekday = (iso: string) => new Date(utc(iso)).getUTCDay()
+const longDate = (iso: string) => new Date(utc(iso)).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ` (${iso})`
 
 /** The header that makes a transcription a complete file for ingest:manual / ingest:prices / ingest:hours. */
 export function header(kind: Transcribable, h: { site: string; venue: string; source: string; observed: string }): string {

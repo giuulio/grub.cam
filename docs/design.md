@@ -12,7 +12,7 @@ The header is shared across pages: name, BETA label, search with `ScopeTabs` ins
 
 At 1280px and wider the header is one row, with search centred in three columns. Below that, search has its own row. On a phone's finder it sits over the map or at the top of the list instead. Search filters as you type; elsewhere it opens `/?q=…`. There is no search button. The header stays in view above phone width, and sticky content clears its measured `--header-h`.
 
-The footer has About, Find and Help links, coverage counts, copyright, terms and the not-affiliated line. `BackButton` is on `/send` only; site and venue pages have neither a back button nor breadcrumbs in the visible UI. `useScrollMemory` restores scroll per history entry.
+The footer has About, Find and Help links, coverage counts, copyright, terms and the not-affiliated line. No page has a back button or breadcrumbs in the visible UI. `useScrollMemory` restores scroll per history entry.
 
 ## Finder
 
@@ -54,6 +54,8 @@ Reviews use `Reviews.tsx`: anonymous ratings after five members, newest six writ
 ## Coverage and information pages
 
 Coverage has four counts (menus this week, café/bar price lists, hours, photos), followed by venue rows with gaps, each linking to the relevant `/send` form. `menuNote()` explains why menus are missing and links to adapter work when appropriate. `venueGaps()` prioritises menus, café/bar prices and hours, then Dining prices, formal details and photos; it does not ask members for a scripted menu. Filters (`site`, `kind`, `missing`, `order`) stay in the URL; show 24 rows at a time.
+
+`/send` is one centred column and one step. It names the venue (a card with "Change", or a search by venue, site or alias), what it is (icon chips: Menu, Prices, Hours, Venue photo, Correction), then the files: "Take a photo" (touch screens) or "Upload", photos or PDFs, up to ten, as thumbnails, with a context box beside them ("next week's menu"), which takes the typed text when there's no photo. "Send" (Sparkles, for what a model reads) shows the photos swept by a band of light and the reading arriving a line at a time, with the seconds counting; then "It's going up" with links to the venue and to send another, or the model's reason over the form, files kept, to try again. A correction's box is required and goes to a person. On a phone the button stays at the foot of the screen. Copy is short: one line under the title.
 
 About explains the site, live coverage, ways to help and who makes it. Terms covers use, privacy, allergies, no affiliation and services that see visitors' IPs. Credits lists site and venue photos with author, licence and source.
 

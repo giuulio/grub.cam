@@ -5,7 +5,8 @@
 export type Usage = { input: number; output: number }
 /** Dollars per million tokens, input and output, for the model a call uses (priceOf(), or OPENAI_PRICE "2/10"). */
 export type Price = { input: number; output: number }
-export type Image = { base64: string; mime: string }
+/** A photo, or a PDF (`application/pdf`, sent as a file: the model reads its text and pages) */
+export type Image = { base64: string; mime: string; name?: string }
 /** A JSON Schema for the answer: an object whose properties are all required, nothing else allowed (strict mode). */
 export type Schema = { name: string; schema: Record<string, unknown> }
 
@@ -30,15 +31,18 @@ export const priceOf = (model: string, override?: string): Price | undefined => 
 /** What a call cost, in dollars; undefined when the model's price isn't known. */
 export const costOf = (u: Usage, p: Price | undefined) => (p ? (u.input * p.input + u.output * p.output) / 1e6 : undefined)
 
-/**
- * Asks `model` about `text` (and the image, when there is one) and returns its answer parsed to `schema`'s shape.
- * `reasoning`: the effort a reasoning model spends ("minimal", "low", …), left out for models without it. Throws with
- * OpenAI's message when the call fails, is refused, or comes back cut short.
- */
-export async function respond<T>(o: { key: string; model: string; text: string; image?: Image; schema: Schema; maxOutput?: number; reasoning?: string }): Promise<{ value: T; usage: Usage }> {
+type Ask = { key: string; model: string; text: string; image?: Image; images?: Image[]; schema: Schema; maxOutput?: number; reasoning?: string }
+
+/** The Responses API request for `o`: its text, then each image (`image`, or several as `images`), in order. */
+function request(o: Ask, stream: boolean) {
   const content: unknown[] = [{ type: 'input_text', text: o.text }]
-  if (o.image) content.push({ type: 'input_image', image_url: `data:${o.image.mime};base64,${o.image.base64}`, detail: 'high' })
-  const res = await fetch('https://api.openai.com/v1/responses', {
+  for (const i of o.images ?? (o.image ? [o.image] : []))
+    content.push(
+      i.mime === 'application/pdf'
+        ? { type: 'input_file', filename: i.name ?? 'document.pdf', file_data: `data:application/pdf;base64,${i.base64}` }
+        : { type: 'input_image', image_url: `data:${i.mime};base64,${i.base64}`, detail: 'high' },
+    )
+  return fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { authorization: `Bearer ${o.key}`, 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -48,8 +52,18 @@ export async function respond<T>(o: { key: string; model: string; text: string; 
       max_output_tokens: o.maxOutput ?? 4000,
       ...(o.reasoning ? { reasoning: { effort: o.reasoning } } : {}),
       store: false,
+      ...(stream ? { stream: true } : {}),
     }),
   })
+}
+
+/**
+ * Asks `model` about `text` (and the images, when there are some) and returns its answer parsed to `schema`'s shape.
+ * `reasoning`: the effort a reasoning model spends ("minimal", "low", …), left out for models without it. Throws with
+ * OpenAI's message when the call fails, is refused, or comes back cut short.
+ */
+export async function respond<T>(o: Ask): Promise<{ value: T; usage: Usage }> {
+  const res = await request(o, false)
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(`openai ${res.status}: ${data?.error?.message ?? 'no message'}`)
   const usage: Usage = { input: data.usage?.input_tokens ?? 0, output: data.usage?.output_tokens ?? 0 }
@@ -62,18 +76,92 @@ export async function respond<T>(o: { key: string; model: string; text: string; 
   return { value: JSON.parse(text) as T, usage }
 }
 
-/** The answer to a transcription: the body in the kind's format, whether the image held anything, what was unclear. */
-export type Transcription = { readable: boolean; body: string; unsure: string }
+/**
+ * respond(), streamed: `onText` gets the answer's JSON so far each time more of it arrives (partialString() reads a
+ * field out of it), so the sender can watch the board being read. Same answer, usage and errors as respond().
+ */
+export async function respondStream<T>(o: Ask, onText: (soFar: string) => void): Promise<{ value: T; usage: Usage }> {
+  const res = await request(o, true)
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(`openai ${res.status}: ${data?.error?.message ?? 'no message'}`)
+  }
+  let text = ''
+  let refusal = ''
+  let done: { status?: string; usage?: { input_tokens?: number; output_tokens?: number }; incomplete_details?: { reason?: string } } | undefined
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+  let buffer = ''
+  for (;;) {
+    const { value, done: end } = await reader.read()
+    if (value) buffer += value
+    // Server-sent events: blank-line separated, each with a "data: {json}" line
+    let cut: number
+    while ((cut = buffer.indexOf('\n\n')) >= 0) {
+      const event = buffer.slice(0, cut)
+      buffer = buffer.slice(cut + 2)
+      const line = event.split('\n').find((l) => l.startsWith('data: '))
+      if (!line) continue
+      const e = JSON.parse(line.slice(6))
+      if (e.type === 'response.output_text.delta') {
+        text += e.delta
+        onText(text)
+      } else if (e.type === 'response.refusal.delta') refusal += e.delta
+      else if (e.type === 'response.completed' || e.type === 'response.incomplete') done = e.response
+      else if (e.type === 'response.failed') throw new Error(`openai: ${e.response?.error?.message ?? 'failed'}`)
+      else if (e.type === 'error') throw new Error(`openai: ${e.message ?? 'error'}`)
+    }
+    if (end) break
+  }
+  const usage: Usage = { input: done?.usage?.input_tokens ?? 0, output: done?.usage?.output_tokens ?? 0 }
+  if (done?.status === 'incomplete') throw new Error(`openai: answer cut short (${done.incomplete_details?.reason ?? 'unknown'})`)
+  if (refusal) throw new Error(`openai refused: ${refusal}`)
+  if (!text) throw new Error('openai: no answer')
+  return { value: JSON.parse(text) as T, usage }
+}
+
+/** The string `key` holds in `json`, a JSON object still being written: as much of it as has arrived; undefined before it starts. */
+export function partialString(json: string, key: string): string | undefined {
+  const start = json.match(new RegExp(`"${key}"\\s*:\\s*"`))
+  if (!start) return undefined
+  let out = ''
+  for (let i = start.index! + start[0].length; i < json.length; i++) {
+    const c = json[i]
+    if (c === '"') break
+    if (c !== '\\') {
+      out += c
+      continue
+    }
+    const next = json[i + 1]
+    if (next === undefined) break
+    if (next === 'u') {
+      if (i + 6 > json.length) break
+      out += String.fromCharCode(parseInt(json.slice(i + 2, i + 6), 16))
+      i += 5
+    } else {
+      out += ({ n: '\n', t: '\t', r: '\r', b: '\b', f: '\f' } as Record<string, string>)[next] ?? next
+      i++
+    }
+  }
+  return out
+}
+
+/**
+ * The answer to a transcription: the body in the kind's format, whether the image held anything, what was unclear,
+ * and whether it can go up as it is (`verdict`), with what the sender should do when it can't (`retry`).
+ */
+export type Transcription = { readable: boolean; body: string; unsure: string; verdict: 'publish' | 'retry'; retry: string }
 export const TRANSCRIPTION: Schema = {
   name: 'transcription',
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['readable', 'body', 'unsure'],
+    required: ['readable', 'body', 'unsure', 'verdict', 'retry'],
     properties: {
       readable: { type: 'boolean', description: 'false when the image and text show none of what was asked for' },
       body: { type: 'string', description: 'the transcription in the format given, nothing else; empty when not readable' },
       unsure: { type: 'string', description: 'anything hard to read or guessed, in a short sentence for the person who checks it; empty when nothing was' },
+      verdict: { type: 'string', enum: ['publish', 'retry'], description: 'publish: it goes on the venue page as it is, no one checking; retry: the sender is asked to send it again' },
+      retry: { type: 'string', description: 'when retry, one short sentence to the sender saying what to do, e.g. "The right half is cut off: take it again with the whole board in frame."; else empty' },
     },
   },
 }

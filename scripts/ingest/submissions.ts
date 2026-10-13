@@ -49,8 +49,11 @@ const [command, ...args] = positionals
 const db = connect()
 
 const short = (id: string) => id.slice(0, 8)
+/** Every photo sent with it, first to last */
+const photosOf = (s: Submission) => s.photo_paths ?? (s.photo_path ? [s.photo_path] : [])
+const photoWord = (s: Submission) => (photosOf(s).length > 1 ? `${photosOf(s).length} photos` : photosOf(s).length ? 'photo' : '')
 const line = (s: Submission) =>
-  `${short(s.id)}  ${s.status.padEnd(12)} ${(s.topic ? `${s.kind}:${s.topic}` : s.kind).padEnd(14)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${s.photo_path ? '  photo' : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
+  `${short(s.id)}  ${s.status.padEnd(12)} ${(s.topic ? `${s.kind}:${s.topic}` : s.kind).padEnd(14)} ${s.venue_id.padEnd(40)} ${s.created_at.slice(0, 16).replace('T', ' ')}${photoWord(s) ? `  ${photoWord(s)}` : ''}${s.contributor_id ? '  contributor' : ''}${s.transcribed_by ? `  by ${s.transcribed_by}` : ''}${s.review_note ? `  — ${s.review_note}` : ''}`
 
 async function one(id: string): Promise<Submission> {
   const rows = await db.submissions({})
@@ -238,7 +241,7 @@ async function digest(): Promise<string> {
       const days = Math.floor((Date.now() - Date.parse(s.created_at)) / 86400000)
       const why = s.review_note ?? (s.kind === 'other' ? 'a correction to read' : s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
       const where = v ? `[${v.name}, ${v.siteName}](https://grub.cam/${s.venue_id})` : s.venue_id
-      out.push(`| \`${short(s.id)}\` | ${what(s)}${s.photo_path ? ' (photo)' : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
+      out.push(`| \`${short(s.id)}\` | ${what(s)}${photoWord(s) ? ` (${photoWord(s)})` : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
     }
   }
   // Reviews held back: which venue, the stars and why, never the words (they're held back for a reason) or who
@@ -269,10 +272,10 @@ switch (command) {
     if (s.date || s.service) console.log(`for: ${[s.date, s.service].filter(Boolean).join(' ')}`)
     if (s.user_email ?? s.contact) console.log(`from: ${s.user_email ?? s.contact}`)
     if (s.note) console.log(`\nnote:\n${s.note}`)
-    if (s.photo_path) {
-      const file = join(dir, s.photo_path)
-      writeFileSync(file, await db.submissionPhoto(s.photo_path))
-      console.log(`\nphoto saved to ${file}`)
+    for (const path of photosOf(s)) {
+      const file = join(dir, path)
+      writeFileSync(file, await db.submissionPhoto(path))
+      console.log(`${path === photosOf(s)[0] ? '\n' : ''}photo saved to ${file}`)
     }
     if (s.unsure) console.log(`\nthe model wasn't sure: ${s.unsure}`)
     if (s.transcription) console.log(`\ntranscription (${s.transcribed_by}${s.model ? `, ${s.model}` : ''}):\n${s.transcription}`)
@@ -280,7 +283,7 @@ switch (command) {
       const v = await db.venue(s.venue_id)
       const t = s.kind as Transcribable
       console.log(`\n— paste the photo and this prompt into a chat model, save its answer under this header as a .txt, then: npm run submissions -- transcribe ${short(s.id)} file.txt —\n`)
-      console.log(header(t, { site: v.site, venue: v.slug, source: `submission ${s.id}: ${s.photo_path ? 'photo' : 'text'} sent from the venue's page on grub.cam`, observed: s.created_at.slice(0, 10) }))
+      console.log(header(t, { site: v.site, venue: v.slug, source: `submission ${s.id}: ${photoWord(s) || 'text'} sent from the venue's page on grub.cam`, observed: s.created_at.slice(0, 10) }))
       console.log(prompt({ kind: t, venue: { name: v.name, type: v.type, site: v.siteName }, date: s.date ?? undefined, service: s.service ?? undefined, note: s.note ?? undefined }))
     }
     break

@@ -48,7 +48,7 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 | Pages and shared layout | `src/pages/`, `src/App.tsx`, `src/index.css` |
 | Map engines and shared geometry | `src/components/VenueMap.tsx`, `src/components/AppleMap.tsx`, `src/lib/mapView.ts`, `src/lib/map.ts` |
 | Photos | `src/components/VenuePhoto.tsx`, `src/lib/photos.ts`, `scripts/ingest/photo.ts` |
-| Accounts and sending in | `src/lib/auth.ts`, `src/lib/submit.ts`, `src/pages/Send.tsx`, `supabase/functions/submit/` |
+| Accounts and sending in | `src/lib/auth.ts`, `src/lib/submit.ts`, `src/pages/Send.tsx`, `src/lib/reading.ts`, `supabase/functions/submit/` |
 | Model calls and prompts | `supabase/functions/_shared/openai.ts`, `supabase/functions/_shared/formats.ts` |
 | Reviews | `src/components/Reviews.tsx`, `scripts/ingest/reviews.ts` |
 | SEO and prerendering | `src/lib/seo.ts`, `src/entry-server.tsx`, `scripts/prerender.ts` |

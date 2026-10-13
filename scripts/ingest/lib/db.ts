@@ -18,6 +18,8 @@ export type Submission = {
   topic: string | null
   note: string | null
   photo_path: string | null
+  /** every photo sent with it, in order (0037); photo_path is the first */
+  photo_paths: string[] | null
   contact: string | null
   user_email: string | null
   contributor_id: string | null
