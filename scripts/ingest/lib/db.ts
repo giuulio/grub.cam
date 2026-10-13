@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { MenuDay, PriceItem } from '../../schema.ts'
 import type { Hours } from '../hours.ts'
+import type { SavedPrice } from '../prices.ts'
 import type { MenuSource } from './source.ts'
 import type { PriceTerms } from '../../../src/lib/types.ts'
 import type { SubmissionNotice } from './notifications.ts'
@@ -159,6 +160,11 @@ export function connect() {
     /** Replaces the venue's price list. */
     async savePrices(venue: string, observedOn: string, source: string, items: PriceItem[]) {
       const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: observedOn, p_source: source, p_items: items })
+      if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
+    },
+    /** A venue's whole list, each line with its own source and day (a merged list, or one put back; 0041). */
+    async saveList(venue: string, lines: SavedPrice[]) {
+      const { error } = await sb.rpc('save_prices', { p_venue_id: venue, p_observed_on: null, p_source: null, p_items: lines })
       if (error) throw new Error(`save_prices ${venue}: ${error.message}`)
     },
     async priceTerms(venue: string): Promise<PriceTerms | null> {

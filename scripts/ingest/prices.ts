@@ -1,5 +1,6 @@
 // Usage: npm run ingest:prices -- prices.txt [...] [--dry]
-// Saves a venue's posted price list to Supabase, replacing the one before. Keep the .txt files outside the repo.
+// Saves a venue's posted price list to Supabase, replacing the one before, every section of it (a member's list from
+// the submissions queue only replaces its own sections: mergeList()). Keep the .txt files outside the repo.
 //
 // Format:
 //   site: murray-edwards
@@ -40,6 +41,54 @@ export function unnamedColumns(p: PriceList, tiers?: string[] | null): string | 
   if (sizes) return `"${sizes}" is a size, not who pays: list each size as its own item ("Double espresso | £2.60")`
   if (!p.items.some((i) => i.non_member_gbp != null) || (p.columns?.length ?? 0) >= 2 || (tiers?.length ?? 0) >= 2) return null
   return 'two prices a line, but nothing says whose each is: add "columns: first | second", as the board heads them'
+}
+
+/** A line of a venue's saved list (venue_prices), with the source and day it was seen. */
+export type SavedPrice = PriceItem & { source: string; observed_on: string }
+
+const ROW_FIELDS = ['section', 'name', 'description', 'price_gbp', 'price_max_gbp', 'non_member_gbp', 'services', 'course', 'tags'] as const
+
+/** A venue's venue_prices rows as the lines they were saved from, in order. */
+export function savedList(rows: Record<string, unknown>[]): SavedPrice[] {
+  return [...rows]
+    .sort((a, b) => Number(a.position) - Number(b.position))
+    .map((r) => ({
+      ...PriceItem.parse(Object.fromEntries(ROW_FIELDS.filter((f) => r[f] != null && !(Array.isArray(r[f]) && !r[f].length)).map((f) => [f, r[f]]))),
+      source: String(r.source),
+      observed_on: String(r.observed_on),
+    }))
+}
+
+/** A section's key: its heading in any case; lines under no heading are one section. */
+export const sectionKey = (section?: string | null) => section?.trim().toLowerCase() ?? ''
+
+/**
+ * `list` with the sections in `sections` (keys) made `lines`: each where its first line was, or after the rest when
+ * it's new; a section with no lines in `lines` comes out.
+ */
+export function replaceSections(list: SavedPrice[], sections: Set<string>, lines: SavedPrice[]): SavedPrice[] {
+  const of = (k: string) => lines.filter((l) => sectionKey(l.section) === k)
+  const placed = new Set<string>()
+  const out: SavedPrice[] = []
+  for (const l of list) {
+    const k = sectionKey(l.section)
+    if (!sections.has(k)) out.push(l)
+    else if (!placed.has(k)) {
+      placed.add(k)
+      out.push(...of(k))
+    }
+  }
+  for (const k of new Set(lines.map((l) => sectionKey(l.section)))) if (!placed.has(k)) out.push(...of(k))
+  return out
+}
+
+/**
+ * A member's list on the venue's: its sections replace the ones under the same headings, the others stay, and new
+ * ones follow, so a second board sent on its own (Café Lucy's specials, a minute after its drinks) adds to the first.
+ */
+export function mergeList(list: SavedPrice[], p: PriceList): SavedPrice[] {
+  const lines = p.items.map((i) => ({ ...i, source: p.source, observed_on: p.observed_on }))
+  return replaceSections(list, new Set(lines.map((l) => sectionKey(l.section))), lines)
 }
 
 /** Column names that are sizes or versions of an item (The Buttery's espresso "Single | Double"), not who pays. */

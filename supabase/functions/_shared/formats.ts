@@ -49,9 +49,10 @@ Rules: one line per meal and set of days, "meal | days | times", with an optiona
 }
 
 /**
- * `current`: what the site lists now for a price list or hours, in the same format, so a correction to part of it comes
- * back whole. A menu's `date` and `service`: what the sender says it's for; with `asBoard`, only where the board doesn't
- * say (`today`, London's date, places a board's weekdays). `photos`: how many came together.
+ * `current`: what the site lists now for a price list or hours, in the same format: hours come back whole, a correction
+ * made; a price list comes back as what was sent alone, since publishing merges it by section (0041), a correction as
+ * the whole section it changes. A menu's `date` and `service`: what the sender says it's for; with `asBoard`, only
+ * where the board doesn't say (`today`, London's date, places a board's weekdays). `photos`: how many came together.
  */
 export type Context = { kind: Transcribable; venue: { name: string; type: 'hall' | 'cafe' | 'bar'; site: string }; date?: string; service?: string; asBoard?: boolean; today?: string; note?: string; current?: string; photos?: number }
 
@@ -77,7 +78,10 @@ export function prompt(c: Context, structured = false): string {
   if (c.note) lines.push(`The sender also wrote: "${c.note.replace(/"/g, "'")}" — it may be the text itself, typed, or a note about the photo.`)
   if (c.current)
     lines.push(
-      `What the site lists now, in the same format:\n"""\n${c.current}\n"""\nIf the photo or the text gives only part of it, or a correction to it ("Monday closes at 2", "the latte is now £3"), answer with the whole list: the change made, everything else (headings too: none added) kept as it is. If they give a whole new list, answer with theirs alone.`,
+      `What the site lists now, in the same format:\n"""\n${c.current}\n"""\n` +
+        (c.kind === 'prices'
+          ? `Each section you answer replaces the site's section under the same heading; the site's other sections stay as they are. So answer with what was sent alone, under the board's own headings: a board the site doesn't list yet (specials, a food menu beside the drinks) is new sections, added. Lines under no heading replace the site's lines under no heading, so when the board has no headings and those lines aren't on it, head it with the board's title ("## Specials"). A correction to part of it ("the latte is now £3"): that whole section, under its heading as listed, the change made and the rest of it kept.`
+          : `If the photo or the text gives only part of it, or a correction to it ("Monday closes at 2"), answer with the whole list: the change made, everything else kept as it is. If they give a whole new list, answer with theirs alone.`),
     )
   lines.push('', BODY_SPEC[c.kind])
   if (structured)

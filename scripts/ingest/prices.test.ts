@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGbp, parsePrices, unnamedColumns } from './prices.ts'
+import { mergeList, parseGbp, parsePrices, replaceSections, savedList, unnamedColumns } from './prices.ts'
 
 describe('parsePrices', () => {
   it('reads sections, member and non-member prices', () => {
@@ -87,5 +87,48 @@ describe('price columns', () => {
   it('holds sizes given as columns: each size is its own item', () => {
     expect(unnamedColumns(parsePrices(head + 'columns: Single | Double\nEspresso | £2.20 | £2.60'))).toMatch(/size/)
     expect(unnamedColumns(parsePrices(head + 'columns: Members | Non-members\nEspresso | £2.20 | £2.60'))).toBeNull()
+  })
+})
+
+describe('merging a member\'s list by section', () => {
+  const list = (id: string, observed: string, body: string) => parsePrices(`site: lucy-cavendish\nvenue: cafe-bar\nsource: submission ${id}\nobserved: ${observed}\n---\n${body}`)
+  const drinks = list('a', '2026-10-13', '## Coffee\nAmericano | 2.09\nLatte | 2.19\n## Teas\nAny tea | 1.65')
+  const specials = list('b', '2026-10-13', '## Special Offers\nHot drink & cake | £3.65')
+  const shape = (l: ReturnType<typeof mergeList>) => l.map((i) => `${i.section}: ${i.name} ${i.price_gbp} (${i.source})`)
+
+  it('adds a board sent on its own after the sections already listed (Café Lucy\'s specials after its drinks)', () => {
+    expect(shape(mergeList(mergeList([], drinks), specials))).toEqual([
+      'Coffee: Americano 2.09 (submission a)',
+      'Coffee: Latte 2.19 (submission a)',
+      'Teas: Any tea 1.65 (submission a)',
+      'Special Offers: Hot drink & cake 3.65 (submission b)',
+    ])
+  })
+  it('replaces a section under the same heading, in any case, where it was; the others keep their source and day', () => {
+    const merged = mergeList(mergeList([], drinks), list('c', '2026-11-02', '## COFFEE\nAmericano | 2.20'))
+    expect(shape(merged)).toEqual(['COFFEE: Americano 2.2 (submission c)', 'Teas: Any tea 1.65 (submission a)'])
+    expect(merged.map((l) => l.observed_on)).toEqual(['2026-11-02', '2026-10-13'])
+  })
+  it('takes lines under no heading as one section', () => {
+    const plain = mergeList([], list('a', '2026-10-13', 'Tea | 1.50\n## Cakes\nBrownie | 2'))
+    expect(shape(mergeList(plain, list('b', '2026-10-14', 'Tea | 1.60\nCoffee | 2')))).toEqual([
+      'undefined: Tea 1.6 (submission b)',
+      'undefined: Coffee 2 (submission b)',
+      'Cakes: Brownie 2 (submission a)',
+    ])
+  })
+  it('takes a section out when it is replaced with no lines (rejecting the list that added it)', () => {
+    const merged = mergeList(mergeList([], drinks), specials)
+    expect(shape(replaceSections(merged, new Set(['special offers']), []))).toEqual(shape(mergeList([], drinks)))
+  })
+  it('reads saved rows back in their order, without empty fields', () => {
+    const rows = [
+      { venue_id: 'v', position: 1, section: 'Teas', name: 'Any tea', description: null, price_gbp: 1.65, price_max_gbp: null, non_member_gbp: null, services: null, course: null, tags: [], observed_on: '2026-10-13', source: 'submission a' },
+      { venue_id: 'v', position: 0, section: null, name: 'Soup (VE)', description: 'Leek', price_gbp: 1.75, price_max_gbp: null, non_member_gbp: 2.1, services: ['lunch'], course: 'soup', tags: ['vegan'], observed_on: '2026-10-12', source: 'noticeboard' },
+    ]
+    expect(savedList(rows)).toEqual([
+      { name: 'Soup (VE)', description: 'Leek', price_gbp: 1.75, non_member_gbp: 2.1, services: ['lunch'], course: 'soup', tags: ['vegan'], observed_on: '2026-10-12', source: 'noticeboard' },
+      { section: 'Teas', name: 'Any tea', price_gbp: 1.65, observed_on: '2026-10-13', source: 'submission a' },
+    ])
   })
 })

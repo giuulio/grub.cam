@@ -18,8 +18,10 @@
 // photos Action without a person (`menus`), when it reads, is for the venue it was sent for, its days are yesterday
 // or later (no future cutoff), and the venue's menu isn't fetched by a script; otherwise it waits for a person, saying why. A
 // member's price list or hours goes the same way (since 0032), when it reads and is for its venue: the submit function
-// has already had a model check any reading the sender edited. What it replaces is kept with the row (`replaced`), and
-// rejecting it puts that back, unless the venue's list has been replaced again since.
+// has already had a model check any reading the sender edited. A price list adds to the venue's (0041): its sections
+// replace the ones under the same headings and the others stay, so two boards sent one after the other both go up.
+// What it replaces is kept with the row (`replaced`), and rejecting it puts that back where it's still the venue's: a
+// price list's sections that are still its own, hours unless they've been replaced again since.
 //
 // A member's photo of the venue (kind photo), or of a site itself for its page's banner (`site`, 0040), is published as
 // ingest:photo would: its sizes written to public/photos (commit them; the photos Action does) and its row added ahead
@@ -35,7 +37,7 @@ import { connect, type Submission } from './lib/db.ts'
 import { parseHours } from './hours.ts'
 import { parseManual } from './manual.ts'
 import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
-import { parsePrices, unnamedColumns } from './prices.ts'
+import { mergeList, parsePrices, replaceSections, savedList, sectionKey, unnamedColumns } from './prices.ts'
 import { SITE_URL } from '../../src/lib/site.ts'
 import { deliverNotices, githubDelivery } from './lib/notifications.ts'
 
@@ -151,13 +153,15 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
     const unnamed = unnamedColumns(p, (await db.priceTerms(p.venue))?.tiers)
     if (unnamed) throw new Error(unnamed)
     const before = await db.rowsOf('venue_prices', p.venue)
+    const merged = mergeList(savedList(before), p)
+    const kept = merged.length - p.items.length
     if (!dry) {
       await db.updateSubmission(s.id, { replaced: before })
-      await db.savePrices(p.venue, p.observed_on, p.source, p.items)
+      await db.saveList(p.venue, merged)
       const renamed = p.columns && (await db.nameColumns(p.venue, p.columns))
       if (renamed) await db.updateSubmission(s.id, { replaced_terms: renamed })
     }
-    return `${p.items.length} prices, replacing ${before.length}${p.columns ? `; columns ${p.columns.join(' | ')}` : ''}`
+    return `${p.items.length} prices, replacing ${before.length - kept}${kept ? `, keeping ${kept} in other sections` : ''}${p.columns ? `; columns ${p.columns.join(' | ')}` : ''}`
   }
   if (s.kind === 'hours') {
     const h = parseHours(s.transcription)
@@ -223,10 +227,29 @@ async function listHold(s: Submission): Promise<string | null> {
   return null
 }
 
-/** Whether what a published price list or hours replaced can be put back: the venue's list is still this submission's. */
+/** Whether what published hours replaced can be put back: the venue's slots are still all this submission's. */
 async function stillCurrent(s: Submission): Promise<boolean> {
-  if (s.kind === 'prices') return (await db.rowsOf('venue_prices', venueOf(s))).every((r) => String(r.source).startsWith(`submission ${s.id}`))
   return (await db.rowsOf('service_slots', venueOf(s))).every((r) => (r.prov as { submission?: string } | null)?.submission === s.id)
+}
+
+/**
+ * A published price list taken down: each of its sections still all its own goes back to what it replaced there
+ * (comes out, when it was new); a section someone has sent again since stays. A list published before 0041 replaced
+ * the venue's whole: while all of it is still its own, the whole list before it goes back.
+ */
+async function unpublishPrices(s: Submission, replaced: Record<string, unknown>[], transcription: string): Promise<string> {
+  const venue = venueOf(s)
+  const now = savedList(await db.rowsOf('venue_prices', venue))
+  const own = (l: { source: string }) => l.source.startsWith(`submission ${s.id}`)
+  if (now.every(own)) {
+    await db.restoreRows('venue_prices', venue, replaced)
+    return `; the price list before it (${replaced.length} rows) put back`
+  }
+  const sections = [...new Set(parsePrices(transcription).items.map((i) => sectionKey(i.section)))]
+  const back = new Set(sections.filter((k) => now.some((l) => sectionKey(l.section) === k && own(l)) && now.every((l) => sectionKey(l.section) !== k || own(l))))
+  if (!back.size) return "; its sections have been sent again since, so nothing is put back"
+  await db.saveList(venue, replaceSections(now, back, savedList(replaced).filter((l) => back.has(sectionKey(l.section)))))
+  return `; ${back.size === sections.length ? 'its sections' : `${back.size} of its ${sections.length} sections`} put back as they were before it`
 }
 
 const KIND_WORD: Record<Submission['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'photo of the venue', other: 'correction' }
@@ -359,14 +382,14 @@ switch (command) {
     const hidden = s.kind === 'photo' ? await db.hideSubmissionPhoto(s.id) : 0
     // A member's published menu: its days come down (only theirs: a script's or a hand-copied menu for the same day stays)
     const menus = s.kind === 'menu' && s.status === 'approved' && s.transcription ? await db.deleteMenuDays(venueOf(s), parseManual(s.transcription).days, s.contributor_id ? 'contributor' : 'user') : 0
-    // A published price list or hours: what it replaced goes back, unless the venue's has been replaced again since
+    // A published price list or hours: what it replaced goes back, where it's still the venue's
     let restored = ''
-    if ((s.kind === 'prices' || s.kind === 'hours') && s.status === 'approved' && s.replaced) {
-      const table = s.kind === 'prices' ? 'venue_prices' : 'service_slots'
+    if (s.kind === 'prices' && s.status === 'approved' && s.replaced && s.transcription) restored = await unpublishPrices(s, s.replaced, s.transcription)
+    else if (s.kind === 'hours' && s.status === 'approved' && s.replaced) {
       if (await stillCurrent(s)) {
-        await db.restoreRows(table, venueOf(s), s.replaced)
-        restored = `; the ${s.kind === 'prices' ? 'price list' : 'hours'} before it (${s.replaced.length} rows) put back`
-      } else restored = `; the venue's ${s.kind === 'prices' ? 'price list' : 'hours'} changed again since, so nothing is put back`
+        await db.restoreRows('service_slots', venueOf(s), s.replaced)
+        restored = `; the hours before it (${s.replaced.length} rows) put back`
+      } else restored = `; the venue's hours changed again since, so nothing is put back`
     }
     // Columns it named go back too, unless they've been renamed since
     if (s.kind === 'prices' && s.status === 'approved' && s.replaced_terms && s.transcription) {
