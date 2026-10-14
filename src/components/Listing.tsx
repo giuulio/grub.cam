@@ -139,7 +139,8 @@ function RowPreview({ r, now, types, dishes, formal, compact }: { r: Ranked; now
     const mains = mainDishes(day.items).filter((i) => i.name.toLowerCase() !== MEAL_LABEL[day.service].toLowerCase())
     // Today's meal unless it's another day's (a prerendered page can't say which day is today)
     const when = snapshot || day.date === now.date ? '' : day.date === addDaysISO(now.date, 1) ? ' tomorrow' : ` ${dayLabel(dayOfISO(day.date))}`
-    return <Lines title={`${MEAL_LABEL[day.service]}${when}`} items={mains.map((i) => i.name)} max={max} compact={compact} />
+    // A meal posted elsewhere says so ("European Night, see posters for details")
+    return <Lines title={`${MEAL_LABEL[day.service]}${when}`} items={day.items.length ? mains.map((i) => i.name) : [day.note ?? '']} max={max} compact={compact} />
   }
   const prices = headlineLines(v, types, max)
   if (prices.length)

@@ -2,6 +2,7 @@ import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type Me
 import type { LocalNow } from './time/clock.ts'
 import { openStatus, statusRank, withDayTimes, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
+import { mealElsewhere } from './menuNotes.ts'
 import { compareSearchHits, normalizeSearch, searchVenues, type SearchHit } from './search.ts'
 
 export const MEALS: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
@@ -127,11 +128,11 @@ export const SECTIONS: Section[] = ['open', 'later', 'other', 'unknown']
 export const SECTION_LABEL: Record<Section, string> = { open: 'Open now', later: 'Later today', other: 'Other days', unknown: 'Hours not published' }
 export const sectionOf = (s: OpenStatus): Section => (s.kind === 'open' ? 'open' : s.kind === 'opening' ? 'later' : s.kind === 'closed' ? 'other' : 'unknown')
 
-/** The menu for the service the status points at, else the first menu that day. */
+/** The menu for the service the status points at (its note alone, when it's posted elsewhere), else the first menu that day. */
 export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>): MenuDay | undefined {
   const slot = s.kind === 'open' || s.kind === 'opening' ? s.slot : s.kind === 'closed' ? s.next?.slot : undefined
   const withItems = days.filter((d) => d.items.length)
-  return withItems.find((d) => d.service === slot?.meal) ?? withItems[0]
+  return days.find((d) => d.service === slot?.meal && (d.items.length || mealElsewhere(d))) ?? withItems[0]
 }
 
 /** A menu's main dishes, what a card leads with; every dish where the source marks no courses (Homerton, Downing). */

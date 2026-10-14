@@ -95,6 +95,13 @@ describe('nextService', () => {
     expect(at(15 * 60)).toBe('dinner')
     expect(nextService({ status: { kind: 'unknown' }, days: v.menu })?.service).toBe('lunch')
   })
+  it("a meal posted elsewhere is the one shown, with its note; a cancelled one isn't", () => {
+    const friday = { date: '2026-10-07', service: 'dinner' as const, items: [], note: 'European Night, see posters for details' }
+    const v: Venue = { ...base, slots: [...base.slots, { ...base.slots[0], meal: 'dinner', start: '18:00', end: '19:30' }], menu: [...base.menu, friday] }
+    const { status } = applyFilters([v], { ...DEFAULT_FILTERS, date: now.date }, { ...now, minutes: 15 * 60 })[0]
+    expect(nextService({ status, days: v.menu })).toMatchObject({ service: 'dinner', note: 'European Night, see posters for details' })
+    expect(nextService({ status, days: [...base.menu, { ...friday, note: 'No dinner – formal hall' }] })?.service).toBe('lunch')
+  })
 })
 
 describe('mealHours', () => {

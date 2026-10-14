@@ -49,6 +49,8 @@ Missing menus and price lists use `GapCard`: Light Blue, brief explanation, phot
 
 An explicit dated meal cancellation (`No dinner – …` in the menu note, with no dishes) stays in the calendar and menu. Its heading says “Not served”, without the usual hours or prices; the note gives the published reason. Opening status excludes that meal on that date, and the hours rail includes the notice when it applies today. The usual weekly hours stay visible. A missing menu alone never means a cancelled service.
 
+A meal whose menu is posted elsewhere (a note with no dishes that isn't a cancellation: “European Night, see posters for details”) keeps its usual hours, shows its note in place of dishes, and from yesterday on has a gap line to send a photo of it (`/send` with that date and meal). A venue row whose current meal is one shows its note under the meal's name.
+
 Reviews use `Reviews.tsx`: anonymous ratings after five members, newest six written reviews then “Show all”, and the member's own form when signed in. Signed out, the prompt to rate is a line with a secondary pill, quieter than the page's gaps. `RatingSummary` appears beside venue names; SEO includes `aggregateRating` when available.
 
 ## Contribute and information pages

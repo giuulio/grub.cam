@@ -9,6 +9,7 @@
 //   ---
 //   2026-10-05 lunch            <- starts a service block (date + breakfast|brunch|lunch|dinner)
 //   2026-10-13 dinner | No dinner – UG freshers formal hall <- a cancelled meal, with no dishes
+//   2026-10-16 dinner | European Night, see posters for details <- served, menu posted elsewhere: its note alone, until a member sends a photo of it
 //   2026-10-13 lunch | ! Served at the top table after a leak <- "!" makes the note an alert, shown in red
 //   ## Sides                    <- optional course heading for following lines (soup/main/side/dessert/other)
 //   Carrot & coconut soup (VG)  <- dish; (V)/(VG)/(H)/(GF)/(PB) markers become tags; trailing £x.xx becomes price
@@ -19,7 +20,7 @@ import { parseArgs } from 'node:util'
 import { Meal, MenuDay, type Dish } from '../schema.ts'
 import { connect } from './lib/db.ts'
 import { cleanName, courseFromHeading, parsePrice, tagsFromName } from './lib/tags.ts'
-import { mealCancelled } from '../../src/lib/menuNotes.ts'
+import { mealCancelled, mealPosted } from '../../src/lib/menuNotes.ts'
 
 export type ManualMenu = { venue: string; source_url: string; fetched_at: string; days: MenuDay[] }
 
@@ -70,7 +71,7 @@ export function parseManual(text: string): ManualMenu {
     venue: `${site}/${meta.venue}`,
     source_url: meta.source,
     fetched_at: meta.fetched ?? new Date().toISOString(),
-    days: days.filter((d) => d.items.length || mealCancelled(d)).map((d) => MenuDay.parse(d)),
+    days: days.filter(mealPosted).map((d) => MenuDay.parse(d)),
   }
 }
 

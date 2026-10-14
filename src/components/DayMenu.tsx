@@ -3,9 +3,10 @@ import { dishTags, MEAL_LABEL, MEALS } from '../lib/filters.ts'
 import { coursePrice, fromList, mealPrices, ownPrice, priceHeads, type MealPrices } from '../lib/prices.ts'
 import { hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { noteTimes, slotApplies, withDayTimes } from '../lib/time/openNow.ts'
-import type { Dish, MenuDay, PriceTerms, Slot, VenuePrice } from '../lib/types.ts'
+import type { Dish, Meal, MenuDay, PriceTerms, Slot, VenuePrice } from '../lib/types.ts'
+import { GapLine } from './GapCard.tsx'
 import { Icon } from './Icon.tsx'
-import { mealCancelled } from '../lib/menuNotes.ts'
+import { mealCancelled, mealElsewhere, mealPosted } from '../lib/menuNotes.ts'
 import { GroupHead, ListNote, PriceList, PriceText, Row } from './MenuRows.tsx'
 
 type Course = NonNullable<Dish['course']>
@@ -21,9 +22,11 @@ const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side
  * Prices from the venue's posted list (its Dining lines, `priceGroups`) sit next to the dishes they apply to, or in the
  * heading for one price per meal; anything else it sells at that meal is folded below. Price columns are headed, and
  * explained, the venue's way (`terms`), and credited to the member who sent the list (`pricesBy`), if one did.
+ * A meal whose menu is posted elsewhere ("European Night, see posters for details") shows that note, and where
+ * `send` gives a link, asks for a photo of it.
  */
-export function DayMenu({ days, slots, date, prices, terms, now, pricesBy }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow; pricesBy?: string }) {
-  const posted = days.filter((d) => d.items.length || mealCancelled(d))
+export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, send }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow; pricesBy?: string; send?: (meal: Meal) => string }) {
+  const posted = days.filter(mealPosted)
   const served = withDayTimes(slots, days)
   // A meal served that day with no dishes posted, but its own posted list (St Catharine's breakfast, a fixed brunch):
   // the list is its menu. Lines sold at every meal aren't one.
@@ -49,6 +52,7 @@ export function DayMenu({ days, slots, date, prices, terms, now, pricesBy }: { d
         {shown.map(({ day, prices: mp }) => {
           const span = (from: Slot[]) => times(from, day.service).map((s) => `${s.start}–${s.end}`).join(', ')
           const cancelled = mealCancelled(day)
+          const elsewhere = mealElsewhere(day)
           const hours = cancelled ? '' : span(served)
           const usual = span(slots)
           // The day's own times, when its note gives some other than the usual
@@ -82,13 +86,20 @@ export function DayMenu({ days, slots, date, prices, terms, now, pricesBy }: { d
                   </span>
                 </p>
               ) : (
-                day.note && <p className={`mt-2 text-sm ${cancelled ? 'text-notice' : 'text-muted'}`}>{day.note}</p>
+                day.note && <p className={elsewhere ? 'mt-3' : `mt-2 text-sm ${cancelled ? 'text-notice' : 'text-muted'}`}>{day.note}</p>
               )}
               {day.items.length ? (
                 <Dishes items={day.items} prices={mp} terms={terms} />
               ) : (
                 <div className="mt-3">
                   <PriceList lines={mp.items} terms={terms} narrow />
+                </div>
+              )}
+              {elsewhere && send && (
+                <div className="mt-4">
+                  <GapLine to={send(day.service)} action="Send a photo">
+                    <span className="font-semibold">Dishes not here yet.</span> <span className="text-muted">Seen the menu?</span>
+                  </GapLine>
                 </div>
               )}
               {day.items.length > 0 && mp.items.length > 0 && (

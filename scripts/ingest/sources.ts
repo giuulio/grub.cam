@@ -174,8 +174,14 @@ export const SOURCES: MenuSource[] = [
   // Public, but behind a CAPTCHA (SiteGround's sgcaptcha, even in headless Chrome): transcribed by hand, never got round
   { venue: 'queens/cripps-dining-hall-cafeteria', channel: 'html', url: 'https://www.queens.cam.ac.uk/life-at-queens/catering/dining-hall/weekly-menu/', cadence: 'weekly' },
 
-  // Fixed menus supplied directly; transcribed with ingest:prices
+  // Menus supplied directly; transcribed with ingest:prices or ingest:manual
   { venue: 'gonville-and-caius/old-courts-cafe-bar', channel: 'email', cadence: 'fixed', notes: 'Caius Café breakfast/lunch menu supplied by the JCR Food & Bar representative on 12 Oct 2026; saved with ingest:prices. Hall menus remain separate.' },
+  {
+    venue: 'sidney-sussex/servery-dining-hall',
+    channel: 'email',
+    cadence: 'three-week rota, new each term (Mon–Fri lunch, daily dinner)',
+    notes: 'Cafeteria menus sent by SSCSU Accommodation & Catering with the College\'s agreement on 14 Oct 2026; each PDF dates its three weeks. Michaelmas 2026 saved with ingest:manual. Friday dinner is "European Night, see posters for details": saved as that note, until a member sends a photo of the poster. Lent\'s rota promised at the start of Lent.',
+  },
 
   // Members only: need a collaborator in the college
   { venue: 'christs/upper-hall', channel: 'intranet', notes: 'https://intranet.christs.cam.ac.uk/upper-hall-menus' },
@@ -212,6 +218,5 @@ export const SOURCES: MenuSource[] = [
   { venue: 'madingley-hall/cafe', channel: 'pdf', url: 'https://madingleyhall.cam.ac.uk/dining/the-cafe/', cadence: 'fixed', prices: madingleyPrices },
 
   // No known menu
-  { venue: 'sidney-sussex/servery-dining-hall', channel: 'none' },
   { venue: 'corpus-christi/leckhampton-dining-hall', channel: 'unknown', notes: 'Not on the Corpus foodmenu: its `reference` parameter is ignored (0–5 return the same cafeteria menu, checked 12 Oct 2026).' },
 ]

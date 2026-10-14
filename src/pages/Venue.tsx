@@ -17,13 +17,13 @@ import { sentBy } from '../lib/contributors.ts'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
-import { mealCancelled } from '../lib/menuNotes.ts'
+import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, siteName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
-import { formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
+import { addDaysISO, formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus, withDayTimes } from '../lib/time/openNow.ts'
 import { isFullTerm } from '../lib/time/termDates.ts'
 import { isFormalOnly, venueTypes, type Channel, type Day, type DietTag, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
@@ -195,7 +195,7 @@ function useMenuDate(venue: Venue, now: LocalNow) {
   const date = isISODate(asked) ? asked : now.date
   const setDate = (d: string) => setParams(d === now.date ? {} : { date: d }, { replace: true })
   const fetched = useMenuDates(venue.id)
-  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter((d) => d.items.length || mealCancelled(d)).map((d) => d.date)])].sort()
+  const dates = [...new Set([...(fetched ?? []), ...venue.menu.filter(mealPosted).map((d) => d.date)])].sort()
   return { asked, date, setDate, fetched, dates }
 }
 
@@ -389,9 +389,19 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
         </div>
       )}
       <div>
-        {days?.some((d) => d.items.length || mealCancelled(d)) ? (
+        {days?.some(mealPosted) ? (
           <>
-            <DayMenu days={days} slots={venue.slots} date={date} prices={prices} terms={venue.price_terms} now={!snapshot && date === now.date ? now : undefined} pricesBy={creditOf(venue, 'prices')} />
+            <DayMenu
+              days={days}
+              slots={venue.slots}
+              date={date}
+              prices={prices}
+              terms={venue.price_terms}
+              now={!snapshot && date === now.date ? now : undefined}
+              pricesBy={creditOf(venue, 'prices')}
+              // A member's menu goes up from yesterday on
+              send={!snapshot && !venue.menu_scripted && date >= addDaysISO(now.date, -1) ? (meal) => sendPath(venue, 'menu', { date, meal }) : undefined}
+            />
             {menuBy && (
               <p className="mt-2 text-sm text-muted">
                 This menu was sent in by <SentBy by={menuBy} />

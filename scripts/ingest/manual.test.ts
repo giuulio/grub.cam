@@ -17,6 +17,10 @@ describe('manual menu cancellations', () => {
   it('recognises a cancellation transcribed on a separate line', () => {
     expect(parseManual(header + '2026-10-17 dinner\nNo dinner – matriculation dinner\n').days[0]).toMatchObject({ items: [], note: 'No dinner – matriculation dinner' })
   })
+  it('keeps a meal posted elsewhere as its note alone, still served', () => {
+    const m = parseManual(header + '2026-10-16 dinner | European Night, see posters for details\n2026-10-17 dinner\n')
+    expect(m.days).toEqual([{ date: '2026-10-16', service: 'dinner', note: 'European Night, see posters for details', items: [] }])
+  })
   it('rejects contradictory dishes and a cancellation', () => {
     expect(() => parseManual(header + '2026-10-13 dinner | No dinner – formal hall\nSoup')).toThrow(/cancelled meal/)
   })
