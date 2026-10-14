@@ -141,7 +141,7 @@ function Dishes({ items, prices, terms }: { items: Dish[]; prices: MealPrices; t
           <GroupHead label={groups.length > 1 || g.price ? COURSE_LABEL[g.course] : undefined} heads={n === 0 ? heads : []} price={g.price} columns={columns} />
           <ul>
             {g.items.map((i, n) => (
-              <Row key={n} name={i.name} tags={dishTags(i.tags)} soldOut={i.sold_out} price={priced[items.indexOf(i)]} columns={columns} />
+              <Row key={n} name={i.name} tags={dishTags(i.tags)} allergens={i.allergens} soldOut={i.sold_out} price={priced[items.indexOf(i)]} columns={columns} />
             ))}
           </ul>
         </div>

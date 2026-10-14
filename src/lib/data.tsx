@@ -21,7 +21,7 @@ type VenueRow = Omit<Venue, 'site' | 'menu' | 'prices' | 'formal' | 'photos'> & 
 type SiteRow = Omit<Site, 'photos'> & { venues: VenueRow[]; photos: (Photo & { position: number })[] }
 type MenuDayRow = MenuDay & { venue_id: string; fetched_at: string }
 
-const ITEMS = 'items:menu_items(name, tags, price_gbp, price2_gbp, price_text, course, sold_out)'
+const ITEMS = 'items:menu_items(name, tags, price_gbp, price2_gbp, price_text, course, sold_out, allergens)'
 const MENU_DAYS = 7
 
 /** Everything the pages need up front: sites, venues, hours and the next week of menus. */

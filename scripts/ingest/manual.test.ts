@@ -21,6 +21,13 @@ describe('manual menu cancellations', () => {
     const m = parseManual(header + '2026-10-16 dinner | European Night, see posters for details\n2026-10-17 dinner\n')
     expect(m.days).toEqual([{ date: '2026-10-16', service: 'dinner', note: 'European Night, see posters for details', items: [] }])
   })
+  it('reads allergens printed in brackets after a dish, apart from its diet codes', () => {
+    const [day] = parseManual(header + '2026-10-12 lunch\nVegan meatball, buckwheat and harissa stew (VG) (soya)\nHalal beef bolognaise (H)\n').days
+    expect(day.items).toEqual([
+      { name: 'Vegan meatball, buckwheat and harissa stew', tags: ['vegan', 'vegetarian'], course: 'main', allergens: ['soya'] },
+      { name: 'Halal beef bolognaise', tags: ['halal'], course: 'main' },
+    ])
+  })
   it('rejects contradictory dishes and a cancellation', () => {
     expect(() => parseManual(header + '2026-10-13 dinner | No dinner – formal hall\nSoup')).toThrow(/cancelled meal/)
   })

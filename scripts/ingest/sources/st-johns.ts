@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 export const stJohns: Adapter = {
@@ -36,7 +36,9 @@ export const stJohns: Adapter = {
           // Tag/allergen row is the sibling block right after the dish paragraph's wrapper
           const wrapper = el.parentNode?.parentNode
           const tagSpans = wrapper?.querySelectorAll('span.rounded-sm').map((s) => s.text.trim()) ?? []
-          items.push({ name, tags: tagsFromLabels(tagSpans), course: courseFromHeading(course) })
+          // After "Contains:": "Gluten (wheat, barley)", "Nuts (walnuts)", "Sulphur Dioxide"
+          const allergens = allergensFromLabels(wrapper?.querySelectorAll('span.rounded-lg').map((s) => s.text) ?? [])
+          items.push({ name, tags: tagsFromLabels(tagSpans), course: courseFromHeading(course), ...(allergens.length ? { allergens } : {}) })
         }
         if (items.length) days.push({ date, service, items })
       }

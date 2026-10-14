@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays, parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 export const robinson: Adapter = {
@@ -36,12 +36,15 @@ export const robinson: Adapter = {
             const name = cleanName(frag.text)
             if (!name || name.length < 3) continue
             const prices = [...priceText.replace(/&pound;/g, '£').matchAll(/£\s*(\d+(?:\.\d{1,2})?)/g)].map((m) => Number(m[1]))
+            // Icons for diets and allergens alike: only the 14 allergens' are allergens
+            const allergens = allergensFromLabels(alts, false)
             items.push({
               name,
               tags: tagsFromLabels(alts),
               price_gbp: prices[0],
               price2_gbp: prices[1],
               course: courseFromHeading(category),
+              ...(allergens.length ? { allergens } : {}),
             })
           }
         }

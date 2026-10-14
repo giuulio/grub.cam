@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { WEEKDAYS, addDays, weekMonday } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, parsePrice } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, parsePrice } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 export const darwin: Adapter = {
@@ -34,17 +34,21 @@ export const darwin: Adapter = {
           const name = cleanName(tds[0]?.text ?? '')
           if (!name) continue
           const price = parsePrice(tds[2]?.text)
+          const allergens = allergensFromLabels(tds[1]?.querySelectorAll('li').map((li) => li.getAttribute('title') ?? li.text) ?? [])
+          const listed = allergens.length ? { allergens } : {}
           const sides = name.match(/^sides?\s*[:\-–]\s*(.+)$/i)
-          if (sides) {
+          // A line of sides is split into them, unless it lists allergens: those are the line's, not any one side's
+          if (sides && !allergens.length) {
             for (const s of sides[1].split(/,\s*/)) {
               const sn = cleanName(s)
               if (sn) items.push({ name: sn, tags: [], course: 'side', price_gbp: price })
             }
-          } else items.push({ name, tags: [], course: 'main', price_gbp: price })
+          } else if (sides) items.push({ name: cleanName(sides[1]), tags: [], course: 'side', price_gbp: price, ...listed })
+          else items.push({ name, tags: [], course: 'main', price_gbp: price, ...listed })
         }
         if (items.length) days.push({ date, service, items })
       }
     }
-    return { days, note: 'Darwin publishes allergen codes but no diet labels; member prices shown.' }
+    return { days, note: 'Darwin publishes allergens but no diet labels; member prices shown.' }
   },
 }

@@ -2,7 +2,7 @@ import { FULL_TERMS } from '../../../src/lib/time/termDates.ts'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays, fromISODate, isoWeek, WEEKDAYS } from '../lib/dates.ts'
 import { fetchJson } from '../lib/http.ts'
-import { cleanName, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 const OUTLET = 17260
@@ -18,7 +18,7 @@ function groupMonday(name: string): string | undefined {
 }
 
 type Outlet = { menu_groups: { id: number; name: string; is_active: boolean }[] }
-type Recipe = { id: number; name: string; tags: { name: string; group: string }[] }
+type Recipe = { id: number; name: string; tags: { name: string; group: string }[]; all_allergens?: { name: string; isMayContain?: boolean }[] }
 type Group = { menus: { id: number; name: string; recipes: Recipe[]; config: { widgets: { class: string; config: { id: number } }[] } | null }[] }
 
 export const downing: Adapter = {
@@ -45,10 +45,12 @@ export const downing: Adapter = {
       const items: Dish[] = order
         .map((id) => recipes.get(id))
         .filter((r): r is Recipe => !!r)
-        .map((r) => ({
-          name: cleanName(r.name),
-          tags: tagsFromLabels(r.tags.filter((t) => t.group === 'Dietary').map((t) => t.name)),
-        }))
+        .map((r) => {
+          // "Gluten" and "Gluten: Wheat" are one allergen, with its kind; what it may contain after, without kinds (a trace
+          // of nuts is listed as all eight)
+          const allergens = allergensFromLabels((r.all_allergens ?? []).map((a) => (a.isMayContain ? `may contain ${a.name.replace(/:.*/, '')}` : a.name)))
+          return { name: cleanName(r.name), tags: tagsFromLabels(r.tags.filter((t) => t.group === 'Dietary').map((t) => t.name)), ...(allergens.length ? { allergens } : {}) }
+        })
       if (!items.length) continue
       if (isBrunch) days.push({ date, service: 'brunch', items })
       else if (dayIdx >= 5) days.push({ date, service: 'dinner', items })

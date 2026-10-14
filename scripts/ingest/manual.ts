@@ -13,13 +13,14 @@
 //   2026-10-13 lunch | ! Served at the top table after a leak <- "!" makes the note an alert, shown in red
 //   ## Sides                    <- optional course heading for following lines (soup/main/side/dessert/other)
 //   Carrot & coconut soup (VG)  <- dish; (V)/(VG)/(H)/(GF)/(PB) markers become tags; trailing £x.xx becomes price
+//   Salmon pasta bake (gluten, fish, milk) <- allergens as printed, in brackets; "(may contain: nuts)" too
 //   Roast pork £3.60 | note     <- anything after " | " is appended to the dish name in brackets
 //   # comment
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { Meal, MenuDay, type Dish } from '../schema.ts'
 import { connect } from './lib/db.ts'
-import { cleanName, courseFromHeading, parsePrice, tagsFromName } from './lib/tags.ts'
+import { allergensFromName, cleanName, courseFromHeading, parsePrice, tagsFromName } from './lib/tags.ts'
 import { mealCancelled, mealPosted } from '../../src/lib/menuNotes.ts'
 
 export type ManualMenu = { venue: string; source_url: string; fetched_at: string; days: MenuDay[] }
@@ -59,10 +60,11 @@ export function parseManual(text: string): ManualMenu {
     }
     const [namePart, ...noteParts] = line.split(' | ')
     const price = parsePrice(namePart)
-    const { name, tags } = tagsFromName(cleanName(namePart.replace(/£\s*\d+(?:\.\d{1,2})?(\s*\/\s*£\s*\d+(?:\.\d{1,2})?)?/g, '')))
+    const { name: plain, allergens } = allergensFromName(cleanName(namePart.replace(/£\s*\d+(?:\.\d{1,2})?(\s*\/\s*£\s*\d+(?:\.\d{1,2})?)?/g, '')))
+    const { name, tags } = tagsFromName(plain)
     const priceText = namePart.match(/£\s*\d+(?:\.\d{1,2})?\s*\/\s*£\s*\d+(?:\.\d{1,2})?/)?.[0]
     const full = noteParts.length ? `${name} (${noteParts.join(' | ')})` : name
-    cur.items.push({ name: full, tags, course, ...(price !== undefined ? { price_gbp: price } : {}), ...(priceText ? { price_text: priceText } : {}) })
+    cur.items.push({ name: full, tags, course, ...(price !== undefined ? { price_gbp: price } : {}), ...(priceText ? { price_text: priceText } : {}), ...(allergens.length ? { allergens } : {}) })
   }
   const site = meta.site ?? meta.college
   if (!site || !meta.venue || !meta.source) throw new Error('header needs site, venue and source')

@@ -1,6 +1,6 @@
 import type { Dish, MenuDay } from '../../schema.ts'
 import { fetchJson } from '../lib/http.ts'
-import { cleanName, tagsFromName } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, tagsFromName } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 type Item = { name: string; allergens: string[]; price?: string }
@@ -9,7 +9,8 @@ type Week = { meta: { weekOffset: number; start: string; end: string }; days: { 
 const toDish = (it: Item): Dish => {
   const { name, tags } = tagsFromName(cleanName(it.name ?? ''))
   const price = it.price ? Number(it.price) : undefined
-  return { name, tags, price_gbp: Number.isFinite(price) ? price : undefined }
+  const allergens = allergensFromLabels(it.allergens ?? [])
+  return { name, tags, price_gbp: Number.isFinite(price) ? price : undefined, ...(allergens.length ? { allergens } : {}) }
 }
 
 export const homerton: Adapter = {

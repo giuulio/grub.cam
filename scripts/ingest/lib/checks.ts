@@ -82,7 +82,8 @@ export function failed(c: SourceCheck | undefined, venue: string, now: Date, err
 
 /** The day exactly as save_menu stores it, so an unchanged day has the hash it was saved with. */
 export function dayHash(d: MenuDay): string {
-  const items = d.items.map((i) => [i.name, i.tags, i.price_gbp ?? null, i.price2_gbp ?? null, i.price_text ?? null, i.course ?? null, i.sold_out ?? null])
+  // Allergens only where listed, so a day without them keeps the hash it had before they were stored (0044)
+  const items = d.items.map((i) => [i.name, i.tags, i.price_gbp ?? null, i.price2_gbp ?? null, i.price_text ?? null, i.course ?? null, i.sold_out ?? null, ...(i.allergens?.length ? [i.allergens] : [])])
   return createHash('sha256').update(JSON.stringify([d.date, d.service, d.note ?? null, d.alert ?? false, items])).digest('hex').slice(0, 32)
 }
 

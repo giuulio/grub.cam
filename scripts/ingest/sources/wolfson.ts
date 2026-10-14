@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { parseLongDate } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 export const wolfson: Adapter = {
@@ -41,17 +41,19 @@ export const wolfson: Adapter = {
           const others = byLabel.others
           const course: Dish['course'] = service === 'breakfast' || service === 'brunch' ? 'other' : courseFromHeading(category || name)
           const tags = tagsFromLabels([/plant.?based|vegan/i.test(name) ? 'vegan' : ''])
+          const allergens = allergensFromLabels(item.querySelectorAll('.field--name-field-allergy-information .field__item').map((f) => f.text))
           items.push({
             name,
             tags,
             course: course === 'other' && /main|dish of the day/i.test(category) ? 'main' : course,
             price_gbp: student,
             price2_gbp: others,
+            ...(allergens.length ? { allergens } : {}),
           })
         }
         if (items.length) days.push({ date, service, items })
       }
     }
-    return { days, note: 'Student price shown first; "others" price second. Wolfson labels allergens but not diets, so only explicitly plant-based/vegan dish names are tagged.' }
+    return { days, note: 'Student price shown first; "others" price second. Wolfson lists allergens but not diets, so only explicitly plant-based/vegan dish names are tagged.' }
   },
 }

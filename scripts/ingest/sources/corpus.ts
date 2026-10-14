@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 import { JESUS_AHEAD } from './jesus.ts'
 
@@ -34,7 +34,9 @@ export const corpus: Adapter = {
           const cells = tr.querySelectorAll('td').map((td) => cleanName(td.text))
           if (!cells[0]) continue
           const tags = tagsFromLabels([category])
-          items.push({ name: cells[0].replace(/\.$/, ''), tags, price_gbp: parsePrice(cells[1]), course: courseFromHeading(category) })
+          // Its Allergens column: "Celery, Egg, Mustard, Sulphur dioxide" (and "Alcohol", kept)
+          const allergens = allergensFromLabels(cells[2]?.split(/,\s*/) ?? [])
+          items.push({ name: cells[0].replace(/\.$/, ''), tags, price_gbp: parsePrice(cells[1]), course: courseFromHeading(category), ...(allergens.length ? { allergens } : {}) })
         }
         if (items.length) days.push({ date, service, items })
       }

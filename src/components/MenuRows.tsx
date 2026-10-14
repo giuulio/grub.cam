@@ -99,7 +99,14 @@ export function GroupHead({ label, heads, price, columns = 0 }: { label?: string
 }
 
 /** A dish or a line of a price list: its name leads, in a medium weight, its price lined up at the right, as TheFork's menus. */
-export function Row({ name, description, tags = [], soldOut, price, columns }: { name: string; description?: string | null; tags?: DietTag[]; soldOut?: boolean; price?: Price; columns: number }) {
+/** A dish's allergens as one line, what it contains and then what it may: "Contains gluten (wheat), milk · may contain nuts". */
+export function allergenText(allergens: string[]): string {
+  const may = allergens.filter((a) => a.startsWith('may contain ')).map((a) => a.slice('may contain '.length))
+  const has = allergens.filter((a) => !a.startsWith('may contain '))
+  return [has.length ? `Contains ${has.join(', ')}` : '', may.length ? `${has.length ? 'may' : 'May'} contain ${may.join(', ')}` : ''].filter(Boolean).join(' · ')
+}
+
+export function Row({ name, description, tags = [], allergens = [], soldOut, price, columns }: { name: string; description?: string | null; tags?: DietTag[]; allergens?: string[]; soldOut?: boolean; price?: Price; columns: number }) {
   return (
     <li className={`flex items-baseline gap-4 text-[1.0625rem] sm:text-lg ${description ? 'py-3' : 'py-1.5'}`}>
       <span className="min-w-0 flex-1">
@@ -108,6 +115,7 @@ export function Row({ name, description, tags = [], soldOut, price, columns }: {
           <Code key={t} tag={t} className="ml-1.5" />
         ))}
         {description && <span className="mt-1 block text-base leading-relaxed text-muted">{description}</span>}
+        {allergens.length > 0 && <span className="mt-0.5 block text-sm text-muted">{allergenText(allergens)}</span>}
       </span>
       {soldOut ? (
         <span className={`${PRICE_COL} text-sm text-muted`}>Sold out</span>

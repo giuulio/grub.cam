@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { WEEKDAYS, addDays, weekMonday } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 type LdItem = { name: string; suitableForDiet?: string | string[]; offers?: { price?: string } }
@@ -37,12 +37,18 @@ async function tenkitesMenu(pick: RegExp, monday: string) {
   const guid = option.getAttribute('data-menu-identifier')
   const root = parse(await fetchText(`https://menus.tenkites.com/magdalenecollege/webmenus?cl=true&mguid=${guid}`))
 
-  // Diet labels (V / VG) live on the rendered recipes; JSON-LD only carries one suitableForDiet.
+  // Diet labels (V / VG) and allergens live on the rendered recipes; JSON-LD only carries one suitableForDiet.
   const labelsByName = new Map<string, string[]>()
+  const allergensByName = new Map<string, string[]>()
+  // Its popover's "Contains: Soya" and "May contain: Soya"
+  const listed = (r: ReturnType<typeof parse>, which: 'contain' | 'may', prefix = '') =>
+    (r.querySelector(`.k10-popover__labels_${which}`)?.text.replace(/^\s*(may )?contains?:\s*/i, '') ?? '').split(/,\s*/).filter((a) => a.trim()).map((a) => prefix + a)
   for (const r of root.querySelectorAll('.k10-recipe')) {
     const name = cleanName(r.querySelector('.k10-recipe__name')?.text ?? '')
     const labels = r.querySelectorAll('.k10-recipe__label').map((l) => l.text.trim())
-    if (name) labelsByName.set(name, labels)
+    if (!name) continue
+    labelsByName.set(name, labels)
+    allergensByName.set(name, allergensFromLabels([...listed(r, 'contain'), ...listed(r, 'may', 'may contain ')]))
   }
 
   const ld = root
@@ -55,7 +61,8 @@ async function tenkitesMenu(pick: RegExp, monday: string) {
     const name = cleanName(it.name)
     const diets = list(it.suitableForDiet).map((u) => u.replace(/.*\//, '').replace(/Diet$/, ''))
     const price = it.offers?.price ? Number(it.offers.price) : undefined
-    return { name, tags: tagsFromLabels([...(labelsByName.get(name) ?? []), ...diets]), course, price_gbp: Number.isFinite(price) ? price : undefined }
+    const allergens = allergensByName.get(name) ?? []
+    return { name, tags: tagsFromLabels([...(labelsByName.get(name) ?? []), ...diets]), course, price_gbp: Number.isFinite(price) ? price : undefined, ...(allergens.length ? { allergens } : {}) }
   }
   return { title: option.text.trim(), sections: list(ld.hasMenuSection), toDish }
 }

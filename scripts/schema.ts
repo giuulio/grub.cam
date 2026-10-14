@@ -18,6 +18,8 @@ export const Dish = z.object({
   price_text: z.string().optional(),
   course: z.enum(['soup', 'main', 'side', 'dessert', 'other']).optional(),
   sold_out: z.boolean().optional(),
+  /** As the source lists them (lib/tags.ts `allergenFromLabel()`): "milk", "gluten (wheat)", "may contain nuts". None listed isn't none present. */
+  allergens: z.array(z.string().min(1)).optional(),
 })
 export type Dish = z.infer<typeof Dish>
 

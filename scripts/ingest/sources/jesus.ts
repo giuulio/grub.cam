@@ -2,7 +2,7 @@ import { parse } from 'node-html-parser'
 import type { Dish, MenuDay } from '../../schema.ts'
 import { addDays } from '../lib/dates.ts'
 import { fetchText } from '../lib/http.ts'
-import { cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
+import { allergensFromLabels, cleanName, courseFromHeading, parsePrice, tagsFromLabels } from '../lib/tags.ts'
 import type { Adapter } from '../lib/source.ts'
 
 const EVENTS: [number, MenuDay['service']][] = [
@@ -37,12 +37,14 @@ export const jesus: Adapter = {
           if (!name) continue
           const reqs = tr.querySelectorAll('.fm-requirement').map((d) => d.getAttribute('title') ?? d.text)
           const soldOut = /sold.?out/i.test(tr.text)
+          const allergens = allergensFromLabels(tr.querySelectorAll('.fm-allergen').map((d) => d.getAttribute('title') ?? d.text))
           items.push({
             name,
             tags: tagsFromLabels([...reqs, course]),
             price_gbp: parsePrice(tr.querySelector('.fm-item-price')?.text),
             course: courseFromHeading(course),
             ...(soldOut ? { sold_out: true } : {}),
+            ...(allergens.length ? { allergens } : {}),
           })
         }
         if (items.length) days.push({ date, service, items })

@@ -79,3 +79,126 @@ export function cleanName(s: string): string {
     .replace(MEALS_NOTE, '')
     .trim()
 }
+
+/** The 14 allergens UK law has menus declare, by the name we show, and the words sources use for them. `kind`: the word
+ * names a particular one ("Wheat" is gluten from wheat), kept as its detail. */
+const ALLERGENS: { name: string; re: RegExp; kind?: true }[] = [
+  { name: 'celery', re: /^(celery|celeriac)$/ },
+  { name: 'gluten', re: /^(gluten|cereals?( (containing|with) gluten)?)$/ },
+  { name: 'gluten', re: /^(wheat|barley|rye|oats?|spelt|kamut)$/, kind: true },
+  { name: 'crustaceans', re: /^(crustaceans?|crustacea)$/ },
+  { name: 'eggs', re: /^eggs?$/ },
+  { name: 'fish', re: /^fish$/ },
+  { name: 'lupin', re: /^lupine?s?$/ },
+  { name: 'milk', re: /^(milk|dairy)$/ },
+  { name: 'molluscs', re: /^(molluscs?|mollusks?)$/ },
+  { name: 'mustard', re: /^mustard$/ },
+  { name: 'nuts', re: /^(tree ?)?nuts?$/ },
+  { name: 'peanuts', re: /^(peanuts?|groundnuts?)$/ },
+  { name: 'sesame', re: /^sesame( seeds?)?$/ },
+  { name: 'soya', re: /^(soya?|soya? ?beans?)$/ },
+  { name: 'sulphites', re: /^(sulphur dioxide|sulfur dioxide|sulphites?|sulfites?|so2)(\s*(and|&|\/)\s*(sulphites?|sulfites?))?$/ },
+]
+
+const MAY = /^may contain:?\s*/
+
+/**
+ * A source's allergen label as we store it: the common name with the source's detail, "may contain" kept in front.
+ * "Gluten (wheat, barley)" and "Gluten: Wheat" are "gluten (wheat, barley)" and "gluten (wheat)", "Wheat" is "gluten
+ * (wheat)", "Sulphur Dioxide" is "sulphites". Undefined when it isn't one of the 14.
+ */
+export function allergenFromLabel(label: string): string | undefined {
+  let s = label.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.;]+$/, '')
+  const may = MAY.exec(s)
+  if (may) s = s.slice(may[0].length)
+  s = s.replace(/^contains:?\s*/, '')
+  const m = /^([^(:]+?)\s*(?::\s*(.+)|\((.+)\))?$/.exec(s)
+  if (!m) return undefined
+  const [, head, colon, bracket] = m
+  const hit = ALLERGENS.find((a) => a.re.test(head))
+  if (!hit) return undefined
+  const detail = [hit.kind ? head : '', colon ?? bracket ?? ''].filter(Boolean).join(', ')
+  return `${may ? 'may contain ' : ''}${hit.name}${detail ? ` (${detail})` : ''}`
+}
+
+/**
+ * A dish's allergen labels as we store them, in the source's order, what it may contain after what it contains; the
+ * details of one allergen together ("gluten (wheat, oats)"). `keep`: a label we don't know is kept as printed, from a
+ * source's own allergen list; never dropped there, since what it says may matter to someone.
+ */
+export function allergensFromLabels(labels: Iterable<string>, keep = true): string[] {
+  const order: string[] = []
+  const details = new Map<string, string[]>()
+  for (const label of labels) {
+    const raw = label.trim().replace(/\s+/g, ' ')
+    if (!raw || /^(none|n\/a|-|no allergens)$/i.test(raw)) continue
+    const a = allergenFromLabel(raw) ?? (keep ? raw.toLowerCase() : undefined)
+    if (!a) continue
+    const m = /^(.*?)(?: \((.+)\))?$/.exec(a)!
+    if (!details.has(m[1])) (details.set(m[1], []), order.push(m[1]))
+    const own = details.get(m[1])!
+    for (const d of m[2]?.split(/,\s*/) ?? []) if (!own.includes(d)) own.push(d)
+  }
+  const contains = order.filter((b) => !MAY.test(b))
+  // What it may contain, unless it contains it anyway
+  const may = order.filter((b) => MAY.test(b) && !contains.includes(b.replace(MAY, '')))
+  return [...contains, ...may].map((b) => (details.get(b)!.length ? `${b} (${details.get(b)!.join(', ')})` : b))
+}
+
+/** Bracketed groups split at top-level commas and "and"/"&", inner brackets kept: "gluten (wheat, barley), milk". */
+function splitTop(s: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let cur = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (c === '(') depth++
+    else if (c === ')') depth--
+    const and = depth === 0 && /^\s+(and|&)\s+/i.exec(s.slice(i))
+    if (depth === 0 && (c === ',' || and)) {
+      parts.push(cur)
+      cur = ''
+      if (and) i += and[0].length - 1
+      continue
+    }
+    cur += c
+  }
+  return [...parts, cur].map((p) => p.trim()).filter(Boolean)
+}
+
+/**
+ * Allergens printed in brackets with a dish, as Sidney's menus do: "Salmon pasta bake (gluten, fish, milk)",
+ * "Flapjack (contains: oats, may contain nuts)" or "(may contain: nuts)". Only a bracket whose every part is one of
+ * the 14 counts, so "Fish (cod or haddock)" keeps its bracket. Returns the name without them.
+ */
+export function allergensFromName(name: string): { name: string; allergens: string[] } {
+  const found: string[] = []
+  let out = ''
+  for (let i = 0; i < name.length; i++) {
+    if (name[i] !== '(') {
+      out += name[i]
+      continue
+    }
+    let depth = 0
+    let j = i
+    for (; j < name.length; j++) {
+      if (name[j] === '(') depth++
+      else if (name[j] === ')' && --depth === 0) break
+    }
+    if (j >= name.length) {
+      out += name.slice(i)
+      break
+    }
+    const inner = name.slice(i + 1, j).trim()
+    const may = MAY.exec(inner.toLowerCase())
+    const parts = splitTop((may ? inner.slice(may[0].length) : inner).replace(/^(contains|allergens):?\s*/i, ''))
+    const labels = parts.map((p) => (may ? `may contain ${p}` : p))
+    if (labels.length && labels.every((l) => allergenFromLabel(l))) found.push(...labels)
+    else out += name.slice(i, j + 1)
+    i = j
+  }
+  return {
+    name: out.replace(/\s{2,}/g, ' ').replace(/\s+([,.;])/g, '$1').trim(),
+    allergens: allergensFromLabels(found, false),
+  }
+}

@@ -16,6 +16,8 @@ type DayMenu = {
 }
 export type Servery = { breakfast: Entry[]; menus_by_date: Record<string, DayMenu>; term_name: string }
 
+// The other codes (C, D, E, … MO, PN, SD, SO) are allergens, but petmenu, an unofficial site, publishes no key to them:
+// left out rather than guessed.
 const DIET_CODES = new Set(['V', 'VV', 'HM'])
 
 function dish([name, codes]: Entry, course: Dish['course']): Dish {

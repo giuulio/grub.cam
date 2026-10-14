@@ -32,6 +32,13 @@ it('shows a meal posted elsewhere with its usual hours, its note, and a link to 
   expect(renderToStaticMarkup(<DayMenu date="2026-10-16" days={[day]} slots={slots} />)).not.toContain('Send a photo')
 })
 
+it("shows a dish's allergens under it, what it may contain after", () => {
+  const day = { date: '2026-10-14', service: 'dinner' as const, items: [{ name: 'Tuscan pulled pork ragu', tags: [], allergens: ['celery', 'gluten (wheat)', 'may contain nuts'] }, { name: 'Roast of the day', tags: [] }] }
+  const html = renderToStaticMarkup(<DayMenu date="2026-10-14" days={[day]} slots={[]} />)
+  expect(html).toContain('Contains celery, gluten (wheat) · may contain nuts')
+  expect(html.match(/Contains/g)).toHaveLength(1)
+})
+
 it('shows an alert in red with its note, and an ordinary note quietly', () => {
   const slots = [{ meal: 'lunch' as const, days: ['tue' as const], start: '12:00', end: '14:00', period: 'all' as const }]
   const day = { date: '2026-10-13', service: 'lunch' as const, items: [{ name: 'Soup', tags: [] }], note: 'Served at the top table after a leak' }

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import type { MenuDay } from '../../schema.ts'
 import { ALERT_AFTER, changedDays, dayHash, failed, healthComment, healthReport, retryAt, scopeFor, succeeded, waiting, type SourceCheck } from './checks.ts'
@@ -55,6 +56,13 @@ describe('saving only what changed', () => {
     expect(dayHash(day({ note: 'No dinner – UG freshers formal hall', items: [] }))).not.toBe(dayHash(day({ items: [] })))
     expect(dayHash(day({ alert: true, note: 'Served at the top table' }))).not.toBe(dayHash(day({ note: 'Served at the top table' })))
     expect(dayHash(day({ items: [{ name: 'Turkey cottage pie', tags: ['vegetarian'], price_gbp: 4 }] }))).not.toBe(dayHash(day()))
+  })
+  it("changes with a dish's allergens, and a day without any keeps the hash it had before they were stored", () => {
+    const pie = { name: 'Turkey cottage pie', tags: [], price_gbp: 4 }
+    expect(dayHash(day({ items: [{ ...pie, allergens: ['celery'] }] }))).not.toBe(dayHash(day({ items: [pie] })))
+    expect(dayHash(day({ items: [{ ...pie, allergens: [] }] }))).toBe(dayHash(day({ items: [pie] })))
+    // As computed before 0044
+    expect(dayHash(day({ items: [pie] }))).toBe(createHash('sha256').update(JSON.stringify([day().date, day().service, null, false, [[pie.name, [], 4, null, null, null, null]]])).digest('hex').slice(0, 32))
   })
   it('skips days saved with the same hash and saves the rest, including those saved by hand', () => {
     const same = day()
