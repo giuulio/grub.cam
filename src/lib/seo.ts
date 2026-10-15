@@ -286,8 +286,9 @@ export function llmsTxt(data: Data): string {
 }
 
 /** "£3.75", or "£3.75 (non-members £5.65)", the second named as the venue names it; "students £21.00" for a second price alone */
-const priceText = (gbp: number | null | undefined, second?: number | null, tiers?: string[]) => {
-  const other = second != null ? `${(tiers?.[1] ?? 'non-members').toLowerCase()} ${formatGbp(second)}` : ''
+const priceText = (gbp: number | null | undefined, second?: number | null, tiers?: string[], secondText?: string | null) => {
+  const value = second != null ? formatGbp(second) : secondText
+  const other = value ? `${(tiers?.[1] ?? 'non-members').toLowerCase()} ${value}` : ''
   return gbp == null ? other : `${formatGbp(gbp)}${other ? ` (${other})` : ''}`
 }
 
@@ -296,7 +297,7 @@ function menuLine(d: MenuDay, v: Venue): string {
   const dishes = d.items.map((i) => {
     const tags = dishTags(i.tags).map((t) => DIET_SHORT[t])
     const p = dishPrice(i, m)
-    const price = p?.gbp != null ? ` ${priceText(p.gbp, p.second, v.price_terms?.tiers)}` : p?.text ? ` ${p.text}` : ''
+    const price = p?.gbp != null ? ` ${priceText(p.gbp, p.second, v.price_terms?.tiers, p.secondText)}` : p?.text ? ` ${p.text}` : ''
     return `${i.name}${tags.length ? ` [${tags.join(' ')}]` : ''}${price}`
   })
   return `- ${day(d.date)}, ${MEAL_LABEL[d.service].toLowerCase()}: ${dishes.join('; ')}`
@@ -314,7 +315,7 @@ export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
       if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v)).join('\n')}`)
       if (v.prices?.length) {
         const when = v.prices.map((p) => p.observed_on).sort().at(-1)!
-        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.description ? ` — ${p.description}` : ''}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp, v.price_terms?.tiers)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
+        const list = v.prices.map((p) => `- ${p.section ? `${p.section}: ` : ''}${p.name}${p.description ? ` — ${p.description}` : ''}${p.tags.length ? ` [${dishTags(p.tags).map((t) => DIET_SHORT[t]).join(' ')}]` : ''} ${priceText(p.price_gbp, p.non_member_gbp, v.price_terms?.tiers, p.non_member_text)}${p.services ? ` [${p.services.map((m) => MEAL_LABEL[m].toLowerCase()).join(', ')}]` : ''}`)
         lines.push(`Prices as posted ${day(when)}:\n${list.join('\n')}`)
       }
       out.push(lines.join('\n'))

@@ -49,6 +49,8 @@ export const PriceItem = z.object({
   price_max_gbp: z.number().nonnegative().optional(),
   /** The second price posted: the venue's second tier, non-members' by default */
   non_member_gbp: z.number().nonnegative().optional(),
+  /** A label printed instead of the second price; never inferred from an empty cell */
+  non_member_text: z.enum(['N/A', 'TBC']).optional(),
   /** The meals it applies to; every meal when absent */
   services: z.array(Meal).min(1).optional(),
   /** Absent: an item sold at those meals rather than the price of the day's dishes */

@@ -71,6 +71,16 @@ describe('second tier only', () => {
 
 describe('price columns', () => {
   const head = 'site: pembroke\nvenue: cafe-84\nsource: board\nobserved: 2026-10-13\n---\n'
+  it('keeps N/A and TBC in the posted second column, including when saved lists are merged', () => {
+    const p = parsePrices(head + 'columns: Price | Member Price\nCarlsberg (pint) | £3.70 | N/A\nSparkling Water | £0.80 | TBC')
+    expect(p.items).toEqual([
+      { name: 'Carlsberg (pint)', price_gbp: 3.7, non_member_text: 'N/A' },
+      { name: 'Sparkling Water', price_gbp: 0.8, non_member_text: 'TBC' },
+    ])
+    expect(savedList(mergeList([], p))).toEqual(mergeList([], p))
+    expect(unnamedColumns({ ...p, columns: undefined })).toMatch(/whose each is/)
+    expect(() => parsePrices(head + 'Carlsberg | 3.70 | unknown')).toThrow(/not a price/)
+  })
   it('reads whose each column is, in the body or the header', () => {
     expect(parsePrices(head + 'columns: Full price | SFC rate\nSingle espresso | £2.20 | £1.32').columns).toEqual(['Full price', 'SFC rate'])
     expect(parsePrices(head.replace('---', 'columns: Members | Non-members\n---') + 'Soup | £1.75 | £2.50').columns).toEqual(['Members', 'Non-members'])

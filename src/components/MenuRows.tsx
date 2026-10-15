@@ -1,5 +1,5 @@
 import { DIET_LABEL, DIET_SHORT, dishTags } from '../lib/filters.ts'
-import { formatGbp, formatPrice, fromList, postedOn, priceHeads, type Price } from '../lib/prices.ts'
+import { formatPrice, formatSecondPrice, fromList, postedOn, priceHeads, type Price } from '../lib/prices.ts'
 import { formatISODate } from '../lib/time/clock.ts'
 import type { DietTag, PriceTerms, VenuePrice } from '../lib/types.ts'
 import { ExternalLink } from './ExternalLink.tsx'
@@ -13,7 +13,7 @@ const PRICE_COL = 'min-w-16 shrink-0 text-right tabular-nums'
 /** A posted price list: short sections can share two columns; a single section or descriptions use the full width. */
 export function PriceList({ lines, terms, narrow = false }: { lines: VenuePrice[]; terms?: PriceTerms | null; narrow?: boolean }) {
   const sections = [...new Set(lines.map((p) => p.section))].map((section) => ({ section, rows: lines.filter((p) => p.section === section) }))
-  const columns = lines.some((p) => p.non_member_gbp != null) ? 2 : 1
+  const columns = lines.some((p) => p.non_member_gbp != null || p.non_member_text) ? 2 : 1
   const heads = priceHeads(columns, terms)
   const split = !narrow && sections.length > 1 && !lines.some((p) => p.description)
   return (
@@ -92,7 +92,7 @@ export function GroupHead({ label, heads, price, columns = 0 }: { label?: string
       <div className="flex items-baseline gap-4 text-[1.0625rem] sm:text-lg">
         {title}
         <span title={price.text} className={`${PRICE_COL} font-medium`}>{formatPrice(price)}</span>
-        {columns > 1 && <span className={`${PRICE_COL} text-muted`}>{price.second != null && formatGbp(price.second)}</span>}
+        {columns > 1 && <span className={`${PRICE_COL} text-muted`}>{formatSecondPrice(price)}</span>}
       </div>
     </div>
   )
@@ -125,7 +125,7 @@ export function Row({ name, description, tags = [], allergens = [], soldOut, pri
             <span title={price?.text} className={PRICE_COL}>
               {price && formatPrice(price)}
             </span>
-            {columns > 1 && <span className={`${PRICE_COL} text-muted`}>{price?.second != null && formatGbp(price.second)}</span>}
+            {columns > 1 && <span className={`${PRICE_COL} text-muted`}>{formatSecondPrice(price)}</span>}
           </>
         )
       )}
@@ -137,7 +137,7 @@ export function PriceText({ price, className = '' }: { price: Price; className?:
   return (
     <span className={`tabular-nums ${className}`}>
       {formatPrice(price)}
-      {price.second != null && <span className="text-muted"> · {formatGbp(price.second)}</span>}
+      {formatSecondPrice(price) && <span className="text-muted"> · {formatSecondPrice(price)}</span>}
     </span>
   )
 }

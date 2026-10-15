@@ -19,6 +19,7 @@
 //                                             (soup/main/side/dessert/other), or the whole meal (meal); shown on the menu
 //   Soup | £1.75 | | soup                  <- an empty field skips the non-member price
 //   Student's guest | | £21.00             <- or the first, when only the second tier is priced
+//   Carlsberg (pint) | £3.70 | N/A         <- N/A or TBC as printed, in the second column
 //   Hummus wrap (VE, GF) | £4               <- diet codes in brackets after the name become tags (V, VE/VG, GF, DF, H)
 //   Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta  <- optional fifth field: description or choices, as posted
 //   # comment
@@ -39,14 +40,14 @@ export type PriceList = { venue: string; source: string; observed_on: string; it
 export function unnamedColumns(p: PriceList, tiers?: string[] | null): string | null {
   const sizes = p.columns?.find((c) => SIZE.test(c))
   if (sizes) return `"${sizes}" is a size, not who pays: list each size as its own item ("Double espresso | £2.60")`
-  if (!p.items.some((i) => i.non_member_gbp != null) || (p.columns?.length ?? 0) >= 2 || (tiers?.length ?? 0) >= 2) return null
+  if (!p.items.some((i) => i.non_member_gbp != null || i.non_member_text) || (p.columns?.length ?? 0) >= 2 || (tiers?.length ?? 0) >= 2) return null
   return 'two prices a line, but nothing says whose each is: add "columns: first | second", as the board heads them'
 }
 
 /** A line of a venue's saved list (venue_prices), with the source and day it was seen. */
 export type SavedPrice = PriceItem & { source: string; observed_on: string }
 
-const ROW_FIELDS = ['section', 'name', 'description', 'price_gbp', 'price_max_gbp', 'non_member_gbp', 'services', 'course', 'tags'] as const
+const ROW_FIELDS = ['section', 'name', 'description', 'price_gbp', 'price_max_gbp', 'non_member_gbp', 'non_member_text', 'services', 'course', 'tags'] as const
 
 /** A venue's venue_prices rows as the lines they were saved from, in order. */
 export function savedList(rows: Record<string, unknown>[]): SavedPrice[] {
@@ -147,6 +148,8 @@ export function parsePrices(text: string): PriceList {
     }
     const [posted, price, nonMember, course, description, ...rest] = line.split('|').map((p) => p.trim())
     if ((!price && !nonMember) || rest.length) throw new Error(`expected "name | price | non-member price | course | description": "${line}"`)
+    const second = !nonMember ? {} : /^(N\/A|TBC)$/i.test(nonMember) ? { non_member_text: nonMember.toUpperCase() } : { non_member_gbp: parseGbp(nonMember) }
+    if (!price && 'non_member_text' in second) throw new Error(`expected a numeric price: "${line}"`)
     const { name, tags } = tagsFromName(posted)
     items.push(
       PriceItem.parse({
@@ -155,7 +158,7 @@ export function parsePrices(text: string): PriceList {
         ...(description ? { description } : {}),
         ...(tags.length ? { tags } : {}),
         ...(price ? parseRange(price) : {}),
-        ...(nonMember ? { non_member_gbp: parseGbp(nonMember) } : {}),
+        ...second,
         ...(services ? { services } : {}),
         ...(course ? { course: PriceCourse.parse(course) } : {}),
       }),

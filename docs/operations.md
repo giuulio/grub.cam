@@ -18,6 +18,8 @@ An explicitly cancelled meal is a dated menu note with no dishes: `2026-10-13 di
 
 Member text and confirmed transcriptions accept up to 20,000 characters. Longer input is rejected with an error rather than silently cut; this also prevents a pasted weekly menu from losing its final day.
 
+A posted second-column label stays in its price column: `Carlsberg (pint) | £3.70 | N/A` or `Sparkling Water | £0.80 | TBC` (`venue_prices.non_member_text`, migration `0045`). Empty cells stay empty; no label or member price is inferred.
+
 Fixed menu items can include a description or choices in the price format's optional fifth field: `Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta`. This is stored in `venue_prices.description` and displayed beneath the item name. Keep ingredients out of the name when they are printed as a separate description; preserve the source's choices and infer no dietary tags.
 
 Source quirks worth preserving:

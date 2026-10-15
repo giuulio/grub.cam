@@ -3,7 +3,7 @@
 import type { Dish, Meal, PriceCourse, PriceTerms, VenuePrice, VenueType } from './types.ts'
 
 /** A price as posted: the first price (`max` when it's a range), the second (the venue's second tier), or words. */
-export type Price = { gbp?: number; max?: number; second?: number; text?: string }
+export type Price = { gbp?: number; max?: number; second?: number; secondText?: string; text?: string }
 
 export type MealPrices = {
   /** One price for the whole meal */
@@ -25,7 +25,7 @@ export function mealPrices(prices: VenuePrice[] | undefined, meal: Meal): MealPr
   return out
 }
 
-export const fromList = (p: VenuePrice): Price => ({ gbp: p.price_gbp ?? undefined, max: p.price_max_gbp ?? undefined, second: p.non_member_gbp ?? undefined })
+export const fromList = (p: VenuePrice): Price => ({ gbp: p.price_gbp ?? undefined, max: p.price_max_gbp ?? undefined, second: p.non_member_gbp ?? undefined, ...(p.non_member_text ? { secondText: p.non_member_text } : {}) })
 
 /** The dish's own price, as printed on the menu. */
 export const ownPrice = (dish: Dish): Price | undefined =>
@@ -39,7 +39,7 @@ export function dishPrice(dish: Dish, m: MealPrices): Price | undefined {
   return p && fromList(p)
 }
 
-const samePrice = (a?: Price, b?: Price) => !!a && !!b && a.gbp === b.gbp && a.second === b.second && a.text === b.text
+const samePrice = (a?: Price, b?: Price) => !!a && !!b && a.gbp === b.gbp && a.second === b.second && a.secondText === b.secondText && a.text === b.text
 
 /**
  * A course's price for its heading, said once for the dishes under it: theirs when they all cost the same (`shared`:
@@ -134,6 +134,9 @@ export function headlinePrices(lines: VenuePrice[], type: VenueType, n = 3): Ven
 export const postedOn = (lines: VenuePrice[]) => lines.reduce<string | undefined>((max, p) => (!max || p.observed_on > max ? p.observed_on : max), undefined)
 
 export const formatGbp = (n: number) => `£${n.toFixed(2)}`
+
+/** The second column's posted price or label, with no substitute for an empty cell. */
+export const formatSecondPrice = (p?: Price) => p?.second != null ? formatGbp(p.second) : p?.secondText ?? ''
 
 /** "£3.24–£3.96", or one price. */
 export const formatPrice = (p: Price) => (p.gbp == null ? (p.text ?? '') : p.max != null ? `${formatGbp(p.gbp)}–${formatGbp(p.max)}` : formatGbp(p.gbp))

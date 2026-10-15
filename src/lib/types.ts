@@ -46,6 +46,8 @@ export type VenuePrice = {
   price_max_gbp?: number | null
   /** The second price posted: the venue's second tier (`PriceTerms.tiers`), non-members' by default */
   non_member_gbp: number | null
+  /** A label printed instead of the second price; an empty cell stays empty */
+  non_member_text?: 'N/A' | 'TBC' | null
   services: Meal[] | null
   course: PriceCourse | null
   tags: DietTag[]

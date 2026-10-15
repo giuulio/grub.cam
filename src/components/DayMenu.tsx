@@ -132,7 +132,7 @@ function Dishes({ items, prices, terms }: { items: Dish[]; prices: MealPrices; t
   // A dish's price on its row, unless its course's heading says it for all of them
   const priced = items.map((i) => (groups.find((g) => g.items.includes(i))?.shared ? undefined : ownPrice(i)))
   const all = [...priced, ...groups.map((g) => g.price)]
-  const columns = all.some((p) => p?.second != null) ? 2 : all.some((p) => p) ? 1 : 0
+  const columns = all.some((p) => p?.second != null || p?.secondText) ? 2 : all.some((p) => p) ? 1 : 0
   const heads = priceHeads(columns, terms)
   return (
     <div className="mt-5 space-y-7">
