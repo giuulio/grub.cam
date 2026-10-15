@@ -218,5 +218,5 @@ export const SOURCES: MenuSource[] = [
   { venue: 'madingley-hall/cafe', channel: 'pdf', url: 'https://madingleyhall.cam.ac.uk/dining/the-cafe/', cadence: 'fixed', prices: madingleyPrices },
 
   // No known menu
-  { venue: 'corpus-christi/leckhampton-dining-hall', channel: 'unknown', notes: 'Not on the Corpus foodmenu: its `reference` parameter is ignored (0–5 return the same cafeteria menu, checked 12 Oct 2026).' },
+  { venue: 'corpus-christi/leckhampton-dining-hall', channel: 'instagram', url: 'https://www.instagram.com/lecky_meals/', cadence: 'stories before dinner, usually Wed–Fri, occasionally Tue', notes: 'Menu source confirmed by email 15 Oct 2026. Transcribe dated stories by hand or member submission. Do not copy Old Hall menus: the mains only reportedly align. Not on the Corpus foodmenu: its `reference` parameter is ignored (0–5 return the same cafeteria menu, checked 12 Oct 2026).' },
 ]

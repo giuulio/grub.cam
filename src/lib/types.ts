@@ -113,6 +113,8 @@ export type Venue = {
   type: VenueType
   /** The venue's own page, when it has one */
   url: string | null
+  /** Published entry and guest requirements, only where confirmed. */
+  access_note?: string | null
   where: string | null
   serves: string | null
   /** Verified venue or containing-building point, never a college/site centroid. */

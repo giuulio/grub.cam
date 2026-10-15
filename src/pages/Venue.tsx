@@ -493,6 +493,7 @@ function Details({ venue }: { venue: Venue }) {
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
     <ul className="order-4 flex flex-col gap-x-8 gap-y-3 text-[1.0625rem] sm:flex-row sm:flex-wrap sm:items-baseline md:mt-8 md:border-t md:border-ink/10 md:pt-6">
+        {venue.access_note && <li className="w-full">{venue.access_note}</li>}
         {diets && (
           <Fact icon={Leaf} known>
             {diets} options

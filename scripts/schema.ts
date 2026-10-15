@@ -61,4 +61,4 @@ export const PriceItem = z.object({
 export type PriceItem = z.infer<typeof PriceItem>
 
 /** How a venue publishes its menu (scripts/ingest/sources.ts, copied to venues.menu_channel). */
-export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'none' | 'unknown'
+export type Channel = 'html' | 'json' | 'pdf' | 'sway' | 'canva' | 'app' | 'email' | 'intranet' | 'instagram' | 'none' | 'unknown'
