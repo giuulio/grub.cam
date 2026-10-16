@@ -10,24 +10,33 @@ import { ExternalLink } from './ExternalLink.tsx'
 
 const PRICE_COL = 'min-w-16 shrink-0 text-right tabular-nums'
 
-/** A posted price list: short sections can share two columns; a single section or descriptions use the full width. */
+const hasSecond = (p: VenuePrice) => p.non_member_gbp != null || p.non_member_text != null
+
+/**
+ * A posted price list: short sections can share two columns; a single section or descriptions use the full width. A
+ * section with one price a line, at a venue whose two columns are named (Christ's Buttery's food board, beside its
+ * members' and others' bar list), is posted for everyone, so it has one column and no headings.
+ */
 export function PriceList({ lines, terms, narrow = false }: { lines: VenuePrice[]; terms?: PriceTerms | null; narrow?: boolean }) {
   const sections = [...new Set(lines.map((p) => p.section))].map((section) => ({ section, rows: lines.filter((p) => p.section === section) }))
-  const columns = lines.some((p) => p.non_member_gbp != null || p.non_member_text) ? 2 : 1
-  const heads = priceHeads(columns, terms)
+  const columns = lines.some(hasSecond) ? 2 : 1
+  const heads = columns === 1 && (terms?.tiers?.length ?? 0) > 1 ? [] : priceHeads(columns, terms)
   const split = !narrow && sections.length > 1 && !lines.some((p) => p.description)
   return (
     <div className={split ? 'gap-x-12 lg:columns-2' : 'space-y-6'}>
-      {sections.map(({ section, rows }, n) => (
-        <div key={section ?? ''} className={split ? 'mb-8 break-inside-avoid' : ''}>
-          <GroupHead label={section ?? undefined} heads={n === 0 || section ? heads : []} />
-          <ul>
-            {rows.map((p, i) => (
-              <Row key={i} name={p.name} description={p.description} tags={dishTags(p.tags)} price={fromList(p)} columns={columns} />
-            ))}
-          </ul>
-        </div>
-      ))}
+      {sections.map(({ section, rows }, n) => {
+        const own = columns === 2 && section && !rows.some(hasSecond) ? 1 : columns
+        return (
+          <div key={section ?? ''} className={split ? 'mb-8 break-inside-avoid' : ''}>
+            <GroupHead label={section ?? undefined} heads={own === columns && (n === 0 || section) ? heads : []} />
+            <ul>
+              {rows.map((p, i) => (
+                <Row key={i} name={p.name} description={p.description} tags={dishTags(p.tags)} price={fromList(p)} columns={own} />
+              ))}
+            </ul>
+          </div>
+        )
+      })}
     </div>
   )
 }
