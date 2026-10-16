@@ -1,0 +1,121 @@
+<!doctype html>
+<!--
+  One single-sided A4 sheet with four A6 flyers, black on white, saying what grub.cam is.
+  Edit the flyer once, in its <template>; the script lays it out four times.
+  The unused "send" template is kept as an alternative; change data-flyer to "send" to use it instead.
+  Render to PDF (fonts load from node_modules, hence the file-access flag):
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-pdf-header-footer \
+      --allow-file-access-from-files --virtual-time-budget=5000 --print-to-pdf=promo/flyer.pdf promo/flyer.html
+  Print at 100% / actual size, not "fit to page", so the cut lines fall on 105 × 148.5 mm.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>grub.cam flyers</title>
+<style>
+  @font-face {
+    font-family: Figtree;
+    font-weight: 300 900;
+    src: url('../node_modules/@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Public Sans';
+    font-weight: 100 900;
+    src: url('../node_modules/@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2') format('woff2');
+  }
+
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 210mm; background: #fff; color: #000; }
+  body { font-family: 'Public Sans', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .sheet {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    display: grid;
+    grid-template-columns: 105mm 105mm;
+    grid-template-rows: 148.5mm 148.5mm;
+    break-inside: avoid;
+    overflow: hidden;
+  }
+  /* Cut lines through the middle: a clean cut takes them away */
+  .sheet::before, .sheet::after { content: ''; position: absolute; border: 0 dashed #9a9a9a; }
+  .sheet::before { left: 105mm; top: 0; bottom: 0; border-left-width: 0.2mm; }
+  .sheet::after { top: 148.5mm; left: 0; right: 0; border-top-width: 0.2mm; }
+
+  /* 10 mm in from every edge: clear of the printer's margin and a wobbly cut */
+  .flyer { padding: 10mm 10mm 9mm; display: flex; flex-direction: column; }
+  .flyer > * { flex-shrink: 0; }
+
+  h1 { font-family: Figtree; font-weight: 800; line-height: 0.98; letter-spacing: -0.025em; }
+  .lede { margin-top: 4mm; font-size: 11pt; line-height: 1.35; text-wrap: pretty; }
+
+  .scan { margin-top: auto; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  /* 42 mm code, with four clear modules on every side for scanning. */
+  .qr { width: 55.44mm; height: 55.44mm; flex: none; }
+  .url { font-family: Figtree; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+  .under { margin-top: 1.5mm; font-size: 8.5pt; line-height: 1.3; }
+
+  .foot { margin-top: 4mm; padding-top: 2.4mm; border-top: 0.2mm solid #000; font-size: 8pt; line-height: 1.3; }
+  .foot b { font-weight: 700; }
+  .small { margin-top: 1mm; font-size: 5.5pt; line-height: 1.3; }
+
+  .what h1 { font-size: 58pt; }
+  .what .lede { font-size: 11.5pt; }
+  .what .url { font-size: 32pt; }
+  .send h1 { font-size: 33pt; }
+  .send .url { font-size: 24pt; }
+</style>
+</head>
+<body>
+<div class="sheet" data-flyer="what"></div>
+
+<!-- What grub.cam is, for anyone -->
+<template id="what">
+  <article class="flyer what">
+    <h1>Hungry?</h1>
+    <p class="lede">Menus, hours and prices for Cambridge’s college and University halls, cafés and bars.</p>
+
+    <div class="scan">
+      <!-- https://grub.cam, error correction Q (version 2, 25 × 25) -->
+      <svg class="qr" viewBox="-4 -4 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code for https://grub.cam"><path d="M0 0h7v1h-7zM8 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM18 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h2v1h-2zM13 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM12 2h1v1h-1zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM11 3h1v1h-1zM13 3h1v1h-1zM18 3h1v1h-1zM20 3h3v1h-3zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h4v1h-4zM16 4h1v1h-1zM18 4h1v1h-1zM20 4h3v1h-3zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h3v1h-3zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h7v1h-7zM8 7h3v1h-3zM12 7h1v1h-1zM15 7h2v1h-2zM1 8h2v1h-2zM4 8h1v1h-1zM6 8h2v1h-2zM10 8h1v1h-1zM15 8h2v1h-2zM18 8h1v1h-1zM20 8h5v1h-5zM0 9h1v1h-1zM2 9h3v1h-3zM12 9h2v1h-2zM16 9h1v1h-1zM18 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM6 10h2v1h-2zM9 10h1v1h-1zM14 10h1v1h-1zM18 10h2v1h-2zM22 10h3v1h-3zM0 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM9 11h7v1h-7zM17 11h2v1h-2zM23 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM6 12h2v1h-2zM9 12h3v1h-3zM14 12h1v1h-1zM16 12h3v1h-3zM21 12h1v1h-1zM23 12h2v1h-2zM1 13h1v1h-1zM4 13h1v1h-1zM7 13h1v1h-1zM10 13h2v1h-2zM13 13h2v1h-2zM16 13h1v1h-1zM18 13h1v1h-1zM21 13h1v1h-1zM24 13h1v1h-1zM0 14h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM8 14h2v1h-2zM13 14h1v1h-1zM17 14h3v1h-3zM22 14h3v1h-3zM1 15h3v1h-3zM7 15h1v1h-1zM11 15h1v1h-1zM13 15h2v1h-2zM20 15h1v1h-1zM23 15h1v1h-1zM0 16h1v1h-1zM3 16h1v1h-1zM6 16h1v1h-1zM9 16h1v1h-1zM11 16h3v1h-3zM16 16h6v1h-6zM8 17h1v1h-1zM12 17h1v1h-1zM15 17h2v1h-2zM20 17h2v1h-2zM23 17h2v1h-2zM0 18h7v1h-7zM8 18h1v1h-1zM10 18h1v1h-1zM14 18h3v1h-3zM18 18h1v1h-1zM20 18h2v1h-2zM23 18h2v1h-2zM0 19h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h2v1h-2zM16 19h1v1h-1zM20 19h2v1h-2zM23 19h1v1h-1zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM8 20h2v1h-2zM13 20h1v1h-1zM16 20h6v1h-6zM24 20h1v1h-1zM0 21h1v1h-1zM2 21h3v1h-3zM6 21h1v1h-1zM10 21h7v1h-7zM19 21h4v1h-4zM0 22h1v1h-1zM2 22h3v1h-3zM6 22h1v1h-1zM8 22h3v1h-3zM13 22h1v1h-1zM15 22h1v1h-1zM20 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM10 23h1v1h-1zM12 23h1v1h-1zM14 23h4v1h-4zM20 23h2v1h-2zM23 23h1v1h-1zM0 24h7v1h-7zM9 24h1v1h-1zM16 24h1v1h-1zM19 24h1v1h-1zM23 24h2v1h-2z"/></svg>
+      <div>
+        <div class="url">grub.cam</div>
+        <p class="under">On your phone. No app, no sign-in.</p>
+      </div>
+    </div>
+
+    <p class="foot"><b>Put your name on the menu:</b> snap a menu board and send it in at <b>grub.cam/send</b>.</p>
+    <p class="small">Independent; not affiliated with the University of Cambridge or its colleges.</p>
+  </article>
+</template>
+
+<!-- Asking people to send in what they see -->
+<template id="send">
+  <article class="flyer send">
+    <h1>Put your name on the menu.</h1>
+    <p class="lede">Snap a menu board, price list or opening hours in any college hall, café or bar. It’s on grub.cam in minutes, sent in by you.</p>
+
+    <div class="scan">
+      <!-- https://grub.cam/send, error correction M (version 2, 25 × 25) -->
+      <svg class="qr" viewBox="-4 -4 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code for https://grub.cam/send"><path d="M0 0h7v1h-7zM9 0h1v1h-1zM15 0h1v1h-1zM18 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h3v1h-3zM15 1h2v1h-2zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h2v1h-2zM12 3h1v1h-1zM14 3h1v1h-1zM18 3h1v1h-1zM20 3h3v1h-3zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h1v1h-1zM14 4h3v1h-3zM18 4h1v1h-1zM20 4h3v1h-3zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM13 5h4v1h-4zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h4v1h-4zM0 8h1v1h-1zM2 8h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h2v1h-2zM20 8h1v1h-1zM23 8h1v1h-1zM0 9h3v1h-3zM4 9h1v1h-1zM7 9h4v1h-4zM12 9h1v1h-1zM16 9h1v1h-1zM18 9h1v1h-1zM24 9h1v1h-1zM0 10h2v1h-2zM5 10h3v1h-3zM10 10h1v1h-1zM13 10h1v1h-1zM18 10h2v1h-2zM22 10h3v1h-3zM1 11h1v1h-1zM3 11h3v1h-3zM8 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM17 11h2v1h-2zM23 11h1v1h-1zM0 12h1v1h-1zM3 12h2v1h-2zM6 12h1v1h-1zM9 12h1v1h-1zM11 12h3v1h-3zM16 12h3v1h-3zM21 12h1v1h-1zM23 12h2v1h-2zM2 13h2v1h-2zM5 13h1v1h-1zM7 13h7v1h-7zM16 13h1v1h-1zM18 13h1v1h-1zM21 13h1v1h-1zM24 13h1v1h-1zM0 14h1v1h-1zM3 14h1v1h-1zM5 14h4v1h-4zM10 14h3v1h-3zM17 14h3v1h-3zM22 14h3v1h-3zM1 15h5v1h-5zM7 15h3v1h-3zM12 15h2v1h-2zM20 15h1v1h-1zM23 15h1v1h-1zM0 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM10 16h2v1h-2zM14 16h1v1h-1zM16 16h6v1h-6zM8 17h1v1h-1zM10 17h2v1h-2zM15 17h2v1h-2zM20 17h2v1h-2zM23 17h2v1h-2zM0 18h7v1h-7zM10 18h1v1h-1zM13 18h1v1h-1zM15 18h2v1h-2zM18 18h1v1h-1zM20 18h2v1h-2zM23 18h2v1h-2zM0 19h1v1h-1zM6 19h1v1h-1zM11 19h1v1h-1zM16 19h1v1h-1zM20 19h2v1h-2zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM8 20h2v1h-2zM12 20h1v1h-1zM16 20h6v1h-6zM23 20h2v1h-2zM0 21h1v1h-1zM2 21h3v1h-3zM6 21h1v1h-1zM9 21h1v1h-1zM11 21h3v1h-3zM15 21h2v1h-2zM19 21h4v1h-4zM0 22h1v1h-1zM2 22h3v1h-3zM6 22h1v1h-1zM8 22h2v1h-2zM11 22h2v1h-2zM14 22h2v1h-2zM20 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h2v1h-2zM12 23h6v1h-6zM20 23h2v1h-2zM23 23h1v1h-1zM0 24h7v1h-7zM8 24h1v1h-1zM11 24h1v1h-1zM14 24h1v1h-1zM16 24h1v1h-1zM19 24h1v1h-1zM23 24h2v1h-2z"/></svg>
+      <div>
+        <div class="url">grub.cam/send</div>
+        <p class="under">Sign in with your Cambridge account.</p>
+      </div>
+    </div>
+
+    <p class="foot"><b>Climb the leaderboard:</b> see who’s sent the most, and what each college is still missing, at <b>grub.cam/contribute</b>.</p>
+    <p class="small">Independent; not affiliated with the University of Cambridge or its colleges.</p>
+  </article>
+</template>
+
+<script>
+  for (const sheet of document.querySelectorAll('.sheet')) {
+    const flyer = document.getElementById(sheet.dataset.flyer).content
+    for (let i = 0; i < 4; i++) sheet.append(flyer.cloneNode(true))
+  }
+</script>
+</body>
+</html>
