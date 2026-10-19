@@ -200,14 +200,21 @@ async function dispatchPublish() {
 
 /**
  * A member's photo of the venue (or of the site): up within minutes when a model passes it and no other member's photo
- * of it went up in the last day, else queued for a person. Their own photos don't count: a second of the same goes up.
+ * of it went up in the last day and the one shown isn't kept (`photos.keep`, one the college supplied), else queued for a
+ * person. Their own photos don't count: a second of the same goes up.
  */
 async function photoOf(id: string, about: Subject, sender: { id: string }, photo: Image): Promise<Response> {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
   // Two members swapping a photo back and forth: the second waits for a person
   const [column, value] = about.venue ? ['venue_id', about.venue.id] : ['site', about.site.slug]
   const { count: others } = await sb.from('submissions').select('*', { count: 'exact', head: true }).eq(column, value).eq('kind', 'photo').in('status', ['queued', 'approved']).neq('user_id', sender.id).gte('created_at', day)
-  const waitFor = (others ?? 0) > 0 ? `this ${about.venue ? 'venue' : 'page'} had a new photo today` : null
+  // A photo the college or its photographer supplied stays until a person decides a member's is better
+  const { data: shown } = await sb.from('photos').select('keep').eq(column, value).eq('kind', 'venue').eq('approved', true).order('position').limit(1).maybeSingle()
+  const waitFor = shown?.keep
+    ? `this ${about.venue ? 'venue' : 'page'}'s photo was supplied by the college`
+    : (others ?? 0) > 0
+      ? `this ${about.venue ? 'venue' : 'page'} had a new photo today`
+      : null
   const verdict = await vet(id, about, photo)
   const patch = { alt: verdict?.alt || null, ...(verdict ? { transcribed_by: 'openai', model: CHECK_MODEL } : {}) }
   if (verdict?.ok && !waitFor) {

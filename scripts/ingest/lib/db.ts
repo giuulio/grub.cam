@@ -197,7 +197,7 @@ export function connect() {
       return !!count
     },
     /** Adds a photo after the subject's others of its kind, or, `first`, ahead of them (a member's replaces the one shown). */
-    async savePhoto(photo: { subject: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean; submission_id?: string }, opts: { first?: boolean } = {}) {
+    async savePhoto(photo: { subject: string; kind: 'venue' | 'menu'; path: string; widths: number[]; width: number; height: number; color: string; alt: string; credit: string | null; licence: string | null; source: string | null; taken_on: string | null; approved: boolean; submission_id?: string; keep?: boolean }, opts: { first?: boolean } = {}) {
       const { subject, ...rest } = photo
       const column = subject.includes('/') ? 'venue_id' : 'site'
       const { data, error: readError } = await sb.from('photos').select('position').eq(column, subject).eq('kind', photo.kind)

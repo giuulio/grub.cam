@@ -1,11 +1,12 @@
 // Usage: npm run ingest:photo -- <site>/<venue> | <site> <photo.jpg | Commons file> --alt "The counter, from the door"
-//          [--credit "Name"] [--licence "CC BY 4.0"] [--source "own photo"] [--taken 2026-10-09] [--kind venue|menu] [--dry]
+//          [--credit "Name"] [--licence "CC BY 4.0"] [--source "own photo"] [--taken 2026-10-09] [--kind venue|menu] [--keep] [--dry]
 //        npm run ingest:photo -- --list photos.txt [--dry]
 // Makes the sizes a page needs (WebP, 240/480/960/1600 px wide, never wider than the original), writes them to
 // public/photos/<site>/<venue>/<id>-<width>.webp and adds the photo to Supabase, approved. Commit the files: the site
 // serves them once it's deployed, and shows the type's tile until then. Metadata (GPS included) is stripped from every
 // file. `--kind menu`: a photo of a menu board or price list, kept as the source for a transcription, not shown.
-// `--dry` fetches and makes the sizes without writing anything.
+// `--keep`: a photo the college or its photographer supplied; while it's the one shown, members' photos of the venue wait
+// for review instead of replacing it. `--dry` fetches and makes the sizes without writing anything.
 //
 // Whose photos: ours, a contributor's with a licence, or one published under an open licence on Wikimedia Commons
 // (CC0, public domain, CC BY, CC BY-SA; not NC or ND), with no recognisable people. Never from Google Maps, social
@@ -97,7 +98,7 @@ export function writeVariants(path: string, variants: Variant[]) {
 export const newPhotoPath = (subject: string) => `${subject}/${randomBytes(4).toString('hex')}`
 
 /** `venue` is the subject: "<site>/<venue>", or "<site>" for a photo of the site itself (the college, the campus). */
-type Job = { venue: string; file: string; alt: string; credit?: string; licence?: string; source?: string; taken?: string; kind: 'venue' | 'menu' }
+type Job = { venue: string; file: string; alt: string; credit?: string; licence?: string; source?: string; taken?: string; kind: 'venue' | 'menu'; keep?: boolean }
 
 /** `<site>/<venue> | <file> | <alt> [| <credit>]` lines (or `<site> | …` for a site's photo), skipping blanks and # comments. */
 export function parseList(text: string): Job[] {
@@ -122,6 +123,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       taken: { type: 'string' },
       kind: { type: 'string', default: 'venue' },
       list: { type: 'string' },
+      keep: { type: 'boolean' },
       dry: { type: 'boolean' },
     },
     allowPositionals: true,
@@ -134,7 +136,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (values.kind === 'menu' && !venue.includes('/')) throw new Error('a menu-board photo belongs to a venue')
     if (values.kind !== 'venue' && values.kind !== 'menu') throw new Error('--kind is venue or menu')
     if (values.taken && !/^\d{4}-\d{2}-\d{2}$/.test(values.taken)) throw new Error('--taken is YYYY-MM-DD')
-    jobs = [{ venue, file, alt: values.alt, credit: values.credit, licence: values.licence, source: values.source, taken: values.taken, kind: values.kind }]
+    jobs = [{ venue, file, alt: values.alt, credit: values.credit, licence: values.licence, source: values.source, taken: values.taken, kind: values.kind, keep: values.keep }]
   }
 
   const db = values.dry ? undefined : connect() // loads .env
@@ -176,8 +178,9 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
         source,
         taken_on: job.taken ?? null,
         approved: true,
+        ...(job.keep ? { keep: true } : {}),
       })
-      console.log(`✓ ${path}: ${sizes}${credited}`)
+      console.log(`✓ ${path}: ${sizes}${credited}${job.keep ? ' · kept' : ''}`)
     } catch (e) {
       failed++
       console.error(`✗ ${job.venue}: ${(e as Error).message}`)
