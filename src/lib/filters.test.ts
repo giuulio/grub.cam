@@ -61,6 +61,13 @@ describe('applyFilters', () => {
     expect(ids('bar')).toEqual(['c/cafe-bar'])
     expect(ids('hall')).toEqual([])
   })
+  it('lists a café with dated bar openings under Bars without inventing a recurring slot', () => {
+    const cafeBar: Venue = { ...base, id: 'c/cafe-bar', slug: 'cafe-bar', type: 'cafe', slots: [{ ...base.slots[0], meal: 'snacks', start: '08:00', end: '20:00' }], menu: [{ date: now.date, service: 'bar', items: [], note: 'Nautilus Bar 20:00–23:00 today' }] }
+    const filter = { ...DEFAULT_FILTERS, date: now.date, type: 'bar' as const }
+    expect(applyFilters([cafeBar], filter, { ...now, minutes: 21 * 60 })[0]?.status.kind).toBe('open')
+    expect(cafeBar.slots.some((s) => s.meal === 'bar')).toBe(false)
+    expect(applyFilters([{ ...cafeBar, menu: [] }], filter, now)).toEqual([])
+  })
   it('counts formal hall only when asked for, or where it is all a hall holds', () => {
     const formal = { ...base.slots[0], meal: 'formal' as const, start: '19:30', end: '21:30' }
     const evening = { ...now, minutes: 20 * 60 }

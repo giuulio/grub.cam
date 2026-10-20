@@ -47,6 +47,10 @@ Nine colleges publish their menus as documents rather than data: Fitzwilliam, Tr
 
 Lucy Cavendish's Canva is read fine from a home connection, but Canva puts a bot check ("Just a moment… Verification") in front of GitHub's runners: the scheduled run reports it in Source health rather than getting round it, so read it with `npm run ingest -- --only lucy-cavendish` from your machine, or transcribe it. Queens' is public but behind a CAPTCHA (its page redirects scripts to SiteGround's `sgcaptcha`), also in headless Chrome: it stays hand-transcribed, never got round.
 
+For Lucy's 19–25 October 2026 screenshots, the dated grid takes provisional precedence over the newsletter: Saturday brunch is explicitly closed for graduation, and street food is kebabs at 16:30–17:30; the newsletter says brunch is open and names Yorkshire pudding street food. Those conflicts remain in Warburton Hall's research notes. Formal menus keep their 19:00 starts in their dated notes, with no inferred finishing time. Café Lucy and Nautilus stay on the existing café/bar venue: the College describes the new-building café/bar, and the weekly timetable's bar openings follow its café closings; the older conservatory references do not establish a separate current venue.
+
+Changes published for a particular week use dated `menu_days` notes with their service's time range, as for St Edmund's: the usual `service_slots` stay intact and `withDayTimes()` applies the change on its date, including café (`snacks`) and bar hours. Lucy's 19–25 October café changes and Nautilus opening times are dated notes; they do not establish recurring or vacation hours.
+
 ## Submissions
 
 There are several publication routes: scripted public sources; hand-entered data; trusted contributors' scripts; members' menus, price lists and hours the model is confident of; vetted venue and site photos; and checked reviews. Corrections and anything held back wait for a person. `AUTO_KINDS` (function secret, default `menu,prices,hours`) says which kinds go up without one; `menu` alone makes prices and hours wait again.

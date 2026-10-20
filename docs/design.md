@@ -51,6 +51,8 @@ An explicit dated meal cancellation (`No dinner – …` in the menu note, with 
 
 A meal whose menu is posted elsewhere (a note with no dishes that isn't a cancellation: “European Night, see posters for details”) keeps its usual hours, shows its note in place of dishes, and from yesterday on has a gap line to send a photo of it (`/send` with that date and meal). A venue row whose current meal is one shows its note under the meal's name.
 
+A café or bar's dated schedule note can give a one-off time range in the same way, without changing its usual weekly hours. A café with a bar service in the loaded dated schedule appears under both types, as it does with recurring bar hours. Formal notes that publish a start alone (“Starts 19:00”) show that dated start in the formal details without inventing a finishing time.
+
 Reviews use `Reviews.tsx`: anonymous ratings after five members, newest six written reviews then “Show all”, and the member's own form when signed in. Signed out, the prompt to rate is a line with a secondary pill, quieter than the page's gaps. `RatingSummary` appears beside venue names; SEO includes `aggregateRating` when available.
 
 ## Contribute and information pages

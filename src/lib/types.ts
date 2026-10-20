@@ -14,9 +14,10 @@ export type VenueType = 'hall' | 'cafe' | 'bar'
  */
 export type Slot = { meal: Meal; days: Day[]; start: string; end: string; period: 'term' | 'vacation' | 'all'; date?: string; except?: string[] }
 
-/** What a venue is: its type (its icon), plus café or bar when it has those hours, as a café that's a bar by night does. */
-export function venueTypes(v: { type: VenueType; slots: Slot[] }): VenueType[] {
-  const also = (['cafe', 'bar'] as const).filter((t) => t !== v.type && v.slots.some((s) => s.meal === (t === 'cafe' ? 'snacks' : 'bar')))
+/** Its own type, plus café/bar services in its recurring hours or loaded dated schedule. */
+export function venueTypes(v: { type: VenueType; slots: Slot[]; menu?: Pick<MenuDay, 'service'>[] }): VenueType[] {
+  const services = [...v.slots.map((s) => s.meal), ...(v.menu ?? []).map((d) => d.service)]
+  const also = (['cafe', 'bar'] as const).filter((t) => t !== v.type && services.includes(t === 'cafe' ? 'snacks' : 'bar'))
   return [v.type, ...also]
 }
 

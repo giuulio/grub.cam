@@ -142,6 +142,18 @@ describe('a day’s changed hours', () => {
     const same = [{ date: '2026-10-12', service: 'dinner' as const, note: 'Dinner 18:30–19:45' }]
     expect(withDayTimes([dinner], same)).toEqual([dinner])
   })
+  it('changes café closing for its date and adds a one-off bar opening without changing the usual slots', () => {
+    const cafe = slot({ meal: 'snacks', start: '08:00', end: '21:00' })
+    const changed = withDayTimes([cafe], [
+      { date: '2026-10-22', service: 'snacks', note: 'Café Lucy 08:00–20:00 this Thursday' },
+      { date: '2026-10-22', service: 'bar', note: 'Nautilus Bar 20:00–23:00 this Thursday' },
+    ])
+    expect(openStatus(changed, at('2026-10-22', 'thu', '20:30'), ['snacks']).kind).toBe('closed')
+    expect(openStatus(changed, at('2026-10-22', 'thu', '20:30'), ['bar']).kind).toBe('open')
+    expect(openStatus(changed, at('2026-10-29', 'thu', '20:30'), ['snacks']).kind).toBe('open')
+    expect(changed.filter((s) => s.meal === 'bar').some((s) => slotApplies(s, '2026-10-29'))).toBe(false)
+    expect(cafe).not.toHaveProperty('except')
+  })
   it('cancels only the named meal and date, keeping the usual week intact', () => {
     const usual = [slot({}), dinner]
     const changed = withDayTimes(usual, [{ date: '2026-10-13', service: 'dinner', note: 'No dinner – UG freshers formal hall' }])
