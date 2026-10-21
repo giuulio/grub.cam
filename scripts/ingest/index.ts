@@ -13,9 +13,10 @@
 // changed after they saved it. Price-list documents (`prices`) are checked on a venue's first run of the day. When an
 // adapter with `fallback` breaks on its page, the model reads the page instead. Model calls need OPENAI_API_KEY.
 //
-// Sources run at once, one request at a time per host (lib/http.ts); a failing source waits longer before each try,
-// and fails the run (so GitHub emails) only when it has failed ALERT_AFTER times in a row; so do a document that
-// couldn't be read and a source in sources.ts with no venue. `--report dir` writes the "Source health" issue's body
+// Sources run at once, one request at a time per host (lib/http.ts); a failing source waits longer before each try
+// and is reported in the "Source health" issue once it has failed ALERT_AFTER times in a row, as is a document that
+// couldn't be read. Only our own errors fail the run (so GitHub emails): a source in sources.ts with no venue, or a
+// database write that failed. `--report dir` writes the "Source health" issue's body
 // (health.md) and, when something starts failing or recovers, a comment (health-comment.md); in Actions,
 // `changed=true` goes to GITHUB_OUTPUT when anything was saved, so the site is rebuilt only then.
 import { appendFileSync, writeFileSync } from 'node:fs'
@@ -246,4 +247,4 @@ if (values.report && db) {
 }
 if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `changed=${saved > 0}\n`)
 console.log(values.dry ? `${saved} services fetched (dry: nothing saved)` : saved ? `${saved} services saved` : 'nothing changed')
-process.exit(fatal || startedFailing.length || unreadNow.length ? 1 : 0)
+process.exit(fatal ? 1 : 0)
