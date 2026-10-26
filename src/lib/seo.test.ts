@@ -86,6 +86,14 @@ describe('seo', () => {
     expect(tags).toContain('Pie \\u003c/script>')
   })
 
+  it('writes a description’s apostrophes as ’, so no snippet can show them as &#39;', () => {
+    const page = { path: '/st-johns', description: "St John's and Queens' College: Today's menus, 'Hall', Café '84 and King's." }
+    const tags = headTags(page, "St John's")
+    expect(tags).toContain('<meta name="description" content="St John’s and Queens’ College: Today’s menus, ‘Hall’, Café ’84 and King’s." />')
+    expect(tags).toContain('<meta property="og:description" content="St John’s and Queens’ College: Today’s menus, ‘Hall’, Café ’84 and King’s." />')
+    expect(tags.split('\n').filter((t) => t.includes('description')).join('\n')).not.toContain("'")
+  })
+
   it('takes the title and a banner’s preload off the front of a rendered page, whichever comes first', () => {
     const preload = '<link rel="preload" as="image" imageSrcSet="/photos/jesus/a-480.webp 480w" fetchPriority="high"/>'
     expect(splitHoisted(`${preload}<title>Jesus College &amp; more</title><div>body</div>`)).toEqual({ title: 'Jesus College & more', head: preload, html: '<div>body</div>' })

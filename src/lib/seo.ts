@@ -225,6 +225,11 @@ export function pages(data: Data, date: string): Page[] {
 }
 
 const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+/**
+ * "Today’s", "St John’s", "Queens’", "Café ’84": a description's straight apostrophes as typographic ones. Google has shown a
+ * plain "'" in our descriptions as a literal "&#39;" in its snippets (Oct 2026); a ’ is never escaped, so it can't be.
+ */
+const curly = (s: string) => s.replace(/(?<=[\p{L}\p{N}])'|'(?=\d)/gu, '’').replace(/'/g, '‘')
 const unescapeText = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, '&')
 
 /**
@@ -244,13 +249,14 @@ export function splitHoisted(out: string): { title: string; head: string; html: 
 /** The <head> tags for one prerendered page (besides <title>). */
 export function headTags(page: Page, title: string): string {
   const url = abs(page.path)
+  const description = escapeAttr(curly(page.description))
   const tags = [
-    `<meta name="description" content="${escapeAttr(page.description)}" />`,
+    `<meta name="description" content="${description}" />`,
     // Large image previews in results (a page's photo), otherwise Google's defaults
     `<meta name="robots" content="${page.noindex ? 'noindex' : 'max-image-preview:large'}" />`,
     `<link rel="canonical" href="${escapeAttr(url)}" />`,
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
-    `<meta property="og:description" content="${escapeAttr(page.description)}" />`,
+    `<meta property="og:description" content="${description}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
     `<meta name="twitter:card" content="${page.image ? 'summary_large_image' : 'summary'}" />`,
   ]
