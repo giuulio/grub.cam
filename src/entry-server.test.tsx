@@ -30,7 +30,7 @@ describe('searchable HTML without JavaScript', () => {
     const page = render('/st-edmunds/dining-hall', data)
     const main = parse(page.html).querySelector('main')!
     expect(page.title).toContain("St Edmund's College (Eddies), Cambridge")
-    expect(main.text).toContain("Dining Hall at St Edmund's College (Eddies), Cambridge")
+    expect(main.text).toContain("Dining Hall is the dining hall of St Edmund's College (Eddies), Cambridge, serving lunch Mon 12:30–13:30.")
     expect(main.text).toContain('Vegetable pie')
     expect(main.text).toContain('12:30–13:30')
     expect(main.querySelector('a[href="/st-edmunds"]')).not.toBeNull()
@@ -40,7 +40,9 @@ describe('searchable HTML without JavaScript', () => {
     const cafe = { ...venue, name: 'Caffiend of Cambridge', aliases: ['WGB Café', 'Computer Laboratory Café'] }
     const main = parse(render('/st-edmunds/dining-hall', { ...data, venues: [cafe] }).html).querySelector('main')!
     expect(main.text).toContain('Also listed as WGB Café or Computer Laboratory Café.')
-    expect(parse(render('/st-edmunds', data).html).querySelector('main')!.text).toContain('Also known as Eddies.')
+    const college = parse(render('/st-edmunds', data).html).querySelector('main')!.text
+    expect(college).toContain("St Edmund's College has one place to eat and drink: Dining Hall, the dining hall, for lunch.")
+    expect(college).toContain('Also known as Eddies.')
   })
 
   it('renders the food-map explanation, category links and venues beyond the first browser page', () => {

@@ -9,6 +9,7 @@ import { applyFilters, DEFAULT_FILTERS, TYPES } from '../lib/filters.ts'
 import { hasLocation } from '../lib/finder.ts'
 import { alternateNames, siteName, venuePath } from '../lib/site.ts'
 import { siteTitle } from '../lib/seo.ts'
+import { siteSummary } from '../lib/summary.ts'
 import { useNow } from '../lib/useNow.ts'
 import { NotFound } from './NotFound.tsx'
 
@@ -52,7 +53,8 @@ export function SitePage() {
       <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-16">
         <div className="min-w-0">
           <h1 className="title text-4xl leading-[1.1] sm:text-5xl">{siteName(site)}</h1>
-          {alternateNames(site).length > 0 && <p className="mt-3 text-muted">Also known as {alternateNames(site).join(' or ')}.</p>}
+          {/* What it has and who it's also called, in words: the lead search engines read */}
+          {mine.length > 0 || alternateNames(site).length > 0 ? <p className="mt-3 max-w-prose text-muted">{siteSummary(site, mine)}</p> : null}
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
             <span className="text-ink">{`${mine.length} ${mine.length === 1 ? 'venue' : 'venues'}`}</span>
             {site.official_dining_url && <ExternalLink href={site.official_dining_url} className="" />}

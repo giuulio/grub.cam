@@ -5,7 +5,9 @@ import { DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from
 import { SCOPES } from './finder.ts'
 import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
+import { formalBooking, formalDress, formalPrice } from './formal.ts'
 import { alternateNames, SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, siteSearchName, venuePath } from './site.ts'
+import { dailyMeals, hasFormalMenu, hasMenu, hasPrices, holdsFormal, kindWords, list, mealWords, placed as placedIn } from './summary.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
@@ -30,16 +32,12 @@ const MENU_DAYS_IN_JSONLD = 3
 const abs = (path: string) => SITE_URL + path
 const siteType = (s: Site) => (s.kind === 'college' ? 'CollegeOrUniversity' : 'Place')
 const day = (iso: string) => formatISODate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
-const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
-const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
-const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items.some((i) => i.price_gbp != null))
-/** "a, b and c" */
-const list = (parts: string[]) => parts.join(', ').replace(/, ([^,]*)$/, ' and $1')
 /** "Jesus College, Cambridge"; a University site is already in Cambridge by name, so it's placed by the University */
 const placed = (s: Site) => (s.kind === 'college' ? `${siteSearchName(s)}, Cambridge` : `${siteSearchName(s)}, University of Cambridge`)
 
-// Page titles: what people search for first (the venue or site, "menus", "opening hours", "prices", "formal hall",
-// "Cambridge"), the site's name last. The pages set them; the prerenderer lifts them into <head>.
+// Page titles: what people search for first (the venue or site, its meals' menus, "formal hall", "opening times" as
+// people in Britain search it, "prices", "Cambridge"), the site's name last. The pages set them; the prerenderer lifts
+// them into <head>.
 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
@@ -50,20 +48,34 @@ export const TAB_TITLES: Record<string, string> = {
   '/formal': `Cambridge college formal hall: nights, prices and dress code · ${SITE_NAME}`,
 }
 
-/** "Jesus College, Cambridge: dining hall menus, café and bar opening hours · grub.cam", from what the site has. */
+/** "Jesus College, Cambridge: dining hall menus, formal hall, café and bar opening times · grub.cam", from what the site has. */
 export function siteTitle(s: Site, venues: Venue[]): string {
-  const kinds = new Set(venues.flatMap(venueTypes))
-  const parts = [kinds.has('hall') && 'dining hall menus', kinds.has('cafe') && 'café', kinds.has('bar') && 'bar'].filter((x): x is string => !!x)
-  return `${placed(s)}: ${parts.length ? `${list(parts)} ` : ''}opening hours · ${SITE_NAME}`
+  const daily = venues.filter((v) => !(v.type === 'hall' && isFormalOnly(v)))
+  const kinds = new Set(daily.flatMap(venueTypes))
+  const hall = s.kind === 'college' ? 'dining hall' : 'canteen'
+  const menus = kinds.has('hall') && daily.some(hasMenu)
+  // Things in their own right, then the kinds whose opening times it gives
+  const things = [menus && `${hall} menus`, venues.some(holdsFormal) && 'formal hall'].filter((x): x is string => !!x)
+  const timed = [kinds.has('hall') && !menus && hall, kinds.has('cafe') && 'café', kinds.has('bar') && 'bar'].filter((x): x is string => !!x)
+  const what = timed.length ? `${list([...things, ...timed])} opening times` : list([...things, 'opening times'])
+  return `${placed(s)}: ${what} · ${SITE_NAME}`
 }
 
-/** "Caff, Jesus College, Cambridge: menus and opening hours · grub.cam", from what the venue is and has. */
+/**
+ * "Caff, Jesus College, Cambridge: lunch and dinner menus, prices and opening times · grub.cam", from what the venue
+ * is and has: the meals it serves, its formal hall, its prices.
+ */
 export function venueTitle(v: Venue): string {
-  const what =
-    v.type === 'hall' && isFormalOnly(v) ? 'formal hall nights, price and dress code'
-    : hasMenu(v) ? `menus${hasPrices(v) ? ', prices' : ''} and opening hours`
-    : `${TYPE_LABEL[v.type].toLowerCase()} opening hours${hasPrices(v) ? ' and prices' : ''}`
-  return `${v.name}, ${placed(v.site)}: ${what} · ${SITE_NAME}`
+  if (v.type === 'hall' && isFormalOnly(v)) return `${v.name}, ${placed(v.site)}: formal hall ${hasFormalMenu(v) ? 'menu, ' : ''}nights, price and dress code · ${SITE_NAME}`
+  const meals = mealWords(v)
+  const menu = hasMenu(v)
+  const parts = [
+    menu ? (v.type === 'hall' ? `${meals ? `${meals} ` : ''}menus` : `${kindWords(v)} menu`) : `${kindWords(v)} opening times`,
+    hasPrices(v) && (v.type === 'bar' && !menu ? 'drink prices' : 'prices'),
+    holdsFormal(v) && 'formal hall',
+    menu && 'opening times',
+  ].filter((x): x is string => !!x)
+  return `${v.name}, ${placed(v.site)}: ${list(parts)} · ${SITE_NAME}`
 }
 
 /** Home › Jesus College › Caff, for a rich result's breadcrumb. */
@@ -89,12 +101,18 @@ const clip = (s: string, n = 160) => (s.length <= n ? s : `${s.slice(0, n - 1).r
 function venueDescription(v: Venue, date: string): string {
   const hours = hoursText(periodSlots(v.slots, date))
   const today = v.menu.some((d) => d.date === date && d.items.length)
-  const menu = hasMenu(v) ? `${today ? "Today's menu" : 'Published menus'}${hasPrices(v) ? ' and prices' : ''}. ` : v.prices?.length ? 'Menu and prices as posted. ' : ''
-  const kinds = venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase()))
+  // "Today's lunch and dinner menus": the meals with dishes today
+  const meals = dailyMeals(v).filter((m) => v.menu.some((d) => d.date === date && d.service === m && d.items.length)).map((m) => MEAL_LABEL[m].toLowerCase())
+  const todays = `Today's ${meals.length ? `${list(meals)} ` : ''}${meals.length > 1 ? 'menus' : 'menu'}`
+  const menu = hasMenu(v) ? `${today ? todays : 'Published menus'}${hasPrices(v) ? ' and prices' : ''}. ` : v.prices?.length ? 'Menu and prices as posted. ' : ''
   const formal = v.type === 'hall' && isFormalOnly(v)
+  // A formal hall's dress, price and booking, as far as they're published
+  const f = v.formal
+  const details = formal && f ? [formalDress(f), formalPrice(f), formalBooking(f) && `Book: ${formalBooking(f)}`].filter(Boolean).map((s) => `${s}. `).join('') : ''
   const aliases = alternateNames(v)
   const name = `${v.name}${aliases.length ? ` (${aliases[0]})` : ''}`
-  return clip(`${name}, ${placed(v.site)}: ${formal ? 'formal hall' : list(kinds)}. ${menu}${hours ? `${formal ? 'Nights' : 'Open'} ${hours}.` : 'Opening hours not published yet.'}`)
+  const what = formal ? 'formal hall' : `${kindWords(v)}${holdsFormal(v) ? ' and formal hall' : ''}`
+  return clip(`${name}, ${placed(v.site)}: ${what}. ${menu}${hours ? `${formal ? 'Nights' : 'Open'} ${hours}. ` : 'Opening hours not published yet. '}${details}`.trim())
 }
 
 function venueJsonLd(v: Venue, date: string): object {
@@ -194,11 +212,12 @@ export function pages(data: Data, date: string): Page[] {
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     // "Caff (dining hall), Hall (formal hall), The Roost (bar)"
-    const named = mine.map((v) => `${v.name} (${v.type === 'hall' && isFormalOnly(v) ? 'formal hall' : list(venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase())))})`)
+    const named = mine.map((v) => `${v.name} (${v.type === 'hall' && isFormalOnly(v) ? 'formal hall' : kindWords(v)})`)
     return {
       path: sitePath(s),
       daily: mine.some(hasMenu),
-      description: clip(`Where to eat and drink at ${placed(s)}: ${named.join(', ')}. Today's menus, opening hours and prices.`),
+      // Menus and prices only where it has them
+      description: clip(`Where to eat and drink at ${placedIn(s)}: ${named.join(', ')}. ${mine.some(hasMenu) ? `Today's menus, opening hours${mine.some(hasPrices) ? ' and prices' : ''}` : mine.some(hasPrices) ? 'Opening hours and prices' : 'Opening hours, as each venue publishes them'}.`),
       jsonLd: [
         {
           '@context': 'https://schema.org',

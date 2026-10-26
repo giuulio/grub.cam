@@ -53,7 +53,7 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 | Model calls and prompts | `supabase/functions/_shared/openai.ts`, `supabase/functions/_shared/formats.ts` |
 | Reviews | `src/components/Reviews.tsx`, `scripts/ingest/reviews.ts` |
 | Contribute: college table, leaderboard, names | `src/pages/Contribute.tsx`, `src/lib/contributors.ts`, `src/lib/coverage.ts` (`venueNeeds()`, `gapWeight()`, `siteProgress()`), views in migration `0039` |
-| SEO and prerendering | `src/lib/seo.ts`, `src/entry-server.tsx`, `scripts/prerender.ts` |
+| SEO and prerendering | `src/lib/seo.ts`, `src/lib/summary.ts` (pages' lead paragraphs), `src/entry-server.tsx`, `scripts/prerender.ts` |
 
 ## Data rules
 

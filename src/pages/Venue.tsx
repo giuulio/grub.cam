@@ -19,7 +19,8 @@ import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
-import { alternateNames, sendPath, siteName, siteSearchName, venuePath } from '../lib/site.ts'
+import { alternateNames, sendPath, siteName, venuePath } from '../lib/site.ts'
+import { venueSummary } from '../lib/summary.ts'
 import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -66,7 +67,7 @@ export function VenuePage() {
         {/* The page scrolls past the name, the facts and the sections, while the rail stays beside them; on a phone,
             the hours come after the name, and the facts, the map and the help after the sections */}
         <div className="contents md:col-start-1 md:row-start-1 md:block md:min-w-0">
-          <Heading venue={venue} />
+          <Heading venue={venue} siblings={venues.filter((v) => v.site.slug === venue.site.slug)} date={now.date} />
           <Details venue={venue} />
           <div className="order-3 min-w-0 space-y-16 md:mt-14">
             <Sections key={venue.id} venue={venue} now={now} />
@@ -213,7 +214,7 @@ function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
   )
 }
 
-function Heading({ venue }: { venue: Venue }) {
+function Heading({ venue, siblings, date }: { venue: Venue; siblings: Venue[]; date: string }) {
   return (
     <header className="order-1 min-w-0">
       {/* Its site over its name, in Dark Cherry as on every row: "Hall" alone doesn't say whose */}
@@ -221,8 +222,9 @@ function Heading({ venue }: { venue: Venue }) {
         {siteName(venue.site)}
       </Link>
       <h1 className="title mt-1 text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
-      <p className="mt-3 text-muted">
-        {venue.name} at {siteSearchName(venue.site)}{venue.site.kind === 'college' ? ', Cambridge' : ', University of Cambridge'}.
+      {/* What it is, its meals and times and its formal hall, in words: the lead search engines read */}
+      <p className="mt-3 max-w-prose text-muted">
+        {venueSummary(venue, date, siblings)}
         {alternateNames(venue).length > 0 && ` Also listed as ${alternateNames(venue).join(' or ')}.`}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
