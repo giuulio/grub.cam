@@ -1,6 +1,6 @@
 // The front page is the one place to find somewhere: a tab per kind of venue, each with its own address, and its
 // filters in the URL. What each tab is, how it reads its filters, and where links from before it existed now go.
-import { DEFAULT_FILTERS, dishMatches, MEAL_LABEL, nextService, type Filters, type Ranked } from './filters.ts'
+import { DEFAULT_FILTERS, dishMatches, MEAL_LABEL, type Filters, type Ranked } from './filters.ts'
 import { isISODate } from './time/clock.ts'
 import type { DietTag, Meal, Site, Venue, VenueType } from './types.ts'
 import { normalizeSearch } from './search.ts'
@@ -81,5 +81,5 @@ export function hasLocation(v: Venue): v is Venue & { latitude: number; longitud
 
 export function resultDishes(r: Ranked, f: Filters): string[] {
   if (normalizeSearch(f.q) && r.searchMatches.length) return [...new Set(r.searchMatches.map((h) => `${h.service ? `${MEAL_LABEL[h.service]}: ` : ''}${h.dish!.name}`))]
-  return (f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, { ...f, q: '' })) : nextService(r)?.items ?? []).map((i) => i.name)
+  return (f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, { ...f, q: '' })) : r.next?.items ?? []).map((i) => i.name)
 }

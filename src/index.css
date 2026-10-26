@@ -489,6 +489,9 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
 .venue-pin::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--sheen); }
 .venue-map[data-map-theme='dark'] .venue-pin { --pin-ring: #2b3a40; }
 .venue-pin-glyph { position: relative; width: 14px; height: 14px; color: #fff; filter: drop-shadow(0 0.5px 0.5px #0000004d); }
+/* The same mark in the corner of a venue's photo in a list, larger, so the row reads as its pin's key */
+.venue-pin.on-photo { position: absolute; top: 0.875rem; left: 0.875rem; width: 2rem; height: 2rem; }
+.venue-pin.on-photo .venue-pin-glyph { width: 1.125rem; height: 1.125rem; }
 
 /* Selected: larger, ringed in Cambridge Dark Blue (Cambridge Blue on the dark basemap). */
 .venue-pin.is-selected {

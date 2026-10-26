@@ -59,7 +59,7 @@ describe('front page tabs', () => {
     expect(from('venue=../../etc')).toBe('/')
   })
   it('still previews the published menu when a venue name, rather than a dish, matched', () => {
-    expect(resultDishes({ venue, status: { kind: 'unknown' }, days: venue.menu, matchedDishes: 0, searchMatches: [] }, read('q=jesus'))).toEqual(['Dhal'])
+    expect(resultDishes({ venue, status: { kind: 'unknown' }, days: venue.menu, next: venue.menu[0], matchedDishes: 0, searchMatches: [] }, read('q=jesus'))).toEqual(['Dhal'])
   })
 })
 

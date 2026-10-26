@@ -3,7 +3,7 @@ import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
 import type { Point } from '../lib/map.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { pinFill, pinLabel } from '../lib/mapView.ts'
-import { venueTypes } from '../lib/types.ts'
+import { venueTypes, type VenueType } from '../lib/types.ts'
 
 // What both maps share (Apple's, `AppleMap.tsx`, and the OpenFreeMap one in `VenueMap.tsx`): their props, the pins,
 // and Near me / Show all; how they frame the venues is in `lib/mapView.ts`.
@@ -32,7 +32,6 @@ export type MapProps = { results: Ranked[]; selected?: string; highlight?: strin
 export function MapPin({ r, selected, shared, oneSite = false, onSelect }: { r: Ranked; selected: boolean; shared: boolean; oneSite?: boolean; onSelect: (id: string) => void }) {
   const v = r.venue
   const types = venueTypes(v)
-  const Glyph = TYPE_ICON[types[0]]
   const label = `${v.site.short_name ?? v.site.name}: ${v.name} (${types.map((t) => TYPE_LABEL[t]).join(' and ')}${r.status.kind === 'open' ? ', open now' : ''})`
   // Drawn around a point of no size (`.venue-pin-origin`), so the map, which reads the pin's size when it places it,
   // always reads the same: the pin's centre on the point, whatever has been drawn in it yet
@@ -40,11 +39,24 @@ export function MapPin({ r, selected, shared, oneSite = false, onSelect }: { r: 
     <span className="venue-pin-origin">
     <button type="button" data-type={types[0]} className={`venue-pin-target ${shared ? 'is-shared' : ''}`} title={label} aria-label={label} aria-pressed={selected}
       onClick={(event) => { event.stopPropagation(); onSelect(v.id) }}>
-      <span className={`venue-pin ${selected ? 'is-selected' : ''}`} style={{ background: pinFill(types) }}>
-        <Glyph weight="Filled" aria-hidden="true" focusable="false" className="venue-pin-glyph" />
-      </span>
+      <PinMark types={types} className={selected ? 'is-selected' : ''} />
       <span aria-hidden="true" className="venue-pin-label">{pinLabel(v, oneSite)}</span>
     </button>
+    </span>
+  )
+}
+
+/**
+ * A venue's pin itself: a disc in its type's colour, or split between its two, with the first one's glyph. On the map
+ * and in the corner of its photo in a list (`on-photo`), where `label` names its types for whoever can't see it.
+ */
+export function PinMark({ types, className = '', label = false }: { types: VenueType[]; className?: string; label?: boolean }) {
+  const Glyph = TYPE_ICON[types[0]]
+  const name = types.map((t) => TYPE_LABEL[t]).join(' and ')
+  return (
+    <span className={`venue-pin ${className}`} style={{ background: pinFill(types) }} title={label ? name : undefined}>
+      <Glyph weight="Filled" aria-hidden="true" focusable="false" className="venue-pin-glyph" />
+      {label && <span className="sr-only">{name}</span>}
     </span>
   )
 }

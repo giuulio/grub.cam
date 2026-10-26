@@ -1,6 +1,6 @@
 import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
-import type { LocalNow } from './time/clock.ts'
-import { openStatus, statusRank, withDayTimes, type OpenStatus } from './time/openNow.ts'
+import { hhmmToMinutes, type LocalNow } from './time/clock.ts'
+import { openStatus, slotApplies, statusRank, withDayTimes, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
 import { mealElsewhere } from './menuNotes.ts'
 import { compareSearchHits, normalizeSearch, searchVenues, type SearchHit } from './search.ts'
@@ -97,6 +97,8 @@ export type Filters = {
 
 export const DEFAULT_FILTERS: Omit<Filters, 'date'> = { diets: [], openNow: false, q: '' }
 
+const sortMeals = (days: MenuDay[]) => days.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
+
 export function menuDaysFor(v: Venue, date: string, meal?: Meal): MenuDay[] {
   return v.menu.filter((d) => d.date === date && (!meal || d.service === meal))
 }
@@ -120,7 +122,8 @@ export function serviceDate(s: OpenStatus): string | undefined {
   if (s.kind === 'closed') return s.next?.date
 }
 
-export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; matchedDishes: number; search?: SearchHit; searchMatches: SearchHit[] }
+/** `next`: the menu its row previews (`nextService()`), which can be tomorrow's when `days` are today's. */
+export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; next?: MenuDay; matchedDishes: number; search?: SearchHit; searchMatches: SearchHit[] }
 
 /** How results are grouped, in ranking order. Unknown hours are their own group, never "closed". */
 export type Section = 'open' | 'later' | 'other' | 'unknown'
@@ -128,11 +131,21 @@ export const SECTIONS: Section[] = ['open', 'later', 'other', 'unknown']
 export const SECTION_LABEL: Record<Section, string> = { open: 'Open now', later: 'Later today', other: 'Other days', unknown: 'Hours not published' }
 export const sectionOf = (s: OpenStatus): Section => (s.kind === 'open' ? 'open' : s.kind === 'opening' ? 'later' : s.kind === 'closed' ? 'other' : 'unknown')
 
-/** The menu for the service the status points at (its note alone, when it's posted elsewhere), else the first menu that day. */
-export function nextService({ status: s, days }: Pick<Ranked, 'status' | 'days'>): MenuDay | undefined {
-  const slot = s.kind === 'open' || s.kind === 'opening' ? s.slot : s.kind === 'closed' ? s.next?.slot : undefined
-  const withItems = days.filter((d) => d.items.length)
-  return days.find((d) => d.service === slot?.meal && (d.items.length || mealElsewhere(d))) ?? withItems[0]
+/**
+ * The menu a row previews: the service the status points at (its note alone, when it's posted elsewhere), else the next
+ * one with dishes that day, never one already over: at dinner, not lunch's. `days` are one day's, in meal order; a day
+ * other than the status's (one picked) previews its first menu. `slots` are the venue's, as that day's menus post them.
+ */
+export function nextService(s: OpenStatus, days: MenuDay[], slots: Slot[]): MenuDay | undefined {
+  const at = s.kind === 'open' || s.kind === 'opening' ? s : s.kind === 'closed' ? s.next : undefined
+  const exact = at && days.find((d) => d.date === at.date && d.service === at.slot.meal && (d.items.length || mealElsewhere(d)))
+  if (exact) return exact
+  // A meal is over when every sitting it has that day ends by the time this one starts; one without hours never is
+  const over = (d: MenuDay) => {
+    const times = slots.filter((x) => x.meal === d.service && slotApplies(x, d.date))
+    return !!at && d.date === at.date && times.length > 0 && times.every((x) => hhmmToMinutes(x.end) <= hhmmToMinutes(at.slot.start))
+  }
+  return days.find((d) => d.items.length && !over(d))
 }
 
 /** A menu's main dishes, what a card leads with; every dish where the source marks no courses (Homerton, Downing). */
@@ -150,18 +163,23 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     if (f.kind && v.site.kind !== f.kind) continue
     const meals = f.meal ? [f.meal] : undefined
     // Today's hours as its menus post them, where they've changed
-    const status = openStatus(withDayTimes(v.slots, v.menu), now, meals)
+    const slots = withDayTimes(v.slots, v.menu)
+    const status = openStatus(slots, now, meals)
     // Site browsing can preview the next service; Explore and searches keep the explicit menu date.
     const date = !f.exactDate && !searching && f.date === now.date ? (serviceDate(status) ?? f.date) : f.date
     const days = menuDaysFor(v, date, f.meal)
     if (!matchesDiet(v, days, f.diets)) continue
-    days.sort((a, b) => MEALS.indexOf(a.service) - MEALS.indexOf(b.service))
+    sortMeals(days)
     if (f.openNow && status.kind !== 'open') continue
     // If a meal is selected and the venue neither serves it (no slot) nor has a menu for it, drop it; formal hall
     // counts where it's held even when its days aren't published
     if (f.meal && !v.slots.some((s) => s.meal === f.meal) && !days.length && !(f.meal === 'formal' && v.formal)) continue
     const matchedDishes = days.reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
-    kept.set(v.id, { venue: v, status, days, matchedDishes })
+    // Its row previews the service its status points at: tomorrow's breakfast once today's meals are over, unless
+    // another day is picked
+    const at = serviceDate(status)
+    const ahead = at && date === now.date && at > date ? sortMeals(menuDaysFor(v, at, f.meal)) : days
+    kept.set(v.id, { venue: v, status, days, next: nextService(status, ahead, slots), matchedDishes })
   }
   // Searches see the venues left, and only dishes on the date viewed, at the meal and with every diet picked.
   const hits = searching
