@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Data } from './data.tsx'
 import { headTags, hoursText, llmsFullTxt, llmsTxt, pages, sitemap, siteTitle, splitHoisted, TAB_TITLES, venueTitle } from './seo.ts'
 import type { Venue } from './types.ts'
+import { alternateNames } from './site.ts'
 
 const jesus = { slug: 'jesus', name: 'Jesus', short_name: null, kind: 'college' as const, official_dining_url: null }
 const caff: Venue = {
@@ -33,7 +34,7 @@ describe('seo', () => {
 
   it('describes a venue with its hours, and gives schema.org hours, menus by date then meal, where it is and its breadcrumb', () => {
     const venue = pages({ ...data, venues: [{ ...caff, latitude: 52.2088, longitude: 0.1241 }] }, date).at(-1)!
-    expect(venue.description).toBe("Caff, Jesus College, Cambridge: dining hall. Open Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40. Today's menu dish by dish, with prices.")
+    expect(venue.description).toBe("Caff, Jesus College, Cambridge: dining hall. Today's menu and prices. Open Lunch Mon–Fri 12:00–13:45; Dinner Daily 17:40–18:40.")
     const [ld, crumbs] = venue.jsonLd as Record<string, any>[]
     expect(ld['@type']).toBe('FoodEstablishment')
     expect(ld.geo).toEqual({ '@type': 'GeoCoordinates', latitude: 52.2088, longitude: 0.1241 })
@@ -48,11 +49,11 @@ describe('seo', () => {
   })
 
   it('titles pages by what people search for, the place first and the site last', () => {
-    expect(TAB_TITLES['/']).toBe('Cambridge college menus, cafés and bars today · grub.cam')
+    expect(TAB_TITLES['/']).toBe('Cambridge food map: college menus, cafés and bars · grub.cam')
     expect(TAB_TITLES['/formal']).toMatch(/^Cambridge college formal hall/)
     const bar: Venue = { ...caff, id: 'jesus/roost', slug: 'roost', name: 'The Roost', type: 'bar', menu: [], slots: [{ meal: 'bar', days: ['fri'], start: '20:00', end: '23:00', period: 'all' }] }
     expect(siteTitle(jesus, [caff, bar])).toBe('Jesus College, Cambridge: dining hall menus and bar opening hours · grub.cam')
-    expect(venueTitle(caff)).toBe('Caff, Jesus College, Cambridge: menu today, opening hours and prices · grub.cam')
+    expect(venueTitle(caff)).toBe('Caff, Jesus College, Cambridge: menus, prices and opening hours · grub.cam')
     expect(venueTitle(bar)).toBe('The Roost, Jesus College, Cambridge: bar opening hours · grub.cam')
     expect(venueTitle({ ...caff, menu: [], slots: [{ meal: 'formal', days: ['fri'], start: '19:30', end: '21:30', period: 'term' }] })).toBe('Caff, Jesus College, Cambridge: formal hall nights, price and dress code · grub.cam')
     const uni = { ...jesus, slug: 'west-cambridge', name: 'West Cambridge', kind: 'university' as const }
@@ -102,8 +103,46 @@ describe('seo', () => {
     expect(full).toContain('- Thu 8 Oct, lunch: Dhal [VG]')
     expect(hoursText([])).toBe('')
   })
+  it('keeps the account-gated submission form out of search results and the sitemap', () => {
+    const all = pages(data, date)
+    expect(headTags(all.find((p) => p.path === '/send')!, 'Send')).toContain('name="robots" content="noindex"')
+    expect(sitemap(all, date)).not.toContain('<loc>https://grub.cam/send</loc>')
+  })
   it('keeps fixed-menu descriptions in the complete text export', () => {
     const cafe: Venue = { ...caff, type: 'cafe', menu: [], prices: [{ section: 'Breakfast / lunch', name: 'Herb Potato Rosti', description: 'Choose spinach, bacon, or beans', price_gbp: 7.15, non_member_gbp: null, services: ['snacks'], course: null, tags: [], observed_on: '2026-10-12', source: 'email' }] }
     expect(llmsFullTxt({ ...data, venues: [cafe] }, date, '12 Oct 2026')).toContain('Herb Potato Rosti — Choose spinach, bacon, or beans £7.15')
+  })
+
+  it('carries verified college and venue aliases into metadata and text exports', () => {
+    const site = { ...jesus, slug: 'st-edmunds', name: "St Edmund's", aliases: ['Eddies'] }
+    const venue = { ...caff, id: 'st-edmunds/dining-hall', slug: 'dining-hall', name: 'Dining Hall', site, aliases: ['Refectory'] }
+    const example = { ...data, sites: [site], venues: [venue] }
+    const all = pages(example, date)
+    expect(venueTitle(venue)).toContain("St Edmund's College (Eddies), Cambridge")
+    expect(siteTitle(site, [venue])).toContain("St Edmund's College (Eddies)")
+    const page = all.at(-1)!
+    expect(page.description).toContain("Dining Hall (Refectory), St Edmund's College (Eddies)")
+    const [ld] = page.jsonLd as Record<string, any>[]
+    expect(ld.alternateName).toEqual(['Refectory'])
+    expect(ld.containedInPlace.alternateName).toEqual(['Eddies'])
+    const [college] = all.find((p) => p.path === '/st-edmunds')!.jsonLd as Record<string, any>[]
+    expect(college.alternateName).toEqual(['Eddies'])
+    expect(llmsTxt(example)).toContain("St Edmund's College (Eddies)")
+    expect(llmsFullTxt(example, date, '8 Oct 2026')).toContain('Also listed as: Refectory')
+  })
+
+  it('does not call a future menu today’s menu or invent one for an empty venue', () => {
+    const future = { ...caff, menu: caff.menu.map((d) => ({ ...d, date: '2026-10-09' })) }
+    const page = pages({ ...data, venues: [future] }, date).at(-1)!
+    expect(page.description).toContain('Published menus')
+    expect(page.description).not.toContain("Today's menu")
+    const empty = pages({ ...data, venues: [{ ...caff, menu: [], slots: [] }] }, date).at(-1)!
+    expect(empty.description).toContain('Opening hours not published')
+    expect((empty.jsonLd as Record<string, any>[])[0].hasMenu).toBeUndefined()
+  })
+
+  it('avoids repeating aliases that only differ in accents, punctuation or casing', () => {
+    expect(alternateNames({ name: 'Café Lucy / Nautilus Bar', aliases: ['Café Lucy', 'Cafe Lucy', 'Nautilus', 'Nautilus Bar'] })).toEqual([])
+    expect(alternateNames({ name: 'Hall', aliases: [' Refectory ', 'refectory', 'HALL', ''] })).toEqual(['Refectory'])
   })
 })

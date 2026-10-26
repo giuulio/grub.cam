@@ -26,7 +26,7 @@ export function Footer() {
           <Link to="/terms">Terms and privacy</Link>
         </FooterLinks>
         <FooterLinks title="Find">
-          {SCOPES.map((s) => <Link key={s.scope} to={s.path}>{s.scope === 'all' ? 'Everything' : s.label}</Link>)}
+          {SCOPES.map((s) => <Link key={s.scope} to={s.path}>{s.heading}</Link>)}
         </FooterLinks>
         <FooterLinks title="Help build it">
           <Link to="/contribute">Contribute</Link>

@@ -5,7 +5,7 @@ import { DIET_SHORT, dishTags, MEAL_LABEL, MEALS, periodSlots, TYPE_LABEL } from
 import { SCOPES } from './finder.ts'
 import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, venuePath } from './site.ts'
+import { alternateNames, SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, siteSearchName, venuePath } from './site.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
@@ -13,7 +13,7 @@ import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Ph
  * `image`: a photo for link previews (og:image); `jsonLd`: one or more schema.org things; `daily`: what the page shows
  * changes from day to day (a menu), so the sitemap dates it to the build, while the rest go without a date they don't have
  */
-export type Page = { path: string; description: string; jsonLd?: object | object[]; image?: string; daily?: boolean }
+export type Page = { path: string; description: string; jsonLd?: object | object[]; image?: string; daily?: boolean; noindex?: boolean }
 
 const TYPE_SCHEMA: Record<VenueType, string> = { hall: 'FoodEstablishment', cafe: 'CafeOrCoffeeShop', bar: 'BarOrPub' }
 const DAY_SCHEMA: Record<Day, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
@@ -36,15 +36,15 @@ const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items
 /** "a, b and c" */
 const list = (parts: string[]) => parts.join(', ').replace(/, ([^,]*)$/, ' and $1')
 /** "Jesus College, Cambridge"; a University site is already in Cambridge by name, so it's placed by the University */
-const placed = (s: Site) => (s.kind === 'college' ? `${siteName(s)}, Cambridge` : `${siteName(s)}, University of Cambridge`)
+const placed = (s: Site) => (s.kind === 'college' ? `${siteSearchName(s)}, Cambridge` : `${siteSearchName(s)}, University of Cambridge`)
 
-// Page titles: what people search for first (the place, "menu today", "opening hours", "prices", "formal hall",
+// Page titles: what people search for first (the venue or site, "menus", "opening hours", "prices", "formal hall",
 // "Cambridge"), the site's name last. The pages set them; the prerenderer lifts them into <head>.
 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
-  '/': `Cambridge college menus, cafés and bars today · ${SITE_NAME}`,
-  '/dining': `Cambridge college hall and canteen menus today, and meal times · ${SITE_NAME}`,
+  '/': `Cambridge food map: college menus, cafés and bars · ${SITE_NAME}`,
+  '/dining': `Cambridge college menus and meal times · ${SITE_NAME}`,
   '/cafes': `Cambridge college and University cafés: opening hours and prices · ${SITE_NAME}`,
   '/bars': `Cambridge college bars: opening hours and drink prices · ${SITE_NAME}`,
   '/formal': `Cambridge college formal hall: nights, prices and dress code · ${SITE_NAME}`,
@@ -57,11 +57,11 @@ export function siteTitle(s: Site, venues: Venue[]): string {
   return `${placed(s)}: ${parts.length ? `${list(parts)} ` : ''}opening hours · ${SITE_NAME}`
 }
 
-/** "Caff, Jesus College, Cambridge: menu today and opening hours · grub.cam", from what the venue is and has. */
+/** "Caff, Jesus College, Cambridge: menus and opening hours · grub.cam", from what the venue is and has. */
 export function venueTitle(v: Venue): string {
   const what =
     v.type === 'hall' && isFormalOnly(v) ? 'formal hall nights, price and dress code'
-    : hasMenu(v) ? `menu today, opening hours${hasPrices(v) ? ' and prices' : ''}`
+    : hasMenu(v) ? `menus${hasPrices(v) ? ', prices' : ''} and opening hours`
     : `${TYPE_LABEL[v.type].toLowerCase()} opening hours${hasPrices(v) ? ' and prices' : ''}`
   return `${v.name}, ${placed(v.site)}: ${what} · ${SITE_NAME}`
 }
@@ -88,10 +88,13 @@ const clip = (s: string, n = 160) => (s.length <= n ? s : `${s.slice(0, n - 1).r
 
 function venueDescription(v: Venue, date: string): string {
   const hours = hoursText(periodSlots(v.slots, date))
-  const menu = hasMenu(v) ? ` Today's menu dish by dish${hasPrices(v) ? ', with prices' : ''}.` : v.prices?.length ? ' Menu and prices as posted.' : ''
+  const today = v.menu.some((d) => d.date === date && d.items.length)
+  const menu = hasMenu(v) ? `${today ? "Today's menu" : 'Published menus'}${hasPrices(v) ? ' and prices' : ''}. ` : v.prices?.length ? 'Menu and prices as posted. ' : ''
   const kinds = venueTypes(v).map((t) => (t === 'hall' ? 'dining hall' : TYPE_LABEL[t].toLowerCase()))
   const formal = v.type === 'hall' && isFormalOnly(v)
-  return clip(`${v.name}, ${placed(v.site)}: ${formal ? 'formal hall' : list(kinds)}. ${hours ? `${formal ? 'Nights' : 'Open'} ${hours}.` : 'Opening hours not published yet.'}${menu}`)
+  const aliases = alternateNames(v)
+  const name = `${v.name}${aliases.length ? ` (${aliases[0]})` : ''}`
+  return clip(`${name}, ${placed(v.site)}: ${formal ? 'formal hall' : list(kinds)}. ${menu}${hours ? `${formal ? 'Nights' : 'Open'} ${hours}.` : 'Opening hours not published yet.'}`)
 }
 
 function venueJsonLd(v: Venue, date: string): object {
@@ -101,9 +104,10 @@ function venueJsonLd(v: Venue, date: string): object {
     '@context': 'https://schema.org',
     '@type': TYPE_SCHEMA[v.type],
     name: v.name,
+    alternateName: alternateNames(v).length ? alternateNames(v) : undefined,
     url: abs(venuePath(v)),
     sameAs: v.url ?? undefined,
-    containedInPlace: { '@type': siteType(v.site), name: siteName(v.site), url: abs(sitePath(v.site)) },
+    containedInPlace: { '@type': siteType(v.site), name: siteName(v.site), alternateName: alternateNames(v.site).length ? alternateNames(v.site) : undefined, url: abs(sitePath(v.site)) },
     address: { '@type': 'PostalAddress', streetAddress: [v.where, siteName(v.site)].filter(Boolean).join(', '), addressLocality: 'Cambridge', addressCountry: 'GB' },
     geo: v.latitude != null && v.longitude != null ? { '@type': 'GeoCoordinates', latitude: v.latitude, longitude: v.longitude } : undefined,
     // Members' rating, once there are 5 reviews (the same rule as the page)
@@ -141,7 +145,7 @@ function dietUrls(tags: DietTag[]): string[] | undefined {
   return urls.length ? urls : undefined
 }
 
-/** Every page worth indexing, with its description and structured data. Titles come from the pages themselves. */
+/** Every rendered page, with its description, indexing policy and structured data. Titles come from the pages themselves. */
 export function pages(data: Data, date: string): Page[] {
   const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/') }
   const home: Page = {
@@ -186,7 +190,7 @@ export function pages(data: Data, date: string): Page[] {
   const contribute: Page = { path: '/contribute', description: "Help fill in grub.cam: what it has for Cambridge's college and University venues, the colleges by how complete they are, who has sent in the most, and every venue still missing something, with the way to send it in." }
   const terms: Page = { path: '/terms', description: "grub.cam's terms of use and privacy: information as published by each venue, no cookies, no tracking." }
   const credits: Page = { path: '/credits', description: 'Who took the photos of venues on grub.cam, and the open licences they share them under.' }
-  const sendPage: Page = { path: '/send', description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }
+  const sendPage: Page = { path: '/send', noindex: true, description: 'Send a menu board, price list or opening times from a Cambridge college café, hall or bar, as a photo or as text, to add it to grub.cam.' }
   const sites = data.sites.map((s): Page => {
     const mine = data.venues.filter((v) => v.site.slug === s.slug)
     // "Caff (dining hall), Hall (formal hall), The Roost (bar)"
@@ -200,6 +204,7 @@ export function pages(data: Data, date: string): Page[] {
           '@context': 'https://schema.org',
           '@type': siteType(s),
           name: siteName(s),
+          alternateName: alternateNames(s).length ? alternateNames(s) : undefined,
           url: abs(sitePath(s)),
           containsPlace: mine.map((v) => ({ '@type': TYPE_SCHEMA[v.type], name: v.name, url: abs(venuePath(v)) })),
           ...(imageOf(sitePhoto(s)) ? { image: imageOf(sitePhoto(s)) } : {}),
@@ -242,7 +247,7 @@ export function headTags(page: Page, title: string): string {
   const tags = [
     `<meta name="description" content="${escapeAttr(page.description)}" />`,
     // Large image previews in results (a page's photo), otherwise Google's defaults
-    '<meta name="robots" content="max-image-preview:large" />',
+    `<meta name="robots" content="${page.noindex ? 'noindex' : 'max-image-preview:large'}" />`,
     `<link rel="canonical" href="${escapeAttr(url)}" />`,
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${escapeAttr(page.description)}" />`,
@@ -255,9 +260,9 @@ export function headTags(page: Page, title: string): string {
   return tags.join('\n    ')
 }
 
-/** Every page; only those with a menu carry the build's date, since a lastmod that's always today is one Google ignores. */
+/** Indexable pages; only those with a menu carry the build's date, since a lastmod that's always today is one Google ignores. */
 export function sitemap(list: Page[], lastmod: string): string {
-  const urls = list.map((p) => `  <url><loc>${abs(p.path)}</loc>${p.daily ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`).join('\n')
+  const urls = list.filter((p) => !p.noindex).map((p) => `  <url><loc>${abs(p.path)}</loc>${p.daily ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`).join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
 }
 
@@ -273,7 +278,7 @@ export function llmsTxt(data: Data): string {
   const list = (kind: Site['kind']) =>
     data.sites
       .filter((s) => s.kind === kind)
-      .map((s) => `- [${siteName(s)}](${abs(sitePath(s))}): ${data.venues.filter((v) => v.site.slug === s.slug).map((v) => v.name).join(', ')}`)
+      .map((s) => `- [${siteSearchName(s)}](${abs(sitePath(s))}): ${data.venues.filter((v) => v.site.slug === s.slug).map((v) => v.name).join(', ')}`)
       .join('\n')
   return [
     `# ${SITE_NAME}`,
@@ -307,10 +312,12 @@ function menuLine(d: MenuDay, v: Venue): string {
 export function llmsFullTxt(data: Data, date: string, builtAt: string): string {
   const out = [`# ${SITE_NAME}: every venue, its hours and menus`, `Built ${builtAt} (Europe/London) from ${abs('/')}. Diet codes: ${(Object.keys(DIET_SHORT) as DietTag[]).map((t) => `${DIET_SHORT[t]} ${t.replace('_', '-')}`).join(', ')}.`, NOTES.join(' ')]
   for (const s of data.sites) {
-    out.push(`## ${siteName(s)}\n\n${abs(sitePath(s))}`)
+    out.push(`## ${siteSearchName(s)}\n\n${abs(sitePath(s))}`)
+    if (alternateNames(s).length) out.push(`Also known as: ${alternateNames(s).join(', ')}`)
     for (const v of data.venues.filter((x) => x.site.slug === s.slug)) {
       const hours = hoursText(periodSlots(v.slots, date))
       const lines = [`### ${v.name} (${venueTypes(v).map((t) => TYPE_LABEL[t].toLowerCase()).join(', ')})`, abs(venuePath(v)), `Hours: ${hours || 'not published'}`]
+      if (alternateNames(v).length) lines.push(`Also listed as: ${alternateNames(v).join(', ')}`)
       const menus = menusOf(v)
       if (menus.length) lines.push(`Menus:\n${menus.map((d) => menuLine(d, v)).join('\n')}`)
       if (v.prices?.length) {

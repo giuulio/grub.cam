@@ -17,8 +17,8 @@ export type ScopeInfo = { scope: Scope; path: string; label: string; heading: st
  * ("Cambridge college bars"), in as few as it takes.
  */
 export const SCOPES: ScopeInfo[] = [
-  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge college menus, cafés and bars', description: SITE_DESCRIPTION, placeholder: 'Colleges, cafés, bars, dishes…', noun: ['venue', 'venues'] },
-  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college dining halls', description: "Every Cambridge college dining hall and University canteen: today's menus dish by dish, with prices, meal times, and what's open now.", placeholder: 'A college, or a dish on the menu…', noun: ['dining venue', 'dining venues'] },
+  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge food map', description: SITE_DESCRIPTION, placeholder: 'Colleges, cafés, bars, dishes…', noun: ['venue', 'venues'] },
+  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college menus', description: "Find published menus for Cambridge college dining halls, cafeterias and University canteens, with dishes, prices and meal times.", placeholder: 'A college, or a dish on the menu…', noun: ['dining venue', 'dining venues'] },
   { scope: 'cafe', path: '/cafes', label: 'Cafés', heading: 'Cambridge college and University cafés', description: "Every Cambridge college and University café: opening hours, coffee and food prices as posted, and what's open now.", placeholder: 'A café or a college…', noun: ['café', 'cafés'] },
   { scope: 'bar', path: '/bars', label: 'Bars', heading: 'Cambridge college bars', description: "Every Cambridge college bar: opening hours, pint and drink prices as posted, and what's open now.", placeholder: 'A bar or a college…', noun: ['bar', 'bars'] },
   { scope: 'formal', path: '/formal', label: 'Formal hall', heading: 'Cambridge college formal hall', description: 'Formal hall at every Cambridge college that holds it: which nights, what it costs, dress code, guests and how to book.', placeholder: 'A college…', noun: ['formal hall', 'formal halls'] },

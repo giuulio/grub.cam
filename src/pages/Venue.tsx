@@ -19,7 +19,7 @@ import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
-import { sendPath, siteName, venuePath } from '../lib/site.ts'
+import { alternateNames, sendPath, siteName, siteSearchName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -221,6 +221,10 @@ function Heading({ venue }: { venue: Venue }) {
         {siteName(venue.site)}
       </Link>
       <h1 className="title mt-1 text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
+      <p className="mt-3 text-muted">
+        {venue.name} at {siteSearchName(venue.site)}{venue.site.kind === 'college' ? ', Cambridge' : ', University of Cambridge'}.
+        {alternateNames(venue).length > 0 && ` Also listed as ${alternateNames(venue).join(' or ')}.`}
+      </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
         {venueTypes(venue).map((t) => <TypeLabel key={t} type={t} className="gap-2" />)}
         {holdsFormal(venue) && (

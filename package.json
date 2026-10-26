@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && tsx scripts/prerender.ts",
+    "build": "tsc -b && vite build && tsx scripts/prerender.ts && tsx scripts/check-seo.ts",
+    "check:seo": "tsx scripts/check-seo.ts",
+    "favicon": "tsx scripts/favicon.ts",
     "ingest": "tsx scripts/ingest/index.ts",
     "ingest:manual": "tsx scripts/ingest/manual.ts",
     "ingest:prices": "tsx scripts/ingest/prices.ts",
