@@ -6,6 +6,7 @@ import { SCOPES } from '../lib/finder.ts'
 import { ISSUES_URL, REPO_URL, SITE_NAME } from '../lib/site.ts'
 import { Container } from './Container.tsx'
 import { GITHUB_STARS } from './GitHub.tsx'
+import { Mark } from './Mark.tsx'
 
 /**
  * Laid out as Tripadvisor's: columns of links (the site, where to browse, how to help) and how fresh the menus are;
@@ -52,7 +53,9 @@ export function Footer() {
       </Container>
       <Container className="pb-10">
         <div className="min-w-0">
-          <p className="text-sm text-muted">© {new Date().getFullYear()} {SITE_NAME}</p>
+          <p className="flex items-center gap-1.5 text-sm text-muted">
+            <Mark className="h-[1.3em] w-auto text-action" />© {new Date().getFullYear()} {SITE_NAME}
+          </p>
           <p className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 font-medium">
             <Link to="/terms" className="underline underline-offset-4 hover:no-underline">Terms and privacy</Link>
             <Link to="/credits" className="underline underline-offset-4 hover:no-underline">Photo credits</Link>

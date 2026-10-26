@@ -147,7 +147,7 @@ function dietUrls(tags: DietTag[]): string[] | undefined {
 
 /** Every rendered page, with its description, indexing policy and structured data. Titles come from the pages themselves. */
 export function pages(data: Data, date: string): Page[] {
-  const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/') }
+  const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/'), logo: abs('/logo.png') }
   const home: Page = {
     path: '/',
     daily: true,

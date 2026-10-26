@@ -31,12 +31,12 @@ for (const url of urls) {
   assert.equal(html.querySelectorAll('main h1').length, 1, `Expected one main heading: ${url}`)
   assert(html.querySelectorAll('main a[href]').length, `No crawlable links: ${url}`)
   for (const script of html.querySelectorAll('script[type="application/ld+json"]')) JSON.parse(script.text)
-  assert(head.querySelector('link[rel="icon"][href="/favicon.png"]'), `Missing favicon: ${url}`)
+  assert(head.querySelector('link[rel="icon"][href^="/favicon.png"]'), `Missing favicon: ${url}`)
 }
 const icon = await sharp(join(dist, 'favicon.png')).metadata()
 assert.equal(icon.width, icon.height, 'Favicon must be square')
 assert((icon.width ?? 0) >= 48, 'Favicon too small for search results')
-for (const file of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) assert(readFileSync(join(dist, file)).length)
+for (const file of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'logo.png']) assert(readFileSync(join(dist, file)).length)
 for (const file of ['404.html', 'send.html']) {
   const excluded = parse(readFileSync(join(dist, file), 'utf8'))
   assert.equal(excluded.querySelector('meta[name="robots"]')?.getAttribute('content'), 'noindex', file)

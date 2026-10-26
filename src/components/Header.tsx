@@ -6,12 +6,13 @@ import { SITE_NAME } from '../lib/site.ts'
 import { AccountButton } from './Account.tsx'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
+import { Mark } from './Mark.tsx'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
 import { useMedia } from '../lib/useMedia.ts'
 
 /**
- * The same bar on every page, as Airbnb's compact one: the name (no mark), the search with the tabs inside it,
+ * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it,
  * Contribute (the one thing we ask of everyone, so in the action colour), the theme and your account (signing in with a
  * Cambridge account, `AccountButton`), all as tall as the search; GitHub is in the footer; one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
  * front page the search is over the map instead (the Finder draws it there), so the bar is one row and the map starts
@@ -43,8 +44,10 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-3">
           {/* Up a tenth of its size: its letters are mostly lowercase, so its box centred leaves them low beside the
               search, and the Beta pill, centred on the row, high beside them */}
-          <Link to="/" className="title -translate-y-[0.1em] text-2xl sm:text-[1.875rem]">
-            {SITE_NAME}
+          <Link to="/" className="title flex items-center gap-1.5 text-2xl sm:text-[1.875rem]">
+            {/* The mark stands on the row's centre; only the name is lifted */}
+            <Mark className="h-[1.2em] w-auto text-action" />
+            <span className="-translate-y-[0.1em]">{SITE_NAME}</span>
           </Link>
           {/* Still being built: say so to anyone who lands here */}
           <span title="Still being built: some menus, hours and venues are missing" className="beta-pill">Beta</span>
