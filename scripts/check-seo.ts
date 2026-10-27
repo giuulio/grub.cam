@@ -36,7 +36,7 @@ for (const url of urls) {
 const icon = await sharp(join(dist, 'favicon.png')).metadata()
 assert.equal(icon.width, icon.height, 'Favicon must be square')
 assert((icon.width ?? 0) >= 48, 'Favicon too small for search results')
-for (const file of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'logo.png']) assert(readFileSync(join(dist, file)).length)
+for (const file of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'logo.png', 'og.png']) assert(readFileSync(join(dist, file)).length)
 for (const file of ['404.html', 'send.html']) {
   const excluded = parse(readFileSync(join(dist, file), 'utf8'))
   assert.equal(excluded.querySelector('meta[name="robots"]')?.getAttribute('content'), 'noindex', file)

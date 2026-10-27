@@ -49,7 +49,7 @@ describe('searchable HTML without JavaScript', () => {
     const venues = Array.from({ length: 30 }, (_, i) => ({ ...venue, id: `${site.slug}/hall-${i}`, slug: `hall-${i}`, name: `Hall ${i}` }))
     const page = parse(render('/', { ...data, venues }).html)
     expect(page.querySelector('h1')!.text).toBe('Cambridge food map')
-    expect(page.querySelector('main')!.text).toContain('college and University food map')
+    expect(page.querySelector('main')!.text).toContain('Cambridge college grub, mapped')
     for (const path of ['/dining', '/cafes', '/bars', '/formal', '/st-edmunds/hall-29']) {
       expect(page.querySelector(`a[href="${path}"]`), path).not.toBeNull()
     }

@@ -6,7 +6,7 @@ import { SCOPES } from './finder.ts'
 import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { formalBooking, formalDress, formalPrice } from './formal.ts'
-import { alternateNames, SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, siteSearchName, venuePath } from './site.ts'
+import { alternateNames, SITE_ALTERNATE_NAMES, SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, siteSearchName, venuePath } from './site.ts'
 import { dailyMeals, hasFormalMenu, hasMenu, hasPrices, holdsFormal, kindWords, list, mealWords, placed as placedIn } from './summary.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
@@ -41,11 +41,11 @@ const placed = (s: Site) => (s.kind === 'college' ? `${siteSearchName(s)}, Cambr
 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
-  '/': `Cambridge food map: college menus, cafés and bars · ${SITE_NAME}`,
-  '/dining': `Cambridge college menus and meal times · ${SITE_NAME}`,
-  '/cafes': `Cambridge college and University cafés: opening hours and prices · ${SITE_NAME}`,
-  '/bars': `Cambridge college bars: opening hours and drink prices · ${SITE_NAME}`,
-  '/formal': `Cambridge college formal hall: nights, prices and dress code · ${SITE_NAME}`,
+  '/': `Cambridge University food map: college menus, cafés, canteens and bars · ${SITE_NAME}`,
+  '/dining': `Cambridge college menus today: dining halls, canteens and meal times · ${SITE_NAME}`,
+  '/cafes': `Cambridge college and University cafés: map, opening times and prices · ${SITE_NAME}`,
+  '/bars': `Cambridge college bars: map, opening times and drink prices · ${SITE_NAME}`,
+  '/formal': `Cambridge formal hall: every college's nights, prices, dress code and booking · ${SITE_NAME}`,
 }
 
 /** "Jesus College, Cambridge: dining hall menus, formal hall, café and bar opening times · grub.cam", from what the site has. */
@@ -165,7 +165,7 @@ function dietUrls(tags: DietTag[]): string[] | undefined {
 
 /** Every rendered page, with its description, indexing policy and structured data. Titles come from the pages themselves. */
 export function pages(data: Data, date: string): Page[] {
-  const organization = { '@type': 'Organization', name: SITE_NAME, url: abs('/'), logo: abs('/logo.png') }
+  const organization = { '@type': 'Organization', name: SITE_NAME, alternateName: SITE_ALTERNATE_NAMES, url: abs('/'), logo: abs('/logo.png') }
   const home: Page = {
     path: '/',
     daily: true,
@@ -174,6 +174,7 @@ export function pages(data: Data, date: string): Page[] {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: SITE_NAME,
+      alternateName: SITE_ALTERNATE_NAMES,
       url: abs('/'),
       description: SITE_DESCRIPTION,
       inLanguage: 'en-GB',
@@ -277,9 +278,11 @@ export function headTags(page: Page, title: string): string {
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${description}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
-    `<meta name="twitter:card" content="${page.image ? 'summary_large_image' : 'summary'}" />`,
+    // A page's own photo, else the site's card (public/og.png, from `npm run favicon`), so no link shares bare
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta property="og:image" content="${escapeAttr(page.image ?? abs('/og.png'))}" />`,
   ]
-  if (page.image) tags.push(`<meta property="og:image" content="${escapeAttr(page.image)}" />`)
+  if (!page.image) tags.push('<meta property="og:image:width" content="1200" />', '<meta property="og:image:height" content="630" />', `<meta property="og:image:alt" content="grub.cam: today’s menus, cafés, bars and formal hall across Cambridge colleges" />`)
   // "<" escaped so a dish name can't close the script tag
   if (page.jsonLd) tags.push(`<script type="application/ld+json">${JSON.stringify(page.jsonLd).replace(/</g, '\\u003c')}</script>`)
   return tags.join('\n    ')

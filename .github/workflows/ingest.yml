@@ -45,9 +45,16 @@ jobs:
       - id: trusted
         if: ${{ !cancelled() }}
         run: npm run submissions -- approve --trusted
-      # Even if one source failed, the others were saved: rebuild if anything was. Skipped until the hook exists.
-      - if: ${{ !cancelled() && (steps.ingest.outputs.changed == 'true' || steps.trusted.outputs.published == 'true') }}
-        run: '[ -z "$CF_DEPLOY_HOOK" ] || curl -fsS -X POST "$CF_DEPLOY_HOOK" > /dev/null'
+      # Even if one source failed, the others were saved: rebuild if anything was. And rebuild on the day's first run
+      # (pg_cron starts it at 06:07 UTC) whatever changed, so prerendered pages and descriptions are today's, not
+      # yesterday's, on a day no menu changes. Skipped until the hook exists.
+      - if: ${{ !cancelled() }}
+        env:
+          CHANGED: ${{ steps.ingest.outputs.changed == 'true' || steps.trusted.outputs.published == 'true' }}
+        run: |
+          if [ "$CHANGED" = true ] || [ "$(date -u +%H%M)" -lt 0630 ]; then
+            [ -z "$CF_DEPLOY_HOOK" ] || curl -fsS -X POST "$CF_DEPLOY_HOOK" > /dev/null
+          fi
       # One open issue, its body the failing sources, made the first time; edited only when that changes (the time
       # aside), with a comment when a source starts failing or recovers, since an edited body notifies no one
       - if: ${{ !cancelled() }}

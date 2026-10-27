@@ -49,8 +49,8 @@ describe('seo', () => {
   })
 
   it('titles pages by what people search for, the place first and the site last', () => {
-    expect(TAB_TITLES['/']).toBe('Cambridge food map: college menus, cafés and bars · grub.cam')
-    expect(TAB_TITLES['/formal']).toMatch(/^Cambridge college formal hall/)
+    expect(TAB_TITLES['/']).toBe('Cambridge University food map: college menus, cafés, canteens and bars · grub.cam')
+    expect(TAB_TITLES['/formal']).toMatch(/^Cambridge formal hall/)
     const bar: Venue = { ...caff, id: 'jesus/roost', slug: 'roost', name: 'The Roost', type: 'bar', menu: [], slots: [{ meal: 'bar', days: ['fri'], start: '20:00', end: '23:00', period: 'all' }] }
     expect(siteTitle(jesus, [caff, bar])).toBe('Jesus College, Cambridge: dining hall menus and bar opening times · grub.cam')
     // The meals it serves, so "Jesus College lunch menu" finds it
@@ -88,7 +88,9 @@ describe('seo', () => {
     expect(tags).toContain('<link rel="canonical" href="https://grub.cam/jesus/caff" />')
     expect(tags).toContain('content="Caff &quot;quoted&quot;"')
     expect(tags).toContain('<meta name="robots" content="max-image-preview:large" />')
-    expect(tags).toContain('<meta name="twitter:card" content="summary" />')
+    // No photo of its own: the site's card
+    expect(tags).toContain('<meta name="twitter:card" content="summary_large_image" />')
+    expect(tags).toContain('<meta property="og:image" content="https://grub.cam/og.png" />')
     expect(tags).not.toContain('Pie </script>')
     expect(tags).toContain('Pie \\u003c/script>')
   })

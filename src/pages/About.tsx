@@ -41,7 +41,7 @@ export function About() {
           </Link>
           .
         </p>
-        <p className="mt-4 text-muted">Hours and prices change at short notice, and allergens are the venue’s to confirm. grub.cam is independent, and not affiliated with the University of Cambridge or its colleges.</p>
+        <p className="mt-4 text-muted">Hours and prices change at short notice, and allergens are the venue’s to confirm. grub.cam is independent, and not affiliated with the University of Cambridge or its colleges. It covers Cambridge, England, not Cambridge, Massachusetts.</p>
 
         <h2 className="title mt-12 text-2xl leading-tight sm:text-3xl">Help build it</h2>
         <ul className="mt-6 space-y-6">

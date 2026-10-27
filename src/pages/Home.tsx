@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type
 import { Link, Navigate, useSearchParams } from 'react-router'
 import { CloseCircle, List as ListIcon, Map as MapIcon } from 'reicon-react'
 import { Chip, ChipSelect } from '../components/Controls.tsx'
+import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { VenueRow } from '../components/Listing.tsx'
@@ -286,6 +287,7 @@ function Finder({ scope }: { scope: Scope }) {
               </div>
             )}
           </section>
+          {scope === 'formal' && !alone && <FormalCompare venues={venues} />}
         </div>
         {(showMap || (snapshot && !listView)) && (
           <div className="finder-map">

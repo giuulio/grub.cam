@@ -3,7 +3,9 @@ import type { Site, Venue } from './types.ts'
 export const SITE_NAME = 'grub.cam'
 /** Canonical origin, for links that leave the page: canonical URLs, sitemap, structured data, llms.txt. */
 export const SITE_URL = 'https://grub.cam'
-export const SITE_DESCRIPTION = "Explore Cambridge's college and University food map: dining hall menus, cafés, bars and formal halls, with published opening hours and prices."
+export const SITE_DESCRIPTION = "Cambridge college grub, mapped: today's dining hall menus, University cafés and canteens, college bars and formal halls, with opening times and prices."
+/** What else people call the site, for search engines' site names: "grub", "Cambridge grub" */
+export const SITE_ALTERNATE_NAMES = ['grub', 'Cambridge grub']
 export const REPO_URL = 'https://github.com/giuulio/grub.cam'
 export const ISSUES_URL = `${REPO_URL}/issues`
 
