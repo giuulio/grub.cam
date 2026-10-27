@@ -56,7 +56,11 @@ export function Terms() {
         </Part>
 
         <Part title="Privacy">
-          <p>We don't use cookies or analytics. If you only read the site, we collect nothing about you.</p>
+          <p>
+            We don't use cookies. To count visits we use Cloudflare Web Analytics, which keeps nothing on your device and doesn't know who you are: it
+            records the page, the site that sent you, your browser and country, and how fast the page loaded. If you only read the site, that's all we
+            learn.
+          </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               If you sign in, we keep your Cambridge email address and the name your Google account gives, with what you send and your reviews. Your

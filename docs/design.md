@@ -69,7 +69,7 @@ What members send goes up under their name (`submissions.credit`, the name their
 
 `/send` is one centred column, as wide as the header's search (46rem), and one step. It names the venue (a card with "Change", or a search by venue, site or alias), or with `?site=` a college or site itself, whose page's banner a photo is for (no kind chips then: a site takes only its photo), what it is (icon chips: Menu, Prices, Hours, Venue photo, Correction), then the files: "Take a photo" (touch screens) or "Upload", photos or PDFs, up to ten, as thumbnails, with a context box beside them ("next week's menu"), which takes the typed text when there's no photo. "Send" (Sparkles, for what a model reads) shows the photos swept by a band of light and the reading arriving a line at a time, with the seconds counting; then "It's going up" (sent in by whom) with links to the venue and to send another, and to the leaderboard, or the model's reason over the form, files kept, to try again. A correction's box is required and goes to a person. Under the button: "Goes up as <name> (<address>)". On a phone the button stays at the foot of the screen. Copy is short: one line under the title.
 
-About explains the site, live coverage, ways to help and who makes it. Terms covers use, privacy, allergies, no affiliation and services that see visitors' IPs. Credits lists site and venue photos with author, licence and source.
+About explains the site, live coverage, ways to help and who makes it. Terms covers use, privacy (including the cookieless Cloudflare Web Analytics beacon, which `vite.config.ts` adds to built pages only), allergies, no affiliation and services that see visitors' IPs. Credits lists site and venue photos with author, licence and source.
 
 ## Visual conventions
 
