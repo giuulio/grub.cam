@@ -51,6 +51,8 @@ For Lucy's 19–25 October 2026 screenshots, the dated grid takes provisional pr
 
 Changes published for a particular week use dated `menu_days` notes with their service's time range, as for St Edmund's: the usual `service_slots` stay intact and `withDayTimes()` applies the change on its date, including café (`snacks`) and bar hours. Lucy's 19–25 October café changes and Nautilus opening times are dated notes; they do not establish recurring or vacation hours.
 
+Lucy's 26 October–1 November 2026 screenshot repeats lunch times under weekday supper and Halloween Formal Hall, and brunch times under Saturday's Dracula's Street Food supper. Those evening times are unconfirmed: save their menus without a time override, and note the discrepancy. The clear breakfast, lunch, Saturday brunch (11:30–13:00), café and bar times are dated notes. V means vegan and Vn vegetarian on this poster; the formal's explicitly labelled vegetarian alternative is vegetarian, without inferring tags for other dishes.
+
 ## Submissions
 
 There are several publication routes: scripted public sources; hand-entered data; trusted contributors' scripts; members' menus, price lists and hours the model is confident of; vetted venue and site photos; and checked reviews. Corrections and anything held back wait for a person. `AUTO_KINDS` (function secret, default `menu,prices,hours`) says which kinds go up without one; `menu` alone makes prices and hours wait again.
