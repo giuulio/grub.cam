@@ -5,7 +5,7 @@ import { Chip, ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
 import { Icon } from '../components/Icon.tsx'
-import { VenueRow } from '../components/Listing.tsx'
+import { NoMenuLine, VenueRow } from '../components/Listing.tsx'
 import { SitePicker } from '../components/SitePicker.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
@@ -139,8 +139,13 @@ function Finder({ scope }: { scope: Scope }) {
   const picked = ranked.find((r) => r.venue.id === selected)
   // Beside the map, a picked pin's venue is the list, alone, until it's let go
   const alone = split && !snapshot ? picked : undefined
+  // Dining leads with its menus: a venue without one for the date and meal picked is folded into a line at the foot
+  // (unless a search or a diet asked for it by name or dish)
+  const folds = scope === 'hall' && !searching && !f.diets.length
+  const listed = folds ? ranked.filter((r) => r.next) : ranked
+  const unlisted = folds ? ranked.filter((r) => !r.next) : []
   // A prerendered page lists every venue, for whoever reads it without the script
-  const rows = alone ? [alone] : snapshot ? ranked : ranked.slice(0, shown)
+  const rows = alone ? [alone] : snapshot ? listed : listed.slice(0, shown)
   const pick = (id?: string) => {
     setSelected(id)
     // The row under the pointer may be about to go
@@ -273,19 +278,22 @@ function Finder({ scope }: { scope: Scope }) {
             </div>
             {!alone && <CoverageLine scope={scope} />}
             {ranked.length ? (
-              <ul className="mt-3 space-y-3">
-                {rows.map((r) => <VenueRow key={r.venue.id} {...rowProps(r)} selected={!alone && r.venue.id === selected} onHover={setHover} />)}
-              </ul>
+              rows.length > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {rows.map((r) => <VenueRow key={r.venue.id} {...rowProps(r)} selected={!alone && r.venue.id === selected} onHover={setHover} />)}
+                </ul>
+              )
             ) : (
               <Empty onClear={clear}>No {info.noun[1]} match.</Empty>
             )}
-            {!alone && rows.length < ranked.length && (
+            {!alone && rows.length < listed.length && (
               <div className="flex justify-center py-6">
                 <button type="button" onClick={() => setShown(shown + PAGE)} className="btn btn-secondary">
-                  Show {Math.min(PAGE, ranked.length - rows.length)} more
+                  Show {Math.min(PAGE, listed.length - rows.length)} more
                 </button>
               </div>
             )}
+            {!alone && rows.length >= listed.length && <NoMenuLine rows={unlisted} onHover={setHover} />}
           </section>
           {scope === 'formal' && !alone && <FormalCompare venues={venues} />}
         </div>

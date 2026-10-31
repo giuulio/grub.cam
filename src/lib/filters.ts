@@ -33,6 +33,12 @@ export function dishTags(tags: DietTag[]): DietTag[] {
   return DIET_ORDER.filter((t) => has(t) && !hidden.has(t))
 }
 
+/** The meat-free codes, strongest first. */
+export const MEAT_FREE: DietTag[] = ['vegan', 'plant_based', 'vegetarian']
+
+/** The one meat-free code a dish carries, the strongest (VG implies V, `dishTags()`): what a venue row tags it with. */
+export const plantTag = (tags: DietTag[]): DietTag | undefined => dishTags(tags).find((t) => MEAT_FREE.includes(t))
+
 export const TYPES: VenueType[] = ['hall', 'cafe', 'bar']
 
 /** Meal by meal, then by first day. */

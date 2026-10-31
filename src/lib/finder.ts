@@ -79,7 +79,18 @@ export function hasLocation(v: Venue): v is Venue & { latitude: number; longitud
     && typeof v.longitude === 'number' && Number.isFinite(v.longitude) && Math.abs(v.longitude) <= 180
 }
 
-export function resultDishes(r: Ranked, f: Filters): string[] {
-  if (normalizeSearch(f.q) && r.searchMatches.length) return [...new Set(r.searchMatches.map((h) => `${h.service ? `${MEAL_LABEL[h.service]}: ` : ''}${h.dish!.name}`))]
-  return (f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, { ...f, q: '' })) : r.next?.items ?? []).map((i) => i.name)
+/** A dish as a row lists it: its name (after its meal's, for a search across meals) and its diet tags. */
+export type RowDish = { name: string; tags: DietTag[] }
+
+/** What a row lists under a search or a diet: the dishes that matched, else its next menu's. */
+export function resultDishes(r: Ranked, f: Filters): RowDish[] {
+  if (normalizeSearch(f.q) && r.searchMatches.length) {
+    const seen = new Map<string, RowDish>()
+    for (const h of r.searchMatches) {
+      const name = `${h.service ? `${MEAL_LABEL[h.service]}: ` : ''}${h.dish!.name}`
+      if (!seen.has(name)) seen.set(name, { name, tags: h.dish!.tags })
+    }
+    return [...seen.values()]
+  }
+  return (f.diets.length ? r.days.flatMap((d) => d.items).filter((i) => dishMatches(i, { ...f, q: '' })) : r.next?.items ?? []).map((i) => ({ name: i.name, tags: i.tags }))
 }

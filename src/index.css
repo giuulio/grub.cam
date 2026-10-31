@@ -492,6 +492,9 @@ main:has(.finder) + .site-footer { margin-top: 3rem; }
 /* The same mark in the corner of a venue's photo in a list, larger, so the row reads as its pin's key */
 .venue-pin.on-photo { position: absolute; top: 0.875rem; left: 0.875rem; width: 2rem; height: 2rem; }
 .venue-pin.on-photo .venue-pin-glyph { width: 1.125rem; height: 1.125rem; }
+/* On a row's square thumbnail, smaller and nearer the corner */
+.venue-pin.on-thumb { top: 0.4375rem; left: 0.4375rem; width: 1.5rem; height: 1.5rem; }
+.venue-pin.on-thumb .venue-pin-glyph { width: 0.875rem; height: 0.875rem; }
 
 /* Selected: larger, ringed in Cambridge Dark Blue (Cambridge Blue on the dark basemap). */
 .venue-pin.is-selected {

@@ -1,22 +1,23 @@
 import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { NoteAdd, type IconComponent } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { mainDishes, MEAL_LABEL, slotOrder, type Ranked } from '../lib/filters.ts'
+import { mainDishes, MEAL_LABEL, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
+import type { RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
+import { pinLabel } from '../lib/mapView.ts'
 import { sendPath, sitePath, venuePath } from '../lib/site.ts'
 import { leadsWithMeal } from '../lib/status.ts'
 import { addDaysISO, dayLabel, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { slotApplies, withDayTimes } from '../lib/time/openNow.ts'
 import { isFormalOnly, venueTypes, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
-import { Icon } from './Icon.tsx'
 import { PinMark } from './MapParts.tsx'
+import { Code } from './MenuRows.tsx'
 import { Status } from './Status.tsx'
 import { RatingSummary } from './Reviews.tsx'
 import { VenueImage, VenueThumb } from './VenuePhoto.tsx'
 
-// The venues as Airbnb lists homes, a row each (its photo down the left, what to know beside it), beside a map of them:
+// The venues, a row each (a square photo at the left, what to know beside it, its menu first), beside a map of them:
 // the front page's and a site's.
 
 /** The prices of what people usually order at a venue of its kind (`headlinePrices`), its own kind's list first. */
@@ -27,19 +28,20 @@ function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] 
   return lines
 }
 
-/** The lines a row's preview fills beside its photo, its heading and "+N more" among them; a card's, on one line. */
+/** The lines of usual prices a row lists beside its photo. */
 const LINES = 4
 
 /**
- * A venue in the front page's list, as Airbnb's rows: its photo, with its map pin's mark in the corner for what kind
- * of venue it is, the same on every tab; its college by the name people use (linked to its page) and its name (its
- * link covers the row); whether it's open, the next meal today and how far (nearest first); then one thing to know: what a search
- * matched, the next meal's main dishes, the prices of what people usually order, or, under the Formal hall tab, when it
- * is, its price, dress and booking. What isn't known yet is said there instead, linked to sending it in. The photo
- * runs the row's height, so nothing hangs below it. `card`: the same, smaller, as the card over a phone's map for the
- * venue picked on it. `selected` when its pin was picked. `showSite: false` on its site's own page.
+ * A venue in the front page's list: a square photo, with its map pin's mark in the corner for what kind of venue it
+ * is, the same on every tab, beside its text on a phone too, so the menus lead; its college by the name people use
+ * (linked to its page) and its name (its link covers the row); whether it's open, the next meal today and how far
+ * (nearest first); then one thing to know: what a search matched, the next meal's main dishes on a line with their
+ * meat-free tags, the prices of what people usually order, or, under the Formal hall tab, when it is, its price, dress
+ * and booking. What isn't known yet is said there instead, linked to sending it in. `card`: the same, smaller, as the
+ * card over a phone's map for the venue picked on it. `selected` when its pin was picked. `showSite: false` on its
+ * site's own page.
  */
-export function VenueRow({ r, now, selected = false, onHover, dishes, distance, formal = false, card = false, showSite = true }: { r: Ranked; now: LocalNow; selected?: boolean; onHover?: (id?: string) => void; dishes?: string[]; distance?: string; formal?: boolean; card?: boolean; showSite?: boolean }) {
+export function VenueRow({ r, now, selected = false, onHover, dishes, distance, formal = false, card = false, showSite = true }: { r: Ranked; now: LocalNow; selected?: boolean; onHover?: (id?: string) => void; dishes?: RowDish[]; distance?: string; formal?: boolean; card?: boolean; showSite?: boolean }) {
   const { snapshot } = useReady()
   const v = r.venue
   const types = venueTypes(v)
@@ -54,20 +56,19 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 flex-col gap-3 rounded-[1.75rem] p-3 text-base sm:flex-row sm:gap-5 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 gap-3 rounded-[1.5rem] p-3 text-base sm:gap-4 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
         <VenueThumb venue={v} className="size-24 rounded-xl" />
       ) : (
-        // Airbnb's photo: 4:3 at least, 20px corners, its label 14px in; as tall as the row beside it, which can run
-        // past 4:3; across the top on a phone, 16:9, as Airbnb's there
-        <div className="relative w-full shrink-0 overflow-hidden rounded-[1.25rem] sm:w-[38%] sm:max-w-72">
-          <div aria-hidden="true" className="aspect-[16/9] sm:aspect-[4/3]" />
-          <VenueImage venue={v} sizes="(min-width: 640px) 18rem, 100vw" decorative icon="size-12" className="absolute inset-0 size-full" />
-          <PinMark types={types} className="on-photo" label />
+        // A square thumbnail, 6rem on a phone and 7rem wider, beside the text on a phone too, so the menu leads; its
+        // pin's mark in the corner
+        <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl sm:size-28">
+          <VenueImage venue={v} sizes="112px" decorative icon="size-9 sm:size-10" className="absolute inset-0 size-full" />
+          <PinMark types={types} className="on-photo on-thumb" label />
         </div>
       )}
-      <div className={`min-w-0 flex-1 ${card ? '' : 'sm:py-1'}`}>
+      <div className="min-w-0 flex-1">
         {showSite && (
           <Link to={sitePath(v.site)} className={`relative z-10 font-semibold text-site-ink hover:underline ${card ? 'text-sm' : ''}`}>
             {v.site.short_name ?? v.site.name}
@@ -75,14 +76,14 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
         )}
         {/* Its rating beside its name, as Airbnb's, once 5 members have rated it */}
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl sm:text-2xl'}`}>
+          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-lg sm:text-xl'}`}>
             <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
               {v.name}
             </Link>
           </h3>
           <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
         </div>
-        <p className={card ? 'mt-1' : 'mt-1.5'}>
+        <p className="mt-1">
           <Status s={r.status} now={now} meal={named} />
           {then && <span className="text-muted"> · {then}</span>}
           {distance && <span className="text-muted"> · {distance}</span>}
@@ -93,7 +94,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             </>
           )}
         </p>
-        <div className={card ? 'mt-2 line-clamp-2' : 'mt-3'}>
+        <div className={card ? 'mt-2 line-clamp-2' : 'mt-2'}>
           <RowPreview r={r} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
         </div>
       </div>
@@ -113,18 +114,18 @@ function nextToday(r: Ranked, now: LocalNow): string | undefined {
 }
 
 /**
- * A row's one thing to know (see VenueRow), as a list that fills the space beside its photo: a meal's main dishes, the
- * usual prices lined up, formal hall's facts; or what's missing, linked to sending it in. A meal's name heads its dishes
- * only when the status line above doesn't already say it (`named`): another meal's, or another day's. `compact`: one or
- * two lines, for the card over a phone's map.
+ * A row's one thing to know (see VenueRow) beside its photo: a meal's main dishes on a line, the usual prices lined up,
+ * formal hall's facts; or what's missing, linked to sending it in. A meal's name leads its dishes only when the status
+ * line above doesn't already say it (`named`): another meal's, or another day's. `compact`: one or two lines, for the
+ * card over a phone's map.
  */
-function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Ranked; now: LocalNow; types: VenueType[]; dishes?: string[]; formal: boolean; named: boolean; compact: boolean }) {
+function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Ranked; now: LocalNow; types: VenueType[]; dishes?: RowDish[]; formal: boolean; named: boolean; compact: boolean }) {
   const { snapshot } = useReady()
   const v = r.venue
   if (formal) {
     const facts: [string, string | undefined][] = [['When', formalWhen(v, v.formal).join('; ')], ['Price', v.formal && formalPrice(v.formal)], ['Dress', v.formal && formalDress(v.formal)], ['Booking', v.formal && formalBooking(v.formal)]]
     const known = facts.filter((f): f is [string, string] => !!f[1])
-    if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us" icon={NoteAdd} compact={compact}>Times and price not known yet.</Gap>
+    if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us">Times and price not known yet.</Gap>
     if (compact) return <p>{known.map((f) => f[1]).join(' · ')}</p>
     return (
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
@@ -137,7 +138,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
       </dl>
     )
   }
-  if (dishes?.length) return <Lines items={dishes} compact={compact} />
+  if (dishes?.length) return <Dishes items={dishes} />
   const s = r.status
   const at = s.kind === 'open' || s.kind === 'opening' ? s : s.kind === 'closed' ? s.next : undefined
   const day = r.next
@@ -148,7 +149,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     // The status names a meal it leads with; a café's or bar's hours are its own, with nothing more to name
     const said = !snapshot && at?.date === day.date && at.slot.meal === day.service && (named || !leadsWithMeal(day.service))
     // A meal posted elsewhere says so ("European Night, see posters for details")
-    return <Lines title={said ? undefined : `${MEAL_LABEL[day.service]}${when}`} items={day.items.length ? mains.map((i) => i.name) : [day.note ?? '']} compact={compact} />
+    return <Dishes title={said ? undefined : `${MEAL_LABEL[day.service]}${when}`} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} />
   }
   const prices = headlineLines(v, types, compact ? 3 : LINES)
   if (prices.length)
@@ -171,63 +172,69 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     const meal = !today ? '' : at && ['breakfast', 'brunch', 'lunch', 'dinner'].includes(at.slot.meal) ? `${MEAL_LABEL[at.slot.meal].toLowerCase()} ` : ''
     const on = today ? '' : at.date === addDaysISO(now.date, 1) ? ' for tomorrow' : ` for ${dayLabel(dayOfISO(at.date))}`
     if (v.menu_scripted) return <p className="text-muted">No {meal}menu posted{on} yet.</p>
-    return <Gap to={sendPath(v, 'menu', at && !snapshot ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in" compact={compact}>No {meal}menu{on} yet.</Gap>
+    return <Gap to={sendPath(v, 'menu', at && !snapshot ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in">No {meal}menu{on} yet.</Gap>
   }
-  return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices yet.</Gap>
+  return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'}>No prices yet.</Gap>
 }
 
 /**
- * Dishes as a list, one to a line, under their meal's name when it's given, within `LINES`: the last says how many
- * more there are when they don't fit. `compact`: on one line.
+ * Dishes on one wrapped line, " · " between them, each with its strongest meat-free code (VG, else V; `plantTag()`),
+ * after their meal's name when it's given; three lines at most, so a row stays about its photo's height (the card
+ * over a phone's map clamps it to two).
  */
-function Lines({ title, items, compact }: { title?: string; items: string[]; compact: boolean }) {
-  if (compact)
-    return (
-      <p>
-        {title && <span className="font-medium">{title}: </span>}
-        {items.join(' · ')}
-      </p>
-    )
-  const room = LINES - (title ? 1 : 0)
-  const shown = items.length > room ? room - 1 : room
+function Dishes({ title, items }: { title?: string; items: RowDish[] }) {
   return (
-    <div>
-      {title && <p className="mb-1.5 font-semibold">{title}</p>}
-      <ul className="space-y-1.5">
-        {items.slice(0, shown).map((t, n) => (
-          <li key={n} className="flex gap-2.5">
-            <span aria-hidden="true" className="mt-[0.55em] size-1.5 shrink-0 rounded-full bg-ink/30" />
-            <span className="truncate">{t}</span>
-          </li>
-        ))}
-        {items.length > shown && <li className="pl-4 text-muted">+{items.length - shown} more</li>}
-      </ul>
-    </div>
+    <p className="line-clamp-3">
+      {title && <span className="font-semibold">{title}: </span>}
+      {items.map((d, n) => {
+        const tag = plantTag(d.tags)
+        return (
+          <Fragment key={n}>
+            {n > 0 && (
+              <>
+                <span aria-hidden="true" className="text-muted"> · </span>
+                <span className="sr-only">, </span>
+              </>
+            )}
+            {d.name}
+            {tag && <Code tag={tag} small className="ml-1" />}
+          </Fragment>
+        )
+      })}
+    </p>
+  )
+}
+
+/** What a row doesn't know yet, and the way to send it in (a photo or the text), in Warm Blue, deepened to read as text. */
+function Gap({ to, send, children }: { to: string; send: string; children: ReactNode }) {
+  return (
+    <p className="text-muted">
+      {children} <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
+    </p>
   )
 }
 
 /**
- * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Light Blue disc,
- * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
+ * Dining's venues without a menu for the date and meal picked, folded into one line at the foot of its list, so the
+ * menus lead: each linked to its page (and its pin lit on the map), then the way to send one in.
  */
-function Gap({ to, send, icon = NoteAdd, compact = false, children }: { to: string; send: string; icon?: IconComponent; compact?: boolean; children: ReactNode }) {
-  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
-  if (compact)
-    return (
-      <p className="text-muted">
-        {children} {action}
-      </p>
-    )
+export function NoMenuLine({ rows, onHover }: { rows: Ranked[]; onHover?: (id?: string) => void }) {
+  if (!rows.length) return null
   return (
-    <div className="flex items-center gap-3">
-      {/* Not beside a map on a tablet, where the row's text has little room */}
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cta-bg text-cta md:max-lg:hidden">
-        <Icon of={icon} className="size-6" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-muted">{children}</p>
-        {action}
-      </div>
-    </div>
+    <p className="mt-4 border-t border-ink/10 pt-4 text-[0.9375rem] leading-relaxed text-muted">
+      <span className="font-semibold text-ink">No menu yet</span> at {rows.length === 1 ? 'one more' : `${rows.length} more`}:{' '}
+      {rows.map((r, n) => (
+        <Fragment key={r.venue.id}>
+          {n > 0 && ', '}
+          <Link to={venuePath(r.venue)} onMouseEnter={() => onHover?.(r.venue.id)} onMouseLeave={() => onHover?.(undefined)} className="text-ink hover:underline">
+            {/* The site's name before a venue's that says nothing alone ("Clare Buttery"), as its map pin's label does */}
+            {pinLabel(r.venue) !== r.venue.name && <span className="text-site-ink">{r.venue.site.short_name ?? r.venue.site.name} </span>}
+            {r.venue.name}
+          </Link>
+        </Fragment>
+      ))}
+      .{' '}
+      <Link to="/send" className="font-semibold text-cta hover:underline">Send one in</Link>
+    </p>
   )
 }

@@ -1,4 +1,4 @@
-import { DIET_LABEL, DIET_SHORT, dishTags } from '../lib/filters.ts'
+import { DIET_LABEL, DIET_SHORT, dishTags, MEAT_FREE } from '../lib/filters.ts'
 import { formatPrice, formatSecondPrice, fromList, postedOn, priceHeads, type Price } from '../lib/prices.ts'
 import { formatISODate } from '../lib/time/clock.ts'
 import type { DietTag, PriceTerms, VenuePrice } from '../lib/types.ts'
@@ -152,14 +152,17 @@ export function PriceText({ price, className = '' }: { price: Price; className?:
 }
 
 // Meat-free codes on Green, so a vegetarian can run down a menu for them; the rest on grey
-const GREEN: DietTag[] = ['vegan', 'plant_based', 'vegetarian']
+const GREEN = MEAT_FREE
 
-/** A diet code after a dish (VG, H, GF), as a small tag: easy to find down a menu, small enough that the dish name leads. */
-export function Code({ tag, className = '' }: { tag: DietTag; className?: string }) {
+/**
+ * A diet code after a dish (VG, H, GF), as a small tag: easy to find down a menu, small enough that the dish name leads.
+ * `small`: within a line of running text (a venue row's dishes), so it doesn't open up the line.
+ */
+export function Code({ tag, small = false, className = '' }: { tag: DietTag; small?: boolean; className?: string }) {
   return (
     <abbr
       title={DIET_LABEL[tag]}
-      className={`relative -top-px inline-block rounded-[0.3125rem] px-1.5 text-xs leading-[1.375rem] font-semibold tracking-wide no-underline ${GREEN.includes(tag) ? 'bg-open/15 text-open-ink' : 'bg-ink/7 text-muted'} ${className}`}
+      className={`relative -top-px inline-block rounded-[0.3125rem] font-semibold tracking-wide no-underline ${small ? 'px-1 text-[0.6875rem] leading-[1.125rem]' : 'px-1.5 text-xs leading-[1.375rem]'} ${GREEN.includes(tag) ? 'bg-open/15 text-open-ink' : 'bg-ink/7 text-muted'} ${className}`}
     >
       {DIET_SHORT[tag]}
     </abbr>
