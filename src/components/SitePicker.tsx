@@ -40,7 +40,7 @@ export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; va
     }
   }, [open])
   const picked = sites.filter((s) => ticked.includes(s.slug))
-  const label = kind === 'college' ? 'Colleges' : kind === 'university' ? 'University sites' : !picked.length ? 'Colleges and sites' : picked.length <= 2 ? picked.map(nameOf).join(', ') : `${picked.length} colleges and sites`
+  const label = kind === 'college' ? 'Colleges' : kind === 'university' ? 'University sites' : !picked.length ? 'Anywhere' : picked.length <= 2 ? picked.map(nameOf).join(', ') : `${picked.length} colleges and sites`
   const pick = (slugs: string[]) => {
     setTicked(slugs)
     onChange(slugs)
@@ -49,7 +49,7 @@ export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; va
   const shown = sites.filter((s) => !q.trim() || [s.name, s.short_name ?? '', ...(s.aliases ?? [])].some((n) => fold(n).includes(fold(q.trim()))))
   return (
     <div ref={box} className="relative">
-      <button type="button" aria-expanded={open} aria-haspopup="dialog" data-on={picked.length > 0 || !!kind || undefined} onClick={() => setOpen(!open)} className="chip max-w-64">
+      <button type="button" aria-label={`Colleges and sites: ${label}`} aria-expanded={open} aria-haspopup="dialog" data-on={picked.length > 0 || !!kind || undefined} onClick={() => setOpen(!open)} className="chip max-w-64">
         <span className="truncate">{label}</span>
         <Icon of={ChevronDown} className="size-4" />
       </button>

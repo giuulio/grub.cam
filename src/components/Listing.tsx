@@ -31,10 +31,10 @@ function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] 
 }
 
 /**
- * The lines a row's dishes or usual prices fill beside its photo, a dish heading among them: five, so the list ends
- * with the photo at its full size (288px wide, 4:3).
+ * The lines a row's dishes or usual prices fill beside its photo, a dish heading among them: four, at 1.25rem and
+ * 0.5rem apart, so the list ends with the photo at its full size (288px wide, 4:3).
  */
-const LINES = 5
+const LINES = 4
 
 /**
  * A venue in the front page's list: its photo, with its map pin's mark in the corner for what kind of venue it is, the
@@ -109,7 +109,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             </>
           )}
         </p>
-        <div className={card ? 'mt-2 line-clamp-2' : '@container mt-3 text-[1.0625rem]'}>
+        <div className={card ? 'mt-2 line-clamp-2' : '@container mt-3 text-xl'}>
           <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
         </div>
       </div>
@@ -195,8 +195,8 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     return compact ? (
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
     ) : (
-      // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to ten
-      <ul className="grid gap-x-10 gap-y-1 @lg:grid-cols-2">
+      // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to eight
+      <ul className="grid gap-x-10 gap-y-2 @lg:grid-cols-2">
         {prices.map((p, n) => (
           <li key={n} className={`max-w-xs items-baseline justify-between gap-4 ${n < LINES ? 'flex' : 'hidden @lg:flex'}`}>
             <span className="truncate">{p.name}</span>
@@ -250,8 +250,8 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
   const more = items.length - shown.length
   return (
     <div>
-      {title && <p className="mb-1 font-semibold">{title}</p>}
-      <ul className="space-y-1">
+      {title && <p className="mb-2 font-semibold">{title}</p>}
+      <ul className="space-y-2">
         {shown.map((d, n) => {
           const tag = plantTag(d.tags)
           return (

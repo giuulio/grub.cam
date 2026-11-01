@@ -355,6 +355,13 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   pointer-events: none;
 }
 .finder-sheet:empty { display: none; }
+/* Nearest first, as a map's own button: the top-left corner beside a list, the foot's right beside a phone's List
+   button; under a phone's picked card (the sheet, 700). Cambridge Blue while the list is by distance. */
+.finder-locate {
+  @apply absolute top-3 left-3 z-[600] flex size-11 cursor-pointer items-center justify-center rounded-full bg-canvas text-ink transition-colors hover:text-action;
+  box-shadow: 0 1px 4px #0003;
+}
+.finder-locate[aria-pressed='true'] { @apply bg-accent text-accent-ink; }
 .finder-sheet .venue-row { box-shadow: 0 6px 20px #0000002e; }
 .venue-row { scroll-margin-top: calc(var(--header-h, 0px) + 4.5rem); }
 .venue-row:has(.card-link:focus-visible) {
@@ -400,6 +407,7 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   /* Clear of the map's attribution along its foot; while the keyboard is up, just above it (--keyboard: how much of the
      map it covers, measured) */
   .finder.is-map .finder-sheet { bottom: var(--keyboard, 0px); padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+  .finder.is-map .finder-locate { top: auto; left: auto; right: 0.75rem; bottom: max(2rem, env(safe-area-inset-bottom)); }
   .finder.is-map[data-keyboard] .finder-sheet { padding-bottom: 0.75rem; }
   /* Pinch to zoom: the buttons would sit under the filters */
   .finder .maplibregl-ctrl-top-right { display: none; }

@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { AddCircle } from 'reicon-react'
-import { SCOPES, SHARED_FILTERS } from '../lib/finder.ts'
+import { SCOPES } from '../lib/finder.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { AccountButton } from './Account.tsx'
 import { Container } from './Container.tsx'
 import { Icon } from './Icon.tsx'
 import { Mark } from './Mark.tsx'
-import { SCOPE_ICON } from '../lib/icons.ts'
 import { ThemeToggle } from './ThemeToggle.tsx'
 import { useMedia } from '../lib/useMedia.ts'
 
 /**
- * The same bar on every page, as Airbnb's compact one: the mark and name, the search with the tabs inside it,
+ * The same bar on every page, as Airbnb's compact one: the mark and name, the search (the finder's tabs and filters are
+ * the list's, under its heading),
  * Contribute (the one thing we ask of everyone, so in the action colour), the theme and your account (signing in with a
  * Cambridge account, `AccountButton`), all as tall as the search; GitHub is in the footer; one 112px row on a wide screen, the search on a row of its own under the rest below that. On a phone's
  * front page the search is over the map instead (the Finder draws it there), so the bar is one row and the map starts
@@ -73,38 +73,8 @@ export function Header() {
 }
 
 /**
- * A tab per kind of venue, inside the search at its end: each its icon, the picked one (in Cambridge Blue) also its
- * name, so they fit beside what's typed even on a phone. A tab keeps the page's shared filters and the phone's list.
- */
-function ScopeTabs() {
-  const [params] = useSearchParams()
-  const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
-  return (
-    <nav aria-label="Kinds of venue" className="card-row flex shrink-0 items-center border-l border-ink/10 pl-1 sm:gap-1 sm:pl-2">
-      {SCOPES.map((s) => (
-        <NavLink
-          key={s.scope}
-          to={`${s.path}${keep ? `?${keep}` : ''}`}
-          end
-          aria-label={s.label}
-          title={s.label}
-          className={({ isActive }) => `flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-sm sm:h-11 sm:min-w-11 sm:gap-2 sm:px-2.5 sm:text-base sm:font-bold font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-2.5 text-accent-ink sm:pr-4' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
-        >
-          {({ isActive }) => (
-            <>
-              <Icon of={SCOPE_ICON[s.scope]} className="size-5 sm:size-6" />
-              {isActive && s.label}
-            </>
-          )}
-        </NavLink>
-      ))}
-    </nav>
-  )
-}
-
-/**
- * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, then the tabs; the keyboard's key
- * searches. On the front page's tabs it's the page's own search (the list and map follow as you type); elsewhere it
+ * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, and nothing else (the kind of venue
+ * is the first of the finder's filters); the keyboard's key searches. On the front page's tabs it's the page's own search (the list and map follow as you type); elsewhere it
  * opens the front page with it. `className` places it: in the header, or over a phone's map.
  */
 export function HeaderSearch({ finder, className = '' }: { finder: boolean; className?: string }) {
@@ -113,7 +83,7 @@ export function HeaderSearch({ finder, className = '' }: { finder: boolean; clas
   const [params, setParams] = useSearchParams()
   const [draft, setDraft] = useState('')
   const scope = SCOPES.find((s) => s.path === pathname) ?? SCOPES[0]
-  // On a phone the tabs leave room for a word; the keyboard's own key searches
+  // On a phone, a word; the keyboard's own key searches
   const wide = useMedia('(min-width: 640px)')
   const change = (q: string) => {
     if (!finder) return setDraft(q)
@@ -130,7 +100,7 @@ export function HeaderSearch({ finder, className = '' }: { finder: boolean; clas
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className={`search-box search-glow flex h-12 items-center gap-1.5 rounded-full border bg-canvas pr-1.5 pl-4 sm:h-14 sm:gap-2 sm:pl-6 ${className}`}
+      className={`search-box search-glow flex h-12 items-center rounded-full border bg-canvas px-4 sm:h-14 sm:px-6 ${className}`}
     >
       <input
         type="search"
@@ -141,7 +111,6 @@ export function HeaderSearch({ finder, className = '' }: { finder: boolean; clas
         aria-label={scope.scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${scope.label.toLowerCase()}`}
         className="h-full min-w-0 flex-1 bg-transparent text-[1.0625rem] text-ink sm:text-lg outline-none placeholder:text-muted"
       />
-      <ScopeTabs />
     </form>
   )
 }

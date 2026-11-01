@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router'
-import { CloseCircle, List as ListIcon, Map as MapIcon } from 'reicon-react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
+import { ChevronDown, CloseCircle, Gps, List as ListIcon, Map as MapIcon } from 'reicon-react'
 import { Chip, ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
@@ -11,12 +11,13 @@ import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
 import { tabCoverage } from '../lib/coverage.ts'
 import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filters.ts'
-import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, scopeInfo, type Scope } from '../lib/finder.ts'
+import { SCOPE_ICON } from '../lib/icons.ts'
+import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, SHARED_FILTERS, type Scope } from '../lib/finder.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
 import { TAB_TITLES } from '../lib/seo.ts'
 import { addDaysISO, formatISODate, relativeDay } from '../lib/time/clock.ts'
-import { isFormalOnly, type Venue } from '../lib/types.ts'
+import { isFormalOnly, type Meal, type Venue } from '../lib/types.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 
@@ -236,8 +237,8 @@ function Finder({ scope }: { scope: Scope }) {
               out but not shown, so the map has the screen */}
           <h1 className={`finder-title title mb-2 text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
           <div className="finder-filters card-row flex items-center gap-2">
+            <ScopeSelect scope={scope} />
             {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
-            {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
             <SitePicker
               sites={sites}
               value={f.sites ?? []}
@@ -251,8 +252,12 @@ function Finder({ scope }: { scope: Scope }) {
             />
             {scope === 'hall' && (
               <>
-                <ChipSelect label="Menus for" value={f.date} onChange={(d) => set('date', d === now.date ? undefined : d)} options={dates.map((d) => [d, relativeDay(d, now.date) ?? formatISODate(d)])} />
-                <ChipSelect label="Meal" value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+                <MenusFor date={f.date} meal={f.meal} dates={dates} today={now.date} onChange={(d, m) => update((p) => {
+                  if (d === now.date) p.delete('date')
+                  else p.set('date', d)
+                  if (m) p.set('meal', m)
+                  else p.delete('meal')
+                })} />
                 <ChipSelect label="Diet" value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
               </>
             )}
@@ -308,13 +313,19 @@ function Finder({ scope }: { scope: Scope }) {
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
-                inset={split ? { top: 52 } : { top: 58, bottom: picked ? 130 : 0 }}
+                inset={split ? { top: 0 } : { top: 58, bottom: picked ? 130 : 0 }}
                 here={here}
                 controls={false}
                 core={!narrowed}
               />
             ) : (
               <div className="venue-map" />
+            )}
+            {/* Nearest first, as a map's own button: where you are, and the list by distance from it */}
+            {!snapshot && (
+              <button type="button" onClick={locate} aria-pressed={!!here} aria-label={locating ? 'Finding you…' : 'Nearest first'} title={here ? 'Nearest first: on' : 'Nearest first'} className={`finder-locate ${locating ? 'animate-pulse' : ''}`}>
+                <Icon of={Gps} className="size-5" />
+              </button>
             )}
             <div ref={sheet} className="finder-sheet">
               {!split && !listView && ranked.length > 0 && toggle}
@@ -328,6 +339,70 @@ function Finder({ scope }: { scope: Scope }) {
       {/* On a phone's list, one button back to the map */}
       {!snapshot && !split && listView && ranked.length > 0 && <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2">{toggle}</div>}
     </>
+  )
+}
+
+/**
+ * The kind of venue, as the first chip: its icon and name, in Cambridge Blue past All. Picking another opens that tab's
+ * own address (each its page), keeping the filters they share and a phone's list.
+ */
+function ScopeSelect({ scope }: { scope: Scope }) {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const info = scopeInfo(scope)
+  const go = (path: string) => {
+    const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
+    navigate(`${path}${keep ? `?${keep}` : ''}`)
+  }
+  const name = (s: (typeof SCOPES)[number]) => (s.scope === 'all' ? 'All venues' : s.label)
+  return (
+    <label className="chip relative font-medium" data-on={scope !== 'all' || undefined}>
+      <Icon of={SCOPE_ICON[scope]} className="size-[1.125rem]" />
+      {name(info)}
+      <Icon of={ChevronDown} className="size-4" />
+      <select aria-label="Kind of venue" value={info.path} onChange={(e) => go(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0">
+        {SCOPES.map((s) => (
+          <option key={s.scope} value={s.path}>
+            {name(s)}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+/**
+ * Dining's menus by day and meal, as one chip ("Today", "Tomorrow · Lunch"): a day's choices under its name, any meal
+ * first. In Cambridge Blue past today's, any meal.
+ */
+function MenusFor({ date, meal, dates, today, onChange }: { date: string; meal?: Meal; dates: string[]; today: string; onChange: (date: string, meal?: Meal) => void }) {
+  const day = (d: string) => relativeDay(d, today) ?? formatISODate(d)
+  return (
+    <label className="chip relative" data-on={date !== today || !!meal || undefined}>
+      {day(date)}
+      {meal && ` · ${MEAL_LABEL[meal]}`}
+      <Icon of={ChevronDown} className="size-4" />
+      <select
+        aria-label="Menus for"
+        value={`${date}|${meal ?? ''}`}
+        onChange={(e) => {
+          const [d, m] = e.target.value.split('|')
+          onChange(d, (m || undefined) as Meal | undefined)
+        }}
+        className="absolute inset-0 cursor-pointer opacity-0"
+      >
+        {dates.map((d) => (
+          <optgroup key={d} label={day(d)}>
+            <option value={`${d}|`}>{day(d)}, any meal</option>
+            {FILTER_MEALS.map((m) => (
+              <option key={m} value={`${d}|${m}`}>
+                {day(d)}, {MEAL_LABEL[m].toLowerCase()}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </label>
   )
 }
 
