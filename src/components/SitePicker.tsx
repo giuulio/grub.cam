@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown } from 'reicon-react'
+import { ChevronDown, MapPoint } from 'reicon-react'
 import type { Site } from '../lib/types.ts'
 import { SearchField, Segmented } from './Controls.tsx'
 import { Icon } from './Icon.tsx'
@@ -50,6 +50,7 @@ export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; va
   return (
     <div ref={box} className="relative">
       <button type="button" aria-label={`Colleges and sites: ${label}`} aria-expanded={open} aria-haspopup="dialog" data-on={picked.length > 0 || !!kind || undefined} onClick={() => setOpen(!open)} className="chip max-w-64">
+        <Icon of={MapPoint} className="size-[1.125rem] shrink-0" />
         <span className="truncate">{label}</span>
         <Icon of={ChevronDown} className="size-4" />
       </button>

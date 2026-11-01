@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
-import { ChevronDown, CloseCircle, Gps, List as ListIcon, Map as MapIcon } from 'reicon-react'
-import { Chip, ChipSelect } from '../components/Controls.tsx'
+import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Map as MapIcon, Plate } from 'reicon-react'
+import { ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
 import { Icon } from '../components/Icon.tsx'
@@ -11,12 +11,13 @@ import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
 import { tabCoverage } from '../lib/coverage.ts'
 import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filters.ts'
+import { SCOPE_ICON } from '../lib/icons.ts'
 import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, SHARED_FILTERS, type Scope } from '../lib/finder.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
 import { TAB_TITLES } from '../lib/seo.ts'
 import { addDaysISO, formatISODate, relativeDay } from '../lib/time/clock.ts'
-import { isFormalOnly, type Meal, type Venue } from '../lib/types.ts'
+import { isFormalOnly, type Venue } from '../lib/types.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 
@@ -130,6 +131,7 @@ function Finder({ scope }: { scope: Scope }) {
       { timeout: 10000, maximumAge: 60000 },
     )
   }
+  const day = (d: string) => relativeDay(d, now.date) ?? formatISODate(d)
   const dates = Array.from({ length: Math.max(0, (Date.parse(menuTo) - Date.parse(menuFrom)) / 86400000) }, (_, i) => addDaysISO(menuFrom, i))
   const count = `${ranked.length} ${ranked.length === 1 ? info.noun[0] : info.noun[1]}`
   // A phone opens on the map; ?view=list shows the list instead
@@ -236,7 +238,23 @@ function Finder({ scope }: { scope: Scope }) {
           <h1 className="sr-only">{info.heading}</h1>
           <ScopeSwitch />
           <div className="finder-filters card-row flex items-center gap-2">
-            {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
+            {/* Hours, as Google Maps': open now first; on Dining, then which day's menus */}
+            {(scope === 'hall' || !snapshot) && (
+              <ChipSelect
+                label="Hours"
+                icon={Clock}
+                value={f.openNow ? 'open' : scope === 'hall' ? f.date : ''}
+                text={f.openNow ? 'Open now' : scope === 'hall' ? day(f.date) : 'Hours'}
+                on={f.openNow || f.date !== now.date}
+                options={[...(snapshot ? [] : [['open', 'Open now'] as [string, string], null]), ...(scope === 'hall' ? dates.map((d): [string, string] => [d, day(d)]) : [['', 'Any time'] as [string, string]])]}
+                onChange={(v) => update((p) => {
+                  if (v === 'open') p.set('open', '1')
+                  else p.delete('open')
+                  if (v === 'open' || !v || v === now.date) p.delete('date')
+                  else p.set('date', v)
+                })}
+              />
+            )}
             <SitePicker
               sites={sites}
               value={f.sites ?? []}
@@ -250,13 +268,8 @@ function Finder({ scope }: { scope: Scope }) {
             />
             {scope === 'hall' && (
               <>
-                <MenusFor date={f.date} meal={f.meal} dates={dates} today={now.date} onChange={(d, m) => update((p) => {
-                  if (d === now.date) p.delete('date')
-                  else p.set('date', d)
-                  if (m) p.set('meal', m)
-                  else p.delete('meal')
-                })} />
-                <ChipSelect label="Diet" value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
+                <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+                <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
               </>
             )}
           </div>
@@ -340,66 +353,36 @@ function Finder({ scope }: { scope: Scope }) {
   )
 }
 
-/** Each tab's word after "Cambridge" in the switch: "Cambridge menus", "Cambridge cafés". */
-const WORD: Record<Scope, string> = { all: 'food', hall: 'menus', cafe: 'cafés', bar: 'bars', formal: 'formals' }
-
 /**
- * The tabs as the heading: "Cambridge", then a word per tab, the open one in a Cambridge Blue pill ("Cambridge food
- * [menus] cafés bars formals"), larger where the list has room, each its own address, keeping the filters they share and a phone's list. Over a
- * phone's map, the words alone, scrolling, under the search.
+ * The tabs as the heading, with the icons and names the search's tabs had: "Cambridge", then a tab each, the open one
+ * its icon and name in a Cambridge Blue pill ("Cambridge [Dining]"), the others their icon alone, named on hover and to
+ * a screen reader; each its own address, keeping the filters they share and a phone's list. On a phone, the tabs alone
+ * as chips under the search.
  */
 function ScopeSwitch() {
   const [params] = useSearchParams()
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
-    <nav aria-label="Kinds of venue" className="scope-switch title flex flex-wrap items-center gap-x-0.5 gap-y-1.5 text-2xl leading-tight @[42rem]:text-[1.75rem] @[50rem]:text-[2rem]">
-      <span aria-hidden="true" className="scope-switch-lead mr-1.5">Cambridge</span>
+    <nav aria-label="Kinds of venue" className="scope-switch title flex flex-wrap items-center gap-1 text-2xl leading-tight @[42rem]:text-[1.75rem]">
+      <span aria-hidden="true" className="scope-switch-lead mr-2">Cambridge</span>
       {SCOPES.map((s) => (
         <NavLink
           key={s.scope}
           to={`${s.path}${keep ? `?${keep}` : ''}`}
           end
-          className={({ isActive }) => `shrink-0 rounded-full px-3 py-1 whitespace-nowrap transition-colors ${isActive ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+          aria-label={s.label}
+          title={s.label}
+          className={({ isActive }) => `flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1.5 whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-4 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
         >
-          {WORD[s.scope]}
+          {({ isActive }) => (
+            <>
+              <Icon of={SCOPE_ICON[s.scope]} className="size-[1.1em]" />
+              {isActive && s.label}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>
-  )
-}
-
-/**
- * Dining's menus by day and meal, as one chip ("Today", "Tomorrow · Lunch"): a day's choices under its name, any meal
- * first. In Cambridge Blue past today's, any meal.
- */
-function MenusFor({ date, meal, dates, today, onChange }: { date: string; meal?: Meal; dates: string[]; today: string; onChange: (date: string, meal?: Meal) => void }) {
-  const day = (d: string) => relativeDay(d, today) ?? formatISODate(d)
-  return (
-    <label className="chip relative" data-on={date !== today || !!meal || undefined}>
-      {day(date)}
-      {meal && ` · ${MEAL_LABEL[meal]}`}
-      <Icon of={ChevronDown} className="size-4" />
-      <select
-        aria-label="Menus for"
-        value={`${date}|${meal ?? ''}`}
-        onChange={(e) => {
-          const [d, m] = e.target.value.split('|')
-          onChange(d, (m || undefined) as Meal | undefined)
-        }}
-        className="absolute inset-0 cursor-pointer opacity-0"
-      >
-        {dates.map((d) => (
-          <optgroup key={d} label={day(d)}>
-            <option value={`${d}|`}>{day(d)}, any meal</option>
-            {FILTER_MEALS.map((m) => (
-              <option key={m} value={`${d}|${m}`}>
-                {day(d)}, {MEAL_LABEL[m].toLowerCase()}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-    </label>
   )
 }
 

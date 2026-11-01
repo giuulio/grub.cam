@@ -279,28 +279,18 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
 }
 
 /**
- * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Light Blue disc,
- * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
+ * What a row doesn't know yet, and how to send it in (a photo or the text), on one line where its menu would be: a
+ * note to add to and what's missing in Dark Crest, then the way to send it in Warm Blue, deepened to read as text.
+ * `compact`: without the icon, for a card.
  */
 function Gap({ to, send, compact = false, children }: { to: string; send: string; compact?: boolean; children: ReactNode }) {
-  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
-  if (compact)
-    return (
-      <p className="text-muted">
-        {children} {action}
-      </p>
-    )
   return (
-    <div className="flex items-center gap-3">
-      {/* Not beside a map on a tablet, where the row's text has little room */}
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cta-bg text-cta md:max-lg:hidden">
-        <Icon of={NoteAdd} className="size-6" />
+    <p className={compact ? 'text-muted' : 'flex items-start gap-2'}>
+      {!compact && <Icon of={NoteAdd} className="mt-[0.15em] size-[1.1em] shrink-0 text-alert" />}
+      <span>
+        <span className={compact ? '' : 'text-alert'}>{children}</span> <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
       </span>
-      <div className="min-w-0">
-        <p className="text-muted">{children}</p>
-        {action}
-      </div>
-    </div>
+    </p>
   )
 }
 

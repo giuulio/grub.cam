@@ -1,5 +1,5 @@
-import type { ReactNode, SelectHTMLAttributes } from 'react'
-import { ChevronDown, Search } from 'reicon-react'
+import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { Check, ChevronDown, Search, type IconComponent } from 'reicon-react'
 import { Icon } from './Icon.tsx'
 
 // Form controls shared by the front page and Coverage, one height for a row of them: 44px on a phone, 40px
@@ -54,22 +54,58 @@ export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSe
 }
 
 /**
- * A native select drawn as a chip, as Google Maps' "Price ▾": the picked option's name, Cambridge Blue once it isn't
- * the first (the "any" choice). The select itself sits invisibly over the chip, so it opens as the platform's own.
+ * A chip that opens a short list to pick one from, as Google Maps' "Hours ▾": its icon, the picked option's name (or
+ * `text`), Cambridge Blue once it isn't the first (or as `on` says). The list is ours, as the colleges' picker is, so
+ * every filter opens alike: under the chip, or rising from the foot of a phone's screen; `null` between options draws
+ * a line. Picking closes it, as do Escape and a click outside.
  */
-export function ChipSelect({ label, value, options, onChange }: { label: string; value: string; options: [value: string, text: string][]; onChange: (v: string) => void }) {
-  const current = options.find(([v]) => v === value) ?? options[0]
+export function ChipSelect({ label, value, options, onChange, icon, text, on }: { label: string; value: string; options: ([value: string, text: string] | null)[]; onChange: (v: string) => void; icon?: IconComponent; text?: string; on?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const outside = (e: PointerEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false) }
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [open])
+  const choices = options.filter((o): o is [string, string] => !!o)
+  const current = choices.find(([v]) => v === value) ?? choices[0]
   return (
-    <label className="chip relative" data-on={current[0] !== options[0][0] || undefined}>
-      {current[1]}
-      <Icon of={ChevronDown} className="size-4" />
-      <select aria-label={label} value={current[0]} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0">
-        {options.map(([v, text]) => (
-          <option key={v} value={v}>
-            {text}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div ref={box} className="relative">
+      <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label={`${label}: ${text ?? current[1]}`} data-on={(on ?? current[0] !== choices[0][0]) || undefined} onClick={() => setOpen(!open)} className="chip">
+        {icon && <Icon of={icon} className="size-[1.125rem]" />}
+        {text ?? current[1]}
+        <Icon of={ChevronDown} className="size-4" />
+      </button>
+      {open && (
+        <div role="menu" aria-label={label} className="raised z-[800] flex flex-col overflow-y-auto rounded-xl p-1.5 text-left max-md:fixed max-md:inset-x-2 max-md:bottom-2 max-md:max-h-[70svh] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(24rem,65svh)] md:min-w-52">
+          {options.map((o, n) =>
+            o ? (
+              <button
+                key={o[0]}
+                type="button"
+                role="menuitemradio"
+                aria-checked={o[0] === current[0]}
+                onClick={() => {
+                  onChange(o[0])
+                  setOpen(false)
+                }}
+                className={`flex cursor-pointer items-center justify-between gap-6 rounded-lg px-3 py-2.5 text-sm whitespace-nowrap hover:bg-ink/5 ${o[0] === current[0] ? 'font-semibold' : ''}`}
+              >
+                {o[1]}
+                {o[0] === current[0] && <Icon of={Check} className="size-4" />}
+              </button>
+            ) : (
+              <hr key={`line-${n}`} className="mx-2 my-1 border-ink/10" />
+            ),
+          )}
+        </div>
+      )}
+    </div>
   )
 }

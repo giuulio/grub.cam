@@ -17,11 +17,11 @@ export type ScopeInfo = { scope: Scope; path: string; label: string; heading: st
  * ("Cambridge college bars"), in as few as it takes.
  */
 export const SCOPES: ScopeInfo[] = [
-  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge college and University menus, cafés and bars', description: SITE_DESCRIPTION, placeholder: 'Colleges, cafés, bars, dishes…', noun: ['venue', 'venues'] },
-  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college menus', description: "Today's menus for Cambridge college dining halls, butteries, cafeterias and University canteens, with dishes, prices, allergens and meal times.", placeholder: 'A college, or a dish on the menu…', noun: ['dining venue', 'dining venues'] },
-  { scope: 'cafe', path: '/cafes', label: 'Cafés', heading: 'Cambridge college and University cafés', description: "Every Cambridge college and University café on one map: opening times, coffee and food prices as posted, and what's open now.", placeholder: 'A café or a college…', noun: ['café', 'cafés'] },
-  { scope: 'bar', path: '/bars', label: 'Bars', heading: 'Cambridge college bars', description: "Every Cambridge college bar on one map: opening times, pint and drink prices as posted, and what's open now.", placeholder: 'A bar or a college…', noun: ['bar', 'bars'] },
-  { scope: 'formal', path: '/formal', label: 'Formal hall', heading: 'Cambridge college formal hall', description: 'Formal hall at every Cambridge college that holds it, compared: which nights, what it costs, dress code and gowns, guests and how to book.', placeholder: 'A college…', noun: ['formal hall', 'formal halls'] },
+  { scope: 'all', path: '/', label: 'All', heading: 'Cambridge college and University menus, cafés and bars', description: SITE_DESCRIPTION, placeholder: 'Search the University of Cambridge’s dining halls, cafés and bars…', noun: ['venue', 'venues'] },
+  { scope: 'hall', path: '/dining', label: 'Dining', heading: 'Cambridge college menus', description: "Today's menus for Cambridge college dining halls, butteries, cafeterias and University canteens, with dishes, prices, allergens and meal times.", placeholder: 'Search the University of Cambridge’s menus and dishes…', noun: ['dining venue', 'dining venues'] },
+  { scope: 'cafe', path: '/cafes', label: 'Cafés', heading: 'Cambridge college and University cafés', description: "Every Cambridge college and University café on one map: opening times, coffee and food prices as posted, and what's open now.", placeholder: 'Search the University of Cambridge’s cafés…', noun: ['café', 'cafés'] },
+  { scope: 'bar', path: '/bars', label: 'Bars', heading: 'Cambridge college bars', description: "Every Cambridge college bar on one map: opening times, pint and drink prices as posted, and what's open now.", placeholder: 'Search the University of Cambridge’s college bars…', noun: ['bar', 'bars'] },
+  { scope: 'formal', path: '/formal', label: 'Formal hall', heading: 'Cambridge college formal hall', description: 'Formal hall at every Cambridge college that holds it, compared: which nights, what it costs, dress code and gowns, guests and how to book.', placeholder: 'Search the University of Cambridge’s formal halls…', noun: ['formal hall', 'formal halls'] },
 ]
 export const scopeInfo = (scope: Scope) => SCOPES.find((s) => s.scope === scope)!
 
