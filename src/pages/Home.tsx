@@ -82,6 +82,8 @@ function Finder({ scope }: { scope: Scope }) {
   const info = scopeInfo(scope)
   const f = readFilters(params, scope, now.date, sites, menuFrom, menuTo)
   // Dining is the everyday meals: a Hall used only for formal hall is under Formal hall
+  // The sites with venues in the tab whatever else is picked, so the site picker can grey the rest
+  const inTab = new Set(applyFilters(venues, { ...f, q: '', sites: undefined, kind: undefined, openNow: false, diets: [], meal: scope === 'formal' ? f.meal : undefined }, now).filter((r) => scope !== 'hall' || !isFormalOnly(r.venue)).map((r) => r.venue.site.slug))
   const found = applyFilters(venues, f, now).filter((r) => scope !== 'hall' || !isFormalOnly(r.venue))
   const metres = (v: Venue) => (here && hasLocation(v) ? metresBetween(here, v) : undefined)
   const ranked = here ? [...found].sort((a, b) => (metres(a.venue) ?? Infinity) - (metres(b.venue) ?? Infinity)) : found
@@ -257,6 +259,7 @@ function Finder({ scope }: { scope: Scope }) {
             )}
             <SitePicker
               sites={sites}
+              available={inTab}
               value={f.sites ?? []}
               kind={f.kind}
               onChange={(slugs, kind) => update((p) => {
@@ -266,12 +269,9 @@ function Finder({ scope }: { scope: Scope }) {
                 else p.delete('kind')
               })}
             />
-            {scope === 'hall' && (
-              <>
-                <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
-                <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
-              </>
-            )}
+            {/* The same four on every tab, so the row doesn't change under you; the meal and diet are of Dining's menus */}
+            <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+            <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
           </div>
           {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
           <section aria-label={`${info.label} venues`} className="finder-list">
@@ -353,31 +353,34 @@ function Finder({ scope }: { scope: Scope }) {
   )
 }
 
+/** Each tab's name after "The University of Cambridge's": the search's old tabs' names, as a sentence ends. */
+const SWITCH_NAME: Record<Scope, string> = { all: 'Food & drink', hall: 'Dining halls', cafe: 'Cafés', bar: 'Bars', formal: 'Formal halls' }
+
 /**
- * The tabs as the heading, with the icons and names the search's tabs had: "Cambridge", then a tab each, the open one
- * its icon and name in a Cambridge Blue pill ("Cambridge [Dining]"), the others their icon alone, named on hover and to
- * a screen reader; each its own address, keeping the filters they share and a phone's list. On a phone, the tabs alone
- * as chips under the search.
+ * The tabs as the heading, with the icons the header search's tabs had: "The University of Cambridge's" on a line of
+ * its own, then a tab each, the open one its icon and name in a Cambridge Blue pill ("[Cafés]"), the others their icon
+ * alone, named on hover and to a screen reader; each its own address, keeping the filters they share and a phone's
+ * list. On a phone, the tabs alone as chips under the search.
  */
 function ScopeSwitch() {
   const [params] = useSearchParams()
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
-    <nav aria-label="Kinds of venue" className="scope-switch title flex flex-wrap items-center gap-1 text-2xl leading-tight @[42rem]:text-[1.75rem]">
-      <span aria-hidden="true" className="scope-switch-lead mr-2">Cambridge</span>
+    <nav aria-label="Kinds of venue" className="scope-switch flex flex-wrap items-center gap-1">
+      <span aria-hidden="true" className="scope-switch-lead title mb-2 w-full text-2xl leading-tight @[42rem]:text-[1.75rem]">The University of Cambridge’s</span>
       {SCOPES.map((s) => (
         <NavLink
           key={s.scope}
           to={`${s.path}${keep ? `?${keep}` : ''}`}
           end
-          aria-label={s.label}
-          title={s.label}
-          className={({ isActive }) => `flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1.5 whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-4 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+          aria-label={SWITCH_NAME[s.scope]}
+          title={SWITCH_NAME[s.scope]}
+          className={({ isActive }) => `title flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full text-lg whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-4.5 pl-3.5 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
         >
           {({ isActive }) => (
             <>
-              <Icon of={SCOPE_ICON[s.scope]} className="size-[1.1em]" />
-              {isActive && s.label}
+              <Icon of={SCOPE_ICON[s.scope]} className="size-6" />
+              {isActive && SWITCH_NAME[s.scope]}
             </>
           )}
         </NavLink>

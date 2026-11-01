@@ -5,8 +5,8 @@ import { Icon } from './Icon.tsx'
 // Form controls shared by the front page and Coverage, one height for a row of them: 44px on a phone, 40px
 // above (`.btn`, `.chip`, `.field` in index.css).
 
-/** Pick one of a few views or groups: the pressed one sits raised. */
-export function Segmented<T extends string>({ label, options, value, onChange }: { label: string; options: [T, string][]; value: T; onChange: (v: T) => void }) {
+/** Pick one of a few views or groups: the pressed one sits raised; `disabled` ones greyed. */
+export function Segmented<T extends string>({ label, options, value, onChange, disabled = [] }: { label: string; options: [T, string][]; value: T; onChange: (v: T) => void; disabled?: T[] }) {
   return (
     <div role="group" aria-label={label} className="inline-flex h-11 shrink-0 items-center gap-1 rounded-lg bg-ink/6 p-1 sm:h-10">
       {options.map(([v, text]) => (
@@ -14,8 +14,9 @@ export function Segmented<T extends string>({ label, options, value, onChange }:
           key={v}
           type="button"
           aria-pressed={v === value}
+          disabled={disabled.includes(v)}
           onClick={() => onChange(v)}
-          className={`h-full cursor-pointer rounded-md px-3.5 text-sm whitespace-nowrap transition-colors ${v === value ? 'raised font-medium text-ink' : 'text-muted hover:text-ink'}`}
+          className={`h-full cursor-pointer rounded-md px-3.5 text-sm whitespace-nowrap transition-colors disabled:cursor-default disabled:opacity-40 ${v === value ? 'raised font-medium text-ink' : 'text-muted enabled:hover:text-ink'}`}
         >
           {text}
         </button>
@@ -57,9 +58,10 @@ export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSe
  * A chip that opens a short list to pick one from, as Google Maps' "Hours ▾": its icon, the picked option's name (or
  * `text`), Cambridge Blue once it isn't the first (or as `on` says). The list is ours, as the colleges' picker is, so
  * every filter opens alike: under the chip, or rising from the foot of a phone's screen; `null` between options draws
- * a line. Picking closes it, as do Escape and a click outside.
+ * a line. Picking closes it, as do Escape and a click outside. `off`: greyed and shut, saying why on hover, for a
+ * filter that's always in its row but doesn't apply here.
  */
-export function ChipSelect({ label, value, options, onChange, icon, text, on }: { label: string; value: string; options: ([value: string, text: string] | null)[]; onChange: (v: string) => void; icon?: IconComponent; text?: string; on?: boolean }) {
+export function ChipSelect({ label, value, options, onChange, icon, text, on, off }: { label: string; value: string; options: ([value: string, text: string] | null)[]; onChange: (v: string) => void; icon?: IconComponent; text?: string; on?: boolean; off?: string }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -77,7 +79,7 @@ export function ChipSelect({ label, value, options, onChange, icon, text, on }: 
   const current = choices.find(([v]) => v === value) ?? choices[0]
   return (
     <div ref={box} className="relative">
-      <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label={`${label}: ${text ?? current[1]}`} data-on={(on ?? current[0] !== choices[0][0]) || undefined} onClick={() => setOpen(!open)} className="chip">
+      <button type="button" disabled={!!off} title={off} aria-haspopup="menu" aria-expanded={open} aria-label={`${label}: ${text ?? current[1]}${off ? ` (${off})` : ''}`} data-on={(!off && (on ?? current[0] !== choices[0][0])) || undefined} onClick={() => setOpen(!open)} className="chip disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/15">
         {icon && <Icon of={icon} className="size-[1.125rem]" />}
         {text ?? current[1]}
         <Icon of={ChevronDown} className="size-4" />

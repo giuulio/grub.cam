@@ -16,8 +16,10 @@ const KINDS: ['' | Kind, string][] = [['', 'All'], ['college', 'Colleges'], ['un
  * University, a search over the names (and nicknames), then every college and site to tick, grouped. Picking a kind
  * clears the ticks and a tick clears the kind. Ticks apply as they're made; Escape, a click outside or Done closes it.
  * On a phone the box rises from the foot of the screen, so a row of chips that scrolls sideways can't clip it.
+ * `available`: the sites with venues in the tab; the others, and a kind with none (University sites under Formal
+ * halls), are greyed, as picking them would show nothing.
  */
-export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; value: string[]; kind?: Kind; onChange: (slugs: string[], kind?: Kind) => void }) {
+export function SitePicker({ sites, value, kind, onChange, available }: { sites: Site[]; value: string[]; kind?: Kind; onChange: (slugs: string[], kind?: Kind) => void; available?: Set<string> }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const box = useRef<HTMLDivElement>(null)
@@ -57,7 +59,7 @@ export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; va
       {open && (
         <div role="dialog" aria-label="Colleges and sites" className="raised z-[800] flex flex-col overflow-hidden rounded-xl text-left max-md:fixed max-md:inset-x-2 max-md:bottom-2 max-md:max-h-[70svh] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(30rem,65svh)] md:w-80">
           <div className="space-y-3 border-b border-ink/10 p-3">
-            <Segmented label="Which" options={KINDS} value={kind ?? ''} onChange={(k) => { setTicked([]); onChange([], k || undefined) }} />
+            <Segmented label="Which" options={KINDS} value={kind ?? ''} disabled={KINDS.flatMap(([k]) => (k && available && !sites.some((s) => s.kind === k && available.has(s.slug)) ? [k] : []))} onChange={(k) => { setTicked([]); onChange([], k || undefined) }} />
             <SearchField value={q} onChange={setQ} placeholder="Find a college or site" />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -67,12 +69,15 @@ export function SitePicker({ sites, value, kind, onChange }: { sites: Site[]; va
                 list.length > 0 && (
                   <fieldset key={kind}>
                     <legend className="px-2 pt-2 pb-1 text-sm font-semibold text-muted">{kind === 'college' ? 'Colleges' : 'University'}</legend>
-                    {list.map((s) => (
-                      <label key={s.slug} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-ink/5">
-                        <input type="checkbox" checked={ticked.includes(s.slug)} onChange={() => toggle(s.slug)} className="size-4 shrink-0 accent-[var(--action)]" />
-                        {nameOf(s)}
-                      </label>
-                    ))}
+                    {list.map((s) => {
+                      const none = !!available && !available.has(s.slug) && !ticked.includes(s.slug)
+                      return (
+                        <label key={s.slug} className={`flex items-center gap-3 rounded-lg px-2 py-2 text-sm ${none ? 'opacity-40' : 'cursor-pointer hover:bg-ink/5'}`}>
+                          <input type="checkbox" disabled={none} checked={ticked.includes(s.slug)} onChange={() => toggle(s.slug)} className="size-4 shrink-0 accent-[var(--action)]" />
+                          {nameOf(s)}
+                        </label>
+                      )
+                    })}
                   </fieldset>
                 )
               )
