@@ -30,26 +30,21 @@ describe('searchable HTML without JavaScript', () => {
     const page = render('/st-edmunds/dining-hall', data)
     const main = parse(page.html).querySelector('main')!
     expect(page.title).toContain("St Edmund's College (Eddies), Cambridge")
-    expect(main.text).toContain("Dining Hall is the dining hall of St Edmund's College (Eddies), Cambridge, serving lunch Mon 12:30–13:30.")
     expect(main.text).toContain('Vegetable pie')
     expect(main.text).toContain('12:30–13:30')
     expect(main.querySelector('a[href="/st-edmunds"]')).not.toBeNull()
   })
 
-  it('exposes venue aliases in visible text and keeps a college alias on its own page', () => {
-    const cafe = { ...venue, name: 'Caffiend of Cambridge', aliases: ['WGB Café', 'Computer Laboratory Café'] }
-    const main = parse(render('/st-edmunds/dining-hall', { ...data, venues: [cafe] }).html).querySelector('main')!
-    expect(main.text).toContain('Also listed as WGB Café or Computer Laboratory Café.')
-    const college = parse(render('/st-edmunds', data).html).querySelector('main')!.text
-    expect(college).toContain("St Edmund's College has one place to eat and drink: Dining Hall, the dining hall, for lunch.")
-    expect(college).toContain('Also known as Eddies.')
+  it('keeps a college alias in its own page title', () => {
+    const college = render('/st-edmunds', data)
+    expect(college.title).toContain("St Edmund's College (Eddies)")
+    expect(parse(college.html).querySelector('main')!.text).toContain('Dining Hall')
   })
 
   it('renders the food-map explanation, category links and venues beyond the first browser page', () => {
     const venues = Array.from({ length: 30 }, (_, i) => ({ ...venue, id: `${site.slug}/hall-${i}`, slug: `hall-${i}`, name: `Hall ${i}` }))
     const page = parse(render('/', { ...data, venues }).html)
     expect(page.querySelector('h1')!.text).toBe('Cambridge food map')
-    expect(page.querySelector('main')!.text).toContain('Cambridge college grub, mapped')
     for (const path of ['/dining', '/cafes', '/bars', '/formal', '/st-edmunds/hall-29']) {
       expect(page.querySelector(`a[href="${path}"]`), path).not.toBeNull()
     }

@@ -110,7 +110,7 @@ function venueDescription(v: Venue, date: string): string {
   const f = v.formal
   const details = formal && f ? [formalDress(f), formalPrice(f), formalBooking(f) && `Book: ${formalBooking(f)}`].filter(Boolean).map((s) => `${s}. `).join('') : ''
   const aliases = alternateNames(v)
-  const name = `${v.name}${aliases.length ? ` (${aliases[0]})` : ''}`
+  const name = `${v.name}${aliases.length ? ` (${aliases.join(', ')})` : ''}`
   const what = formal ? 'formal hall' : `${kindWords(v)}${holdsFormal(v) ? ' and formal hall' : ''}`
   return clip(`${name}, ${placed(v.site)}: ${what}. ${menu}${hours ? `${formal ? 'Nights' : 'Open'} ${hours}. ` : 'Opening hours not published yet. '}${details}`.trim())
 }
@@ -218,7 +218,7 @@ export function pages(data: Data, date: string): Page[] {
       path: sitePath(s),
       daily: mine.some(hasMenu),
       // Menus and prices only where it has them
-      description: clip(`Where to eat and drink at ${placedIn(s)}: ${named.join(', ')}. ${mine.some(hasMenu) ? `Today's menus, opening hours${mine.some(hasPrices) ? ' and prices' : ''}` : mine.some(hasPrices) ? 'Opening hours and prices' : 'Opening hours, as each venue publishes them'}.`),
+      description: clip(`Where to eat and drink at ${placedIn(s)}${alternateNames(s).length > 1 ? `, also known as ${list(alternateNames(s).slice(1))}` : ''}: ${named.join(', ')}. ${mine.some(hasMenu) ? `Today's menus, opening hours${mine.some(hasPrices) ? ' and prices' : ''}` : mine.some(hasPrices) ? 'Opening hours and prices' : 'Opening hours, as each venue publishes them'}.`),
       jsonLd: [
         {
           '@context': 'https://schema.org',

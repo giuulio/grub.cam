@@ -40,9 +40,8 @@ export function Footer() {
         </FooterLinks>
         <div>
           <h2 className="text-muted">The menus</h2>
-          <p className="mt-4 max-w-xs">Menus and opening hours for Cambridge college and University dining halls, cafés and bars.</p>
           {data.status === 'ready' && menus && (
-            <p className="mt-3 max-w-xs">
+            <p className="mt-4 max-w-xs">
               <Link to="/contribute" className="link">
                 {menuWindow(data, true)}: {menus.have} of {menus.of} colleges
               </Link>
@@ -61,7 +60,7 @@ export function Footer() {
             <Link to="/credits" className="underline underline-offset-4 hover:no-underline">Photo credits</Link>
             <Link to="/about" className="underline underline-offset-4 hover:no-underline">Contact</Link>
           </p>
-          <p className="mt-3 max-w-2xl text-sm text-muted">Independent, and not affiliated with the University of Cambridge or its colleges. Menus, hours and prices are as each venue publishes them: check allergens with the venue.</p>
+          <p className="mt-3 max-w-2xl text-sm text-muted">Not affiliated with the University or its colleges. Check allergens with the venue.</p>
         </div>
       </Container>
     </footer>
