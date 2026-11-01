@@ -353,13 +353,13 @@ function Finder({ scope }: { scope: Scope }) {
   )
 }
 
-/** Each tab's name after "The University of Cambridge's": the search's old tabs' names, as a sentence ends. */
-const SWITCH_NAME: Record<Scope, string> = { all: 'Food & drink', hall: 'Dining halls', cafe: 'Cafés', bar: 'Bars', formal: 'Formal halls' }
+/** Each tab's name after "Cambridge's": the search's old tabs' names, as a sentence ends. */
+const SWITCH_NAME: Record<Scope, string> = { all: 'Food & drink', hall: 'Dining halls', cafe: 'Cafés', bar: 'Bars', formal: 'Formals' }
 
 /**
- * The tabs as the heading, with the icons the header search's tabs had: "The University of Cambridge's" on a line of
- * its own, then a tab each, the open one its icon and name in a Cambridge Blue pill ("[Cafés]"), the others their icon
- * alone, named on hover and to a screen reader; each its own address, keeping the filters they share and a phone's
+ * The tabs as the heading, on one line, with the icons the header search's tabs had: "Cambridge's" ("The University
+ * of Cambridge's" where the list is wide enough for it), then a tab each, the open one its icon and name in a Cambridge
+ * Blue pill ("Cambridge's [Cafés]"), the others their icon alone, named on hover and to a screen reader; each its own address, keeping the filters they share and a phone's
  * list. On a phone, the tabs alone as chips under the search.
  */
 function ScopeSwitch() {
@@ -367,7 +367,10 @@ function ScopeSwitch() {
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
     <nav aria-label="Kinds of venue" className="scope-switch flex flex-wrap items-center gap-1">
-      <span aria-hidden="true" className="scope-switch-lead title mb-2 w-full text-2xl leading-tight @[42rem]:text-[1.75rem]">The University of Cambridge’s</span>
+      <span aria-hidden="true" className="scope-switch-lead title mr-2 text-2xl leading-tight @[54rem]:text-[1.75rem]">
+        <span className="@[46rem]:hidden">Cambridge’s</span>
+        <span className="hidden @[46rem]:inline">The University of Cambridge’s</span>
+      </span>
       {SCOPES.map((s) => (
         <NavLink
           key={s.scope}
