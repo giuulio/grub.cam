@@ -146,6 +146,12 @@ describe('seo', () => {
     expect(college.alternateName).toEqual(['Eddies'])
     expect(llmsTxt(example)).toContain("St Edmund's College (Eddies)")
     expect(llmsFullTxt(example, date, '8 Oct 2026')).toContain('Also listed as: Refectory')
+     // Every alias, not just the first, now that pages don't show them
+    const medwards = { ...site, slug: 'murray-edwards', name: 'Murray Edwards', aliases: ['Medwards', 'New Hall'] }
+    const cafe = { ...venue, id: 'murray-edwards/cafe', site: medwards, aliases: ['Refectory', 'Dome'] }
+    const both = pages({ ...data, sites: [medwards], venues: [cafe] }, date)
+    expect(both.find((p) => p.path === '/murray-edwards')!.description).toContain('Murray Edwards College (Medwards), Cambridge, also known as New Hall:')
+    expect(both.at(-1)!.description).toContain('Dining Hall (Refectory, Dome), Murray Edwards College (Medwards)')
   })
 
   it('does not call a future menu today’s menu or invent one for an empty venue', () => {

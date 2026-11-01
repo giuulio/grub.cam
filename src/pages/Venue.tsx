@@ -19,8 +19,7 @@ import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
-import { alternateNames, sendPath, siteName, venuePath } from '../lib/site.ts'
-import { venueSummary } from '../lib/summary.ts'
+import { sendPath, siteName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
@@ -67,7 +66,7 @@ export function VenuePage() {
         {/* The page scrolls past the name, the facts and the sections, while the rail stays beside them; on a phone,
             the hours come after the name, and the facts, the map and the help after the sections */}
         <div className="contents md:col-start-1 md:row-start-1 md:block md:min-w-0">
-          <Heading venue={venue} siblings={venues.filter((v) => v.site.slug === venue.site.slug)} date={now.date} />
+          <Heading venue={venue} />
           <Details venue={venue} />
           <div className="order-3 min-w-0 space-y-16 md:mt-14">
             <Sections key={venue.id} venue={venue} now={now} />
@@ -172,7 +171,6 @@ function HelpCard({ venue }: { venue: Venue }) {
   return (
     <RailCard>
       <h2 className="text-lg font-semibold">Help fill this in</h2>
-      <p className="mt-1 text-[0.9375rem] text-muted">A photo or the text, sent with your Cambridge account. It goes up once we’ve checked it.</p>
       <ul className="mt-3 space-y-2">
         {missing.map(([label, to]) => (
           <li key={label} className="flex items-start gap-3">
@@ -214,7 +212,7 @@ function SideCalendar({ venue, now }: { venue: Venue; now: LocalNow }) {
   )
 }
 
-function Heading({ venue, siblings, date }: { venue: Venue; siblings: Venue[]; date: string }) {
+function Heading({ venue }: { venue: Venue }) {
   return (
     <header className="order-1 min-w-0">
       {/* Its site over its name, in Dark Cherry as on every row: "Hall" alone doesn't say whose */}
@@ -222,11 +220,6 @@ function Heading({ venue, siblings, date }: { venue: Venue; siblings: Venue[]; d
         {siteName(venue.site)}
       </Link>
       <h1 className="title mt-1 text-4xl leading-[1.1] sm:text-5xl">{venue.name}</h1>
-      {/* What it is, its meals and times and its formal hall, in words: the lead search engines read */}
-      <p className="mt-3 max-w-prose text-muted">
-        {venueSummary(venue, date, siblings)}
-        {alternateNames(venue).length > 0 && ` Also listed as ${alternateNames(venue).join(' or ')}.`}
-      </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
         {venueTypes(venue).map((t) => <TypeLabel key={t} type={t} className="gap-2" />)}
         {holdsFormal(venue) && (
