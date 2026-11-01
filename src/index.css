@@ -182,7 +182,7 @@ select option, select optgroup {
     @apply border border-ink/15 bg-canvas text-ink hover:border-ink/40;
   }
   .chip {
-    @apply inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border border-ink/15 bg-canvas px-4 text-sm whitespace-nowrap text-ink transition-colors hover:border-ink/40 sm:h-10;
+    @apply inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border border-ink/15 bg-canvas px-3.5 text-sm whitespace-nowrap text-ink transition-colors hover:border-ink/40 sm:h-10;
   }
   /* Beta, beside the name, as maps.apple.com marks its own: a grey pill, in capitals, centred on the name's letters. */
   .beta-pill {

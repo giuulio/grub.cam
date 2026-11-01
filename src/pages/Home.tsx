@@ -239,7 +239,7 @@ function Finder({ scope }: { scope: Scope }) {
           {/* What this tab is, in the words people search for, read out; what's shown is the switch between tabs */}
           <h1 className="sr-only">{info.heading}</h1>
           <ScopeSwitch />
-          <div className="finder-filters card-row flex items-center gap-2">
+          <div className="finder-filters card-row flex items-center gap-1.5">
             {/* Hours, as Google Maps': open now first; on Dining, then which day's menus */}
             {(scope === 'hall' || !snapshot) && (
               <ChipSelect
@@ -272,6 +272,11 @@ function Finder({ scope }: { scope: Scope }) {
             {/* The same four on every tab, so the row doesn't change under you; the meal and diet are of Dining's menus */}
             <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
             <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
+            {filtered && (
+              <button type="button" onClick={clear} aria-label="Clear filters" title="Clear filters" className="chip w-11 px-0 text-muted sm:w-10">
+                <Icon of={CloseCircle} className="size-5" />
+              </button>
+            )}
           </div>
           {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
           <section aria-label={`${info.label} venues`} className="finder-list">
@@ -283,12 +288,6 @@ function Finder({ scope }: { scope: Scope }) {
                 </button>
               ) : (
                 <h2 className="font-medium">{count}</h2>
-              )}
-              {filtered && (
-                <button type="button" onClick={clear} className="flex cursor-pointer items-center gap-1 text-sm text-muted hover:text-ink">
-                  <Icon of={CloseCircle} />
-                  Clear
-                </button>
               )}
             </div>
             {ranked.length ? (
@@ -367,7 +366,7 @@ function ScopeSwitch() {
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
     <nav aria-label="Kinds of venue" className="scope-switch flex flex-wrap items-center gap-1">
-      <span aria-hidden="true" className="scope-switch-lead title mr-2 text-2xl leading-tight @[54rem]:text-[1.75rem]">
+      <span aria-hidden="true" className="scope-switch-lead title mr-2 text-[1.75rem] leading-tight @[46rem]:text-2xl @[50rem]:text-[1.75rem] @[56rem]:text-[2rem]">
         <span className="@[46rem]:hidden">Cambridge’s</span>
         <span className="hidden @[46rem]:inline">The University of Cambridge’s</span>
       </span>

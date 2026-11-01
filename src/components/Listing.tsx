@@ -279,25 +279,27 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
 }
 
 /**
- * What a row doesn't know yet, and how to send it in (a photo or the text): a tile filling the space its menu would,
- * as tall as the photo allows, in a tint of Dark Crest with a dashed edge, a note to add to and what's missing, then
- * the way to send it in Warm Blue, deepened to read as text; the whole tile the link. `compact`: a line, for a card.
+ * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Dark Crest disc,
+ * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
  */
 function Gap({ to, send, compact = false, children }: { to: string; send: string; compact?: boolean; children: ReactNode }) {
+  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
   if (compact)
     return (
       <p className="text-muted">
-        {children} <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
+        {children} {action}
       </p>
     )
   return (
-    <Link to={to} className="relative z-10 flex h-full min-h-20 flex-col justify-center gap-1 rounded-2xl border border-dashed border-alert/30 bg-alert-bg/60 px-4 py-3 transition-colors hover:bg-alert-bg">
-      <span className="flex items-center gap-2 text-alert">
-        <Icon of={NoteAdd} className="size-[1.1em] shrink-0" />
-        {children}
+    <div className="flex items-center gap-3">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-alert-bg text-alert">
+        <Icon of={NoteAdd} className="size-6" />
       </span>
-      <span className="font-semibold text-cta">{send} →</span>
-    </Link>
+      <div className="min-w-0">
+        <p className="text-muted">{children}</p>
+        {action}
+      </div>
+    </div>
   )
 }
 
