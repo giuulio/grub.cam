@@ -2,16 +2,16 @@ import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { NoteAdd } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { mainDishes, MEAL_LABEL, mealHours, periodSlots, plantTag, slotOrder, weekHours, type Ranked } from '../lib/filters.ts'
+import { mainDishes, MEAL_LABEL, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
 import type { RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
 import { pinLabel } from '../lib/mapView.ts'
 import { sendPath, sitePath, venuePath } from '../lib/site.ts'
 import { leadsWithMeal } from '../lib/status.ts'
-import { addDaysISO, dayLabel, dayOfISO, formatDays, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
+import { addDaysISO, dayLabel, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { slotApplies, withDayTimes, type OpenStatus } from '../lib/time/openNow.ts'
-import { DAYS, isFormalOnly, venueTypes, type Day, type Meal, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { isFormalOnly, venueTypes, type Meal, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 import { PinMark } from './MapParts.tsx'
 import { Code } from './MenuRows.tsx'
@@ -30,8 +30,11 @@ function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] 
   return lines
 }
 
-/** The lines a row's dishes or usual prices fill beside its photo, a dish heading and "+N more" among them. */
-const LINES = 4
+/**
+ * The lines a row's dishes or usual prices fill beside its photo, a dish heading among them: five, so the list ends
+ * with the photo at its full size (288px wide, 4:3).
+ */
+const LINES = 5
 
 /**
  * A venue in the front page's list: its photo, with its map pin's mark in the corner for what kind of venue it is, the
@@ -192,8 +195,8 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     return compact ? (
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
     ) : (
-      // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to eight
-      <ul className="grid gap-x-10 gap-y-1.5 @lg:grid-cols-2">
+      // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to ten
+      <ul className="grid gap-x-10 gap-y-1 @lg:grid-cols-2">
         {prices.map((p, n) => (
           <li key={n} className={`max-w-xs items-baseline justify-between gap-4 ${n < LINES ? 'flex' : 'hidden @lg:flex'}`}>
             <span className="truncate">{p.name}</span>
@@ -202,8 +205,6 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
         ))}
       </ul>
     )
-  // Nothing to list: its usual week fills the space, over what's missing
-  const week = compact ? null : <RowHours v={v} date={now.date} />
   if (v.type === 'hall' && !isFormalOnly(v)) {
     // Today's meal it's serving or opening for by name ("No dinner menu yet"), tomorrow's by the day: menus someone can
     // see. One further off (Wednesday's, on a Sunday) isn't anyone's to send yet, so it asks for none in particular. A
@@ -212,60 +213,15 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     const tomorrow = !today && at.date === addDaysISO(now.date, 1)
     const meal = !today ? '' : at && ['breakfast', 'brunch', 'lunch', 'dinner'].includes(at.slot.meal) ? `${MEAL_LABEL[at.slot.meal].toLowerCase()} ` : ''
     const on = tomorrow ? ' for tomorrow' : ''
-    if (v.menu_scripted) return <>{week}<p className="text-muted">No {meal}menu posted{on} yet.</p></>
-    return (
-      <>
-        {week}
-        <Gap to={sendPath(v, 'menu', at && !snapshot && (today || tomorrow) ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in" compact={compact}>No {meal}menu{on} yet.</Gap>
-      </>
-    )
+    if (v.menu_scripted) return <p className="text-muted">No {meal}menu posted{on} yet.</p>
+    return <Gap to={sendPath(v, 'menu', at && !snapshot && (today || tomorrow) ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in" compact={compact}>No {meal}menu{on} yet.</Gap>
   }
-  return (
-    <>
-      {week}
-      <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices yet.</Gap>
-    </>
-  )
-}
-
-/** A café's or bar's days by when it opens and closes, days alike together ("Mon–Fri  08:00–18:00"), its services within. */
-function spans(slots: Slot[]): [string, string][] {
-  const rows = new Map<string, Day[]>()
-  for (const w of weekHours(slots)) {
-    const span = `${w.times.map((t) => t.start).sort()[0]}–${w.times.map((t) => t.end).sort().at(-1)}`
-    for (const d of w.days) rows.set(span, [...(rows.get(span) ?? []), d])
-  }
-  const first = (days: Day[]) => Math.min(...days.map((d) => DAYS.indexOf(d)))
-  return [...rows].sort((a, b) => first(a[1]) - first(b[1])).map(([span, days]) => [formatDays(days), span])
+  return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices yet.</Gap>
 }
 
 /**
- * A venue's usual week for the term or vacation `date` falls in, for a row with nothing else to list: a dining hall's
- * meal by meal ("Dinner  Wed 19:00–20:00"), a café's or bar's day by day ("Mon–Fri  08:30–16:00"), three lines at most.
- * Beside the photo only: on a phone, where the photo is above, there's no space to fill.
- */
-function RowHours({ v, date }: { v: Venue; date: string }) {
-  const slots = periodSlots(v.slots, date).filter((s) => s.meal !== 'formal')
-  const lines: [string, string][] =
-    v.type === 'hall'
-      ? mealHours(slots).map(({ meal, times }) => [MEAL_LABEL[meal], times.map((t) => `${formatDays(t.days)} ${t.start}–${t.end}`).join(', ')])
-      : spans(slots)
-  if (!lines.length) return null
-  return (
-    <dl className="mb-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 tabular-nums max-sm:hidden">
-      {lines.slice(0, 3).map(([k, t]) => (
-        <Fragment key={k}>
-          <dt className="text-muted">{k}</dt>
-          <dd className="truncate">{t}</dd>
-        </Fragment>
-      ))}
-    </dl>
-  )
-}
-
-/**
- * A meal's dishes, a bullet each, under its name and time when given, within `LINES`: the last says how many more
- * there are when they don't fit. Each carries its strongest meat-free code (VG, else PB, else V; `plantTag()`), so a
+ * A meal's dishes, a bullet each, under its name and time when given, within `LINES`: the last also says how many
+ * more there are when they don't fit ("Grilled Bacon +17 more"). Each carries its strongest meat-free code (VG, else PB, else V; `plantTag()`), so a
  * vegetarian can run down them. `compact`: on one line, " · " between them, for the card over a phone's map.
  */
 function Dishes({ title, items, compact = false }: { title?: string; items: RowDish[]; compact?: boolean }) {
@@ -290,23 +246,23 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
         })}
       </p>
     )
-  const room = LINES - (title ? 1 : 0)
-  const shown = items.length > room ? room - 1 : room
+  const shown = items.slice(0, LINES - (title ? 1 : 0))
+  const more = items.length - shown.length
   return (
     <div>
-      {title && <p className="mb-1.5 font-semibold">{title}</p>}
-      <ul className="space-y-1.5">
-        {items.slice(0, shown).map((d, n) => {
+      {title && <p className="mb-1 font-semibold">{title}</p>}
+      <ul className="space-y-1">
+        {shown.map((d, n) => {
           const tag = plantTag(d.tags)
           return (
             <li key={n} className="flex items-baseline gap-2.5">
               <span aria-hidden="true" className="size-1.5 shrink-0 -translate-y-[0.2em] rounded-full bg-ink/30" />
               <span className="min-w-0 truncate">{d.name}</span>
               {tag && <Code tag={tag} small className="shrink-0" />}
+              {more > 0 && n === shown.length - 1 && <span className="shrink-0 text-muted">+{more} more</span>}
             </li>
           )
         })}
-        {items.length > shown && <li className="pl-4 text-muted">+{items.length - shown} more</li>}
       </ul>
     </div>
   )
