@@ -1,16 +1,18 @@
 import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { NoteAdd } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { mainDishes, MEAL_LABEL, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
+import { mainDishes, MEAL_LABEL, mealHours, periodSlots, plantTag, slotOrder, weekHours, type Ranked } from '../lib/filters.ts'
 import type { RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
 import { pinLabel } from '../lib/mapView.ts'
 import { sendPath, sitePath, venuePath } from '../lib/site.ts'
 import { leadsWithMeal } from '../lib/status.ts'
-import { addDaysISO, dayLabel, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
+import { addDaysISO, dayLabel, dayOfISO, formatDays, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { slotApplies, withDayTimes, type OpenStatus } from '../lib/time/openNow.ts'
-import { isFormalOnly, venueTypes, type Meal, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { DAYS, isFormalOnly, venueTypes, type Day, type Meal, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { Icon } from './Icon.tsx'
 import { PinMark } from './MapParts.tsx'
 import { Code } from './MenuRows.tsx'
 import { Status } from './Status.tsx'
@@ -77,7 +79,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
         {/* Its college by the name people use, then its own, on one line ("Robinson · Garden Restaurant"); its rating
             beside them, once 5 members have rated it */}
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl'}`}>
+          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl sm:text-2xl'}`}>
             {showSite && (
               <>
                 <Link to={sitePath(v.site)} className="relative z-10 text-site-ink hover:underline">
@@ -93,7 +95,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
           </h3>
           <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
         </div>
-        <p className={card ? 'mt-1' : 'mt-1 text-[0.9375rem]'}>
+        <p className={card ? 'mt-1' : 'mt-1.5'}>
           <Status s={status} now={now} meal={named} />
           {then && <span className="text-muted"> · {then}</span>}
           {distance && <span className="text-muted"> · {distance}</span>}
@@ -104,7 +106,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             </>
           )}
         </p>
-        <div className={card ? 'mt-2 line-clamp-2' : 'mt-2.5 text-[1.0625rem]'}>
+        <div className={card ? 'mt-2 line-clamp-2' : '@container mt-3 text-[1.0625rem]'}>
           <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
         </div>
       </div>
@@ -156,7 +158,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
   if (formal) {
     const facts: [string, string | undefined][] = [['When', formalWhen(v, v.formal).join('; ')], ['Price', v.formal && formalPrice(v.formal)], ['Dress', v.formal && formalDress(v.formal)], ['Booking', v.formal && formalBooking(v.formal)]]
     const known = facts.filter((f): f is [string, string] => !!f[1])
-    if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us">Times and price not known yet.</Gap>
+    if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us" compact={compact}>Times and price not known yet.</Gap>
     if (compact) return <p>{known.map((f) => f[1]).join(' · ')}</p>
     return (
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
@@ -185,30 +187,80 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     // A meal posted elsewhere says so ("European Night, see posters for details")
     return <Dishes title={said ? undefined : title} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} compact={compact} />
   }
-  const prices = headlineLines(v, types, compact ? 3 : LINES)
+  const prices = headlineLines(v, types, compact ? 3 : LINES * 2)
   if (prices.length)
     return compact ? (
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
     ) : (
-      <ul className="max-w-md space-y-1.5">
+      // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to eight
+      <ul className="grid gap-x-10 gap-y-1.5 @lg:grid-cols-2">
         {prices.map((p, n) => (
-          <li key={n} className="flex items-baseline justify-between gap-4">
+          <li key={n} className={`max-w-xs items-baseline justify-between gap-4 ${n < LINES ? 'flex' : 'hidden @lg:flex'}`}>
             <span className="truncate">{p.name}</span>
             <span className="shrink-0 tabular-nums">{formatPrice(fromList(p))}</span>
           </li>
         ))}
       </ul>
     )
+  // Nothing to list: its usual week fills the space, over what's missing
+  const week = compact ? null : <RowHours v={v} date={now.date} />
   if (v.type === 'hall' && !isFormalOnly(v)) {
-    // Today's meal it's serving or opening for by name ("No dinner menu yet"), another day's by the day; a scripted menu
-    // isn't ours to ask for
+    // Today's meal it's serving or opening for by name ("No dinner menu yet"), tomorrow's by the day: menus someone can
+    // see. One further off (Wednesday's, on a Sunday) isn't anyone's to send yet, so it asks for none in particular. A
+    // scripted menu isn't ours to ask for
     const today = !at || snapshot || at.date === now.date
+    const tomorrow = !today && at.date === addDaysISO(now.date, 1)
     const meal = !today ? '' : at && ['breakfast', 'brunch', 'lunch', 'dinner'].includes(at.slot.meal) ? `${MEAL_LABEL[at.slot.meal].toLowerCase()} ` : ''
-    const on = today ? '' : at.date === addDaysISO(now.date, 1) ? ' for tomorrow' : ` for ${dayLabel(dayOfISO(at.date))}`
-    if (v.menu_scripted) return <p className="text-muted">No {meal}menu posted{on} yet.</p>
-    return <Gap to={sendPath(v, 'menu', at && !snapshot ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in">No {meal}menu{on} yet.</Gap>
+    const on = tomorrow ? ' for tomorrow' : ''
+    if (v.menu_scripted) return <>{week}<p className="text-muted">No {meal}menu posted{on} yet.</p></>
+    return (
+      <>
+        {week}
+        <Gap to={sendPath(v, 'menu', at && !snapshot && (today || tomorrow) ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in" compact={compact}>No {meal}menu{on} yet.</Gap>
+      </>
+    )
   }
-  return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'}>No prices yet.</Gap>
+  return (
+    <>
+      {week}
+      <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices yet.</Gap>
+    </>
+  )
+}
+
+/** A café's or bar's days by when it opens and closes, days alike together ("Mon–Fri  08:00–18:00"), its services within. */
+function spans(slots: Slot[]): [string, string][] {
+  const rows = new Map<string, Day[]>()
+  for (const w of weekHours(slots)) {
+    const span = `${w.times.map((t) => t.start).sort()[0]}–${w.times.map((t) => t.end).sort().at(-1)}`
+    for (const d of w.days) rows.set(span, [...(rows.get(span) ?? []), d])
+  }
+  const first = (days: Day[]) => Math.min(...days.map((d) => DAYS.indexOf(d)))
+  return [...rows].sort((a, b) => first(a[1]) - first(b[1])).map(([span, days]) => [formatDays(days), span])
+}
+
+/**
+ * A venue's usual week for the term or vacation `date` falls in, for a row with nothing else to list: a dining hall's
+ * meal by meal ("Dinner  Wed 19:00–20:00"), a café's or bar's day by day ("Mon–Fri  08:30–16:00"), three lines at most.
+ * Beside the photo only: on a phone, where the photo is above, there's no space to fill.
+ */
+function RowHours({ v, date }: { v: Venue; date: string }) {
+  const slots = periodSlots(v.slots, date).filter((s) => s.meal !== 'formal')
+  const lines: [string, string][] =
+    v.type === 'hall'
+      ? mealHours(slots).map(({ meal, times }) => [MEAL_LABEL[meal], times.map((t) => `${formatDays(t.days)} ${t.start}–${t.end}`).join(', ')])
+      : spans(slots)
+  if (!lines.length) return null
+  return (
+    <dl className="mb-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 tabular-nums max-sm:hidden">
+      {lines.slice(0, 3).map(([k, t]) => (
+        <Fragment key={k}>
+          <dt className="text-muted">{k}</dt>
+          <dd className="truncate">{t}</dd>
+        </Fragment>
+      ))}
+    </dl>
+  )
 }
 
 /**
@@ -260,12 +312,29 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
   )
 }
 
-/** What a row doesn't know yet, and the way to send it in (a photo or the text), in Warm Blue, deepened to read as text. */
-function Gap({ to, send, children }: { to: string; send: string; children: ReactNode }) {
+/**
+ * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Light Blue disc,
+ * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
+ */
+function Gap({ to, send, compact = false, children }: { to: string; send: string; compact?: boolean; children: ReactNode }) {
+  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
+  if (compact)
+    return (
+      <p className="text-muted">
+        {children} {action}
+      </p>
+    )
   return (
-    <p className="text-muted">
-      {children} <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
-    </p>
+    <div className="flex items-center gap-3">
+      {/* Not beside a map on a tablet, where the row's text has little room */}
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cta-bg text-cta md:max-lg:hidden">
+        <Icon of={NoteAdd} className="size-6" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-muted">{children}</p>
+        {action}
+      </div>
+    </div>
   )
 }
 

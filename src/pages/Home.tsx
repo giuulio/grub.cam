@@ -275,7 +275,6 @@ function Finder({ scope }: { scope: Scope }) {
                 </button>
               )}
             </div>
-            {!alone && <CoverageLine scope={scope} />}
             {ranked.length ? (
               rows.length > 0 && (
                 <ul className="mt-3 space-y-1">
@@ -293,6 +292,8 @@ function Finder({ scope }: { scope: Scope }) {
               </div>
             )}
             {!alone && rows.length >= listed.length && <NoMenuLine rows={unlisted} onHover={setHover} />}
+            {/* How much the tab has, at the foot of its list, where its rows are done */}
+            {!alone && <CoverageLine scope={scope} />}
           </section>
           {scope === 'formal' && !alone && <FormalCompare venues={venues} />}
         </div>
@@ -371,7 +372,7 @@ function CoverageLine({ scope }: { scope: Scope }) {
   const c = tabCoverage(venues, scope)
   if (!c.of || c.have === c.of) return null
   return (
-    <div className="flex items-center gap-3 text-sm text-muted">
+    <div className="mt-6 flex items-center gap-3 text-sm text-muted">
       <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-sm bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={c.of} aria-valuenow={c.have} aria-label={`${c.what}: ${c.have} of ${c.of} ${c.noun}`}>
         <div className="h-full bg-action" style={{ width: `${Math.round((c.have / c.of) * 100)}%` }} />
       </div>
