@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
+import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
 import { ChevronDown, CloseCircle, Gps, List as ListIcon, Map as MapIcon } from 'reicon-react'
 import { Chip, ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
@@ -11,7 +11,6 @@ import { VenueMap } from '../components/VenueMap.tsx'
 import { useReady } from '../lib/data.tsx'
 import { tabCoverage } from '../lib/coverage.ts'
 import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filters.ts'
-import { SCOPE_ICON } from '../lib/icons.ts'
 import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, SHARED_FILTERS, type Scope } from '../lib/finder.ts'
 import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
@@ -232,12 +231,11 @@ function Finder({ scope }: { scope: Scope }) {
       <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
         {/* On a phone, the search is the map's (or the list's), not the header's */}
         <HeaderSearch finder className="finder-search md:hidden" />
-        <div ref={side} className="finder-side">
-          {/* What this tab is, at the top of its list (it scrolls away with it); over a phone's map, read
-              out but not shown, so the map has the screen */}
-          <h1 className={`finder-title title mb-2 text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
+        <div ref={side} className="finder-side md:@container">
+          {/* What this tab is, in the words people search for, read out; what's shown is the switch between tabs */}
+          <h1 className="sr-only">{info.heading}</h1>
+          <ScopeSwitch />
           <div className="finder-filters card-row flex items-center gap-2">
-            <ScopeSelect scope={scope} />
             {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
             <SitePicker
               sites={sites}
@@ -313,7 +311,7 @@ function Finder({ scope }: { scope: Scope }) {
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
-                inset={split ? { top: 0 } : { top: 58, bottom: picked ? 130 : 0 }}
+                inset={split ? { top: 0 } : { top: 112, bottom: picked ? 130 : 0 }}
                 here={here}
                 controls={false}
                 core={!narrowed}
@@ -342,32 +340,31 @@ function Finder({ scope }: { scope: Scope }) {
   )
 }
 
+/** Each tab's word after "Cambridge" in the switch: "Cambridge menus", "Cambridge cafés". */
+const WORD: Record<Scope, string> = { all: 'food', hall: 'menus', cafe: 'cafés', bar: 'bars', formal: 'formals' }
+
 /**
- * The kind of venue, as the first chip: its icon and name, in Cambridge Blue past All. Picking another opens that tab's
- * own address (each its page), keeping the filters they share and a phone's list.
+ * The tabs as the heading: "Cambridge", then a word per tab, the open one in a Cambridge Blue pill ("Cambridge food
+ * [menus] cafés bars formals"), larger where the list has room, each its own address, keeping the filters they share and a phone's list. Over a
+ * phone's map, the words alone, scrolling, under the search.
  */
-function ScopeSelect({ scope }: { scope: Scope }) {
-  const navigate = useNavigate()
+function ScopeSwitch() {
   const [params] = useSearchParams()
-  const info = scopeInfo(scope)
-  const go = (path: string) => {
-    const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
-    navigate(`${path}${keep ? `?${keep}` : ''}`)
-  }
-  const name = (s: (typeof SCOPES)[number]) => (s.scope === 'all' ? 'All venues' : s.label)
+  const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
-    <label className="chip relative font-medium" data-on={scope !== 'all' || undefined}>
-      <Icon of={SCOPE_ICON[scope]} className="size-[1.125rem]" />
-      {name(info)}
-      <Icon of={ChevronDown} className="size-4" />
-      <select aria-label="Kind of venue" value={info.path} onChange={(e) => go(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0">
-        {SCOPES.map((s) => (
-          <option key={s.scope} value={s.path}>
-            {name(s)}
-          </option>
-        ))}
-      </select>
-    </label>
+    <nav aria-label="Kinds of venue" className="scope-switch title flex flex-wrap items-center gap-x-0.5 gap-y-1.5 text-2xl leading-tight @[42rem]:text-[1.75rem] @[50rem]:text-[2rem]">
+      <span aria-hidden="true" className="scope-switch-lead mr-1.5">Cambridge</span>
+      {SCOPES.map((s) => (
+        <NavLink
+          key={s.scope}
+          to={`${s.path}${keep ? `?${keep}` : ''}`}
+          end
+          className={({ isActive }) => `shrink-0 rounded-full px-3 py-1 whitespace-nowrap transition-colors ${isActive ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+        >
+          {WORD[s.scope]}
+        </NavLink>
+      ))}
+    </nav>
   )
 }
 

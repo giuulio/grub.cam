@@ -31,8 +31,8 @@ function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] 
 }
 
 /**
- * The lines a row's dishes or usual prices fill beside its photo, a dish heading among them: four, at 1.25rem and
- * 0.5rem apart, so the list ends with the photo at its full size (288px wide, 4:3).
+ * The lines a row's dishes or usual prices fill beside its photo, a dish heading among them: four, at 1.125rem and
+ * 0.25rem apart, so the list ends with the photo at its full size (15rem wide, 4:3).
  */
 const LINES = 4
 
@@ -57,6 +57,41 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
   const then = after && !(!dishes?.length && r.next?.date === now.date && r.next.service === after.meal) ? `${after.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[after.meal]} ${after.start}` : undefined
   // The status leads with the meal for a venue serving more than one (`leadsWithMeal()`); its preview then needn't again
   const named = v.type === 'hall' || types.length > 1
+  const head = (
+    <>
+      {/* Its college by the name people use, then its own, on one line ("Robinson · Garden Restaurant"); its rating
+          beside them, once 5 members have rated it */}
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl sm:text-2xl'}`}>
+          {showSite && (
+            <>
+              <Link to={sitePath(v.site)} className="relative z-10 text-site-ink hover:underline">
+                {v.site.short_name ?? v.site.name}
+              </Link>
+              <span aria-hidden="true" className="text-muted"> · </span>
+              <span className="sr-only"> </span>
+            </>
+          )}
+          <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
+            {v.name}
+          </Link>
+        </h3>
+        <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
+      </div>
+      <p className="mt-1">
+        <Status s={status} now={now} meal={named} />
+        {then && <span className="text-muted"> · {then}</span>}
+        {distance && <span className="text-muted"> · {distance}</span>}
+        {!snapshot && r.status.kind === 'unknown' && (
+          <>
+            {' · '}
+            <Link to={sendPath(v, 'hours')} className="relative z-10 font-semibold text-cta hover:underline">Send them</Link>
+          </>
+        )}
+      </p>
+    </>
+  )
+  const preview = <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
   return (
     <li
       id={card ? undefined : `venue-${v.id}`}
@@ -65,54 +100,29 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 flex-col gap-3 rounded-[1.75rem] p-3 text-base sm:flex-row sm:gap-5 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative leading-snug transition-colors ${card ? 'raised flex gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-2.5 rounded-[1.5rem] p-3 text-base sm:grid-cols-[min(38%,15rem)_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-5 sm:gap-y-0 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
-        <VenueThumb venue={v} className="size-24 rounded-xl" />
+        <>
+          <VenueThumb venue={v} className="size-24 rounded-xl" />
+          <div className="min-w-0 flex-1">
+            {head}
+            <div className="mt-2 line-clamp-2">{preview}</div>
+          </div>
+        </>
       ) : (
-        // Its photo: 4:3 at least, 20px corners, its pin's mark 14px in; as tall as the row beside it, which can run past
-        // 4:3; across the top on a phone, 16:9
-        <div className="relative w-full shrink-0 overflow-hidden rounded-[1.25rem] sm:w-[38%] sm:max-w-72">
-          <div aria-hidden="true" className="aspect-[16/9] sm:aspect-[4/3]" />
-          <VenueImage venue={v} sizes="(min-width: 640px) 18rem, 100vw" decorative icon="size-12" className="absolute inset-0 size-full" />
-          <PinMark types={types} className="on-photo" label />
-        </div>
+        <>
+          {/* Its photo: 4:3 at least, at most 15rem wide, 20px corners, its pin's mark in the corner, as tall as the
+              text beside it. On a phone, a 4.5rem thumbnail beside its name, so the menu under them has the width */}
+          <div className="relative size-[4.5rem] overflow-hidden rounded-xl sm:row-span-2 sm:size-auto sm:rounded-[1.25rem]">
+            <div aria-hidden="true" className="hidden aspect-[4/3] sm:block" />
+            <VenueImage venue={v} sizes="(min-width: 640px) 15rem, 4.5rem" decorative icon="size-7 sm:size-12" className="absolute inset-0 size-full" />
+            <PinMark types={types} className="on-photo" label />
+          </div>
+          <div className="min-w-0 self-center sm:self-start sm:pt-1">{head}</div>
+          <div className="@container col-span-2 text-lg leading-snug sm:col-span-1 sm:col-start-2 sm:mt-2">{preview}</div>
+        </>
       )}
-      <div className={`min-w-0 flex-1 ${card ? '' : 'sm:py-1'}`}>
-        {/* Its college by the name people use, then its own, on one line ("Robinson · Garden Restaurant"); its rating
-            beside them, once 5 members have rated it */}
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl sm:text-2xl'}`}>
-            {showSite && (
-              <>
-                <Link to={sitePath(v.site)} className="relative z-10 text-site-ink hover:underline">
-                  {v.site.short_name ?? v.site.name}
-                </Link>
-                <span aria-hidden="true" className="text-muted"> · </span>
-                <span className="sr-only"> </span>
-              </>
-            )}
-            <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
-              {v.name}
-            </Link>
-          </h3>
-          <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
-        </div>
-        <p className={card ? 'mt-1' : 'mt-1.5'}>
-          <Status s={status} now={now} meal={named} />
-          {then && <span className="text-muted"> · {then}</span>}
-          {distance && <span className="text-muted"> · {distance}</span>}
-          {!snapshot && r.status.kind === 'unknown' && (
-            <>
-              {' · '}
-              <Link to={sendPath(v, 'hours')} className="relative z-10 font-semibold text-cta hover:underline">Send them</Link>
-            </>
-          )}
-        </p>
-        <div className={card ? 'mt-2 line-clamp-2' : '@container mt-3 text-xl'}>
-          <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
-        </div>
-      </div>
     </li>
   )
 }
@@ -196,7 +206,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>
     ) : (
       // Each price near its name, a column no wider than 20rem; two columns where the row has room, so up to eight
-      <ul className="grid gap-x-10 gap-y-2 @lg:grid-cols-2">
+      <ul className="grid gap-x-10 gap-y-1 @lg:grid-cols-2">
         {prices.map((p, n) => (
           <li key={n} className={`max-w-xs items-baseline justify-between gap-4 ${n < LINES ? 'flex' : 'hidden @lg:flex'}`}>
             <span className="truncate">{p.name}</span>
@@ -250,8 +260,8 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
   const more = items.length - shown.length
   return (
     <div>
-      {title && <p className="mb-2 font-semibold">{title}</p>}
-      <ul className="space-y-2">
+      {title && <p className="mb-1 font-semibold">{title}</p>}
+      <ul className="space-y-1">
         {shown.map((d, n) => {
           const tag = plantTag(d.tags)
           return (

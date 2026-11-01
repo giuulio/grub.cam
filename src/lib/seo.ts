@@ -41,7 +41,7 @@ const placed = (s: Site) => (s.kind === 'college' ? `${siteSearchName(s)}, Cambr
 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
-  '/': `Cambridge food map: University of Cambridge college menus, cafés and bars · ${SITE_NAME}`,
+  '/': `Cambridge college and University menus, cafés and bars · ${SITE_NAME}`,
   '/dining': `Cambridge college menus today: dining halls, canteens and meal times · ${SITE_NAME}`,
   '/cafes': `Cambridge college and University cafés: map, opening times and prices · ${SITE_NAME}`,
   '/bars': `Cambridge college bars: map, opening times and drink prices · ${SITE_NAME}`,

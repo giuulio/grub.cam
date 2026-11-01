@@ -44,7 +44,7 @@ describe('searchable HTML without JavaScript', () => {
   it('renders the food-map explanation, category links and venues beyond the first browser page', () => {
     const venues = Array.from({ length: 30 }, (_, i) => ({ ...venue, id: `${site.slug}/hall-${i}`, slug: `hall-${i}`, name: `Hall ${i}` }))
     const page = parse(render('/', { ...data, venues }).html)
-    expect(page.querySelector('h1')!.text).toBe('Cambridge food map')
+    expect(page.querySelector('h1')!.text).toBe('Cambridge college and University menus, cafés and bars')
     for (const path of ['/dining', '/cafes', '/bars', '/formal', '/st-edmunds/hall-29']) {
       expect(page.querySelector(`a[href="${path}"]`), path).not.toBeNull()
     }

@@ -49,7 +49,7 @@ describe('seo', () => {
   })
 
   it('titles pages by what people search for, the place first and the site last', () => {
-    expect(TAB_TITLES['/']).toBe('Cambridge food map: University of Cambridge college menus, cafés and bars · grub.cam')
+    expect(TAB_TITLES['/']).toBe('Cambridge college and University menus, cafés and bars · grub.cam')
     expect(TAB_TITLES['/formal']).toMatch(/^Cambridge formal hall/)
     const bar: Venue = { ...caff, id: 'jesus/roost', slug: 'roost', name: 'The Roost', type: 'bar', menu: [], slots: [{ meal: 'bar', days: ['fri'], start: '20:00', end: '23:00', period: 'all' }] }
     expect(siteTitle(jesus, [caff, bar])).toBe('Jesus College, Cambridge: dining hall menus and bar opening times · grub.cam')
