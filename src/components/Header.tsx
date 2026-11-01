@@ -77,7 +77,7 @@ export function Header() {
  * is the first of the finder's filters); the keyboard's key searches. On the front page's tabs it's the page's own search (the list and map follow as you type); elsewhere it
  * opens the front page with it. `className` places it: in the header, or over a phone's map.
  */
-export function HeaderSearch({ finder, className = '' }: { finder: boolean; className?: string }) {
+export function HeaderSearch({ finder, autoFocus = false, className = '' }: { finder: boolean; autoFocus?: boolean; className?: string }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [params, setParams] = useSearchParams()
@@ -107,6 +107,7 @@ export function HeaderSearch({ finder, className = '' }: { finder: boolean; clas
         value={finder ? (params.get('q') ?? '') : draft}
         onChange={(e) => change(e.target.value)}
         enterKeyHint="search"
+        autoFocus={autoFocus}
         placeholder={wide ? scope.placeholder : 'Search'}
         aria-label={scope.scope === 'all' ? 'Search venues, colleges and dishes' : `Search ${scope.label.toLowerCase()}`}
         className="h-full min-w-0 flex-1 bg-transparent text-[1.0625rem] text-ink sm:text-lg outline-none placeholder:text-muted"

@@ -384,14 +384,30 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
 .map-cards::-webkit-scrollbar { display: none; }
 .map-cards > li { flex: 0 0 100%; scroll-snap-align: center; }
 @media (max-width: 767px) {
-  /* The search, at the top of the list, or over the map's top with the filters under it */
-  .finder-search { margin-top: 0.75rem; }
-  .finder.is-map .finder-search { position: absolute; top: 0.75rem; inset-inline: 0.75rem; z-index: 11; margin: 0; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
-  .finder-filters { margin-inline: calc(-1 * var(--gutter)); padding: 0.25rem var(--gutter); overflow-x: auto; }
-  .finder-filters > * { flex-shrink: 0; }
+  /* One bar: the search's magnifying glass (or the field, open), the tabs, the filters' button; at the top of the list,
+     or over the map's top */
+  .finder-bar { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; }
+  .finder.is-map .finder-bar { position: absolute; top: 0.75rem; inset-inline: 0.75rem; z-index: 11; margin: 0; }
+  .bar-btn { @apply flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-canvas text-ink; box-shadow: 0 1px 4px #0003; }
+  .bar-btn[data-on] { @apply bg-accent text-accent-ink; }
+  .finder-bar .search-box { height: 2.75rem; box-shadow: 0 2px 10px #00000033, 0 6px 30px color-mix(in srgb, #8ee8d8 45%, transparent); }
+  /* The filters, a sheet from the foot of the screen behind the bar's button (their own lists open over it) */
+  .finder-filters { display: none; }
+  .finder-filters.is-open {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 750;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+    border-radius: 1.25rem 1.25rem 0 0;
+    background: var(--raised);
+    box-shadow: var(--raised-shadow);
+  }
   /* The list asked for on a phone (view=list): the list alone */
   .finder.is-list .finder-map { display: none; }
-  .finder.is-list .finder-filters { position: sticky; top: var(--header-h, 0px); z-index: 30; background: var(--canvas); padding-block: 0.5rem; }
   .finder.is-map {
     position: relative;
     height: max(26rem, calc(100svh - var(--finder-top, 13.5rem)));
@@ -400,18 +416,15 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   }
   .finder.is-map .finder-map { position: absolute; inset: 0; }
   /* Over the map (it's isolated, so 10 is enough) but under the header, sticky from 640px */
-  /* The tabs' words under the search as chips, scrolling, without "Cambridge"; the filters under them. Over the map,
-     floating on it */
-  .scope-switch { flex-wrap: nowrap; gap: 0.5rem; margin: 0.75rem calc(-1 * var(--gutter)) 0; padding: 0.25rem var(--gutter); overflow-x: auto; scrollbar-width: none; font-size: 1rem; }
-  .scope-switch::-webkit-scrollbar { display: none; }
-  .scope-switch-lead { display: none; }
-  .scope-switch a { height: 2.5rem; min-width: 2.5rem; font-size: 1rem; box-shadow: 0 1px 4px #0003; }
-  .scope-switch a svg { width: 1.25rem; height: 1.25rem; }
-  .scope-switch a:not([aria-current]) { @apply bg-canvas text-ink; }
-  .finder.is-map .scope-switch { position: absolute; inset-inline: 0; top: 3.5rem; z-index: 10; margin: 0; padding: 0.75rem 0.75rem 0; }
-  .finder.is-map .finder-filters { position: absolute; inset-inline: 0; top: 6.5rem; z-index: 10; margin: 0; padding: 0.75rem; }
-  .finder.is-map .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder.is-map .finder-note { position: absolute; top: 10.75rem; left: 0.75rem; right: 0.75rem; z-index: 10; margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: var(--raised); box-shadow: var(--raised-shadow); }
+  /* The tabs in the bar, without "Cambridge's": an icon each, the open one filled, so they fit between the buttons */
+  .finder-bar .scope-switch { margin: 0; padding: 0.25rem; }
+  .finder-bar .scope-tabs { flex: 1; justify-content: space-between; gap: 0.25rem; }
+  .finder-bar .scope-switch-lead { display: none; }
+  .finder-bar .scope-switch a { height: 2.5rem; min-width: 2.5rem; box-shadow: 0 1px 4px #0003; }
+  .finder-bar .scope-switch a svg { width: 1.25rem; height: 1.25rem; }
+  .finder-bar .scope-name { display: none; }
+  .finder-bar .scope-switch a:not([aria-current]) { @apply bg-canvas text-ink; }
+  .finder.is-map .finder-note { position: absolute; top: 4.25rem; left: 0.75rem; right: 0.75rem; z-index: 10; margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: var(--raised); box-shadow: var(--raised-shadow); }
   .finder.is-map .finder-list { display: none; }
   /* Clear of the map's attribution along its foot; while the keyboard is up, just above it (--keyboard: how much of the
      map it covers, measured) */
@@ -437,7 +450,21 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
     height: var(--finder-h);
     scroll-margin-top: var(--header-h, 0px);
   }
-  .scope-switch { margin-bottom: 0.75rem; }
+  /* Sized in its own em, its font from the list's width (cqi), so with the longest tab name open ("Food & drink") the
+     line spans the cards exactly: "Cambridge's" while the list is narrow, the University's full name from 41.25rem.
+     --k-short and --k-full are that line's width in em, measured. */
+  .scope-switch { --k-short: 19.3; --k-full: 27.4; margin-bottom: 0.75rem; font-size: min(2rem, calc(100cqi / var(--k-short))); }
+  .scope-switch .lead-full { display: none; }
+  @container (min-width: 41.25rem) {
+    .scope-switch { font-size: min(2.5rem, calc(100cqi / var(--k-full))); }
+    .scope-switch .lead-short { display: none; }
+    .scope-switch .lead-full { display: inline; }
+  }
+  .scope-tabs { gap: 0.15em; margin-left: auto; padding-left: 0.35em; }
+  .scope-tabs a { height: 1.6em; min-width: 1.6em; gap: 0.3em; }
+  .scope-tabs a[aria-current] { padding-inline: 0.5em 0.65em; }
+  .scope-tabs a svg { width: 0.85em; height: 0.85em; }
+  .scope-tabs .scope-name { font-size: 0.68em; }
   .finder-map { grid-column: 2; grid-row: 1; align-self: start; aspect-ratio: 1; margin-top: var(--gutter); overflow: hidden; border-radius: 1.25rem; }
   /* At the very top of the list (past its padding, --gutter) as it scrolls under them, over the rows (whose links sit at z-10) */
   .finder-filters { position: sticky; top: calc(-1 * var(--gutter)); z-index: 20; flex-wrap: wrap; margin-inline: -0.75rem; padding: 0.5rem 0.75rem 0.75rem; background: var(--canvas); }

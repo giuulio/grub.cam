@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
-import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Map as MapIcon, Plate } from 'reicon-react'
+import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Map as MapIcon, Plate, SearchNormal, Setting4 } from 'reicon-react'
 import { ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
@@ -59,6 +59,9 @@ function Finder({ scope }: { scope: Scope }) {
   // Nearest first: where you are, asked for only on the click and kept in memory
   const [here, setHere] = useState<Point>()
   const [locating, setLocating] = useState(false)
+  // A phone's bar: the search field open, the filters' sheet open
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [note, setNote] = useState('')
   // How many rows show: a page at a time, back to one whenever the tab or the filters change
   const [shown, setShown] = useState(PAGE)
@@ -105,6 +108,8 @@ function Finder({ scope }: { scope: Scope }) {
   // Narrowed past the tab: the map then frames every venue left, not just central Cambridge
   const narrowed = !!(f.q || f.openNow || f.sites?.length || f.kind || (scope === 'hall' && f.meal) || f.diets.length)
   const filtered = narrowed || f.date !== now.date || !!here
+  // How many filters are on, on a phone's Filters button
+  const on = [f.openNow, !!(f.sites?.length || f.kind), scope === 'hall' && !!f.meal, scope === 'hall' && f.diets.length > 0, scope === 'hall' && f.date !== now.date].filter(Boolean).length
   const clear = () => {
     update((p) => { for (const k of ['q', 'open', 'site', 'kind', 'meal', 'diet', 'date']) p.delete(k) })
     setHere(undefined)
@@ -231,15 +236,44 @@ function Finder({ scope }: { scope: Scope }) {
 
       {/* The heading, the filters (staying at the top as it scrolls) and the list down the left, scrolling on their own,
           and a square map beside them; a picked pin's card over the map's foot. On a phone, the map fills the screen
-          with the filters over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
+          with one bar over its top (the search behind its magnifying glass, the tabs, the filters behind a button) and
+          the picked venue's card over its foot (swipe for the next), or the list under the same bar. */}
       <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
-        {/* On a phone, the search is the map's (or the list's), not the header's */}
-        <HeaderSearch finder className="finder-search md:hidden" />
+        {/* On a phone, one bar: the search (the map's or the list's, not the header's) behind its magnifying glass, the
+            tabs, and the filters behind a button, with how many are on; a search typed keeps the field open */}
+        <div className="finder-bar md:hidden">
+          {searchOpen || f.q ? (
+            <>
+              <HeaderSearch finder autoFocus={!f.q} className="min-w-0 flex-1" />
+              <button type="button" aria-label="Close the search" onClick={() => { set('q', undefined); setSearchOpen(false) }} className="bar-btn">
+                <Icon of={CloseCircle} className="size-5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className="bar-btn">
+                <Icon of={SearchNormal} className="size-5" />
+              </button>
+              <ScopeSwitch className="min-w-0 flex-1" />
+              <button type="button" aria-label={on ? `Filters, ${on} on` : 'Filters'} aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} data-on={on > 0 || undefined} className="bar-btn relative">
+                <Icon of={Setting4} className="size-5" />
+                {on > 0 && <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-action text-xs font-semibold text-action-ink">{on}</span>}
+              </button>
+            </>
+          )}
+        </div>
+        {/* The filters' sheet on a phone: tapping beside it closes it */}
+        {filtersOpen && <div aria-hidden="true" onClick={() => setFiltersOpen(false)} className="fixed inset-0 z-[740] bg-black/30 md:hidden" />}
         <div ref={side} className="finder-side md:@container">
           {/* What this tab is, in the words people search for, read out; what's shown is the switch between tabs */}
           <h1 className="sr-only">{info.heading}</h1>
-          <ScopeSwitch />
-          <div className="finder-filters card-row flex items-center gap-1.5">
+          <ScopeSwitch className="max-md:hidden" />
+          <div className={`finder-filters card-row flex items-center gap-1.5 ${filtersOpen ? 'is-open' : ''}`}>
+            {/* On a phone they're a sheet from the foot of the screen */}
+            <div className="mb-1 flex w-full items-center justify-between md:hidden">
+              <h2 className="title text-xl">Filters</h2>
+              <button type="button" onClick={() => setFiltersOpen(false)} className="btn btn-primary">Done</button>
+            </div>
             {/* Hours, as Google Maps': open now first; on Dining, then which day's menus */}
             {(scope === 'hall' || !snapshot) && (
               <ChipSelect
@@ -323,7 +357,7 @@ function Finder({ scope }: { scope: Scope }) {
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
-                inset={split ? { top: 0 } : { top: 112, bottom: picked ? 130 : 0 }}
+                inset={split ? { top: 0 } : { top: 64, bottom: picked ? 130 : 0 }}
                 here={here}
                 controls={false}
                 core={!narrowed}
@@ -356,37 +390,41 @@ function Finder({ scope }: { scope: Scope }) {
 const SWITCH_NAME: Record<Scope, string> = { all: 'Food & drink', hall: 'Dining halls', cafe: 'Cafés', bar: 'Bars', formal: 'Formals' }
 
 /**
- * The tabs as the heading, on one line, with the icons the header search's tabs had: "Cambridge's" ("The University
- * of Cambridge's" where the list is wide enough for it), then a tab each, the open one its icon and name in a Cambridge
- * Blue pill ("Cambridge's [Cafés]"), the others their icon alone, named on hover and to a screen reader; each its own address, keeping the filters they share and a phone's
- * list. On a phone, the tabs alone as chips under the search.
+ * The tabs as the heading, on one line, with the icons the header search's tabs had: "The University of Cambridge's"
+ * ("Cambridge's" where the list is narrow), then a tab each, the open one its icon and name in a Cambridge Blue pill
+ * ("[Cafés]"), the others their icon alone, named on hover and to a screen reader; each its own address, keeping the
+ * filters they share and a phone's list. Its size follows the list's width, so with the longest name open it spans
+ * the cards exactly (`.scope-switch` in index.css). In a phone's bar, the tabs alone, every one its icon, so they fit
+ * between the search and the filters.
  */
-function ScopeSwitch() {
+function ScopeSwitch({ className = '' }: { className?: string }) {
   const [params] = useSearchParams()
   const keep = new URLSearchParams([...params].filter(([k]) => SHARED_FILTERS.includes(k) || k === 'view')).toString()
   return (
-    <nav aria-label="Kinds of venue" className="scope-switch flex flex-wrap items-center gap-1">
-      <span aria-hidden="true" className="scope-switch-lead title mr-2 text-[1.75rem] leading-tight @[46rem]:text-2xl @[50rem]:text-[1.75rem] @[56rem]:text-[2rem]">
-        <span className="@[46rem]:hidden">Cambridge’s</span>
-        <span className="hidden @[46rem]:inline">The University of Cambridge’s</span>
+    <nav aria-label="Kinds of venue" className={`scope-switch flex items-center ${className}`}>
+      <span aria-hidden="true" className="scope-switch-lead title leading-tight whitespace-nowrap">
+        <span className="lead-short">Cambridge’s</span>
+        <span className="lead-full">The University of Cambridge’s</span>
       </span>
-      {SCOPES.map((s) => (
-        <NavLink
-          key={s.scope}
-          to={`${s.path}${keep ? `?${keep}` : ''}`}
-          end
-          aria-label={SWITCH_NAME[s.scope]}
-          title={SWITCH_NAME[s.scope]}
-          className={({ isActive }) => `title flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full text-lg whitespace-nowrap transition-colors ${isActive ? 'bg-accent pr-4.5 pl-3.5 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
-        >
-          {({ isActive }) => (
-            <>
-              <Icon of={SCOPE_ICON[s.scope]} className="size-6" />
-              {isActive && SWITCH_NAME[s.scope]}
-            </>
-          )}
-        </NavLink>
-      ))}
+      <div className="scope-tabs flex items-center">
+        {SCOPES.map((s) => (
+          <NavLink
+            key={s.scope}
+            to={`${s.path}${keep ? `?${keep}` : ''}`}
+            end
+            aria-label={SWITCH_NAME[s.scope]}
+            title={SWITCH_NAME[s.scope]}
+            className={({ isActive }) => `title flex shrink-0 items-center justify-center rounded-full whitespace-nowrap transition-colors ${isActive ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
+          >
+            {({ isActive }) => (
+              <>
+                <Icon of={SCOPE_ICON[s.scope]} />
+                {isActive && <span className="scope-name">{SWITCH_NAME[s.scope]}</span>}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   )
 }
