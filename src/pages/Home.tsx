@@ -225,39 +225,39 @@ function Finder({ scope }: { scope: Scope }) {
     <>
       <title>{TAB_TITLES[info.path]}</title>
 
-      {/* As Airbnb's: the heading and the list down the left, scrolling on their own, and the map beside them, the
-          filters over its top; a picked pin's card over the map's foot. On a phone, the map fills the screen with the filters
-          over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
+      {/* The heading, the filters (staying at the top as it scrolls) and the list down the left, scrolling on their own,
+          and a square map beside them; a picked pin's card over the map's foot. On a phone, the map fills the screen
+          with the filters over its top and the picked venue's card over its foot (swipe for the next), or the list. */}
       <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
         {/* On a phone, the search is the map's (or the list's), not the header's */}
         <HeaderSearch finder className="finder-search md:hidden" />
-        <div className="finder-filters card-row flex items-center gap-2">
-          {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
-          {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
-          <SitePicker
-            sites={sites}
-            value={f.sites ?? []}
-            kind={f.kind}
-            onChange={(slugs, kind) => update((p) => {
-              if (slugs.length) p.set('site', slugs.join(','))
-              else p.delete('site')
-              if (kind) p.set('kind', kind)
-              else p.delete('kind')
-            })}
-          />
-          {scope === 'hall' && (
-            <>
-              <ChipSelect label="Menus for" value={f.date} onChange={(d) => set('date', d === now.date ? undefined : d)} options={dates.map((d) => [d, relativeDay(d, now.date) ?? formatISODate(d)])} />
-              <ChipSelect label="Meal" value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
-              <ChipSelect label="Diet" value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
-            </>
-          )}
-        </div>
-        {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
         <div ref={side} className="finder-side">
           {/* What this tab is, at the top of its list (it scrolls away with it); over a phone's map, read
               out but not shown, so the map has the screen */}
           <h1 className={`finder-title title mb-2 text-3xl leading-[1.1] md:text-[2.5rem] ${listView ? 'max-md:mt-4' : 'max-md:sr-only'}`}>{info.heading}</h1>
+          <div className="finder-filters card-row flex items-center gap-2">
+            {f.date === now.date && !snapshot && <Chip active={f.openNow} onClick={() => set('open', f.openNow ? undefined : '1')}>Open now</Chip>}
+            {!snapshot && <Chip active={!!here} onClick={locate}>{locating ? 'Finding you…' : 'Nearest first'}</Chip>}
+            <SitePicker
+              sites={sites}
+              value={f.sites ?? []}
+              kind={f.kind}
+              onChange={(slugs, kind) => update((p) => {
+                if (slugs.length) p.set('site', slugs.join(','))
+                else p.delete('site')
+                if (kind) p.set('kind', kind)
+                else p.delete('kind')
+              })}
+            />
+            {scope === 'hall' && (
+              <>
+                <ChipSelect label="Menus for" value={f.date} onChange={(d) => set('date', d === now.date ? undefined : d)} options={dates.map((d) => [d, relativeDay(d, now.date) ?? formatISODate(d)])} />
+                <ChipSelect label="Meal" value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+                <ChipSelect label="Diet" value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
+              </>
+            )}
+          </div>
+          {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
           <section aria-label={`${info.label} venues`} className="finder-list">
             <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
               {alone ? (

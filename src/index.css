@@ -404,28 +404,27 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   /* Pinch to zoom: the buttons would sit under the filters */
   .finder .maplibregl-ctrl-top-right { display: none; }
 }
-/* From a tablet up, as Airbnb's: a box from the header to the screen's foot, less --gutter (the page's edge) so the
-   footer starts at the fold: the tab's heading and its list down its left, scrolling on their own right up to the
-   header, and the map beside them as far from the header and the screen's foot as from its side (--gutter), a little wider, 20px corners, no frame, with the filters over its top
-   as chips. Past the end of the list, the page scrolls. */
+/* From a tablet up: a box from the header to the screen's foot (--finder-h), less --gutter (the page's edge) so the
+   footer starts at the fold: the tab's heading, its filters and its list down its left, scrolling on their own right up
+   to the header (the filters staying at the top), and a square map beside them, as tall as the box allows, as far from
+   the header as from its side (--gutter), 20px corners, no frame; on a narrow screen, square at 55% of the width. Past
+   the end of the list, the page scrolls. */
 @media (min-width: 768px) {
   .finder {
     display: grid;
-    grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
+    --finder-h: max(32rem, calc(100svh - var(--header-h, 0px) - var(--gutter)));
+    grid-template-columns: minmax(0, 1fr) min(55%, calc(var(--finder-h) - var(--gutter)));
     grid-template-rows: minmax(0, 1fr);
     column-gap: 1.5rem;
     margin-bottom: var(--gutter);
-    height: max(32rem, calc(100svh - var(--header-h, 0px) - var(--gutter)));
+    height: var(--finder-h);
     scroll-margin-top: var(--header-h, 0px);
   }
   .finder-title { padding-bottom: 0.5rem; }
-  .finder-map { grid-column: 2; grid-row: 1; height: calc(100% - var(--gutter)); margin-top: var(--gutter); overflow: hidden; border-radius: 1.25rem; }
-  /* Over the map but under the sticky header (z-40), so they leave with the map as the page scrolls on: the map is
-     isolated, so a low z-index is enough to sit over it */
-  .finder-filters { grid-column: 2; grid-row: 1; align-self: start; z-index: 10; flex-wrap: wrap; margin: calc(var(--gutter) + 0.75rem) 0.75rem 0.75rem; pointer-events: none; }
-  .finder-filters > * { pointer-events: auto; }
-  .finder-filters .chip { border-color: transparent; box-shadow: 0 1px 4px #0003; }
-  .finder-note { grid-column: 2; grid-row: 1; align-self: start; justify-self: start; max-width: calc(100% - 1.5rem); z-index: 10; margin: calc(var(--gutter) + 4rem) 0.75rem 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: var(--raised); box-shadow: var(--raised-shadow); }
+  .finder-map { grid-column: 2; grid-row: 1; align-self: start; aspect-ratio: 1; margin-top: var(--gutter); overflow: hidden; border-radius: 1.25rem; }
+  /* At the very top of the list (past its padding, --gutter) as it scrolls under them, over the rows (whose links sit at z-10) */
+  .finder-filters { position: sticky; top: calc(-1 * var(--gutter)); z-index: 20; flex-wrap: wrap; margin-inline: -0.75rem; padding: 0.5rem 0.75rem 0.75rem; background: var(--canvas); }
+  .finder-note { margin: 0 0 0.5rem; }
   .finder-side {
     grid-column: 1;
     grid-row: 1;
