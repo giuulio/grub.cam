@@ -10,14 +10,14 @@ import { sendPath, sitePath, venuePath } from '../lib/site.ts'
 import { leadsWithMeal } from '../lib/status.ts'
 import { addDaysISO, dayLabel, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
 import { slotApplies, withDayTimes } from '../lib/time/openNow.ts'
-import { isFormalOnly, venueTypes, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { isFormalOnly, venueTypes, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { PinMark } from './MapParts.tsx'
 import { Code } from './MenuRows.tsx'
 import { Status } from './Status.tsx'
 import { RatingSummary } from './Reviews.tsx'
 import { VenueImage, VenueThumb } from './VenuePhoto.tsx'
 
-// The venues, a row each (a square photo at the left, what to know beside it, its menu first), beside a map of them:
+// The venues, a row each (its photo down the left, what to know beside it, its menu first), beside a map of them:
 // the front page's and a site's.
 
 /** The prices of what people usually order at a venue of its kind (`headlinePrices`), its own kind's list first. */
@@ -28,15 +28,15 @@ function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] 
   return lines
 }
 
-/** The lines of usual prices a row lists beside its photo. */
+/** The lines a row's dishes or usual prices fill beside its photo, a dish heading and "+N more" among them. */
 const LINES = 4
 
 /**
- * A venue in the front page's list: a square photo, with its map pin's mark in the corner for what kind of venue it
- * is, the same on every tab, beside its text on a phone too, so the menus lead; its college by the name people use
- * (linked to its page) and its name (its link covers the row); whether it's open, the next meal today and how far
- * (nearest first); then one thing to know: what a search matched, the next meal's main dishes on a line with their
- * meat-free tags, the prices of what people usually order, or, under the Formal hall tab, when it is, its price, dress
+ * A venue in the front page's list: its photo, with its map pin's mark in the corner for what kind of venue it is, the
+ * same on every tab; its college by the name people use (linked to its page) and its name on one line (its link covers
+ * the row); whether it's open, the next meal today and how far
+ * (nearest first); then one thing to know: what a search matched, the next meal's main dishes with their meat-free
+ * tags, the prices of what people usually order, or, under the Formal hall tab, when it is, its price, dress
  * and booking. What isn't known yet is said there instead, linked to sending it in. `card`: the same, smaller, as the
  * card over a phone's map for the venue picked on it. `selected` when its pin was picked. `showSite: false` on its
  * site's own page.
@@ -45,7 +45,9 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
   const { snapshot } = useReady()
   const v = r.venue
   const types = venueTypes(v)
-  const then = !snapshot && !formal ? nextToday(r, now) : undefined
+  const after = !snapshot && !formal ? nextToday(r, now) : undefined
+  // Not when the menu under it is that meal's, headed with its time already
+  const then = after && !(!dishes?.length && r.next?.date === now.date && r.next.service === after.meal) ? `${after.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[after.meal]} ${after.start}` : undefined
   // The status leads with the meal for a venue serving more than one (`leadsWithMeal()`); its preview then needn't again
   const named = v.type === 'hall' || types.length > 1
   return (
@@ -56,34 +58,38 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 gap-3 rounded-[1.5rem] p-3 text-base sm:gap-4 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative flex leading-snug transition-colors ${card ? 'raised gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 flex-col gap-3 rounded-[1.75rem] p-3 text-base sm:flex-row sm:gap-5 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
         <VenueThumb venue={v} className="size-24 rounded-xl" />
       ) : (
-        // A square thumbnail, 6rem on a phone and 7rem wider, beside the text on a phone too, so the menu leads; its
-        // pin's mark in the corner
-        <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl sm:size-28">
-          <VenueImage venue={v} sizes="112px" decorative icon="size-9 sm:size-10" className="absolute inset-0 size-full" />
-          <PinMark types={types} className="on-photo on-thumb" label />
+        // Its photo: 4:3 at least, 20px corners, its pin's mark 14px in; as tall as the row beside it, which can run past
+        // 4:3; across the top on a phone, 16:9
+        <div className="relative w-full shrink-0 overflow-hidden rounded-[1.25rem] sm:w-[38%] sm:max-w-72">
+          <div aria-hidden="true" className="aspect-[16/9] sm:aspect-[4/3]" />
+          <VenueImage venue={v} sizes="(min-width: 640px) 18rem, 100vw" decorative icon="size-12" className="absolute inset-0 size-full" />
+          <PinMark types={types} className="on-photo" label />
         </div>
       )}
-      <div className="min-w-0 flex-1">
-        {showSite && (
-          <Link to={sitePath(v.site)} className={`relative z-10 font-semibold text-site-ink hover:underline ${card ? 'text-sm' : ''}`}>
-            {v.site.short_name ?? v.site.name}
-          </Link>
-        )}
-        {/* Its rating beside its name, as Airbnb's, once 5 members have rated it */}
+      <div className={`min-w-0 flex-1 ${card ? '' : 'sm:py-1'}`}>
+        {/* Its college by the name people use, then its own, on one line ("Robinson Garden Restaurant"); its rating
+            beside them, once 5 members have rated it */}
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-lg sm:text-xl'}`}>
+          <h3 className={`title min-w-0 leading-tight ${card ? 'text-base' : 'text-xl'}`}>
+            {showSite && (
+              <>
+                <Link to={sitePath(v.site)} className="relative z-10 text-site-ink hover:underline">
+                  {v.site.short_name ?? v.site.name}
+                </Link>{' '}
+              </>
+            )}
             <Link to={venuePath(v)} className="card-link after:absolute after:inset-0 hover:underline focus-visible:outline-none">
               {v.name}
             </Link>
           </h3>
           <RatingSummary venue={v} compact className={`shrink-0 ${card ? 'text-sm' : 'text-base'}`} />
         </div>
-        <p className="mt-1">
+        <p className={card ? 'mt-1' : 'mt-1 text-[0.9375rem]'}>
           <Status s={r.status} now={now} meal={named} />
           {then && <span className="text-muted"> · {then}</span>}
           {distance && <span className="text-muted"> · {distance}</span>}
@@ -94,7 +100,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             </>
           )}
         </p>
-        <div className={card ? 'mt-2 line-clamp-2' : 'mt-2'}>
+        <div className={card ? 'mt-2 line-clamp-2' : 'mt-2.5 text-[1.0625rem]'}>
           <RowPreview r={r} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
         </div>
       </div>
@@ -102,22 +108,22 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
   )
 }
 
-/** The meal after the one a venue's status names, still to come today: "Dinner 17:30", "Formal hall 19:30". */
-function nextToday(r: Ranked, now: LocalNow): string | undefined {
+/** The meal after the one a venue's status names, still to come today ("· Dinner 17:30", "· Formal hall 19:30"). */
+function nextToday(r: Ranked, now: LocalNow): Slot | undefined {
   const s = r.status
   const named = s.kind === 'open' || s.kind === 'opening' ? s.slot : undefined
   const next = withDayTimes(r.venue.slots, r.venue.menu)
     .filter((x) => slotApplies(x, now.date) && hhmmToMinutes(x.start) > now.minutes && !(named && x.meal === named.meal && x.start === named.start))
     .sort(slotOrder)[0]
   if (!next || !named || next.meal === named.meal) return undefined
-  return `${next.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[next.meal]} ${next.start}`
+  return next
 }
 
 /**
- * A row's one thing to know (see VenueRow) beside its photo: a meal's main dishes on a line, the usual prices lined up,
- * formal hall's facts; or what's missing, linked to sending it in. A meal's name leads its dishes only when the status
- * line above doesn't already say it (`named`): another meal's, or another day's. `compact`: one or two lines, for the
- * card over a phone's map.
+ * A row's one thing to know (see VenueRow) beside its photo: a meal's main dishes, the usual prices lined up, formal
+ * hall's facts; or what's missing, linked to sending it in. A meal's name and time head its dishes, in the status
+ * line's words ("Lunch tomorrow 12:30" under "Breakfast tomorrow 07:30"), only when the status above doesn't already
+ * name it (`named`): another meal's, or another day's. `compact`: one or two lines, for the card over a phone's map.
  */
 function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Ranked; now: LocalNow; types: VenueType[]; dishes?: RowDish[]; formal: boolean; named: boolean; compact: boolean }) {
   const { snapshot } = useReady()
@@ -138,7 +144,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
       </dl>
     )
   }
-  if (dishes?.length) return <Dishes items={dishes} />
+  if (dishes?.length) return <Dishes items={dishes} compact={compact} />
   const s = r.status
   const at = s.kind === 'open' || s.kind === 'opening' ? s : s.kind === 'closed' ? s.next : undefined
   const day = r.next
@@ -148,8 +154,11 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     const when = snapshot || day.date === now.date ? '' : day.date === addDaysISO(now.date, 1) ? ' tomorrow' : ` ${dayLabel(dayOfISO(day.date))}`
     // The status names a meal it leads with; a café's or bar's hours are its own, with nothing more to name
     const said = !snapshot && at?.date === day.date && at.slot.meal === day.service && (named || !leadsWithMeal(day.service))
+    // When it's served that day, as the status says when a venue opens
+    const slot = withDayTimes(v.slots, v.menu).filter((x) => x.meal === day.service && slotApplies(x, day.date)).sort(slotOrder)[0]
+    const title = `${MEAL_LABEL[day.service]}${when}${slot ? ` ${slot.start}` : ''}`
     // A meal posted elsewhere says so ("European Night, see posters for details")
-    return <Dishes title={said ? undefined : `${MEAL_LABEL[day.service]}${when}`} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} />
+    return <Dishes title={said ? undefined : title} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} compact={compact} />
   }
   const prices = headlineLines(v, types, compact ? 3 : LINES)
   if (prices.length)
@@ -178,30 +187,51 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
 }
 
 /**
- * Dishes on one wrapped line, " · " between them, each with its strongest meat-free code (VG, else V; `plantTag()`),
- * after their meal's name when it's given; three lines at most, so a row stays about its photo's height (the card
- * over a phone's map clamps it to two).
+ * A meal's dishes, a bullet each, under its name and time when given, within `LINES`: the last says how many more
+ * there are when they don't fit. Each carries its strongest meat-free code (VG, else PB, else V; `plantTag()`), so a
+ * vegetarian can run down them. `compact`: on one line, " · " between them, for the card over a phone's map.
  */
-function Dishes({ title, items }: { title?: string; items: RowDish[] }) {
+function Dishes({ title, items, compact = false }: { title?: string; items: RowDish[]; compact?: boolean }) {
+  if (compact)
+    return (
+      <p>
+        {title && <span className="font-semibold">{title}: </span>}
+        {items.map((d, n) => {
+          const tag = plantTag(d.tags)
+          return (
+            <Fragment key={n}>
+              {n > 0 && (
+                <>
+                  <span aria-hidden="true" className="text-muted"> · </span>
+                  <span className="sr-only">, </span>
+                </>
+              )}
+              {d.name}
+              {tag && <Code tag={tag} small className="ml-1" />}
+            </Fragment>
+          )
+        })}
+      </p>
+    )
+  const room = LINES - (title ? 1 : 0)
+  const shown = items.length > room ? room - 1 : room
   return (
-    <p className="line-clamp-3">
-      {title && <span className="font-semibold">{title}: </span>}
-      {items.map((d, n) => {
-        const tag = plantTag(d.tags)
-        return (
-          <Fragment key={n}>
-            {n > 0 && (
-              <>
-                <span aria-hidden="true" className="text-muted"> · </span>
-                <span className="sr-only">, </span>
-              </>
-            )}
-            {d.name}
-            {tag && <Code tag={tag} small className="ml-1" />}
-          </Fragment>
-        )
-      })}
-    </p>
+    <div>
+      {title && <p className="mb-1.5 font-semibold">{title}</p>}
+      <ul className="space-y-1.5">
+        {items.slice(0, shown).map((d, n) => {
+          const tag = plantTag(d.tags)
+          return (
+            <li key={n} className="flex items-baseline gap-2.5">
+              <span aria-hidden="true" className="size-1.5 shrink-0 -translate-y-[0.2em] rounded-full bg-ink/30" />
+              <span className="min-w-0 truncate">{d.name}</span>
+              {tag && <Code tag={tag} small className="shrink-0" />}
+            </li>
+          )
+        })}
+        {items.length > shown && <li className="pl-4 text-muted">+{items.length - shown} more</li>}
+      </ul>
+    </div>
   )
 }
 
