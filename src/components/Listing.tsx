@@ -308,25 +308,24 @@ function Dishes({ title, items, compact = false }: { title?: string; items: RowD
 }
 
 /**
- * What a row doesn't know yet, and how to send it in (a photo or the text): a note to add to, in a Dark Crest disc,
- * what's missing, and the way to send it in Warm Blue, deepened to read as text. `compact`: on one line, for a card.
+ * What a row doesn't know yet, and how to send it in (a photo or the text), all in Dark Crest: a note to add to in its
+ * disc, what's missing, and the way to send it. `compact`: on one line, for a card, in the muted text and Warm Blue.
  */
 function Gap({ to, send, compact = false, children }: { to: string; send: string; compact?: boolean; children: ReactNode }) {
-  const action = <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
   if (compact)
     return (
       <p className="text-muted">
-        {children} {action}
+        {children} <Link to={to} className="relative z-10 font-semibold text-cta hover:underline">{send}</Link>
       </p>
     )
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-alert-bg text-alert">
-        <Icon of={NoteAdd} className="size-6" />
+    <div className="flex items-center gap-3.5 text-alert">
+      <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-alert-bg">
+        <Icon of={NoteAdd} className="size-7" />
       </span>
       <div className="min-w-0">
-        <p className="text-muted">{children}</p>
-        {action}
+        <p>{children}</p>
+        <Link to={to} className="relative z-10 font-semibold underline-offset-4 hover:underline">{send}</Link>
       </div>
     </div>
   )

@@ -467,7 +467,8 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   }
   .scope-tabs { gap: 0.15em; margin-left: auto; padding-left: 0.35em; }
   .scope-tabs a { height: 1.6em; min-width: 1.6em; gap: 0.3em; }
-  .scope-tabs a[aria-current] { padding-inline: 0.5em 0.65em; }
+  /* The open tab is always as wide as the longest name's pill ("Food & drink"), so the tabs never move */
+  .scope-tabs a[aria-current] { width: 6.2em; padding-inline: 0.5em 0.65em; }
   .scope-tabs a svg { width: 0.85em; height: 0.85em; }
   .scope-tabs .scope-name { font-size: 0.68em; }
   .finder-map { grid-column: 2; grid-row: 1; align-self: start; aspect-ratio: 1; margin-top: var(--gutter); overflow: hidden; border-radius: 1.25rem; }
