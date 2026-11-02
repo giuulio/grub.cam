@@ -47,12 +47,13 @@ describe('applyFilters', () => {
     const bar: Venue = { ...base, id: 'c/bar', slug: 'bar', type: 'bar', menu: [] }
     const other: Venue = { ...base, id: 'd/hall', site: { ...base.site, slug: 'd', name: 'D', kind: 'university' } }
     const ids = (f: Partial<Filters>) => applyFilters([base, bar, other], { ...DEFAULT_FILTERS, date: '2026-10-07', ...f }, now).map((r) => r.venue.id)
-    expect(ids({})).toEqual(['c/hall', 'c/bar', 'd/hall'])
+    // Open till the same time: the bar, with nothing to show, after both halls' menus
+    expect(ids({})).toEqual(['c/hall', 'd/hall', 'c/bar'])
     expect(ids({ type: 'bar' })).toEqual(['c/bar'])
     expect(ids({ type: 'cafe' })).toEqual([])
     expect(ids({ sites: ['d'] })).toEqual(['d/hall'])
     expect(ids({ type: 'hall', sites: ['c'] })).toEqual(['c/hall'])
-    expect(ids({ sites: ['c', 'd'] })).toEqual(['c/hall', 'c/bar', 'd/hall'])
+    expect(ids({ sites: ['c', 'd'] })).toEqual(['c/hall', 'd/hall', 'c/bar'])
   })
   it('lists a café that is a bar by night under both, by its hours', () => {
     const cafeBar: Venue = { ...base, id: 'c/cafe-bar', slug: 'cafe-bar', type: 'cafe', menu: [], slots: [{ ...base.slots[0], meal: 'snacks' }, { ...base.slots[0], meal: 'bar', start: '18:00', end: '23:00' }] }
@@ -80,6 +81,39 @@ describe('applyFilters', () => {
     const unpublished: Venue = { ...base, id: 'c/old-hall', slots: [], menu: [], formal: {} }
     const formalHalls = applyFilters([unpublished, { ...unpublished, id: 'c/caff', formal: undefined }], { ...DEFAULT_FILTERS, date: now.date, type: 'hall', meal: 'formal' }, now)
     expect(formalHalls.map((r) => r.venue.id)).toEqual(['c/old-hall'])
+  })
+})
+
+describe('applyFilters order', () => {
+  const ids = (vs: Venue[], minutes: number) => applyFilters(vs, { ...DEFAULT_FILTERS, date: now.date }, { ...now, minutes }).map((r) => r.venue.id)
+  const cafe = (id: string, site: string, end: string, prices = false): Venue => ({
+    ...base, id, type: 'cafe', menu: [], site: { ...base.site, slug: site, name: site },
+    slots: [{ ...base.slots[0], meal: 'snacks', start: '08:00', end }],
+    prices: prices ? [{ name: 'Flat white', price_gbp: 3, services: null } as never] : [],
+  })
+  it('breaks a tie between open venues closing together: what they show, then kind, then site', () => {
+    const bar = { ...cafe('a/bar', 'A', '16:00'), type: 'bar' as const, slots: [{ ...base.slots[0], meal: 'bar' as const, start: '08:00', end: '16:00' }] }
+    expect(ids([bar, cafe('b/cafe', 'B', '16:00'), cafe('c/cafe', 'C', '16:00', true)], 15 * 60)).toEqual(['c/cafe', 'b/cafe', 'a/bar'])
+  })
+  it('lists open venues with something to show first, each lot with those about to close last', () => {
+    const vs = [cafe('a/soon', 'A', '15:30', true), cafe('b/empty', 'B', '16:00'), cafe('c/later', 'C', '17:00', true), cafe('d/first', 'D', '16:00', true)]
+    expect(ids(vs, 15 * 60 + 10)).toEqual(['d/first', 'c/later', 'a/soon', 'b/empty'])
+  })
+  it("ranks by the dishes a row lists, not a lunch already served", () => {
+    const dinner: Slot = { ...base.slots[0], meal: 'dinner', start: '18:00', end: '19:30' }
+    const lunchOnly: Venue = { ...base, id: 'a/lunch-only', site: { ...base.site, name: 'A' }, slots: [...base.slots, dinner], menu: [{ ...base.menu[0], items: [...base.menu[0].items, { name: 'Soup', tags: [] }] }] }
+    const withDinner: Venue = { ...base, id: 'b/dinner', site: { ...base.site, name: 'B' }, slots: [...base.slots, dinner], menu: [{ date: now.date, service: 'dinner', items: [{ name: 'Risotto', tags: [] }] }] }
+    expect(ids([lunchOnly, withDinner], 15 * 60)).toEqual(['b/dinner', 'a/lunch-only'])
+  })
+  it('orders a row by the meal whose menu it shows', () => {
+    const thu = '2026-10-08'
+    const days = ['thu'] as Slot['days']
+    // Breakfast at 08:00 without a menu, lunch at 12:00 with one: the row shows lunch, so it follows a café opening at 09:00
+    const canteen: Venue = { ...base, id: 'a/canteen', slots: [{ ...base.slots[0], meal: 'breakfast', days, start: '08:00', end: '11:00' }, { ...base.slots[0], days, start: '12:00', end: '14:00' }], menu: [{ date: thu, service: 'lunch', items: [{ name: 'Gratin', tags: [] }] }] }
+    const early = { ...cafe('b/cafe', 'B', '17:00', true), slots: [{ ...base.slots[0], meal: 'snacks' as const, days, start: '09:00', end: '17:00' }] }
+    const [first, second] = applyFilters([canteen, early], { ...DEFAULT_FILTERS, date: now.date }, { ...now, minutes: 20 * 60 })
+    expect([first.venue.id, second.venue.id]).toEqual(['b/cafe', 'a/canteen'])
+    expect(second.shown).toMatchObject({ kind: 'closed', next: { date: thu, slot: { meal: 'lunch', start: '12:00' } } })
   })
 })
 

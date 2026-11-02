@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { NoteAdd } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { mainDishes, MEAL_LABEL, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
+import { mainDishes, MEAL_LABEL, mealSlot, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
 import type { RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
@@ -10,7 +10,7 @@ import { pinLabel } from '../lib/mapView.ts'
 import { sendPath, sitePath, venuePath } from '../lib/site.ts'
 import { leadsWithMeal } from '../lib/status.ts'
 import { addDaysISO, dayOfISO, hhmmToMinutes, type LocalNow } from '../lib/time/clock.ts'
-import { slotApplies, withDayTimes, type OpenStatus } from '../lib/time/openNow.ts'
+import { slotApplies, slotEndMinutes, withDayTimes } from '../lib/time/openNow.ts'
 import { isFormalOnly, venueTypes, type Day, type Meal, type Slot, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { Icon } from './Icon.tsx'
 import { PinMark } from './MapParts.tsx'
@@ -22,9 +22,12 @@ import { VenueImage, VenueThumb } from './VenuePhoto.tsx'
 // The venues, a row each (its photo down the left, what to know beside it, its menu first), beside a map of them:
 // the front page's and a site's.
 
-/** The prices of what people usually order at a venue of its kind (`headlinePrices`), its own kind's list first. */
-function headlineLines(venue: Venue, types: VenueType[], max = 3): VenuePrice[] {
-  const groups = priceGroups(venue.prices, types)
+/**
+ * The prices of what people usually order at a venue of its kind (`headlinePrices`), its own kind's list first; at a
+ * meal (`meal`), only what's sold at it, so a breakfast's price isn't listed under "Dinner 17:45".
+ */
+function headlineLines(venue: Venue, types: VenueType[], max = 3, meal?: Meal): VenuePrice[] {
+  const groups = priceGroups(meal ? (venue.prices ?? []).filter((p) => !p.services || p.services.includes(meal)) : venue.prices, types)
   const lines: VenuePrice[] = []
   for (const t of types) if (lines.length < max) lines.push(...headlinePrices(groups[t] ?? [], t, max - lines.length))
   return lines
@@ -50,18 +53,25 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
   const { snapshot } = useReady()
   const v = r.venue
   const types = venueTypes(v)
-  // While it's closed, the meal whose menu it lists
-  const status = snapshot ? r.status : rowStatus(r, now, !formal && !dishes?.length)
+  // While it's closed, the meal whose menu it lists (`menuStatus()`)
+  const status = snapshot ? r.status : r.shown
   const after = !snapshot && !formal ? nextToday(r, now) : undefined
+  // A meal starting before the one on now ends runs on from it: "Open until 22:00 · Bar 17:00–00:00", so the room
+  // isn't read as shutting at 22:00
+  const named = status.kind === 'open' || status.kind === 'opening' ? status.slot : undefined
+  const runsOn = after && named && hhmmToMinutes(after.start) <= slotEndMinutes(named)
   // Not when the menu under it is that meal's, headed with its time already
-  const then = after && !(!dishes?.length && r.next?.date === now.date && r.next.service === after.meal) ? `${after.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[after.meal]} ${after.start}` : undefined
+  const then = after && !(!dishes?.length && r.next?.date === now.date && r.next.service === after.meal) ? `${after.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[after.meal]} ${runsOn ? `${after.start}–${after.end}` : after.start}` : undefined
   // The status leads with the meal for a venue serving more than one (`leadsWithMeal()`); its preview then needn't again
-  const named = v.type === 'hall' || types.length > 1
+  const leads = v.type === 'hall' || types.length > 1
   // A row listing a meal's dishes heads them in its status line: "Tomorrow's lunch menu · 12:20–13:45", "Today's dinner
   // menu · until 19:30", so what follows reads as the menu
-  const listed = !snapshot && !formal && !dishes?.length && named && r.next?.items.length && DAILY.includes(r.next.service) ? r.next : undefined
+  const listed = !snapshot && !formal && !dishes?.length && leads && r.next?.items.length && HEADED.includes(r.next.service) ? r.next : undefined
   const at = status.kind === 'open' || status.kind === 'opening' ? status : status.kind === 'closed' ? status.next : undefined
-  const menuLine = listed && at && at.date === listed.date && at.slot.meal === listed.service
+  // A meal served within a café's hours, with none of its own (Scholars Brew's lunch), is headed with the café's:
+  // "Today's lunch menu · until 17:00"
+  const within = listed && at && !leadsWithMeal(at.slot.meal) && !mealSlot(v, listed.service, listed.date)
+  const menuLine = listed && at && at.date === listed.date && (at.slot.meal === listed.service || within)
   const head = (
     <>
       {/* Its college by the name people use, then its own, on one line ("Robinson · Garden Restaurant"); its rating
@@ -94,11 +104,11 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
                 <span className="sr-only">Open </span>until {status.slot.end}
               </span>
             ) : (
-              <span className="whitespace-nowrap text-muted">{at.slot.start}–{at.slot.end}</span>
+              <span className="whitespace-nowrap text-muted">{slotTime(at.slot)}</span>
             )}
           </span>
         ) : (
-          <Status s={status} now={now} meal={named} />
+          <Status s={status} now={now} meal={leads} />
         )}
         {then && <span className="text-muted"> · {then}</span>}
         {distance && <span className="text-muted"> · {distance}</span>}
@@ -111,7 +121,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       </p>
     </>
   )
-  const preview = <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={named} compact={card} />
+  const preview = <RowPreview r={{ ...r, status }} now={now} types={types} dishes={dishes} formal={formal} named={leads} headed={!!menuLine} compact={card} />
   return (
     <li
       id={card ? undefined : `venue-${v.id}`}
@@ -148,7 +158,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
 }
 
 /** The meals a row heads as a menu by name. */
-const DAILY: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
+const HEADED: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal']
 const WEEKDAY: Record<Day, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
 
 /** "Today's lunch menu", "Tomorrow's dinner menu", "Wednesday's brunch menu" */
@@ -157,26 +167,8 @@ function menuName(date: string, meal: Meal, today: string): string {
   return `${whose}’s ${MEAL_LABEL[meal].toLowerCase()} menu`
 }
 
-/** When a venue serves a meal on a date: its first time that day, a menu's note's times applied. */
-function mealSlot(v: Venue, meal: Meal, date: string): Slot | undefined {
-  return withDayTimes(v.slots, v.menu).filter((x) => x.meal === meal && slotApplies(x, date)).sort(slotOrder)[0]
-}
-
-/**
- * The status a row shows. While it's closed, or yet to open today, for the meal whose menu it lists (`menu`) rather
- * than an earlier one without a menu: "Lunch tomorrow 11:45" over lunch's dishes, not "Breakfast tomorrow 08:00", so
- * the row names one meal. Open now, it says so whatever the menu below.
- */
-function rowStatus(r: Ranked, now: LocalNow, menu: boolean): OpenStatus {
-  const s = r.status
-  const day = r.next
-  const at = s.kind === 'opening' ? s : s.kind === 'closed' ? s.next : undefined
-  if (!menu || !day || !at || (at.date === day.date && at.slot.meal === day.service)) return s
-  const slot = mealSlot(r.venue, day.service, day.date)
-  if (!slot) return s
-  const days = Math.round((Date.parse(day.date) - Date.parse(now.date)) / 86_400_000)
-  return { kind: 'closed', next: { slot, date: day.date, opensInMin: days * 1440 + hhmmToMinutes(slot.start) - now.minutes } }
-}
+/** A meal's time as a row heads it: "12:00–14:30"; formal hall, a sitting, by when it starts. */
+const slotTime = (slot: Slot) => (slot.meal === 'formal' ? slot.start : `${slot.start}–${slot.end}`)
 
 /** The meal after the one a venue's status names, still to come today ("· Dinner 17:30", "· Formal hall 19:30"). */
 function nextToday(r: Ranked, now: LocalNow): Slot | undefined {
@@ -195,10 +187,11 @@ function nextToday(r: Ranked, now: LocalNow): Slot | undefined {
  * line's words ("Lunch tomorrow 12:30" under "Breakfast tomorrow 07:30"), only when the status above doesn't already
  * name it (`named`): another meal's, or another day's. `compact`: one or two lines, for the card over a phone's map.
  */
-function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Ranked; now: LocalNow; types: VenueType[]; dishes?: RowDish[]; formal: boolean; named: boolean; compact: boolean }) {
+function RowPreview({ r, now, types, dishes, formal, named, headed, compact }: { r: Ranked; now: LocalNow; types: VenueType[]; dishes?: RowDish[]; formal: boolean; named: boolean; headed: boolean; compact: boolean }) {
   const { snapshot } = useReady()
   const v = r.venue
-  if (formal) {
+  // A Hall used only for formal hall gives formal hall's facts on every tab, unless its menu is up
+  if (formal || (!dishes?.length && !r.next && isFormalOnly(v))) {
     const facts: [string, string | undefined][] = [['When', formalWhen(v, v.formal).join('; ')], ['Price', v.formal && formalPrice(v.formal)], ['Dress', v.formal && formalDress(v.formal)], ['Booking', v.formal && formalBooking(v.formal)]]
     const known = facts.filter((f): f is [string, string] => !!f[1])
     if (!known.length) return <Gap to={sendPath(v, 'other', { topic: 'formal' })} send="Tell us" compact={compact}>Times and price not known yet.</Gap>
@@ -221,15 +214,17 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
   if (day) {
     const mains = mainDishes(day.items).filter((i) => i.name.toLowerCase() !== MEAL_LABEL[day.service].toLowerCase())
     // The status names a meal it leads with; a café's or bar's hours are its own, with nothing more to name
-    const said = !snapshot && at?.date === day.date && at.slot.meal === day.service && (named || !leadsWithMeal(day.service))
+    // or the status line heads the menu already (`headed`)
+    const said = headed || (!snapshot && at?.date === day.date && at.slot.meal === day.service && (named || !leadsWithMeal(day.service)))
     // When it's served that day, as the status says when a venue opens
     const slot = mealSlot(v, day.service, day.date)
     // Named as the status line names a menu (a prerendered page can't say which day is today)
-    const title = `${snapshot ? `${MEAL_LABEL[day.service]} menu` : menuName(day.date, day.service, now.date)}${slot ? ` · ${slot.start}–${slot.end}` : ''}`
+    const title = `${snapshot ? `${MEAL_LABEL[day.service]} menu` : menuName(day.date, day.service, now.date)}${slot ? ` · ${slotTime(slot)}` : ''}`
     // A meal posted elsewhere says so ("European Night, see posters for details")
     return <Dishes title={said ? undefined : title} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} compact={compact} />
   }
-  const prices = headlineLines(v, types, compact ? 3 : LINES * 2)
+  // At a hall's meal, what's sold at that meal
+  const prices = headlineLines(v, types, compact ? 3 : LINES * 2, at && leadsWithMeal(at.slot.meal) ? at.slot.meal : undefined)
   if (prices.length)
     return compact ? (
       <p>{prices.map((p) => `${p.name} ${formatPrice(fromList(p))}`).join(' · ')}</p>

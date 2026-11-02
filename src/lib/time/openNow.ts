@@ -65,7 +65,7 @@ export function withDayTimes(slots: Slot[], days: Pick<MenuDay, 'date' | 'servic
   return out
 }
 
-function slotEndMinutes(slot: Slot): number {
+export function slotEndMinutes(slot: Slot): number {
   const s = hhmmToMinutes(slot.start)
   const e = hhmmToMinutes(slot.end)
   return e <= s ? e + 1440 : e // crosses midnight (e.g. bar 17:00–00:00)

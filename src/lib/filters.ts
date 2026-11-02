@@ -1,4 +1,4 @@
-import { DAYS, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
+import { DAYS, isFormalOnly, venueTypes, type Day, type DietTag, type Dish, type Meal, type MenuDay, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 import { hhmmToMinutes, type LocalNow } from './time/clock.ts'
 import { openStatus, slotApplies, statusRank, withDayTimes, type OpenStatus } from './time/openNow.ts'
 import { isFullTerm } from './time/termDates.ts'
@@ -128,8 +128,11 @@ export function serviceDate(s: OpenStatus): string | undefined {
   if (s.kind === 'closed') return s.next?.date
 }
 
-/** `next`: the menu its row previews (`nextService()`), which can be tomorrow's when `days` are today's. */
-export type Ranked = { venue: Venue; status: OpenStatus; days: MenuDay[]; next?: MenuDay; matchedDishes: number; search?: SearchHit; searchMatches: SearchHit[] }
+/**
+ * `next`: the menu its row previews (`nextService()`), which can be tomorrow's when `days` are today's. `shown`: the
+ * status its row shows (`menuStatus()`), what the list is ordered by. `matchedDishes`: how many dishes its row lists.
+ */
+export type Ranked = { venue: Venue; status: OpenStatus; shown: OpenStatus; days: MenuDay[]; next?: MenuDay; matchedDishes: number; search?: SearchHit; searchMatches: SearchHit[] }
 
 /** How results are grouped, in ranking order. Unknown hours are their own group, never "closed". */
 export type Section = 'open' | 'later' | 'other' | 'unknown'
@@ -153,6 +156,32 @@ export function nextService(s: OpenStatus, days: MenuDay[], slots: Slot[]): Menu
   }
   return days.find((d) => d.items.length && !over(d))
 }
+
+/** When a venue serves a meal on a date: its first time that day, a menu's note's times applied. */
+export function mealSlot(v: Venue, meal: Meal, date: string): Slot | undefined {
+  return withDayTimes(v.slots, v.menu).filter((x) => x.meal === meal && slotApplies(x, date)).sort(slotOrder)[0]
+}
+
+/**
+ * The status a row shows. While it's closed, or yet to open today, for the meal whose menu it lists (`next`) rather
+ * than an earlier one without a menu: "Lunch tomorrow 11:45" over lunch's dishes, not "Breakfast tomorrow 08:00", so
+ * the row names one meal. Open now, it says so whatever the menu below.
+ */
+export function menuStatus(s: OpenStatus, next: MenuDay | undefined, v: Venue, now: LocalNow): OpenStatus {
+  const at = s.kind === 'opening' ? s : s.kind === 'closed' ? s.next : undefined
+  if (!next || !at || (at.date === next.date && at.slot.meal === next.service)) return s
+  const slot = mealSlot(v, next.service, next.date)
+  if (!slot) return s
+  const days = Math.round((Date.parse(next.date) - Date.parse(now.date)) / 86_400_000)
+  const opensInMin = days * 1440 + hhmmToMinutes(slot.start) - now.minutes
+  return next.date === now.date ? { kind: 'opening', slot, date: next.date, opensInMin } : { kind: 'closed', next: { slot, date: next.date, opensInMin } }
+}
+
+/** An open venue closing within this many minutes goes to the foot of those open: there's no time to get there. */
+export const CLOSING_SOON = 30
+
+/** Whether a row has something to show (a menu, posted prices, formal hall's facts) rather than only what's missing. */
+const showsSomething = (r: Omit<Ranked, 'searchMatches'>) => !!r.next || !!r.venue.prices?.length || (isFormalOnly(r.venue) && !!r.venue.formal)
 
 /** A menu's main dishes, what a card leads with; every dish where the source marks no courses (Homerton, Downing). */
 export function mainDishes(items: Dish[]): Dish[] {
@@ -180,12 +209,17 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
     // If a meal is selected and the venue neither serves it (no slot) nor has a menu for it, drop it; formal hall
     // counts where it's held even when its days aren't published
     if (f.meal && !v.slots.some((s) => s.meal === f.meal) && !days.length && !(f.meal === 'formal' && v.formal)) continue
-    const matchedDishes = days.reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
     // Its row previews the service its status points at: tomorrow's breakfast once today's meals are over, unless
     // another day is picked
     const at = serviceDate(status)
     const ahead = at && date === now.date && at > date ? sortMeals(menuDaysFor(v, at, f.meal)) : days
-    kept.set(v.id, { venue: v, status, days, next: nextService(status, ahead, slots), matchedDishes })
+    const next = nextService(status, ahead, slots)
+    // The dishes its row lists: the next menu's, or with a diet picked, the day's that match (`resultDishes()`), so a
+    // lunch already served doesn't rank a hall without tonight's menu
+    const matchedDishes = (f.diets.length ? days : next ? [next] : []).reduce((n, d) => n + d.items.filter((i) => dishMatches(i, { diets: f.diets, q: '' })).length, 0)
+    // A row listing dishes found (a search, a diet) or formal hall's facts keeps the status as it is
+    const shown = searching || f.diets.length || f.meal === 'formal' ? status : menuStatus(status, next, v, now)
+    kept.set(v.id, { venue: v, status, shown, days, next, matchedDishes })
   }
   // Searches see the venues left, and only dishes on the date viewed, at the meal and with every diet picked.
   const hits = searching
@@ -202,11 +236,22 @@ export function applyFilters(venues: Venue[], f: Filters, now: LocalNow): Ranked
       const relevance = compareSearchHits(a.search, b.search)
       if (relevance) return relevance
     }
-    const r = statusRank(a.status) - statusRank(b.status)
+    // In the order rows show: open, then by when each opens for the meal it shows
+    const r = statusRank(a.shown) - statusRank(b.shown)
     if (r) return r
-    if (a.status.kind === 'open' && b.status.kind === 'open') return a.status.closesInMin - b.status.closesInMin
+    // Open: those with something to show first; then closing soonest first, those closing within half an hour last
+    if (a.shown.kind === 'open' && b.shown.kind === 'open') {
+      const shows = Number(showsSomething(b)) - Number(showsSomething(a))
+      if (shows) return shows
+      const soon = Number(a.shown.closesInMin <= CLOSING_SOON) - Number(b.shown.closesInMin <= CLOSING_SOON)
+      if (soon) return soon
+      const closes = a.shown.closesInMin - b.shown.closesInMin
+      if (closes) return closes
+    }
     const t = TYPES.indexOf(a.venue.type) - TYPES.indexOf(b.venue.type)
     if (t) return t
+    const shows = Number(showsSomething(b)) - Number(showsSomething(a))
+    if (shows) return shows
     if (b.matchedDishes !== a.matchedDishes) return b.matchedDishes - a.matchedDishes
     return a.venue.site.name.localeCompare(b.venue.site.name)
   })
