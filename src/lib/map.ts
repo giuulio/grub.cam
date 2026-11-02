@@ -41,3 +41,15 @@ export const formatDistance = (m: number) => (m < 950 ? `${Math.max(10, Math.rou
 
 /** Cambridge, roughly: a location outside it isn't used for nearest first. */
 export const inCambridge = (p: Point) => p.latitude > 52.14 && p.latitude < 52.26 && p.longitude > -0.01 && p.longitude < 0.2
+
+/**
+ * Walking directions to a point, from wherever you are, in Apple Maps and Google Maps: each opens its app where it's
+ * installed, else the site.
+ */
+export const directions = (to: Point) => {
+  const at = `${to.latitude},${to.longitude}`
+  return { apple: `https://maps.apple.com/?daddr=${at}&dirflg=w`, google: `https://www.google.com/maps/dir/?api=1&destination=${at}&travelmode=walking` }
+}
+
+/** Whether this is an Apple device, whose own Maps comes first (an iPad says it's a Mac, with a touch screen). */
+export const onApple = () => typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)

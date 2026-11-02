@@ -17,6 +17,7 @@
     "submissions": "tsx scripts/ingest/submissions.ts",
     "reviews": "tsx scripts/ingest/reviews.ts",
     "auth:google": "tsx scripts/auth-google.ts",
+    "mapkit:token": "tsx scripts/mapkit-token.ts",
     "models:compare": "tsx scripts/ingest/compare-models.ts",
     "search:snapshot": "tsx scripts/search-snapshot.ts",
     "test": "vitest run",

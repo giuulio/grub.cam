@@ -6,6 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/finder.ts'
 import { CAMBRIDGE, findMe, fitPadding, labelPins, labelUntilMeasured, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH, userDot } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
+import type { Route } from '../lib/route.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
 import { AppleMap } from './AppleMap.tsx'
 import { MapActions, MapPin, type MapProps } from './MapParts.tsx'
@@ -27,7 +28,7 @@ export function VenueMap(props: MapProps) {
 }
 
 /** OpenFreeMap's vector tiles (Bright, Fiord in the dark) through MapLibre GL, loaded only where a map shows. */
-function OpenMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false }: MapProps) {
+function OpenMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false, route }: MapProps) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -206,11 +207,11 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
   useEffect(() => labelUntilMeasured(() => name.current()), [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
-  // middle of what the panel leaves free.
+  // middle of what the panel leaves free. With the walk to it drawn, the map is fitted to that instead.
   useEffect(() => {
     const e = engine.current
     const row = results.find((r) => r.venue.id === selected)
-    if (!e || !row || !hasLocation(row.venue)) return
+    if (!e || !row || !hasLocation(row.venue) || route) return
     const point = e.map.project(position(row))
     const box = e.map.getContainer().getBoundingClientRect()
     const cover = panel?.current?.getBoundingClientRect()
@@ -219,7 +220,7 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
     const bottom = cover && !left ? box.bottom - cover.top : 0
     if (point.x < left + 75 || point.x > box.width - 75 || point.y < 75 || point.y > box.height - bottom - 75)
       e.map.easeTo({ center: position(row), offset: [left / 2, -bottom / 2], duration: 250 })
-  }, [ready, results, selected, panel])
+  }, [ready, results, selected, panel, route])
 
   // Nearest first, asked for by the page: you on the map, and the map on you
   useEffect(() => {
@@ -228,6 +229,31 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
     if (here) showHere(e, here)
     else e.user?.remove()
   }, [ready, here])
+
+  // The walk to the venue picked: a line under the pins, again after a theme change (a new style drops it), the map
+  // fitted to it
+  useEffect(() => {
+    const e = engine.current
+    const el = container.current
+    if (!ready || !e || !el) return
+    const draw = () => drawRoute(e, route, getComputedStyle(el).getPropertyValue('--route').trim() || '#1a73e8')
+    if (e.map.isStyleLoaded()) draw()
+    else e.map.once('load', draw)
+    e.map.on('style.load', draw)
+    return () => {
+      e.map.off('load', draw)
+      e.map.off('style.load', draw)
+    }
+  }, [ready, route])
+  // Fitted once as each route arrives (`fitted`), not again as what's over the map changes
+  const fitted = useRef<Route>(undefined)
+  useEffect(() => {
+    const e = engine.current
+    if (!ready || !e || !route?.line.length || fitted.current === route) return
+    fitted.current = route
+    const bounds = route.line.reduce((b, p) => b.extend(p), new e.M.LngLatBounds(route.line[0], route.line[0]))
+    e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom: 17, duration: 300 })
+  }, [ready, route, inset])
 
   const locate = () => {
     setLocating(true)
@@ -257,6 +283,21 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
       <MapActions controls={controls} ready={ready} locating={locating} canShowAll={results.some((r) => hasLocation(r.venue))} onLocate={locate} onShowAll={showAll} note={error || locationNote} />
     </>
   )
+}
+
+const ROUTE = 'walk'
+
+/** The walk as a line beneath the pins, or none: one source and layer, kept and given new points. */
+function drawRoute(e: Engine, route: Route | undefined, colour: string) {
+  const map = e.map
+  const data = { type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: route?.line ?? [] } }
+  const source = map.getSource<MapLibre.GeoJSONSource>(ROUTE)
+  if (source) source.setData(data)
+  else {
+    map.addSource(ROUTE, { type: 'geojson', data })
+    map.addLayer({ id: ROUTE, type: 'line', source: ROUTE, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': colour, 'line-width': 5, 'line-opacity': 0.85 } })
+  }
+  map.setPaintProperty(ROUTE, 'line-color', colour)
 }
 
 /** You, as a dot, with the map moved to you. */

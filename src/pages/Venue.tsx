@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject }
 import { Calendar, Flag, Global, Leaf, Map as MapIcon, NoteAdd } from 'reicon-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
+import { Directions } from '../components/Directions.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
 import { GapCard, GapLine, SEND_EITHER } from '../components/GapCard.tsx'
 import { RatingSummary, Reviews } from '../components/Reviews.tsx'
@@ -15,13 +16,16 @@ import { gapPath, menuGap, venueGaps, type Gap } from '../lib/coverage.ts'
 import { useMenuCredits, useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { sentBy } from '../lib/contributors.ts'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
+import { hasLocation } from '../lib/finder.ts'
 import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
 import { sendPath, siteName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
+import { useHere } from '../lib/useHere.ts'
 import { useMedia } from '../lib/useMedia.ts'
+import { useWalkingRoute, walkTime } from '../lib/route.ts'
 import { useNow } from '../lib/useNow.ts'
 import { addDaysISO, formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus, withDayTimes } from '../lib/time/openNow.ts'
@@ -125,6 +129,9 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
   const { snapshot } = useReady()
   const navigate = useNavigate()
   const mapped = venue.latitude != null && venue.longitude != null
+  // The walk here from where you are, once that's known (already allowed, found on the front page, or asked for here)
+  const { here, locating, note, toggle: locate, permission } = useHere()
+  const route = useWalkingRoute(here, hasLocation(venue) ? venue : undefined)
   return (
     <RailCard className="overflow-hidden">
       {mapped && !snapshot && (
@@ -137,6 +144,9 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
             filtered
             embedded
             controls={false}
+            // You on the map only with the walk drawn, so the map never leaves the venue for you alone
+            here={route ? here : undefined}
+            route={route}
             onSelect={(id) => {
               const v = rows.find((r) => r.venue.id === id)?.venue
               if (v && v.id !== venue.id) navigate(venuePath(v))
@@ -148,6 +158,10 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
         <Icon of={MapIcon} className="mt-1 size-4 shrink-0 text-muted" />
         <span className="min-w-0">{venue.where ?? (mapped ? siteName(venue.site) : 'Not on the map yet')}</span>
       </p>
+      {hasLocation(venue) && (
+        <Directions to={venue} walk={route && walkTime(route)} onFind={!snapshot && !here && permission !== 'denied' ? locate : undefined} finding={locating} className="mt-4" />
+      )}
+      {note && <p role="status" className="mt-2 text-sm text-muted">{note}</p>}
     </RailCard>
   )
 }

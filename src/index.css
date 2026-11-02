@@ -59,6 +59,7 @@
   --ink: #232830; /* Slate 4 */
   --muted: #546072; /* Slate 3 */
   --action: #133844; /* Dark Blue, white on it */
+  --route: #1a73e8; /* the walk to a venue, on the map: blue, as maps draw a route */
   --action-ink: #ffffff;
   --open: #4db78c; /* Green, a dot before the word */
   --open-ink: #13553a; /* Dark Green */
@@ -87,6 +88,7 @@
     --muted: #b5bdc8; /* Slate 2 */
     --action: #8ee8d8; /* Cambridge Blue, Dark Blue on it */
     --action-ink: #133844;
+    --route: #6ea8fe;
     --open: #4db78c;
     --open-ink: #afdfcb; /* Warm Green */
     --site-ink: #e18aac; /* Warm Cherry */
@@ -113,6 +115,7 @@
   --muted: #b5bdc8;
   --action: #8ee8d8;
   --action-ink: #133844;
+  --route: #6ea8fe;
   --open: #4db78c;
   --open-ink: #afdfcb;
   --site-ink: #e18aac;
@@ -367,6 +370,15 @@ input[type='date'].filter-select::-webkit-date-and-time-value {
   box-shadow: 0 1px 4px #0003;
 }
 .finder-locate[aria-pressed='true'] { @apply bg-accent text-accent-ink; }
+/* Nearest first, offered: a raised pill, beside the map's button or over a phone's list and map */
+.locate-offer {
+  @apply flex items-center gap-2 rounded-full bg-raised py-1.5 pr-2 pl-4 text-[0.9375rem] text-ink;
+  box-shadow: 0 1px 4px #0003;
+}
+.finder-locate-offer { @apply absolute top-3 left-[4.25rem] z-[600] h-11 max-w-[calc(100%-5.5rem)]; }
+/* One of the two at a time: on the map by its button beside a list, else where a note goes (over a phone's list or map) */
+@media (width < 48rem) { .finder-locate-offer { display: none; } }
+@media (width >= 48rem) { .finder-offer { display: none; } }
 .finder-sheet .venue-row { box-shadow: 0 6px 20px #0000002e; }
 .venue-row { scroll-margin-top: calc(var(--header-h, 0px) + 4.5rem); }
 .venue-row:has(.card-link:focus-visible) {

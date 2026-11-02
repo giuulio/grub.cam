@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type
 import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
 import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Magnifier, Map as MapIcon, Plate } from 'reicon-react'
 import { ChipSelect } from '../components/Controls.tsx'
+import { Directions } from '../components/Directions.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
 import { Icon } from '../components/Icon.tsx'
@@ -13,11 +14,13 @@ import { tabCoverage } from '../lib/coverage.ts'
 import { applyFilters, DIET_LABEL, MEAL_LABEL, type Ranked } from '../lib/filters.ts'
 import { SCOPE_ICON } from '../lib/icons.ts'
 import { FILTER_DIETS, FILTER_MEALS, hasLocation, legacyPath, readFilters, resultDishes, SCOPES, scopeInfo, SHARED_FILTERS, type Scope } from '../lib/finder.ts'
-import { formatDistance, inCambridge, metresBetween, type Point } from '../lib/map.ts'
+import { formatDistance, metresBetween } from '../lib/map.ts'
 import { normalizeSearch } from '../lib/search.ts'
 import { TAB_TITLES } from '../lib/seo.ts'
 import { addDaysISO, formatISODate, relativeDay } from '../lib/time/clock.ts'
 import { isFormalOnly, type Venue } from '../lib/types.ts'
+import { useHere } from '../lib/useHere.ts'
+import { useWalkingRoute, walkTime } from '../lib/route.ts'
 import { useMedia } from '../lib/useMedia.ts'
 import { useNow } from '../lib/useNow.ts'
 
@@ -56,12 +59,10 @@ function Finder({ scope }: { scope: Scope }) {
   const [selected, setSelected] = useState<string>()
   // The row under the pointer, picked out on the map
   const [hover, setHover] = useState<string>()
-  // Nearest first: where you are, asked for only on the click and kept in memory
-  const [here, setHere] = useState<Point>()
-  const [locating, setLocating] = useState(false)
+  // Nearest first: where you are, asked for on a click, or found as the page opens where the browser already allows it
+  const { here, locating, note, clearNote, toggle: locate, offer, dismiss } = useHere()
   // A phone's search, opened from its magnifying glass
   const [searchOpen, setSearchOpen] = useState(false)
-  const [note, setNote] = useState('')
   // How many rows show: a page at a time, back to one whenever the tab or the filters change
   const [shown, setShown] = useState(PAGE)
   const view = `${scope}?${params}`
@@ -76,7 +77,7 @@ function Finder({ scope }: { scope: Scope }) {
     setTab(scope)
     setSelected(undefined)
     setHover(undefined)
-    setNote('')
+    clearNote()
   }
   const side = useRef<HTMLDivElement>(null)
   useEffect(() => { side.current?.scrollTo({ top: 0 }) }, [scope])
@@ -109,31 +110,7 @@ function Finder({ scope }: { scope: Scope }) {
   const filtered = narrowed || f.date !== now.date || !!here
   const clear = () => {
     update((p) => { for (const k of ['q', 'open', 'site', 'kind', 'meal', 'diet', 'date']) p.delete(k) })
-    setHere(undefined)
-  }
-  const locate = () => {
-    if (here) return setHere(undefined)
-    if (!navigator.geolocation) return setNote('Your browser doesn’t share its location.')
-    setLocating(true)
-    setNote('')
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setLocating(false)
-        const p = { latitude: coords.latitude, longitude: coords.longitude }
-        if (inCambridge(p)) setHere(p)
-        else setNote('You’re outside Cambridge, so the list stays as it is.')
-      },
-      (err) => {
-        setLocating(false)
-        // Say what to check: the site's permission, the computer's location services, or just time
-        setNote(
-          err.code === 1 ? 'Location is blocked for this site. Allow it in your browser’s settings for grub.cam, then try again.'
-          : err.code === 2 ? 'Your device couldn’t tell where you are. Check Location Services is on for your browser (on a Mac: System Settings › Privacy & Security › Location Services).'
-          : 'Finding you took too long. Try again.',
-        )
-      },
-      { timeout: 10000, maximumAge: 60000 },
-    )
+    if (here) locate()
   }
   const day = (d: string) => relativeDay(d, now.date) ?? formatISODate(d)
   const dates = Array.from({ length: Math.max(0, (Date.parse(menuTo) - Date.parse(menuFrom)) / 86400000) }, (_, i) => addDaysISO(menuFrom, i))
@@ -143,6 +120,8 @@ function Finder({ scope }: { scope: Scope }) {
   // The map is only made where it's shown (on a prerendered page, its frame holds the place)
   const showMap = !snapshot && (split || !listView)
   const picked = ranked.find((r) => r.venue.id === selected)
+  // The walk there, once where you are is known: drawn on the map, its time on the picked row
+  const route = useWalkingRoute(here, picked && hasLocation(picked.venue) ? picked.venue : undefined)
   // Beside the map, a picked pin's venue is the list, alone, until it's let go
   const alone = split && !snapshot ? picked : undefined
   // Dining leads with its menus: a venue without one for the date and meal picked is folded into a line at the foot
@@ -172,7 +151,8 @@ function Finder({ scope }: { scope: Scope }) {
   }
   const rowProps = (r: Ranked) => {
     const m = metres(r.venue)
-    return { r, now, dishes: searching || f.diets.length ? resultDishes(r, f) : undefined, distance: m != null ? formatDistance(m) : undefined, formal: scope === 'formal' }
+    const walk = route && r.venue.id === picked?.venue.id ? walkTime(route) : undefined
+    return { r, now, dishes: searching || f.diets.length ? resultDishes(r, f) : undefined, distance: walk ?? (m != null ? formatDistance(m) : undefined), formal: scope === 'formal' }
   }
   const switchView = () => {
     set('view', listView ? 'map' : undefined)
@@ -313,6 +293,8 @@ function Finder({ scope }: { scope: Scope }) {
             {!alone && <h2 className="finder-count ml-auto pl-2 text-[0.9375rem] font-medium whitespace-nowrap">{count}</h2>}
           </div>
           {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
+          {/* Offered unasked on a phone, over its list or map; beside a list, on the map by its button */}
+          {!snapshot && offer && !note && <LocateOffer locating={locating} onLocate={locate} onDismiss={dismiss} className="finder-note finder-offer" />}
           <section aria-label={`${info.label} venues`} className="finder-list">
             {alone && (
               <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
@@ -320,6 +302,7 @@ function Finder({ scope }: { scope: Scope }) {
                   <Icon of={CloseCircle} className="size-4.5" />
                   Show all {count}
                 </button>
+                {hasLocation(alone.venue) && <Directions to={alone.venue} inline />}
               </div>
             )}
             {ranked.length ? (
@@ -357,6 +340,7 @@ function Finder({ scope }: { scope: Scope }) {
                 panel={sheet}
                 inset={split ? { top: 0 } : { top: 56, bottom: picked ? 130 : 0 }}
                 here={here}
+                route={route}
                 controls={false}
                 core={!narrowed}
               />
@@ -369,6 +353,7 @@ function Finder({ scope }: { scope: Scope }) {
                 <Icon of={Gps} className="size-5" />
               </button>
             )}
+            {!snapshot && offer && <LocateOffer locating={locating} onLocate={locate} onDismiss={dismiss} className="finder-locate-offer" />}
             <div ref={sheet} className="finder-sheet">
               {!split && !listView && ranked.length > 0 && toggle}
               {/* Wider, the list beside the map is the picked venue's row alone: no card */}
@@ -454,6 +439,24 @@ function MapCards({ rows, selected, onSelect, card }: { rows: Ranked[]; selected
     <ul ref={track} onScroll={scrolled} className="map-cards card-row pointer-events-auto">
       {rows.map((r) => <VenueRow key={r.venue.id} {...card(r)} card />)}
     </ul>
+  )
+}
+
+/**
+ * Nearest first, offered where it's easily missed (a chip among the filters, a button on the map) to someone whose
+ * browser would ask: tapping it asks. Put away for good with ✕.
+ */
+function LocateOffer({ locating, onLocate, onDismiss, className = '' }: { locating: boolean; onLocate: () => void; onDismiss: () => void; className?: string }) {
+  return (
+    <div className={`locate-offer ${className}`}>
+      <button type="button" onClick={onLocate} disabled={locating} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left font-medium">
+        <Icon of={Gps} className={`size-5 shrink-0 text-action ${locating ? 'animate-pulse' : ''}`} />
+        {locating ? 'Finding you…' : 'See what’s nearest you'}
+      </button>
+      <button type="button" onClick={onDismiss} aria-label="Not now" title="Not now" className="-mr-1 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:text-ink">
+        <Icon of={CloseCircle} className="size-5" />
+      </button>
+    </div>
   )
 }
 

@@ -50,7 +50,7 @@ type Engine = { map: mapkit.Map; pins: Map<string, Pin>; user?: mapkit.Annotatio
  * Apple's map (MapKit JS, its muted style, light or dark with the theme), with the same pins and behaviour as
  * OpenFreeMap's (`MapProps`). `onFail`: Apple's map couldn't load or refused the token.
  */
-export function AppleMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false, onFail }: MapProps & { onFail: () => void }) {
+export function AppleMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false, route, onFail }: MapProps & { onFail: () => void }) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -254,12 +254,12 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
   useEffect(() => labelUntilMeasured(() => name.current()), [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
-  // middle of what the panel leaves free.
+  // middle of what the panel leaves free. With the walk to it drawn, the map is fitted to that instead.
   useEffect(() => {
     const e = engine.current
     const el = container.current
     const row = results.find((r) => r.venue.id === selected)
-    if (!e || !el || !row || !hasLocation(row.venue)) return
+    if (!e || !el || !row || !hasLocation(row.venue) || route) return
     const box = el.getBoundingClientRect()
     const centre = e.map.convertCoordinateToPointOnPage(e.map.center)
     const pin = e.map.convertCoordinateToPointOnPage(coordinate(venuePoint(row)))
@@ -271,7 +271,7 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
     const bottom = cover && !left ? box.bottom - cover.top : 0
     if (x < left + 75 || x > box.width - 75 || y < 75 || y > box.height - bottom - 75)
       e.map.setCenterAnimated(e.map.convertPointOnPageToCoordinate(new DOMPoint(pin.x - left / 2, pin.y + bottom / 2)), true)
-  }, [ready, results, selected, panel])
+  }, [ready, results, selected, panel, route])
 
   // Nearest first, asked for by the page: you on the map, and the map on you
   useEffect(() => {
@@ -284,6 +284,32 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
       e.user = undefined
     }
   }, [ready, here])
+
+  // The walk to the venue picked: a line under the pins, the map fitted to it
+  const overlay = useRef<mapkit.PolylineOverlay>(undefined)
+  const fitted = useRef<mapkit.PolylineOverlay>(undefined)
+  useEffect(() => {
+    const e = engine.current
+    const el = container.current
+    if (!ready || !e || !el || !route?.line.length) return
+    const colour = getComputedStyle(el).getPropertyValue('--route').trim() || '#1a73e8'
+    const line = new mapkit.PolylineOverlay(route.line.map(([lng, lat]) => new mapkit.Coordinate(lat, lng)), { style: new mapkit.Style({ strokeColor: colour, strokeOpacity: 0.85, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }) })
+    e.map.addOverlay(line)
+    overlay.current = line
+    return () => {
+      e.map.removeOverlay(line)
+      overlay.current = undefined
+    }
+  }, [ready, route])
+  // Fitted once as each route arrives (`fitted`), not again as what's over the map changes
+  useEffect(() => {
+    const e = engine.current
+    const line = overlay.current
+    if (!ready || !e || !line || fitted.current === line) return
+    fitted.current = line
+    const pad = fitPadding(inset)
+    e.map.showItems([line], { animate: true, padding: new mapkit.Padding(pad.top, pad.right, pad.bottom, pad.left) })
+  }, [ready, route, inset])
 
   const locate = () => {
     setLocating(true)

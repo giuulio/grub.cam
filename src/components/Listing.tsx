@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { NoteAdd } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
 import { mainDishes, MEAL_LABEL, mealSlot, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
-import type { RowDish } from '../lib/finder.ts'
+import { hasLocation, type RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
 import { pinLabel } from '../lib/mapView.ts'
@@ -16,6 +16,7 @@ import { Icon } from './Icon.tsx'
 import { PinMark } from './MapParts.tsx'
 import { Code } from './MenuRows.tsx'
 import { Status } from './Status.tsx'
+import { DirectionsButton } from './Directions.tsx'
 import { RatingSummary } from './Reviews.tsx'
 import { VenueImage, VenueThumb } from './VenuePhoto.tsx'
 
@@ -111,7 +112,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
           <Status s={status} now={now} meal={leads} />
         )}
         {then && <span className="text-muted"> · {then}</span>}
-        {distance && <span className="text-muted"> · {distance}</span>}
+        {distance && <span className="whitespace-nowrap text-muted"> · {distance}</span>}
         {!snapshot && r.status.kind === 'unknown' && (
           <>
             {' · '}
@@ -139,6 +140,8 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
             {head}
             <div className="mt-2 line-clamp-2">{preview}</div>
           </div>
+          {/* On a phone's map, the way there in one tap */}
+          {hasLocation(v) && <DirectionsButton to={v} className="self-center" />}
         </>
       ) : (
         <>

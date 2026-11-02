@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { TYPE_LABEL, type Ranked } from '../lib/filters.ts'
 import type { Point } from '../lib/map.ts'
+import type { Route } from '../lib/route.ts'
 import { TYPE_ICON } from '../lib/icons.ts'
 import { pinFill, pinLabel } from '../lib/mapView.ts'
 import { venueTypes, type VenueType } from '../lib/types.ts'
@@ -19,9 +20,10 @@ import { venueTypes, type VenueType } from '../lib/types.ts'
  * site's few venues (17). `focus`: a venue to centre on at `maxZoom` instead of fitting them all, for a venue's own
  * page, where the others are context. `embedded`: a small map inside a page that scrolls, so the wheel scrolls the
  * page, not the map (the zoom buttons and pinching still zoom). `onBackground`: a click on the map itself, not a pin
- * (to let go of the picked one).
+ * (to let go of the picked one). `route`: the walk from `here` to the picked venue, drawn under the pins, the map fitted
+ * to it.
  */
-export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number; bottom?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean }
+export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number; bottom?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean; route?: Route }
 
 /**
  * A venue's pin, as Apple marks its own places: a disc in its type's colour (or its two types') with the type's glyph,
