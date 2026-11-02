@@ -401,10 +401,17 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
               // A member's menu goes up from yesterday on
               send={!snapshot && !venue.menu_scripted && date >= addDaysISO(now.date, -1) ? (meal) => sendPath(venue, 'menu', { date, meal }) : undefined}
             />
-            {menuBy && (
+            {menuBy ? (
               <p className="mt-2 text-sm text-muted">
                 This menu was sent in by <SentBy by={menuBy} />
               </p>
+            ) : (
+              // Where the venue posts it, to check or read further ahead
+              venue.menu_url && (
+                <p className="mt-2 text-sm text-muted">
+                  Menu from <ExternalLink href={venue.menu_url} />
+                </p>
+              )
             )}
           </>
         ) : (

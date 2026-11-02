@@ -25,7 +25,7 @@ Fixed menu items can include a description or choices in the price format's opti
 Source quirks worth preserving:
 
 - PDFs: `curl -A "Mozilla/5.0" … | pdftotext -layout - -` extracts layout. Sway/Canva can be inspected with headless Chrome's `--dump-dom`.
-- Canva's rendered DOM shows only the first page; later text is in JSON `"A":["…"]` runs, with supper blocks before their day labels.
+- Canva's rendered DOM shows only the page it opens at (`?embed#4` opens page 4) and its neighbours; every page's text is in the viewer's JSON `"A":["…"]` runs, in page order, with supper blocks before their day labels. Lucy's design gains a page per week rather than always being overwritten (2 Nov 2026: last week's menu on page 1, newsletters on 2 and 3, this week's on 4): `menuPages()` numbers its pages from that JSON, and each week's menu is its own document, drawn and read at its page.
 - Lucy Cavendish uses V = vegan and Vn = vegetarian; transcribe explicit `(vegan)` / `(vegetarian)`. Clare Hall's PB means plant-based. Never assume a diet code's meaning.
 - St Catharine's PDFs contain the whole four-week cycle and each week's dates. Fitzwilliam and Lucy Cavendish also publish formal menus; save them at service `formal` on the room that holds them.
 - Queens' page has a BotDetect CAPTCHA, including in headless Chrome. Members-only sources need a collaborator.

@@ -4,6 +4,7 @@ import { catzDocuments } from './st-catharines.ts'
 import { churchillMenu, parseChurchill } from './churchill.ts'
 import { eddiesDocuments } from './st-edmunds.ts'
 import { fitzDocuments } from './fitzwilliam.ts'
+import { menuPages } from './lucy-cavendish.ts'
 import { parseNewnham } from './newnham.ts'
 import { pembrokeDocuments } from './pembroke.ts'
 import { trinityDocument } from './trinity.ts'
@@ -75,5 +76,14 @@ describe('the documents a listing links', () => {
     expect(docs).toHaveLength(12)
     expect(docs[0].label).toBe("St Catharine's cafeteria menu, weekday lunch, week 1 of its four-week cycle")
     expect(docs[11].label).toBe("St Catharine's cafeteria menu, weekend brunch and dinner, week 4 of its four-week cycle")
+  })
+})
+
+describe('Lucy Cavendish', () => {
+  it("numbers the design's pages from the viewer's data, a week's menu or a newsletter each, whichever page is drawn", () => {
+    // As on 2 Nov 2026: last week's menu, two newsletters, then this week's menu after them; the drawn page's text isn't counted
+    const html = '<p>Lucy Cavendish Catering: 26th October- 1st November</p><script>{"A":["Lucy Cavendish Catering: 26th October- 1st November\\\\n"]},{"A":["Weekly Catering Newsletter\\\\n"]},{"A":["Weekly Catering Newsletter"]},{"A":["Lucy Cavendish Catering: 2nd November-  8th November\\\\n"]}</script>'
+    expect(menuPages(html)).toEqual([{ page: 1, week: '26th October- 1st November' }, { page: 4, week: '2nd November- 8th November' }])
+    expect(menuPages('<html>Just a moment…</html>')).toEqual([])
   })
 })
