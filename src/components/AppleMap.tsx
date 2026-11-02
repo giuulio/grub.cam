@@ -26,7 +26,8 @@ function loadMapKit(): Promise<void> {
     script.crossOrigin = 'anonymous'
     script.async = true
     script.dataset.callback = 'grubMapKitLoaded'
-    script.dataset.libraries = 'map,annotations'
+    // Overlays for the walk to a venue (`PolylineOverlay`)
+    script.dataset.libraries = 'map,annotations,overlays'
     script.onerror = () => reject(new Error('MapKit JS could not load'))
     document.head.append(script)
   })
@@ -293,7 +294,13 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
     const el = container.current
     if (!ready || !e || !el || !route?.line.length) return
     const colour = getComputedStyle(el).getPropertyValue('--route').trim() || '#1a73e8'
-    const line = new mapkit.PolylineOverlay(route.line.map(([lng, lat]) => new mapkit.Coordinate(lat, lng)), { style: new mapkit.Style({ strokeColor: colour, strokeOpacity: 0.85, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }) })
+    let line: mapkit.PolylineOverlay
+    try {
+      line = new mapkit.PolylineOverlay(route.line.map(([lng, lat]) => new mapkit.Coordinate(lat, lng)), { style: new mapkit.Style({ strokeColor: colour, strokeOpacity: 0.85, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }) })
+    } catch {
+      // MapKit without what draws a line: the page without the walk, never no page
+      return
+    }
     e.map.addOverlay(line)
     overlay.current = line
     return () => {
