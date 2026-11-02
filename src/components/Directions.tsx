@@ -30,11 +30,11 @@ export function Directions({ to, walk, onFind, finding = false, inline = false, 
         )}
       </span>
       <a href={apple} target="_blank" rel="noopener" aria-label="Walking directions in Apple Maps" className="chip h-9 sm:h-9">
-        <AppleMapsIcon className="size-[1.125rem]" />
+        <AppleMapsIcon className="size-[1.125rem] shrink-0" />
         Apple Maps
       </a>
       <a href={google} target="_blank" rel="noopener" aria-label="Walking directions in Google Maps" className="chip h-9 sm:h-9">
-        <GoogleMapsIcon className="h-[1.125rem]" />
+        <GoogleMapsIcon className="h-[1.125rem] shrink-0" />
         Google Maps
       </a>
     </div>

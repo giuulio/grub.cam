@@ -274,12 +274,15 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
       e.map.setCenterAnimated(e.map.convertPointOnPageToCoordinate(new DOMPoint(pin.x - left / 2, pin.y + bottom / 2)), true)
   }, [ready, results, selected, panel, route])
 
-  // Nearest first, asked for by the page: you on the map, and the map on you
+  // Nearest first, asked for by the page: you on the map, and the map on you; with the walk drawn, the map is fitted
+  // to that instead (MapKit keeps the first of two moves)
+  const walking = useRef(route)
+  useEffect(() => { walking.current = route }, [route])
   useEffect(() => {
     const e = engine.current
     const el = container.current
     if (!ready || !e || !el) return
-    if (here) showHere(e, here, el)
+    if (here) showHere(e, here, el, !walking.current)
     else if (e.user) {
       e.map.removeAnnotation(e.user)
       e.user = undefined
@@ -353,11 +356,11 @@ function showItems(e: Engine, items: mapkit.Annotation[], el: HTMLElement, inset
 }
 
 /** You, as a dot, with the map moved to you. */
-function showHere(e: Engine, p: Point, el: HTMLElement) {
+function showHere(e: Engine, p: Point, el: HTMLElement, move = true) {
   if (e.user) e.map.removeAnnotation(e.user)
   // Hung from a point of no size, as the pins are, so MapKit always places it the same
   const dot = userDot()
   e.user = new mapkit.Annotation(coordinate(p), () => dot, { calloutEnabled: false, enabled: false, anchorOffset: new DOMPoint(0, 0), displayPriority: 1000 })
   e.map.addAnnotation(e.user)
-  e.map.setRegionAnimated(regionAt(p, 15, el), true)
+  if (move) e.map.setRegionAnimated(regionAt(p, 15, el), true)
 }

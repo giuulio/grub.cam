@@ -222,11 +222,14 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
       e.map.easeTo({ center: position(row), offset: [left / 2, -bottom / 2], duration: 250 })
   }, [ready, results, selected, panel, route])
 
-  // Nearest first, asked for by the page: you on the map, and the map on you
+  // Nearest first, asked for by the page: you on the map, and the map on you; with the walk drawn, the map is fitted
+  // to that instead
+  const walking = useRef(route)
+  useEffect(() => { walking.current = route }, [route])
   useEffect(() => {
     const e = engine.current
     if (!ready || !e) return
-    if (here) showHere(e, here)
+    if (here) showHere(e, here, !walking.current)
     else e.user?.remove()
   }, [ready, here])
 
@@ -301,8 +304,8 @@ function drawRoute(e: Engine, route: Route | undefined, colour: string) {
 }
 
 /** You, as a dot, with the map moved to you. */
-function showHere(e: Engine, p: Point) {
+function showHere(e: Engine, p: Point, move = true) {
   e.user?.remove()
   e.user = new e.M.Marker({ element: userDot() }).setLngLat([p.longitude, p.latitude]).addTo(e.map)
-  e.map.easeTo({ center: [p.longitude, p.latitude], zoom: 15, duration: 300 })
+  if (move) e.map.easeTo({ center: [p.longitude, p.latitude], zoom: 15, duration: 300 })
 }
