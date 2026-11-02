@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useSearchParams } from 'react-router'
-import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Map as MapIcon, Plate, SearchNormal, Setting4 } from 'reicon-react'
+import { Clock, CloseCircle, Gps, Leaf, List as ListIcon, Magnifier, Map as MapIcon, Plate } from 'reicon-react'
 import { ChipSelect } from '../components/Controls.tsx'
 import { FormalCompare } from '../components/FormalCompare.tsx'
 import { HeaderSearch } from '../components/Header.tsx'
@@ -59,9 +59,8 @@ function Finder({ scope }: { scope: Scope }) {
   // Nearest first: where you are, asked for only on the click and kept in memory
   const [here, setHere] = useState<Point>()
   const [locating, setLocating] = useState(false)
-  // A phone's bar: the search field open, the filters' sheet open
+  // A phone's search, opened from its magnifying glass
   const [searchOpen, setSearchOpen] = useState(false)
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [note, setNote] = useState('')
   // How many rows show: a page at a time, back to one whenever the tab or the filters change
   const [shown, setShown] = useState(PAGE)
@@ -108,8 +107,6 @@ function Finder({ scope }: { scope: Scope }) {
   // Narrowed past the tab: the map then frames every venue left, not just central Cambridge
   const narrowed = !!(f.q || f.openNow || f.sites?.length || f.kind || (scope === 'hall' && f.meal) || f.diets.length)
   const filtered = narrowed || f.date !== now.date || !!here
-  // How many filters are on, on a phone's Filters button
-  const on = [f.openNow, !!(f.sites?.length || f.kind), scope === 'hall' && !!f.meal, scope === 'hall' && f.diets.length > 0, scope === 'hall' && f.date !== now.date].filter(Boolean).length
   const clear = () => {
     update((p) => { for (const k of ['q', 'open', 'site', 'kind', 'meal', 'diet', 'date']) p.delete(k) })
     setHere(undefined)
@@ -141,8 +138,8 @@ function Finder({ scope }: { scope: Scope }) {
   const day = (d: string) => relativeDay(d, now.date) ?? formatISODate(d)
   const dates = Array.from({ length: Math.max(0, (Date.parse(menuTo) - Date.parse(menuFrom)) / 86400000) }, (_, i) => addDaysISO(menuFrom, i))
   const count = `${ranked.length} ${ranked.length === 1 ? info.noun[0] : info.noun[1]}`
-  // A phone opens on the map; ?view=list shows the list instead
-  const listView = params.get('view') === 'list'
+  // A phone opens on the list; ?view=map shows the map instead
+  const listView = params.get('view') !== 'map'
   // The map is only made where it's shown (on a prerendered page, its frame holds the place)
   const showMap = !snapshot && (split || !listView)
   const picked = ranked.find((r) => r.venue.id === selected)
@@ -178,7 +175,7 @@ function Finder({ scope }: { scope: Scope }) {
     return { r, now, dishes: searching || f.diets.length ? resultDishes(r, f) : undefined, distance: m != null ? formatDistance(m) : undefined, formal: scope === 'formal' }
   }
   const switchView = () => {
-    set('view', listView ? undefined : 'list')
+    set('view', listView ? 'map' : undefined)
     if (listView) window.scrollTo({ top: 0 })
     else requestAnimationFrame(() => results.current?.scrollIntoView({ block: 'start' }))
   }
@@ -239,9 +236,9 @@ function Finder({ scope }: { scope: Scope }) {
           with one bar over its top (the search behind its magnifying glass, the tabs, the filters behind a button) and
           the picked venue's card over its foot (swipe for the next), or the list under the same bar. */}
       <div ref={results} className={`finder ${listView ? 'is-list' : 'is-map'}`}>
-        {/* On a phone, one bar: the search (the map's or the list's, not the header's) behind its magnifying glass, the
-            tabs, and the filters behind a button, with how many are on; a search typed keeps the field open */}
-        <div className="finder-bar md:hidden">
+        {/* On a phone, one line: the search, a short box until it's tapped (then the field fills the line, the
+            keyboard up, with ✕ to close it; a typed search keeps it open), and the tabs beside it */}
+        <div className="finder-bar flex items-center gap-2 md:hidden">
           {searchOpen || f.q ? (
             <>
               <HeaderSearch finder autoFocus={!f.q} className="min-w-0 flex-1" />
@@ -251,29 +248,19 @@ function Finder({ scope }: { scope: Scope }) {
             </>
           ) : (
             <>
-              <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className="bar-btn">
-                <Icon of={SearchNormal} className="size-5" />
+              <button type="button" onClick={() => setSearchOpen(true)} className="bar-btn search-glow search-pill">
+                <Icon of={Magnifier} className="size-5" />
+                <span className="truncate">Search…</span>
               </button>
-              <ScopeSwitch className="min-w-0 flex-1" />
-              <button type="button" aria-label={on ? `Filters, ${on} on` : 'Filters'} aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} data-on={on > 0 || undefined} className="bar-btn relative">
-                <Icon of={Setting4} className="size-5" />
-                {on > 0 && <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-action text-xs font-semibold text-action-ink">{on}</span>}
-              </button>
+              <ScopeSwitch className="shrink-0" />
             </>
           )}
         </div>
-        {/* The filters' sheet on a phone: tapping beside it closes it */}
-        {filtersOpen && <div aria-hidden="true" onClick={() => setFiltersOpen(false)} className="fixed inset-0 z-[740] bg-black/30 md:hidden" />}
         <div ref={side} className="finder-side md:@container">
           {/* What this tab is, in the words people search for, read out; what's shown is the switch between tabs */}
           <h1 className="sr-only">{info.heading}</h1>
           <ScopeSwitch className="max-md:hidden" />
-          <div className={`finder-filters card-row flex items-center gap-1.5 ${filtersOpen ? 'is-open' : ''}`}>
-            {/* On a phone they're a sheet from the foot of the screen */}
-            <div className="mb-1 flex w-full items-center justify-between md:hidden">
-              <h2 className="title text-xl">Filters</h2>
-              <button type="button" onClick={() => setFiltersOpen(false)} className="btn btn-primary">Done</button>
-            </div>
+          <div className="finder-filters card-row flex items-center gap-1.5">
             {/* Hours, as Google Maps': open now first; on Dining, then which day's menus */}
             {(scope === 'hall' || !snapshot) && (
               <ChipSelect
@@ -291,6 +278,13 @@ function Finder({ scope }: { scope: Scope }) {
                 })}
               />
             )}
+            {/* Nearest first: on a phone, a chip here, so the list has it too; beside a list, the map's own button */}
+            {!snapshot && (
+              <button type="button" onClick={locate} aria-pressed={!!here} className={`chip md:hidden ${locating ? 'animate-pulse' : ''}`}>
+                <Icon of={Gps} className="size-[1.125rem]" />
+                {locating ? 'Finding you…' : 'Nearest first'}
+              </button>
+            )}
             <SitePicker
               sites={sites}
               available={inTab}
@@ -303,30 +297,34 @@ function Finder({ scope }: { scope: Scope }) {
                 else p.delete('kind')
               })}
             />
-            {/* The same four on every tab, so the row doesn't change under you; the meal and diet are of Dining's menus */}
-            <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
-            <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} off={scope === 'hall' ? undefined : 'For Dining halls’ menus'} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
+            {/* The meal and diet are of Dining's menus, so on Dining alone */}
+            {scope === 'hall' && (
+              <>
+                <ChipSelect label="Meal" icon={Plate} value={f.meal ?? ''} onChange={(m) => set('meal', m)} options={[['', 'Any meal'], ...FILTER_MEALS.map((m): [string, string] => [m, MEAL_LABEL[m]])]} />
+                <ChipSelect label="Diet" icon={Leaf} value={f.diets[0] ?? ''} onChange={(d) => set('diet', d)} options={[['', 'Any diet'], ...FILTER_DIETS.map((t): [string, string] => [t, DIET_LABEL[t]])]} />
+              </>
+            )}
             {filtered && (
               <button type="button" onClick={clear} aria-label="Clear filters" title="Clear filters" className="chip w-11 px-0 text-muted sm:w-10">
                 <Icon of={CloseCircle} className="size-5" />
               </button>
             )}
+            {/* How many, at the row's end rather than a line of its own (on a phone's map, its List button says) */}
+            {!alone && <h2 className="finder-count ml-auto pl-2 text-[0.9375rem] font-medium whitespace-nowrap">{count}</h2>}
           </div>
           {note && <p role="status" className="finder-note text-sm text-muted">{note}</p>}
           <section aria-label={`${info.label} venues`} className="finder-list">
-            <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
-              {alone ? (
+            {alone && (
+              <div className="flex items-center justify-between gap-3 py-1 text-[0.9375rem]">
                 <button type="button" onClick={() => pick(undefined)} className="flex cursor-pointer items-center gap-1.5 font-medium hover:underline">
                   <Icon of={CloseCircle} className="size-4.5" />
                   Show all {count}
                 </button>
-              ) : (
-                <h2 className="font-medium">{count}</h2>
-              )}
-            </div>
+              </div>
+            )}
             {ranked.length ? (
               rows.length > 0 && (
-                <ul className="mt-3 space-y-1">
+                <ul className="mt-1 space-y-3 md:space-y-1">
                   {rows.map((r) => <VenueRow key={r.venue.id} {...rowProps(r)} selected={!alone && r.venue.id === selected} onHover={setHover} />)}
                 </ul>
               )
@@ -357,7 +355,7 @@ function Finder({ scope }: { scope: Scope }) {
                 onBackground={() => pick(undefined)}
                 filtered
                 panel={sheet}
-                inset={split ? { top: 0 } : { top: 64, bottom: picked ? 130 : 0 }}
+                inset={split ? { top: 0 } : { top: 56, bottom: picked ? 130 : 0 }}
                 here={here}
                 controls={false}
                 core={!narrowed}
@@ -367,7 +365,7 @@ function Finder({ scope }: { scope: Scope }) {
             )}
             {/* Nearest first, as a map's own button: where you are, and the list by distance from it */}
             {!snapshot && (
-              <button type="button" onClick={locate} aria-pressed={!!here} aria-label={locating ? 'Finding you…' : 'Nearest first'} title={here ? 'Nearest first: on' : 'Nearest first'} className={`finder-locate ${locating ? 'animate-pulse' : ''}`}>
+              <button type="button" onClick={locate} aria-pressed={!!here} aria-label={locating ? 'Finding you…' : 'Nearest first'} title={here ? 'Nearest first: on' : 'Nearest first'} className={`finder-locate max-md:hidden ${locating ? 'animate-pulse' : ''}`}>
                 <Icon of={Gps} className="size-5" />
               </button>
             )}
@@ -394,8 +392,7 @@ const SWITCH_NAME: Record<Scope, string> = { all: 'Food & drink', hall: 'Dining 
  * ("Cambridge's" where the list is narrow), then a tab each, the open one its icon and name in a Cambridge Blue pill
  * ("[Cafés]"), the others their icon alone, named on hover and to a screen reader; each its own address, keeping the
  * filters they share and a phone's list. Its size follows the list's width, so with the longest name open it spans
- * the cards exactly (`.scope-switch` in index.css). In a phone's bar, the tabs alone, every one its icon, so they fit
- * between the search and the filters.
+ * the cards exactly (`.scope-switch` in index.css). In a phone's bar, the tabs alone, spread across it.
  */
 function ScopeSwitch({ className = '' }: { className?: string }) {
   const [params] = useSearchParams()
@@ -416,12 +413,8 @@ function ScopeSwitch({ className = '' }: { className?: string }) {
             title={SWITCH_NAME[s.scope]}
             className={({ isActive }) => `title flex shrink-0 items-center justify-center rounded-full whitespace-nowrap transition-colors ${isActive ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}
           >
-            {({ isActive }) => (
-              <>
-                <Icon of={SCOPE_ICON[s.scope]} />
-                {isActive && <span className="scope-name">{SWITCH_NAME[s.scope]}</span>}
-              </>
-            )}
+            <Icon of={SCOPE_ICON[s.scope]} />
+            <span className="scope-name">{SWITCH_NAME[s.scope]}</span>
           </NavLink>
         ))}
       </div>

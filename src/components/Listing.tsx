@@ -57,7 +57,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
   const then = after && !(!dishes?.length && r.next?.date === now.date && r.next.service === after.meal) ? `${after.meal === 'formal' ? 'Formal hall' : MEAL_LABEL[after.meal]} ${after.start}` : undefined
   // The status leads with the meal for a venue serving more than one (`leadsWithMeal()`); its preview then needn't again
   const named = v.type === 'hall' || types.length > 1
-  // A row listing a meal's dishes heads them in its status line: "Tomorrow's lunch menu · from 12:20", "Today's dinner
+  // A row listing a meal's dishes heads them in its status line: "Tomorrow's lunch menu · 12:20–13:45", "Today's dinner
   // menu · until 19:30", so what follows reads as the menu
   const listed = !snapshot && !formal && !dishes?.length && named && r.next?.items.length && DAILY.includes(r.next.service) ? r.next : undefined
   const at = status.kind === 'open' || status.kind === 'opening' ? status : status.kind === 'closed' ? status.next : undefined
@@ -94,7 +94,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
                 <span className="sr-only">Open </span>until {status.slot.end}
               </span>
             ) : (
-              <span className="text-muted">from {at.slot.start}</span>
+              <span className="whitespace-nowrap text-muted">{at.slot.start}–{at.slot.end}</span>
             )}
           </span>
         ) : (
@@ -120,7 +120,7 @@ export function VenueRow({ r, now, selected = false, onHover, dishes, distance, 
       onMouseLeave={() => onHover?.(undefined)}
       onFocus={() => onHover?.(v.id)}
       onBlur={() => onHover?.(undefined)}
-      className={`venue-row relative leading-snug transition-colors ${card ? 'raised flex gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `-mx-3 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-2.5 rounded-[1.5rem] p-3 text-base sm:grid-cols-[min(38%,15rem)_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-5 sm:gap-y-0 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
+      className={`venue-row relative leading-snug transition-colors ${card ? 'raised flex gap-3 rounded-[1.25rem] p-3 text-[0.9375rem]' : `grid grid-cols-[4.5rem_minmax(0,1fr)] -mx-3 gap-x-3 gap-y-2.5 rounded-[1.5rem] p-3 text-base sm:grid-cols-[min(38%,15rem)_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-5 sm:gap-y-0 ${selected ? 'bg-accent/20' : 'hover:bg-ink/4'}`}`}
     >
       {card ? (
         <>
@@ -225,7 +225,7 @@ function RowPreview({ r, now, types, dishes, formal, named, compact }: { r: Rank
     // When it's served that day, as the status says when a venue opens
     const slot = mealSlot(v, day.service, day.date)
     // Named as the status line names a menu (a prerendered page can't say which day is today)
-    const title = `${snapshot ? `${MEAL_LABEL[day.service]} menu` : menuName(day.date, day.service, now.date)}${slot ? ` · from ${slot.start}` : ''}`
+    const title = `${snapshot ? `${MEAL_LABEL[day.service]} menu` : menuName(day.date, day.service, now.date)}${slot ? ` · ${slot.start}–${slot.end}` : ''}`
     // A meal posted elsewhere says so ("European Night, see posters for details")
     return <Dishes title={said ? undefined : title} items={day.items.length ? mains : [{ name: day.note ?? '', tags: [] }]} compact={compact} />
   }

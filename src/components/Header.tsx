@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
-import { AddCircle } from 'reicon-react'
+import { AddCircle, Magnifier } from 'reicon-react'
 import { SCOPES } from '../lib/finder.ts'
 import { SITE_NAME } from '../lib/site.ts'
 import { AccountButton } from './Account.tsx'
@@ -75,7 +75,8 @@ export function Header() {
 /**
  * The search, one rounded box glowing Cambridge Blue, as Airbnb's: what's typed, and nothing else (the kind of venue
  * is the first of the finder's filters); the keyboard's key searches. On the front page's tabs it's the page's own search (the list and map follow as you type); elsewhere it
- * opens the front page with it. `className` places it: in the header, or over a phone's map.
+ * opens the front page with it. `className` places it: in the header, or atop a phone's list and map, where a magnifying
+ * glass leads it.
  */
 export function HeaderSearch({ finder, autoFocus = false, className = '' }: { finder: boolean; autoFocus?: boolean; className?: string }) {
   const navigate = useNavigate()
@@ -100,8 +101,9 @@ export function HeaderSearch({ finder, autoFocus = false, className = '' }: { fi
         if (finder) (document.activeElement as HTMLElement | null)?.blur()
         else navigate(draft.trim() ? `/?${new URLSearchParams({ q: draft.trim() })}` : '/')
       }}
-      className={`search-box search-glow flex h-12 items-center rounded-full border bg-canvas px-4 sm:h-14 sm:px-6 ${className}`}
+      className={`search-box search-glow flex h-12 items-center gap-2.5 rounded-full border bg-canvas px-4 sm:h-14 sm:px-6 ${className}`}
     >
+      <Icon of={Magnifier} className="size-5 text-muted md:hidden" />
       <input
         type="search"
         value={finder ? (params.get('q') ?? '') : draft}

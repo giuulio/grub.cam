@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from 'react'
-import { Check, ChevronDown, Search, type IconComponent } from 'reicon-react'
+import { Check, ChevronDown, Magnifier, type IconComponent } from 'reicon-react'
 import { Icon } from './Icon.tsx'
+import { useDrop } from '../lib/useDrop.ts'
 
 // Form controls shared by the front page and Coverage, one height for a row of them: 44px on a phone, 40px
 // above (`.btn`, `.chip`, `.field` in index.css).
@@ -38,7 +39,7 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
 export function SearchField({ value, onChange, placeholder, className = '' }: { value: string; onChange: (q: string) => void; placeholder: string; className?: string }) {
   return (
     <label className={`field ${className}`}>
-      <Icon of={Search} />
+      <Icon of={Magnifier} />
       <input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
     </label>
   )
@@ -57,7 +58,7 @@ export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSe
 /**
  * A chip that opens a short list to pick one from, as Google Maps' "Hours ▾": its icon, the picked option's name (or
  * `text`), Cambridge Blue once it isn't the first (or as `on` says). The list is ours, as the colleges' picker is, so
- * every filter opens alike: under the chip, or rising from the foot of a phone's screen; `null` between options draws
+ * every filter opens alike: under the chip (on a phone, the screen's width, `useDrop()`); `null` between options draws
  * a line. Picking closes it, as do Escape and a click outside. `off`: greyed and shut, saying why on hover, for a
  * filter that's always in its row but doesn't apply here.
  */
@@ -75,6 +76,7 @@ export function ChipSelect({ label, value, options, onChange, icon, text, on, of
       document.removeEventListener('keydown', escape)
     }
   }, [open])
+  useDrop(box, open)
   const choices = options.filter((o): o is [string, string] => !!o)
   const current = choices.find(([v]) => v === value) ?? choices[0]
   return (
@@ -85,7 +87,7 @@ export function ChipSelect({ label, value, options, onChange, icon, text, on, of
         <Icon of={ChevronDown} className="size-4" />
       </button>
       {open && (
-        <div role="menu" aria-label={label} className="raised z-[800] flex flex-col overflow-y-auto rounded-xl p-1.5 text-left max-md:fixed max-md:inset-x-2 max-md:bottom-2 max-md:max-h-[70svh] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(24rem,65svh)] md:min-w-52">
+        <div role="menu" aria-label={label} className="raised z-[800] flex flex-col overflow-y-auto rounded-xl p-1.5 text-left max-md:fixed max-md:inset-x-2 max-md:top-(--drop) max-md:max-h-[calc(100svh-var(--drop)-0.5rem)] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(24rem,65svh)] md:min-w-52">
           {options.map((o, n) =>
             o ? (
               <button

@@ -3,6 +3,7 @@ import { ChevronDown, MapPoint } from 'reicon-react'
 import type { Site } from '../lib/types.ts'
 import { SearchField, Segmented } from './Controls.tsx'
 import { Icon } from './Icon.tsx'
+import { useDrop } from '../lib/useDrop.ts'
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/[’']/g, '').toLowerCase()
 const nameOf = (s: Site) => s.short_name ?? s.name
@@ -15,7 +16,7 @@ const KINDS: ['' | Kind, string][] = [['', 'All'], ['college', 'Colleges'], ['un
  * what's picked ("Jesus, Trinity", "3 colleges and sites", "Colleges"), opening a box with a choice of all, colleges or
  * University, a search over the names (and nicknames), then every college and site to tick, grouped. Picking a kind
  * clears the ticks and a tick clears the kind. Ticks apply as they're made; Escape, a click outside or Done closes it.
- * On a phone the box rises from the foot of the screen, so a row of chips that scrolls sideways can't clip it.
+ * On a phone the box is the screen's width, under the chip (`useDrop()`).
  * `available`: the sites with venues in the tab; the others, and a kind with none (University sites under Formal
  * halls), are greyed, as picking them would show nothing.
  */
@@ -41,6 +42,7 @@ export function SitePicker({ sites, value, kind, onChange, available }: { sites:
       document.removeEventListener('keydown', escape)
     }
   }, [open])
+  useDrop(box, open)
   const picked = sites.filter((s) => ticked.includes(s.slug))
   const label = kind === 'college' ? 'Colleges' : kind === 'university' ? 'University sites' : !picked.length ? 'Anywhere' : picked.length <= 2 ? picked.map(nameOf).join(', ') : `${picked.length} colleges and sites`
   const pick = (slugs: string[]) => {
@@ -57,7 +59,7 @@ export function SitePicker({ sites, value, kind, onChange, available }: { sites:
         <Icon of={ChevronDown} className="size-4" />
       </button>
       {open && (
-        <div role="dialog" aria-label="Colleges and sites" className="raised z-[800] flex flex-col overflow-hidden rounded-xl text-left max-md:fixed max-md:inset-x-2 max-md:bottom-2 max-md:max-h-[70svh] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(30rem,65svh)] md:w-80">
+        <div role="dialog" aria-label="Colleges and sites" className="raised z-[800] flex flex-col overflow-hidden rounded-xl text-left max-md:fixed max-md:inset-x-2 max-md:top-(--drop) max-md:max-h-[calc(100svh-var(--drop)-0.5rem)] md:absolute md:top-full md:left-0 md:mt-2 md:max-h-[min(30rem,65svh)] md:w-80">
           <div className="space-y-3 border-b border-ink/10 p-3">
             <Segmented label="Which" options={KINDS} value={kind ?? ''} disabled={KINDS.flatMap(([k]) => (k && available && !sites.some((s) => s.kind === k && available.has(s.slug)) ? [k] : []))} onChange={(k) => { setTicked([]); onChange([], k || undefined) }} />
             <SearchField value={q} onChange={setQ} placeholder="Find a college or site" />

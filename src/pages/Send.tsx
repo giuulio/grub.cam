@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { AlertCircle, Buildings, Camera, Clock, DocumentText, Flag, Gallery, GraduationCap, MenuBoard, Receipt, Search, Sparkles, TickCircle, X } from 'reicon-react'
+import { AlertCircle, Buildings, Camera, Clock, DocumentText, Flag, Gallery, GraduationCap, Magnifier, MenuBoard, Receipt, Sparkles, TickCircle, X } from 'reicon-react'
 import { Icon } from '../components/Icon.tsx'
 import { useReady } from '../lib/data.tsx'
 import { MEAL_LABEL } from '../lib/filters.ts'
@@ -333,7 +333,7 @@ function VenuePicker({ venues, onPick }: { venues: Venue[]; onPick: (id: string)
   return (
     <div>
       <label className="relative block">
-        <Icon of={Search} className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
+        <Icon of={Magnifier} className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
         <input
           type="search"
           value={q}
