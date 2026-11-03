@@ -307,7 +307,8 @@ export function AppleMap({ results, selected, highlight, onSelect, onBackground,
     e.map.addOverlay(line)
     overlay.current = line
     return () => {
-      e.map.removeOverlay(line)
+      // Leaving the page, the map is destroyed first (its effect comes first), and MapKit throws on removing from it
+      if (engine.current === e) e.map.removeOverlay(line)
       overlay.current = undefined
     }
   }, [ready, route])
