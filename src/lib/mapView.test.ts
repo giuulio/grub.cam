@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { pickToken, pinLabel, placeLabels, tokenOrigin, zoomFor } from './mapView.ts'
+import { describe, expect, it, vi } from 'vitest'
+import { panelCover, pickToken, pinLabel, placeLabels, tokenOrigin, whenStill, zoomFor, type Moving } from './mapView.ts'
 
 const jwt = (claims: object) => `header.${btoa(JSON.stringify(claims)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')}.signature`
 const apex = jwt({ iss: 'TEAM', origin: 'grub.cam', scope: 'mapkit_js' })
@@ -47,5 +47,82 @@ describe('pin names', () => {
   it('reads the zoom from a span', () => {
     expect(zoomFor(256, 360)).toBe(0)
     expect(Math.round(zoomFor(800, 360 / 2 ** 15 * 800 / 256))).toBe(15)
+  })
+})
+
+describe('a panel over the map', () => {
+  // The map 600 px square at (500, 100) on the page
+  const box = { left: 500, top: 100, right: 1100, bottom: 700, width: 600, height: 600 } as DOMRect
+  const panel = (left: number, top: number, width: number, height: number) => ({ getBoundingClientRect: () => ({ left, top, width, height, right: left + width, bottom: top + height }) }) as HTMLElement
+  it('covers nothing when it isn’t drawn (an empty sheet, beside a list)', () => {
+    expect(panelCover(panel(0, 0, 0, 0), box)).toEqual({ left: 0, bottom: 0 })
+    expect(panelCover(undefined, box)).toEqual({ left: 0, bottom: 0 })
+  })
+  it('covers the foot on a phone, the left beside the map', () => {
+    expect(panelCover(panel(500, 520, 600, 180), box)).toEqual({ left: 0, bottom: 180 })
+    expect(panelCover(panel(500, 100, 240, 600), box)).toEqual({ left: 240, bottom: 0 })
+  })
+})
+
+describe('moving Apple’s map once it’s still', () => {
+  // A map that's moving, and ends its move when told to
+  const map = () => {
+    const ends = new Set<() => void>()
+    const e: Moving & { end: () => void } = {
+      moving: true,
+      map: { addEventListener: (_, f) => ends.add(f), removeEventListener: (_, f) => ends.delete(f) },
+      end: () => {
+        e.moving = false
+        ends.forEach((f) => f())
+      },
+    }
+    return e
+  }
+  it('moves at once when it’s still', () => {
+    const move = vi.fn()
+    whenStill({ ...map(), moving: false }, move)
+    expect(move).toHaveBeenCalledOnce()
+  })
+  it('waits for the move under way to end, as MapKit would drop this one', () => {
+    vi.useFakeTimers()
+    const e = map()
+    const move = vi.fn()
+    whenStill(e, move)
+    vi.advanceTimersByTime(1500)
+    expect(move).not.toHaveBeenCalled()
+    e.end()
+    vi.runAllTimers()
+    expect(move).toHaveBeenCalledOnce()
+    vi.useRealTimers()
+  })
+  it('moves anyway when the end is never told, and not twice', () => {
+    vi.useFakeTimers()
+    const e = map()
+    const move = vi.fn()
+    whenStill(e, move)
+    vi.advanceTimersByTime(4000)
+    vi.runAllTimers()
+    e.end()
+    vi.runAllTimers()
+    expect(move).toHaveBeenCalledOnce()
+    vi.useRealTimers()
+  })
+  it('never moves once cancelled (another venue picked meanwhile)', () => {
+    vi.useFakeTimers()
+    const e = map()
+    const move = vi.fn()
+    const cancel = whenStill(e, move)
+    cancel()
+    e.end()
+    vi.runAllTimers()
+    expect(move).not.toHaveBeenCalled()
+    // Nor when cancelled between the end and the move
+    const later = vi.fn()
+    const stop = whenStill(e.moving ? e : Object.assign(e, { moving: true }), later)
+    e.end()
+    stop()
+    vi.runAllTimers()
+    expect(later).not.toHaveBeenCalled()
+    vi.useRealTimers()
   })
 })

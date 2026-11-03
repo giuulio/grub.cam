@@ -33,8 +33,11 @@ export async function walkingRoute(from: Point, to: Point, signal?: AbortSignal)
 /** "4 min walk", never under a minute. */
 export const walkTime = (r: Route) => `${Math.max(1, Math.round(r.seconds / 60))} min walk`
 
-/** The walking route between two points while both are known, fetched as they change (and the last one let go). */
-export function useWalkingRoute(from?: Point, to?: Point): Route | undefined {
+/**
+ * The walking route between two points while both are known, fetched as they change (and the last one let go).
+ * `routing`: one is wanted and still on its way, so a map waits for it rather than moving first.
+ */
+export function useWalkingRoute(from?: Point, to?: Point): { route?: Route; routing: boolean } {
   const [got, setGot] = useState<{ key: string; route?: Route }>()
   const want = from && to ? key(from, to) : undefined
   const [fLat, fLon, tLat, tLon] = [from?.latitude, from?.longitude, to?.latitude, to?.longitude]
@@ -48,5 +51,6 @@ export function useWalkingRoute(from?: Point, to?: Point): Route | undefined {
     })
     return () => stop.abort()
   }, [fLat, fLon, tLat, tLon])
-  return got && got.key === want ? got.route : undefined
+  const settled = !!want && got?.key === want
+  return { route: settled ? got.route : undefined, routing: !!want && !settled }
 }

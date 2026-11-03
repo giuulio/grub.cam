@@ -42,6 +42,46 @@ export const fitPadding = (inset: { top?: number; left?: number; bottom?: number
   window.innerWidth >= 640
     ? { top: 60 + (inset.top ?? 0), left: 60 + (inset.left ?? 0), right: 60, bottom: 60 + (inset.bottom ?? 0) }
     : { top: 70 + (inset.top ?? 0), bottom: 90 + (inset.bottom ?? 0), left: 44, right: 44 }
+/** The closest a walk is fitted: a short one fills the map at street level, not a few doorways. */
+export const WALK_ZOOM = 17
+
+/** Apple's map as `whenStill` reads it: `moving` between MapKit's start and end of a change of region. */
+export type Moving = { moving: boolean; map: { addEventListener(type: 'region-change-end', listener: () => void): void; removeEventListener(type: 'region-change-end', listener: () => void): void } }
+
+/**
+ * `move` once Apple's map is still: a move asked for while another is under way is lost, as that one ends where it was
+ * going (a picked venue's walk would be lost to the move before it), so this waits for its end, or a little longer
+ * than MapKit's moves take (up to 2 s) if it never says. Returns the cancel.
+ */
+export function whenStill(e: Moving, move: () => void): () => void {
+  if (!e.moving) {
+    move()
+    return () => {}
+  }
+  // After the end has been told, not inside its telling
+  const go = () => {
+    stop()
+    timer = setTimeout(move)
+  }
+  let timer = setTimeout(go, 4000)
+  const stop = () => {
+    clearTimeout(timer)
+    e.map.removeEventListener('region-change-end', go)
+  }
+  e.map.addEventListener('region-change-end', go)
+  return stop
+}
+
+/**
+ * How much of the map (`box`) a panel over it covers, in px: beside it (narrower than half the map), its left side; on a
+ * phone, its foot. An empty panel isn't drawn (`.finder-sheet:empty`), so covers nothing.
+ */
+export function panelCover(panel: HTMLElement | null | undefined, box: DOMRect): { left: number; bottom: number } {
+  const cover = panel?.getBoundingClientRect()
+  if (!cover?.width || !cover.height) return { left: 0, bottom: 0 }
+  const left = cover.width < box.width / 2 ? Math.max(0, cover.right - box.left) : 0
+  return { left, bottom: left ? 0 : Math.max(0, box.bottom - cover.top) }
+}
 
 /** You are here: a dot hung from a point of no size (`.map-user-origin`), as a pin is, so either map places it the same. */
 export function userDot(): HTMLElement {

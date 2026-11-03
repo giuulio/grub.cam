@@ -131,7 +131,7 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
   const mapped = venue.latitude != null && venue.longitude != null
   // The walk here from where you are, once that's known (already allowed, found on the front page, or asked for here)
   const { here, locating, note, toggle: locate, permission } = useHere()
-  const route = useWalkingRoute(here, hasLocation(venue) ? venue : undefined)
+  const { route, routing } = useWalkingRoute(here, hasLocation(venue) ? venue : undefined)
   return (
     <RailCard className="overflow-hidden">
       {mapped && !snapshot && (
@@ -147,6 +147,7 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
             // You on the map only with the walk drawn, so the map never leaves the venue for you alone
             here={route ? here : undefined}
             route={route}
+            routing={routing}
             onSelect={(id) => {
               const v = rows.find((r) => r.venue.id === id)?.venue
               if (v && v.id !== venue.id) navigate(venuePath(v))

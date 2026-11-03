@@ -21,9 +21,9 @@ import { venueTypes, type VenueType } from '../lib/types.ts'
  * page, where the others are context. `embedded`: a small map inside a page that scrolls, so the wheel scrolls the
  * page, not the map (the zoom buttons and pinching still zoom). `onBackground`: a click on the map itself, not a pin
  * (to let go of the picked one). `route`: the walk from `here` to the picked venue, drawn under the pins, the map fitted
- * to it.
+ * to it, the venue and you. `routing`: that walk is on its way, so the map waits for it rather than moving first.
  */
-export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number; bottom?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean; route?: Route }
+export type MapProps = { results: Ranked[]; selected?: string; highlight?: string[]; onSelect: (id: string) => void; onBackground?: () => void; filtered?: boolean; panel?: RefObject<HTMLElement | null>; inset?: { top?: number; left?: number; bottom?: number }; here?: Point; controls?: boolean; core?: boolean; maxZoom?: number; focus?: string; embedded?: boolean; route?: Route; routing?: boolean }
 
 /**
  * A venue's pin, as Apple marks its own places: a disc in its type's colour (or its two types') with the type's glyph,

@@ -4,7 +4,7 @@ import type * as MapLibre from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { hasLocation } from '../lib/finder.ts'
-import { CAMBRIDGE, findMe, fitPadding, labelPins, labelUntilMeasured, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, position, REACH, userDot } from '../lib/mapView.ts'
+import { CAMBRIDGE, findMe, fitPadding, labelPins, labelUntilMeasured, mainCluster, MAPKIT_TOKEN, mappable, mapTheme, onThemeChange, panelCover, position, REACH, userDot, WALK_ZOOM } from '../lib/mapView.ts'
 import { sideBySide, type Point } from '../lib/map.ts'
 import type { Route } from '../lib/route.ts'
 import { bindSafariPinch } from '../lib/mapGestures.ts'
@@ -28,7 +28,7 @@ export function VenueMap(props: MapProps) {
 }
 
 /** OpenFreeMap's vector tiles (Bright, Fiord in the dark) through MapLibre GL, loaded only where a map shows. */
-function OpenMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false, route }: MapProps) {
+function OpenMap({ results, selected, highlight, onSelect, onBackground, filtered, panel, inset, here, controls = true, core = false, maxZoom = 15, focus, embedded = false, route, routing = false }: MapProps) {
   const container = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const fitKey = useRef('')
@@ -207,25 +207,22 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
   useEffect(() => labelUntilMeasured(() => name.current()), [anchors, selected, litKey, key])
 
   // A picked venue stays in view, clear of its panel: if it's near an edge or under the panel, the map moves it to the
-  // middle of what the panel leaves free. With the walk to it drawn, the map is fitted to that instead.
+  // middle of what the panel leaves free. With the walk to it drawn or on its way, the map is fitted to that instead.
   useEffect(() => {
     const e = engine.current
     const row = results.find((r) => r.venue.id === selected)
-    if (!e || !row || !hasLocation(row.venue) || route) return
+    if (!e || !row || !hasLocation(row.venue) || route || routing) return
     const point = e.map.project(position(row))
     const box = e.map.getContainer().getBoundingClientRect()
-    const cover = panel?.current?.getBoundingClientRect()
-    // Beside the map (narrower than half of it) it covers the left; on a phone, the foot
-    const left = cover && cover.width < box.width / 2 ? cover.right - box.left : 0
-    const bottom = cover && !left ? box.bottom - cover.top : 0
+    const { left, bottom } = panelCover(panel?.current, box)
     if (point.x < left + 75 || point.x > box.width - 75 || point.y < 75 || point.y > box.height - bottom - 75)
       e.map.easeTo({ center: position(row), offset: [left / 2, -bottom / 2], duration: 250 })
-  }, [ready, results, selected, panel, route])
+  }, [ready, results, selected, panel, route, routing])
 
-  // Nearest first, asked for by the page: you on the map, and the map on you; with the walk drawn, the map is fitted
-  // to that instead
-  const walking = useRef(route)
-  useEffect(() => { walking.current = route }, [route])
+  // Nearest first, asked for by the page: you on the map, and the map on you; with the walk drawn or on its way, the
+  // map is fitted to that instead
+  const walking = useRef(false)
+  useEffect(() => { walking.current = !!route || routing }, [route, routing])
   useEffect(() => {
     const e = engine.current
     if (!ready || !e) return
@@ -248,15 +245,19 @@ function OpenMap({ results, selected, highlight, onSelect, onBackground, filtere
       e.map.off('style.load', draw)
     }
   }, [ready, route])
-  // Fitted once as each route arrives (`fitted`), not again as what's over the map changes
+  // Fitted once as each route arrives (`fitted`), not again as what's over the map changes: the walk, the venue past
+  // the road it ends on, and you
   const fitted = useRef<Route>(undefined)
   useEffect(() => {
     const e = engine.current
     if (!ready || !e || !route?.line.length || fitted.current === route) return
     fitted.current = route
     const bounds = route.line.reduce((b, p) => b.extend(p), new e.M.LngLatBounds(route.line[0], route.line[0]))
-    e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom: 17, duration: 300 })
-  }, [ready, route, inset])
+    const row = results.find((r) => r.venue.id === selected)
+    if (row && hasLocation(row.venue)) bounds.extend(position(row))
+    if (here) bounds.extend([here.longitude, here.latitude])
+    e.map.fitBounds(bounds, { padding: fitPadding(inset), maxZoom: WALK_ZOOM, duration: 300 })
+  }, [ready, route, inset, results, selected, here])
 
   const locate = () => {
     setLocating(true)

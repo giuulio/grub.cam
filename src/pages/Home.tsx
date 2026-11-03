@@ -121,7 +121,7 @@ function Finder({ scope }: { scope: Scope }) {
   const showMap = !snapshot && (split || !listView)
   const picked = ranked.find((r) => r.venue.id === selected)
   // The walk there, once where you are is known: drawn on the map, its time on the picked row
-  const route = useWalkingRoute(here, picked && hasLocation(picked.venue) ? picked.venue : undefined)
+  const { route, routing } = useWalkingRoute(here, picked && hasLocation(picked.venue) ? picked.venue : undefined)
   // Beside the map, a picked pin's venue is the list, alone, until it's let go
   const alone = split && !snapshot ? picked : undefined
   // Dining leads with its menus: a venue without one for the date and meal picked is folded into a line at the foot
@@ -341,6 +341,7 @@ function Finder({ scope }: { scope: Scope }) {
                 inset={split ? { top: 0 } : { top: 56, bottom: picked ? 130 : 0 }}
                 here={here}
                 route={route}
+                routing={routing}
                 controls={false}
                 core={!narrowed}
               />
