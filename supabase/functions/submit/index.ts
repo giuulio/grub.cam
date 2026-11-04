@@ -49,7 +49,6 @@
 //
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { invitedUploadError, invitationForm } from '../_shared/invites.ts'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
 import { base64, costOf, moderate, partialString, priceOf, respond, respondStream, MEMBER_TRANSCRIPTION, REVIEW_CHECK, VERDICT, type Image, type MemberTranscription, type ReviewCheck, type Schema, type Verdict } from '../_shared/openai.ts'
 
@@ -75,7 +74,7 @@ const MAX_OUTPUT = 16000
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-contributor-token, x-upload-invite, x-client-info',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-contributor-token, x-client-info',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'content-type': 'application/json' } })
@@ -463,57 +462,6 @@ async function contributorPost(token: string, body: { venue?: string; kind?: str
   return json({ id: data.id, status: 'needs_review' })
 }
 
-/** Invited menu evidence always waits for a person, whatever the client flags or model verdict say. */
-async function invitedPost(req: Request, token: string): Promise<Response> {
-  if (!/^[0-9a-f]{64}$/.test(token)) return fail('This invitation is not valid.', 401)
-  const tokenHash = await sha256(token)
-  // Authenticate the invitation before reading a potentially large body, then reserve quota for the validated site.
-  const { data: valid, error: validError } = await sb.from('upload_invites').select('id').eq('token_hash', tokenHash).eq('active', true).gt('expires_at', new Date().toISOString()).maybeSingle()
-  if (validError) return fail('The invitation could not be checked. Try again.', 503)
-  if (!valid) return fail('This invitation has expired or was revoked.', 403)
-  if (Number(req.headers.get('content-length') ?? 0) > 11 * 1024 * 1024) return fail('10 MB in total at most.', 413)
-  let form: FormData
-  try { form = await invitationForm(req) } catch { return fail('The upload could not be read. Send up to 10 MB of menu photos or PDFs.', 413) }
-  const field = (k: string) => typeof form.get(k) === 'string' ? String(form.get(k)).trim() : ''
-  if (field('website')) return json({ id: crypto.randomUUID(), status: 'received' })
-  const files = form.getAll('photo').filter((f): f is File => f instanceof File && f.size > 0)
-  const invalid = invitedUploadError(field('kind'), files)
-  if (invalid) return fail(invalid)
-  const venue = await venueOf(field('venue'))
-  if (!venue) return fail('Choose a venue.', 404)
-  const note = field('note')
-  if (note.length > 2000) return fail('Keep the note under 2,000 characters.')
-  const date = field('date') || null, service = field('service') || null
-  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('Date as YYYY-MM-DD.')
-  if (service && !MEALS.includes(service)) return fail('Unknown meal.')
-  const { data: claims, error: claimError } = await sb.rpc('claim_upload_invite', { p_token_hash: tokenHash, p_site: venue.site })
-  if (claimError) return fail('The invitation could not be checked. Try again.', 503)
-  const invitation = claims?.[0] as { id: string; label: string } | undefined
-  if (!invitation) return fail('This invitation has expired, was revoked, does not cover this site, or has reached its daily limit.', 403)
-  const { data: row, error } = await sb.from('submissions').insert({ venue_id: venue.id, kind: 'menu', date, service, note: note || null, upload_invite_id: invitation.id, status: 'needs_review', review_note: 'invited menu upload: a person checks it first' }).select('id').single()
-  if (error) return fail('The menu could not be saved. Try again.', 500)
-  const images: Image[] = [], paths: string[] = []
-  const cleanup = async () => {
-    if (paths.length) await sb.storage.from('submissions').remove(paths)
-    await sb.from('submissions').delete().eq('id', row.id)
-  }
-  for (const [i, file] of files.entries()) {
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const path = `${row.id}${i ? `-${i + 1}` : ''}.${file.type.split('/')[1].replace('jpeg', 'jpg')}`
-    const { error } = await sb.storage.from('submissions').upload(path, bytes, { contentType: file.type })
-    if (error) { await cleanup(); return fail('The menu files did not all save. Try again.', 500) }
-    paths.push(path)
-    images.push({ base64: base64(bytes), mime: file.type, name: `menu-${i + 1}` })
-  }
-  const { error: saved } = await sb.from('submissions').update({ photo_path: paths[0], photo_paths: paths }).eq('id', row.id)
-  if (saved) { await cleanup(); return fail('The menu files could not be saved. Try again.', 500) }
-  const got = await transcribe(row.id, { kind: 'menu', venue: { name: venue.name, type: venue.type, site: venue.sites?.name ?? venue.site }, date: date ?? undefined, service: service ?? undefined, asBoard: true, today: today(), note: note || undefined, photos: files.length }, images)
-  const text = got?.body && got.is === 'menu' ? header('menu', { site: venue.site, venue: venue.slug, source: `submission ${row.id}: invited menu photo`, observed: today() }) + got.body + '\n' : null
-  const { error: updated } = await sb.from('submissions').update({ transcription: text, ...(got ? { transcribed_by: 'openai', model: MODEL, unsure: got.unsure || null } : {}) }).eq('id', row.id)
-  if (updated) console.warn('invited transcription was not saved; evidence remains for review')
-  return json({ id: row.id, status: 'needs_review', transcription: null, reason: 'menu photos sent with an invitation are checked before publication' })
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST') return fail('POST only', 405)
@@ -531,8 +479,6 @@ Deno.serve(async (req) => {
     return fail('a photo or text goes as multipart/form-data; JSON is for confirming, reviews, or contributors')
   }
   if (!type.includes('multipart/form-data')) return fail('multipart/form-data expected')
-  const invitation = req.headers.get('x-upload-invite')
-  if (invitation) return invitedPost(req, invitation)
   const sender = await senderOf(req)
   if ('error' in sender) return fail(sender.error, 401)
 

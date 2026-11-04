@@ -24,9 +24,7 @@
     "typecheck": "tsc -b && tsc -p tsconfig.scripts.json",
     "lint": "oxlint",
     "preview": "vite preview",
-    "ingest:tags": "tsx scripts/ingest/retag.ts",
-    "export:menus": "tsx scripts/export-menus.ts",
-    "invites": "tsx scripts/invite-uploads.ts"
+    "export:menus": "tsx scripts/export-menus.ts"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "^5.3.0",

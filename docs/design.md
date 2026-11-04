@@ -73,8 +73,6 @@ About explains the site, live coverage, ways to help and who makes it. Terms cov
 
 ## Visual conventions
 
-An invited group's `/send#invite=…` link opens the existing form without sign-in, restricted to menu photos/PDFs. Its introductory line and footer explain that a person checks it before publication and no individual name is published. The form retains the shared venue picker, files, context box and confirmation; other kind chips are hidden. The invitation is held in memory and removed from the URL. Ordinary `/send` keeps Cambridge sign-in and named contributions. Invitation uploads never show the automatic-publication or leaderboard promises.
-
 `html { font-size: 90% }` scales rem sizes, including Tailwind. Quoted pixel sizes in comments assume 16px per rem; media-query rem breakpoints use the browser's default size. Use rem for layout; reserve px for hairlines, rings, shadows and map marks sized against the basemap.
 
 `Container` aligns header and footer with 16/24/48px gutters and a 120rem maximum width. The finder uses those outer edges; other pages have a centred 76rem column, with a 22rem rail on large screens (17rem at tablet width). Lists and dated meals stay one column. Contribute's two columns, fixed price-list sections and reviews can use multiple columns.

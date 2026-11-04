@@ -56,7 +56,7 @@ async function call(token: string, init: RequestInit): Promise<SubmitResult> {
  * `venue`: a photo of the site itself, for its page's banner.
  */
 export async function send(
-  token: string | { invitation: string },
+  token: string,
   fields: { venue?: string; site?: string; kind: SubmitKind; date?: string; service?: string; asBoard?: boolean; topic?: Topic; note?: string; website?: string },
   photos: File[],
   onText?: (soFar: string) => void,
@@ -70,8 +70,7 @@ export async function send(
     form.set('stream', '1')
     form.set('auto', '1')
   }
-  const headers: Record<string, string> = typeof token === 'string' ? { authorization: `Bearer ${token}`, apikey: KEY } : { 'x-upload-invite': token.invitation, apikey: KEY }
-  const res = await fetch(URL_, { method: 'POST', body: form, headers })
+  const res = await fetch(URL_, { method: 'POST', body: form, headers: { authorization: `Bearer ${token}`, apikey: KEY } })
   if (!res.ok || !res.headers.get('content-type')?.includes('ndjson') || !res.body) {
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(body.error ?? `Something went wrong (${res.status})`)

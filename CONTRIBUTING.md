@@ -42,10 +42,6 @@ Dated weekly ZIPs are published in [GitHub releases](https://github.com/giuulio/
 
 For direct access, the public REST API is `<VITE_SUPABASE_URL>/rest/v1/<table>` with an `apikey: <VITE_SUPABASE_PUBLISHABLE_KEY>` header. Relevant tables are `sites`, `venues`, `menu_days`, `menu_items`, `venue_prices` and `service_slots`. Request explicit columns, a stable unique `order`, and every page with `limit`/`offset` (the server caps each response). `Prefer: count=exact` returns the total in `Content-Range`. Join `menu_items.menu_day_id` to `menu_days.id`, and `menu_days.venue_id` to `venues.id`. The homepage's seven-day load is not the full dataset. Treat diet labels as recorded labels and keep any later classifications and evidence in separate columns.
 
-## Invited menu photos
-
-A group invitation opens `/send` without Google sign-in and accepts menu photos or PDFs, up to four files and 10 MB total (5 MB per photo). Every submission waits for a person, even when a model transcribes it confidently. No individual name is published. These invitations are separate from the trusted script tokens above and cannot submit reviews or publish venue photos. Ask Giulio for a link and keep it within the group.
-
 ## Code
 
 `npm test`, `npm run typecheck` and `npm run lint` must pass. The database is the system of record; schema changes are migrations in `supabase/migrations/`. Terms: a **site** is a college or a University site, a **venue** is somewhere you eat or drink in one; never "place".
