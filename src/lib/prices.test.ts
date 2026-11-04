@@ -113,3 +113,13 @@ describe('formatPrice', () => {
     expect(formatPrice({ text: 'market price' })).toBe('market price')
   })
 })
+
+describe('starting prices', () => {
+  it('says "From" before both columns', async () => {
+    const { formatPrice, formatSecondPrice, fromList } = await import('./prices.ts')
+    const p = fromList({ section: null, name: 'Pastries', price_gbp: 2, price_from: true, non_member_gbp: 2.66, services: null, course: null, tags: [], observed_on: '2026-10-31', source: 's' })
+    expect(formatPrice(p)).toBe('From £2.00')
+    expect(formatSecondPrice(p)).toBe('From £2.66')
+    expect(formatPrice({ gbp: 3.24, max: 3.96 })).toBe('£3.24–£3.96')
+  })
+})

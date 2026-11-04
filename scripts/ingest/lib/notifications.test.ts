@@ -1,23 +1,25 @@
 import { describe, expect, it, vi } from 'vitest'
-import { deliverNotices, noticeBody, type SubmissionNotice } from './notifications.ts'
+import { deliverNotices, needsPerson, noticeBody, settled, type SubmissionNotice } from './notifications.ts'
 
-const row: SubmissionNotice = { id: '6b8716a5-624b-4bc1-af90-a2b4c2f54303', venue_id: 'west-cambridge/cavendish-cafe', site: null, kind: 'prices', topic: null, created_at: '2026-10-12T15:00:00Z' }
+const row: SubmissionNotice = { id: '6b8716a5-624b-4bc1-af90-a2b4c2f54303', venue_id: 'west-cambridge/cavendish-cafe', site: null, kind: 'prices', topic: null, created_at: '2026-10-12T15:00:00Z', status: 'needs_review' }
+const NOW = Date.parse('2026-10-12T16:00:00Z')
 
 describe('submission notifications', () => {
-  it('announces receipt without leaking private text or identity, regardless of publication status', async () => {
+  it('announces what waits for a person without leaking private text or identity', async () => {
     const post = vi.fn(async (_body: string) => {})
     const acknowledge = vi.fn(async () => {})
-    const privateRow = { ...row, status: 'approved', note: 'private note', user_email: 'private@cam.ac.uk', transcription: 'private prices', photo_path: 'private/photo.jpg' }
+    const privateRow = { ...row, note: 'private note', user_email: 'private@cam.ac.uk', transcription: 'private prices', photo_path: 'private/photo.jpg' }
     expect(await deliverNotices([privateRow], { existing: async () => [], post, acknowledge })).toBe(1)
     const body = post.mock.calls[0][0]
-    expect(body).toContain('New price list')
+    expect(body).toContain('A price list')
+    expect(body).toContain('waits for you')
     expect(body).toContain('https://grub.cam/west-cambridge/cavendish-cafe')
     for (const value of [privateRow.note, privateRow.user_email, privateRow.transcription, privateRow.photo_path]) expect(body).not.toContain(value)
     expect(acknowledge).toHaveBeenCalledWith(row.id)
   })
 
   it('names a site photo by the site whose page it is for', () => {
-    expect(noticeBody({ ...row, venue_id: null, site: 'robinson', kind: 'photo' })).toContain('New site photo submitted for [robinson](https://grub.cam/robinson)')
+    expect(noticeBody({ ...row, venue_id: null, site: 'robinson', kind: 'photo' })).toContain('A site photo for [robinson](https://grub.cam/robinson) waits for you')
   })
 
   it('does not duplicate a comment when the database acknowledgement failed after posting', async () => {
@@ -36,5 +38,31 @@ describe('submission notifications', () => {
     const acknowledge = vi.fn(async () => {})
     await expect(deliverNotices([row], { existing: async () => [], post: async () => { throw new Error('GitHub unavailable') }, acknowledge })).rejects.toThrow('GitHub unavailable')
     expect(acknowledge).not.toHaveBeenCalled()
+  })
+
+  it('acknowledges what went up or was turned back without a comment', async () => {
+    const post = vi.fn(async (_body: string) => {})
+    const acknowledge = vi.fn(async () => {})
+    const existing = vi.fn(async () => [])
+    expect(await deliverNotices([{ ...row, status: 'approved' }, { ...row, id: 'b', status: 'rejected' }], { existing, post, acknowledge }, NOW)).toBe(0)
+    expect(post).not.toHaveBeenCalled()
+    expect(existing).not.toHaveBeenCalled()
+    expect(acknowledge).toHaveBeenCalledTimes(2)
+  })
+
+  it('leaves what is still being read or published for the next run', async () => {
+    const acknowledge = vi.fn(async () => {})
+    const fresh = '2026-10-12T15:55:00Z'
+    const rows: SubmissionNotice[] = [{ ...row, status: 'received', created_at: fresh }, { ...row, id: 'q', status: 'queued', created_at: fresh }, { ...row, id: 't', status: 'transcribed' }]
+    expect(await deliverNotices(rows, { existing: async () => [], post: async () => {}, acknowledge }, NOW)).toBe(0)
+    expect(acknowledge).not.toHaveBeenCalled()
+  })
+
+  it('counts a correction at once, an unread menu after a while, and a stuck one', () => {
+    expect(needsPerson({ ...row, kind: 'other', status: 'received', created_at: '2026-10-12T15:59:00Z' }, NOW)).toBe(true)
+    expect(settled({ ...row, kind: 'menu', status: 'received', created_at: '2026-10-12T15:50:00Z' }, NOW)).toBe(false)
+    expect(needsPerson({ ...row, kind: 'menu', status: 'received', created_at: '2026-10-12T15:40:00Z' }, NOW)).toBe(true)
+    expect(needsPerson({ ...row, kind: 'menu', status: 'queued', created_at: '2026-10-12T13:00:00Z' }, NOW)).toBe(true)
+    expect(noticeBody({ ...row, status: 'queued' })).toContain('stuck')
   })
 })

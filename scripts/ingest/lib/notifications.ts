@@ -3,14 +3,37 @@ import { SITE_URL } from '../../../src/lib/site.ts'
 import type { Submission } from './db.ts'
 
 /** Deliberately excludes evidence, submitted words, model output and sender identity. */
-export type SubmissionNotice = Pick<Submission, 'id' | 'venue_id' | 'site' | 'kind' | 'topic' | 'created_at'>
+export type SubmissionNotice = Pick<Submission, 'id' | 'venue_id' | 'site' | 'kind' | 'topic' | 'created_at' | 'status'>
+
+const MINUTE = 60000
+/** Longer than a model takes to read a board: a menu still `received` after this had no model to read it */
+const READING = 15 * MINUTE
+/** Longer than the photos Action takes to publish: still `queued` after this, it's stuck */
+const PUBLISHING = 2 * 60 * MINUTE
+
+/**
+ * Whether a submission has come to rest: published or turned back, waiting for a person, or stuck. One still being read,
+ * confirmed or published hasn't, and is looked at again on the next run (pg_cron's, every ten minutes).
+ */
+export function settled(s: Pick<SubmissionNotice, 'kind' | 'status' | 'created_at'>, now = Date.now()): boolean {
+  const age = now - Date.parse(s.created_at)
+  if (s.status === 'received') return s.kind === 'other' || age > READING
+  if (s.status === 'queued') return age > PUBLISHING
+  return s.status !== 'transcribed'
+}
+
+/** Whether, at rest, it waits for a person: what's published or turned back needs no one. */
+export const needsPerson = (s: Pick<SubmissionNotice, 'kind' | 'status' | 'created_at'>, now = Date.now()) => settled(s, now) && s.status !== 'approved' && s.status !== 'rejected'
 const WORDS: Record<SubmissionNotice['kind'], string> = { menu: 'menu', prices: 'price list', hours: 'hours', photo: 'venue photo', other: 'correction' }
 const marker = (id: string) => `<!-- grub-submission:${id} -->`
 
 export function noticeBody(s: SubmissionNotice): string {
   // A venue's, or (a photo for its page's banner) a site's own
   const subject = s.venue_id ?? s.site
-  return `New ${s.venue_id ? WORDS[s.kind] : 'site photo'}${s.topic ? ` (${s.topic})` : ''} submitted for [${subject}](${SITE_URL}/${subject}).\n\nRead privately with \`npm run submissions -- show ${s.id}\`.\n\n${marker(s.id)}`
+  const word = s.venue_id ? WORDS[s.kind] : 'site photo'
+  const [lead, is, waits] = word === 'hours' ? ['Hours', 'are', 'wait'] : [`A ${word}`, 'is', 'waits']
+  const stuck = s.status === 'queued' ? ` ${is} stuck in the publishing queue (check the photos Action)` : ` ${waits} for you`
+  return `${lead}${s.topic ? ` (${s.topic})` : ''} for [${subject}](${SITE_URL}/${subject})${stuck}.\n\nRead privately with \`npm run submissions -- show ${s.id}\`.\n\n${marker(s.id)}`
 }
 
 type Delivery = {
@@ -19,13 +42,18 @@ type Delivery = {
   acknowledge(id: string): Promise<void>
 }
 
-/** A comment marker closes the retry window between posting to GitHub and acknowledging in Supabase. */
-export async function deliverNotices(rows: SubmissionNotice[], delivery: Delivery): Promise<number> {
-  if (!rows.length) return 0
-  const comments = await delivery.existing()
+/**
+ * A comment for each submission that has come to rest waiting for a person, so GitHub emails you only then; what went
+ * up or was turned back on its own is acknowledged without one, and what's still moving is left for the next run. A
+ * comment marker closes the retry window between posting to GitHub and acknowledging in Supabase.
+ */
+export async function deliverNotices(rows: SubmissionNotice[], delivery: Delivery, now = Date.now()): Promise<number> {
+  const due = rows.filter((s) => settled(s, now))
+  if (!due.length) return 0
+  const comments = due.some((s) => needsPerson(s, now)) ? await delivery.existing() : []
   let posted = 0
-  for (const s of rows) {
-    if (!comments.some((body) => body.includes(marker(s.id)))) {
+  for (const s of due) {
+    if (needsPerson(s, now) && !comments.some((body) => body.includes(marker(s.id)))) {
       const body = noticeBody(s)
       await delivery.post(body)
       comments.push(body)

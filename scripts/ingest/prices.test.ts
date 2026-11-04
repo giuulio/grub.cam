@@ -142,3 +142,22 @@ describe('merging a member\'s list by section', () => {
     ])
   })
 })
+
+describe('starting prices', () => {
+  const head = ['site: newnham', 'venue: iris-cafe', 'source: s', 'observed: 2026-10-31', 'columns: Members | Non-members', '---']
+  it('reads "From £2.00" as where the prices start, in either column', () => {
+    const p = parsePrices([...head, 'Assorted pastries | From £2.00 | From £2.66', 'Artisan focaccia | from £4.90 | £6.52', 'Homemade soup | £2.20 | £2.93'].join('\n'))
+    expect(p.items).toEqual([
+      { section: undefined, name: 'Assorted pastries', price_gbp: 2, price_from: true, non_member_gbp: 2.66 },
+      { section: undefined, name: 'Artisan focaccia', price_gbp: 4.9, price_from: true, non_member_gbp: 6.52 },
+      { section: undefined, name: 'Homemade soup', price_gbp: 2.2, non_member_gbp: 2.93 },
+    ])
+  })
+  it('keeps it through a saved row, and drops the column when it is false', () => {
+    const rows = [
+      { position: 0, section: null, name: 'Pastries', price_gbp: 2, price_from: true, source: 's', observed_on: '2026-10-31' },
+      { position: 1, section: null, name: 'Soup', price_gbp: 2.2, price_from: false, source: 's', observed_on: '2026-10-31' },
+    ]
+    expect(savedList(rows).map((l) => l.price_from)).toEqual([true, undefined])
+  })
+})

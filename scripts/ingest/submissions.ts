@@ -39,7 +39,7 @@ import { parseManual } from './manual.ts'
 import { makeVariants, newPhotoPath, writeVariants } from './photo.ts'
 import { mergeList, parsePrices, replaceSections, savedList, sectionKey, unnamedColumns } from './prices.ts'
 import { SITE_URL } from '../../src/lib/site.ts'
-import { deliverNotices, githubDelivery } from './lib/notifications.ts'
+import { deliverNotices, githubDelivery, needsPerson } from './lib/notifications.ts'
 
 /** The licence a member grants by sending a photo of a venue (src/pages/Send.tsx says so). */
 const MEMBER_LICENCE = 'CC BY 4.0'
@@ -140,6 +140,9 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
   if (s.kind === 'menu') {
     const m = parseManual(s.transcription)
     if (m.venue !== s.venue_id) throw new Error(`transcription is for ${m.venue}, the submission for ${s.venue_id}`)
+    // A venue a script fetches: only the days its website hasn't given
+    m.days = await newDays(m.venue, m.days)
+    if (!m.days.length) throw new Error('the venue’s website already gives these days')
     const dishes = m.days.reduce((n, d) => n + d.items.length, 0)
     if (!dry) {
       await db.saveMenu(m.venue, m.source_url, m.fetched_at, method, m.days)
@@ -181,8 +184,20 @@ async function publish(s: Submission, dry: boolean): Promise<string> {
 const londonDate = (days = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + days * 86400000))
 
 /**
- * Why a member's menu can't go up without a person, or null when it can: it must parse, be for its venue, cover only
- * yesterday or later, and be for a venue no script fetches (a script's menu is the source's own). No future cutoff.
+ * A menu's days the venue doesn't have from its own website: all of them, for a venue no script fetches. A script's
+ * day is the source's own; a member's fills a day the script has nothing for, until the script gives it.
+ */
+async function newDays<D extends { date: string; service: string }>(venue: string, days: D[]): Promise<D[]> {
+  if (!days.length || !(await db.venue(venue)).menu_scripted) return days
+  const dates = days.map((d) => d.date).sort()
+  const saved = await db.savedHashes(venue, dates[0], dates.at(-1)!)
+  // A script's day has its hash; a day saved by hand or by a member (none) can be sent again
+  return days.filter((d) => saved.get(`${d.date}|${d.service}`) == null)
+}
+
+/**
+ * Why a member's menu can't go up without a person, or null when it can: it must parse, be for its venue and cover
+ * only yesterday or later. No future cutoff. One for a venue a script fetches saves only the days the script lacks.
  */
 async function menuHold(s: Submission): Promise<string | null> {
   if (!s.transcription) return 'no text to publish'
@@ -197,7 +212,6 @@ async function menuHold(s: Submission): Promise<string | null> {
   const from = londonDate(-1)
   const off = m.days.find((d) => d.date < from)
   if (off) return `it's for ${off.date}, before yesterday`
-  if ((await db.venue(s.venue_id)).menu_scripted) return 'a script fetches this venue’s menu'
   return null
 }
 
@@ -262,7 +276,8 @@ const what = (s: Submission) => `${KIND_WORD[s.kind]}${s.topic ? ` (${s.topic})`
  * model spend.
  */
 async function digest(): Promise<string> {
-  const rows = await db.submissions({ status: ['received', 'transcribed', 'needs_review'] })
+  // What's at rest waiting for a person: not one a model is still reading, or the photos Action still publishing
+  const rows = (await db.submissions({ status: ['received', 'transcribed', 'needs_review', 'queued'] })).filter((s) => needsPerson(s))
   const out = ['The queue of what members sent in that waits for a person. Updated by the queue Action; act with `npm run submissions -- show <id>`, then `approve <id>` or `reject <id> "why"`.', '']
   if (!rows.length) out.push('**Nothing waiting.**')
   else {
@@ -272,7 +287,7 @@ async function digest(): Promise<string> {
     for (const s of rows) {
       const v = s.venue_id ? await db.venue(s.venue_id).then((x) => ({ name: x.name, of: x.siteName })).catch(() => null) : await db.site(subjectOf(s)).then((x) => ({ name: x.name, of: 'its page' })).catch(() => null)
       const days = Math.floor((Date.now() - Date.parse(s.created_at)) / 86400000)
-      const why = s.review_note ?? (s.kind === 'other' ? 'a correction to read' : s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
+      const why = s.status === 'queued' ? 'stuck: the photos Action hasn’t published it' : s.review_note ?? (s.kind === 'other' ? 'a correction to read' : s.status === 'received' ? 'no model read it' : s.status === 'transcribed' ? 'the sender hasn’t confirmed the text' : s.contributor_id ? 'a contributor’s, approved by the ingest Action' : 'prices and hours wait for a person')
       const where = v ? `[${v.name}, ${v.of}](https://grub.cam/${subjectOf(s)})` : subjectOf(s)
       out.push(`| \`${short(s.id)}\` | ${what(s)}${photoWord(s) ? ` (${photoWord(s)})` : ''} | ${where} | ${days ? `${days} d` : 'today'} | ${why.replace(/\|/g, '/')} |`)
     }
@@ -341,6 +356,11 @@ switch (command) {
     for (const s of rows) {
       try {
         const hold = s.kind === 'menu' ? await menuHold(s) : await listHold(s)
+        if (!hold && s.kind === 'menu' && !(await newDays(venueOf(s), parseManual(s.transcription!).days)).length) {
+          if (!values.dry) await db.updateSubmission(s.id, { status: 'rejected', review_note: 'the venue’s website already gives these days', reviewed_at: new Date().toISOString() })
+          console.log(`– ${short(s.id)} ${subjectOf(s)}: the venue’s website already gives these days`)
+          continue
+        }
         if (hold) {
           if (!values.dry) await db.updateSubmission(s.id, { status: 'needs_review', review_note: hold })
           console.log(`… ${short(s.id)} ${subjectOf(s)}: waits for a person: ${hold}`)

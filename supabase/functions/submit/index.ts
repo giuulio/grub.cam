@@ -16,8 +16,8 @@
 // once today's have cost that much. A call refused or failing (no key, quota spent) leaves the row for a person. Contributors (table `contributors`) post JSON with a X-Contributor-Token header and their
 // own transcription; the ingest Action approves theirs.
 //
-// A menu, once its sender has confirmed the text, goes up without a person too, unless a script fetches the venue's
-// menu: it's `queued`, and the photos Action (`submissions -- publish`) checks it parses, is for its venue and is dated
+// A menu, once its sender has confirmed the text, goes up without a person too (for a venue a script fetches, only the
+// days the script hasn't given; one it has given in full is turned back, the sender told): it's `queued`, and the photos Action (`submissions -- publish`) checks it parses, is for its venue and is dated
 // yesterday or later (no future cutoff), then publishes it; one that isn't waits for a person. There's no allowance
 // per sender: one member filling in a whole site in an afternoon is the point. A price list or hours goes the same way,
 // and when the sender changed the model's reading of a photo, a model first checks the changed text still says what
@@ -50,7 +50,7 @@
 // Deploy: supabase functions deploy submit; secrets: supabase secrets set OPENAI_API_KEY=… (see AGENTS.md, Submissions).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BODY_SPEC, cleanBody, header, prompt, type Kind, type Transcribable } from '../_shared/formats.ts'
-import { base64, costOf, moderate, partialString, priceOf, respond, respondStream, REVIEW_CHECK, TRANSCRIPTION, VERDICT, type Image, type ReviewCheck, type Schema, type Transcription, type Verdict } from '../_shared/openai.ts'
+import { base64, costOf, moderate, partialString, priceOf, respond, respondStream, MEMBER_TRANSCRIPTION, REVIEW_CHECK, VERDICT, type Image, type MemberTranscription, type ReviewCheck, type Schema, type Verdict } from '../_shared/openai.ts'
 
 const KINDS: Kind[] = ['menu', 'prices', 'hours', 'photo', 'other']
 const MEALS = ['breakfast', 'brunch', 'lunch', 'dinner', 'formal', 'snacks', 'bar']
@@ -129,16 +129,18 @@ async function ask<T>(purpose: Purpose, text: string, schema: Schema, images: Im
  * sender should do when it can't (nothing to read is a retry too). Null when no model could be asked (no key, over
  * budget, failed). `onBody`: the body so far, as the model writes it, for a sender watching.
  */
-async function transcribe(id: string, c: Parameters<typeof prompt>[0], files: Image[], onBody?: (soFar: string) => void): Promise<{ body: string; unsure: string; publish: boolean; retry: string } | null> {
+async function transcribe(id: string, c: Parameters<typeof prompt>[0], files: Image[], onBody?: (soFar: string) => void): Promise<{ body: string; unsure: string; publish: boolean; retry: string; is: Transcribable; news: string } | null> {
   if (!files.length && !c.note) return null
   const onText = onBody && ((json: string) => {
     const body = partialString(json, 'body')
     if (body) onBody(body)
   })
-  const got = await ask<Transcription>('transcribe', prompt(c, true), TRANSCRIPTION, files, { submission_id: id }, (t) => t.readable && !!t.body.trim(), onText)
+  const got = await ask<MemberTranscription>('transcribe', prompt({ ...c, member: true }, true), MEMBER_TRANSCRIPTION, files, { submission_id: id }, (t) => t.readable && !!t.body.trim(), onText)
   if (!got) return null
   const body = got.readable ? cleanBody(got.body) : ''
-  return { body, unsure: got.unsure.trim(), publish: !!body && got.verdict === 'publish', retry: got.retry.trim() }
+  // Only a menu and a price list are read as each other (OTHER in formats.ts); hours stay hours
+  const is = c.kind !== 'hours' && (got.is === 'menu' || got.is === 'prices') ? got.is : c.kind
+  return { body, unsure: got.unsure.trim(), publish: !!body && got.verdict === 'publish', retry: got.retry.trim(), is, news: got.news.trim() }
 }
 
 const WHAT: Record<Transcribable, string> = { menu: 'a menu', prices: 'a price list', hours: 'opening hours' }
@@ -329,7 +331,7 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
     if (!data?.length) return null
     return data.map((s) => fields([s.meal, (s.days as string[]).map((d) => d[0].toUpperCase() + d.slice(1)).join(', '), `${String(s.start_time).slice(0, 5)}-${String(s.end_time).slice(0, 5)}`, s.period, s.note ?? ''], 4)).join('\n')
   }
-  const { data } = await sb.from('venue_prices').select('section, name, description, price_gbp, price_max_gbp, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
+  const { data } = await sb.from('venue_prices').select('section, name, description, price_gbp, price_max_gbp, price_from, non_member_gbp, services, course, tags').eq('venue_id', venueId).order('position')
   if (!data?.length) return null
   const { data: v } = await sb.from('venues').select('price_terms').eq('id', venueId).maybeSingle()
   const tiers = (v?.price_terms as { tiers?: string[] } | null)?.tiers
@@ -340,17 +342,47 @@ async function currentText(kind: 'prices' | 'hours', venueId: string): Promise<s
     if (head && head !== heading) lines.push(head)
     heading = head
     const tags = ((p.tags ?? []) as string[]).filter((t) => !(t === 'vegetarian' && p.tags.includes('vegan'))).map((t) => DIET_CODE[t]).filter(Boolean)
-    const price = p.price_max_gbp != null ? `${gbp(p.price_gbp)}-${gbp(p.price_max_gbp)}` : gbp(p.price_gbp)
-    lines.push(fields([tags.length ? `${p.name} (${tags.join(', ')})` : p.name, price, gbp(p.non_member_gbp), p.course ?? '', p.description ?? ''], 2))
+    const from = (n: number | string | null) => (p.price_from && n != null ? `From ${gbp(n)}` : gbp(n))
+    const price = p.price_max_gbp != null ? `${gbp(p.price_gbp)}-${gbp(p.price_max_gbp)}` : from(p.price_gbp)
+    lines.push(fields([tags.length ? `${p.name} (${tags.join(', ')})` : p.name, price, from(p.non_member_gbp), p.course ?? '', p.description ?? ''], 2))
   }
   return lines.join('\n')
 }
 
-/** Why a member's menu for this venue waits for a person, or null when it can go up: no script fetches the venue's. */
+/**
+ * Why a member's menu for this venue waits for a person, or null when it can go up. A venue a script fetches doesn't
+ * wait: the photos Action saves only the days its website hasn't given (and turns it back when it has given them all).
+ */
 async function menuWait(venueId: string): Promise<string | null> {
+  const { data: v } = await sb.from('venues').select('id').eq('id', venueId).maybeSingle()
+  return v ? null : 'no such venue'
+}
+
+/** The days and meals ("2026-11-04 dinner") a menu's text is for. */
+const menuDays = (text: string) => [...(text.split('\n---\n')[1] ?? '').matchAll(/^(\d{4}-\d{2}-\d{2})\s+(breakfast|brunch|lunch|dinner|formal)\b/gim)].map((m) => ({ date: m[1], service: m[2].toLowerCase() }))
+
+/** Whether the venue's own website (a script) already gives every day and meal of this menu: nothing for a member to add. */
+async function scriptHasAll(venueId: string, text: string): Promise<boolean> {
   const { data: v } = await sb.from('venues').select('menu_scripted').eq('id', venueId).maybeSingle()
-  if (!v) return 'no such venue'
-  return v.menu_scripted ? 'this venue’s menu is read from its own website' : null
+  const days = menuDays(text)
+  if (!v?.menu_scripted || !days.length) return false
+  // A script's days carry its hash; one saved by hand or by a member has none and can be sent again
+  const { data } = await sb.from('menu_days').select('date, service').eq('venue_id', venueId).in('date', [...new Set(days.map((d) => d.date))]).not('content_hash', 'is', null)
+  const saved = new Set((data ?? []).map((d) => `${d.date}|${d.service}`))
+  return days.every((d) => saved.has(`${d.date}|${d.service}`))
+}
+
+/**
+ * What the sender's note told the site besides what was read (the venue is closed, eat elsewhere), as a correction of
+ * its own for a person to act on: kept even when the photo is turned back.
+ */
+async function keepNews(from: { id: string; venue_id: string; user_id: string; user_email: string; credit: string; ip_hash: string | null }, news: string, note: string | null) {
+  const { error } = await sb.from('submissions').insert({
+    venue_id: from.venue_id, kind: 'other', topic: 'other', status: 'received',
+    note: `${news.slice(0, 500)}\n\n(read from the note with submission ${from.id}${note ? `: "${note.slice(0, 1500)}"` : ''})`,
+    user_id: from.user_id, user_email: from.user_email, contact: from.user_email, credit: from.credit, ip_hash: from.ip_hash,
+  })
+  if (error) console.warn(`news from ${from.id}: ${error.message}`)
 }
 
 /**
@@ -506,7 +538,8 @@ Deno.serve(async (req) => {
   if (kind === 'photo') return photoOf(id, site ? { site } : { venue: venue! }, sender, images[0])
   if (!venue) return fail('no such venue', 404)
   if (!['menu', 'prices', 'hours'].includes(kind)) return json({ id, status: 'received', transcription: null })
-  const t = kind as Transcribable
+  const asked = kind as Transcribable
+  const t = asked
   const siteName = venue.sites?.short_name ?? venue.sites?.name ?? venue.site
   const current = t === 'menu' ? null : await currentText(t, venue.id)
   const context = { kind: t, venue: { name: venue.name, type: venue.type, site: siteName }, date: date ?? undefined, service: service ?? undefined, asBoard: t === 'menu' && field('as_board') === '1', today: today(), note: note ?? undefined, current: current ?? undefined, photos: images.length }
@@ -514,6 +547,10 @@ Deno.serve(async (req) => {
   const auto = field('auto') === '1'
   // The reading, saved with the row; what the sender gets back
   const finish = async (got: Awaited<ReturnType<typeof transcribe>>) => {
+    if (got?.news) await keepNews({ id, venue_id: venue.id, user_id: sender.id, user_email: sender.email, credit: sender.name, ip_hash: ipHash }, got.news, note)
+    // A bar's price list sent as tonight's menu goes up as its price list: the row becomes what it is
+    const t = got?.is ?? asked
+    if (t !== asked) await sb.from('submissions').update({ kind: t, ...(t === 'prices' ? { date: null, service: null } : {}) }).eq('id', id)
     const sent = images.length ? `${images.length > 1 ? `${images.length} files` : images[0].mime === 'application/pdf' ? 'PDF' : 'photo'}${note ? ' and a note' : ''}` : 'text'
     const text = got?.body ? header(t, { site: venue.site, venue: venue.slug, source: `submission ${id}: ${sent} sent from the venue's page on grub.cam`, observed: today() }) + got.body + '\n' : null
     const read = { transcription: text, transcribed_by: 'openai', model: MODEL, unsure: got?.unsure || null }
@@ -529,7 +566,13 @@ Deno.serve(async (req) => {
       await sb.from('submissions').update({ ...read, status: 'rejected', review_note: `the model asked for another try: ${reason}` }).eq('id', id)
       return { id, status: 'rejected', transcription: null, reason }
     }
-    // Up within minutes, unless something says a person should look (a script's venue)
+    // A menu the venue's website already gives in full: nothing to add, and the sender is told so
+    if (t === 'menu' && (await scriptHasAll(venue.id, text))) {
+      const reason = `Thanks, but ${venue.name}'s menu for those days already comes from its own website.`
+      await sb.from('submissions').update({ ...read, status: 'rejected', review_note: 'the venue’s website already gives these days' }).eq('id', id)
+      return { id, status: 'rejected', transcription: null, reason }
+    }
+    // Up within minutes, unless something says a person should look
     const hold = await holdOf({ id, kind: t, venue_id: venue.id, photo_path: paths[0] ?? null, photo_paths: paths }, text, false)
     const status = hold === null ? 'queued' : 'needs_review'
     await sb.from('submissions').update({ ...read, status, review_note: hold || null }).eq('id', id)

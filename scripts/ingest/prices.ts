@@ -15,6 +15,7 @@
 //   ## Brunch | brunch                     <- section heading for the lines after it, and the meals they're sold at (default: all)
 //   Bacon rashers x 2 | 95p | £1.30        <- name | price | second price (optional); £3.75, 3.75 or 95p
 //   Sandwiches | £3.24-£3.96               <- a range, as posted
+//   Assorted pastries | From £2.00 | From £2.66  <- where the prices start, as posted
 //   Main course dish | £3.75 | £5.65 | main   <- a 4th field prices every dish of that course on the day's menu
 //                                             (soup/main/side/dessert/other), or the whole meal (meal); shown on the menu
 //   Soup | £1.75 | | soup                  <- an empty field skips the non-member price
@@ -47,14 +48,14 @@ export function unnamedColumns(p: PriceList, tiers?: string[] | null): string | 
 /** A line of a venue's saved list (venue_prices), with the source and day it was seen. */
 export type SavedPrice = PriceItem & { source: string; observed_on: string }
 
-const ROW_FIELDS = ['section', 'name', 'description', 'price_gbp', 'price_max_gbp', 'non_member_gbp', 'non_member_text', 'services', 'course', 'tags'] as const
+const ROW_FIELDS = ['section', 'name', 'description', 'price_gbp', 'price_max_gbp', 'price_from', 'non_member_gbp', 'non_member_text', 'services', 'course', 'tags'] as const
 
 /** A venue's venue_prices rows as the lines they were saved from, in order. */
 export function savedList(rows: Record<string, unknown>[]): SavedPrice[] {
   return [...rows]
     .sort((a, b) => Number(a.position) - Number(b.position))
     .map((r) => ({
-      ...PriceItem.parse(Object.fromEntries(ROW_FIELDS.filter((f) => r[f] != null && !(Array.isArray(r[f]) && !r[f].length)).map((f) => [f, r[f]]))),
+      ...PriceItem.parse(Object.fromEntries(ROW_FIELDS.filter((f) => r[f] != null && r[f] !== false &&!(Array.isArray(r[f]) && !r[f].length)).map((f) => [f, r[f]]))),
       source: String(r.source),
       observed_on: String(r.observed_on),
     }))
@@ -102,6 +103,9 @@ function columnsOf(text: string): string[] {
   return names
 }
 
+/** "From " before a price: where it starts, as posted */
+const FROM = /^from\s+/i
+
 /** "£3.24-£3.96" (or with an en dash) as its two ends; a single price as itself. */
 export function parseRange(s: string): { price_gbp: number; price_max_gbp?: number } {
   const ends = s.split(/[-–]/)
@@ -148,8 +152,11 @@ export function parsePrices(text: string): PriceList {
     }
     const [posted, price, nonMember, course, description, ...rest] = line.split('|').map((p) => p.trim())
     if ((!price && !nonMember) || rest.length) throw new Error(`expected "name | price | non-member price | course | description": "${line}"`)
-    const second = !nonMember ? {} : /^(N\/A|TBC)$/i.test(nonMember) ? { non_member_text: nonMember.toUpperCase() } : { non_member_gbp: parseGbp(nonMember) }
-    if (!price && 'non_member_text' in second) throw new Error(`expected a numeric price: "${line}"`)
+    // "From £2.00", as posted: where the item's prices start (pastries, focaccia by filling)
+    const from = [price, nonMember].some((c) => FROM.test(c ?? ''))
+    const [first, other] = [price, nonMember].map((c) => c?.replace(FROM, ''))
+    const second = !other ? {} : /^(N\/A|TBC)$/i.test(other) ? { non_member_text: other.toUpperCase() } : { non_member_gbp: parseGbp(other) }
+    if (!first && 'non_member_text' in second) throw new Error(`expected a numeric price: "${line}"`)
     const { name, tags } = tagsFromName(posted)
     items.push(
       PriceItem.parse({
@@ -157,7 +164,8 @@ export function parsePrices(text: string): PriceList {
         name,
         ...(description ? { description } : {}),
         ...(tags.length ? { tags } : {}),
-        ...(price ? parseRange(price) : {}),
+        ...(first ? parseRange(first) : {}),
+        ...(from ? { price_from: true } : {}),
         ...second,
         ...(services ? { services } : {}),
         ...(course ? { course: PriceCourse.parse(course) } : {}),

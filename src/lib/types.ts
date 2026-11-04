@@ -45,6 +45,8 @@ export type VenuePrice = {
   price_gbp: number | null
   /** The top of a range ("£3.24–£3.96") */
   price_max_gbp?: number | null
+  /** The prices are where they start, as posted ("From £2.00"), in both columns */
+  price_from?: boolean
   /** The second price posted: the venue's second tier (`PriceTerms.tiers`), non-members' by default */
   non_member_gbp: number | null
   /** A label printed instead of the second price; an empty cell stays empty */

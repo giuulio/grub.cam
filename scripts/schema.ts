@@ -47,6 +47,8 @@ export const PriceItem = z.object({
   price_gbp: z.number().nonnegative().optional(),
   /** The top of a range ("£3.24–£3.96") */
   price_max_gbp: z.number().nonnegative().optional(),
+  /** Its prices are where they start, as posted: "From £2.00" (both columns); absent otherwise */
+  price_from: z.literal(true).optional(),
   /** The second price posted: the venue's second tier, non-members' by default */
   non_member_gbp: z.number().nonnegative().optional(),
   /** A label printed instead of the second price; never inferred from an empty cell */

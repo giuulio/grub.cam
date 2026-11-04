@@ -147,7 +147,7 @@ export function connect() {
     },
     /** Every newly received submission, even if it has already been published. No private text or identity. */
     async pendingNotices(): Promise<SubmissionNotice[]> {
-      const { data, error } = await sb.from('submissions').select('id, venue_id, site, kind, topic, created_at').is('notified_at', null).order('created_at').limit(100)
+      const { data, error } = await sb.from('submissions').select('id, venue_id, site, kind, topic, created_at, status').is('notified_at', null).order('created_at').limit(100)
       if (error) throw new Error(`submission notices: ${error.message}`)
       return data as SubmissionNotice[]
     },

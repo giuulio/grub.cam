@@ -166,6 +166,24 @@ export const TRANSCRIPTION: Schema = {
   },
 }
 
+/**
+ * A member's transcription (the submit function): a Transcription, with what was sent read as the kind it is (`is`: a
+ * bar's price list sent as tonight's menu is a price list) and anything their note says the site should know (`news`).
+ */
+export type MemberTranscription = Transcription & { is: 'menu' | 'prices' | 'hours'; news: string }
+export const MEMBER_TRANSCRIPTION: Schema = {
+  name: 'member_transcription',
+  schema: {
+    ...TRANSCRIPTION.schema,
+    required: [...(TRANSCRIPTION.schema.required as string[]), 'is', 'news'],
+    properties: {
+      ...(TRANSCRIPTION.schema.properties as Record<string, unknown>),
+      is: { type: 'string', enum: ['menu', 'prices', 'hours'], description: 'what was sent is, and the format the body is in: the kind asked for unless the prompt says otherwise' },
+      news: { type: 'string', description: 'anything the sender wrote that the site should know besides what is in the body (closed, moved, being rebuilt, eat elsewhere), in one short sentence; else empty' },
+    },
+  },
+}
+
 /** A verdict on a member's photo of a venue (see vet() in the submit function). */
 export type Verdict = { ok: boolean; reason: string; alt: string }
 export const VERDICT: Schema = {

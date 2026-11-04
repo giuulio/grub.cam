@@ -4,8 +4,8 @@ name: Review queue
 # a model held back), so GitHub tells you when there's something to look at. No personal data goes in it (the repo is
 # public): `submissions -- digest` gives only what, where, how long and why, and the commands to act on each. Runs
 # on every new submission, with retries every ten minutes and a digest at 07:00 and 18:00 UTC (migration 0033).
-# Every receipt gets a comment, even if it publishes automatically; needs repository secrets VITE_SUPABASE_URL
-# and SUPABASE_SECRET_KEY.
+# A submission gets a comment only once it waits for a person (what goes up or is turned back on its own gets none),
+# and a held-back review a line; needs repository secrets VITE_SUPABASE_URL and SUPABASE_SECRET_KEY.
 on:
   workflow_dispatch:
 
@@ -41,9 +41,10 @@ jobs:
             url=$(gh issue create --title 'Review queue' --body-file digest.md)
             number=${url##*/}
           fi
-          before=$(gh issue view "$number" --json body --jq .body | grep -v '^Model ')
-          after=$(grep -v '^Model ' digest.md)
+          before=$(gh issue view "$number" --json body --jq .body | grep -oE '^\| `[0-9a-f]{8}` \| [^|]* \| [1-5] \|' || true)
           gh issue edit "$number" --body-file digest.md
-          waiting=$(grep -oE '^\*\*[0-9]+ (waiting|reviews? held back)[^*]*\*\*' digest.md | sed -E 's/\*\*//g; s/[.:]$//' | paste -sd ',' - | sed 's/,/, /g' || true)
-          if [ "$before" != "$after" ] && [ -n "$waiting" ]; then gh issue comment "$number" --body "$waiting. The list is in the issue."; fi
+          # A submission gets its own comment from notify; a review held back has none, so a new one gets a line here
+          after=$(grep -oE '^\| `[0-9a-f]{8}` \| [^|]* \| [1-5] \|' digest.md || true)
+          new=$(comm -13 <(echo "$before" | sort) <(echo "$after" | sort) | grep -c . || true)
+          if [ "$new" -gt 0 ]; then gh issue comment "$number" --body "$new new $([ "$new" = 1 ] && echo review || echo reviews) held back. The list is in the issue."; fi
           npm run submissions -- notify "$number"

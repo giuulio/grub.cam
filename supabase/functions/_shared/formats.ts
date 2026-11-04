@@ -34,7 +34,7 @@ Soup | £1.75 | | soup
 Hummus wrap (VE) | £4.00
 Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta
 
-Rules: one item per line, "name | price" (a board in capitals in sentence case: "Flat white", names such as "Americano" kept capitalised) with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96"). When the board shows two prices per item for different people (members and non-members, students and staff), give both: "name | first price | second price", in the board's order, and start the list with a "columns: first | second" line naming each column as the board heads it ("columns: Members | Non-members"; a column headed only by "£" is "Full price"). Leave the columns line out when the board doesn't say whose each price is, and when every item has one price. Prices for sizes or versions of an item (single and double, small and large, half and pint, hot and iced) are separate items, never a second price or a columns line: "Single espresso | £2.20", "Double espresso | £2.60". Leave out a note that prices nothing ("Decaf/oat milk available"). "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. When ingredients, a description or choices are printed beneath an item, put them in an optional fifth field, leaving unused price/course fields empty: "Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta". Preserve all choices and printed details; do not infer ingredients or diet tags. Nothing else: no commentary, no markdown fences.`,
+Rules: one item per line, "name | price" (a board in capitals in sentence case: "Flat white", names such as "Americano" kept capitalised) with the price as "£2.80", "2.80" or "95p" (a range as "£3.24-£3.96", a starting price as "From £2.00", in each column it's printed in). When the board shows two prices per item for different people (members and non-members, students and staff), give both: "name | first price | second price", in the board's order, and start the list with a "columns: first | second" line naming each column as the board heads it ("columns: Members | Non-members"; a column headed only by "£" is "Full price"). Leave the columns line out when the board doesn't say whose each price is, and when every item has one price. Prices for sizes or versions of an item (single and double, small and large, half and pint, hot and iced) are separate items, never a second price or a columns line: "Single espresso | £2.20", "Double espresso | £2.60". Leave out a note that prices nothing ("Decaf/oat milk available"). "## Heading" starts a section named as the board names it; add "| lunch, dinner" after a heading only when the board says those prices apply at particular meals. Add a fourth field only when a line prices a whole course of the day's menu (soup, main, side, dessert) or the whole meal ("meal"), e.g. "Main course | £3.75 | | main". Keep diet codes in brackets after the name as printed. When ingredients, a description or choices are printed beneath an item, put them in an optional fifth field, leaving unused price/course fields empty: "Shakshuka | £7.15 | | | Tomato sauce, poached eggs and feta". Preserve all choices and printed details; do not infer ingredients or diet tags. Nothing else: no commentary, no markdown fences.`,
   hours: `Opening hours, in this format (body only):
 
 breakfast | Mon-Fri | 08:00-09:30
@@ -68,6 +68,17 @@ export type Context = {
   source?: string
   /** With `asBoard`: the Monday of the week its undated weekdays are (a repeating cycle's week), instead of this week */
   week?: string
+  /**
+   * A member sent it (the submit function, MEMBER_TRANSCRIPTION): read it as the kind it is (a bar's price list sent as
+   * a menu is a price list), say what their note tells the site, and turn it back only when it can't be read.
+   */
+  member?: boolean
+}
+
+/** The other kind a member's menu or price list may be, and how to tell */
+const OTHER: Partial<Record<Transcribable, { kind: Transcribable; when: string }>> = {
+  menu: { kind: 'prices', when: 'a standing price list (drinks, or what a café or bar sells, with prices and no particular day\'s meals; a list headed with a year such as "2026-27" is one)' },
+  prices: { kind: 'menu', when: "a menu of dishes for particular days or meals" },
 }
 
 const TYPE_WORD = { hall: 'dining hall', cafe: 'café', bar: 'bar' } as const
@@ -100,7 +111,19 @@ export function prompt(c: Context, structured = false): string {
           : `If the photo or the text gives only part of it, or a correction to it ("Monday closes at 2"), answer with the whole list: the change made, everything else kept as it is. If they give a whole new list, answer with theirs alone.`),
     )
   lines.push('', BODY_SPEC[c.kind])
-  if (structured)
+  const other = structured && c.member ? OTHER[c.kind] : undefined
+  if (other) {
+    if (other.kind === 'menu' && c.today && !c.asBoard) lines.push('', `Today is ${longDate(c.today)}; weekdays without dates are this week's.`)
+    lines.push('', `If what was sent is in fact ${other.when}, answer in this format instead and set is to ${other.kind}:`, '', BODY_SPEC[other.kind])
+  }
+  if (structured && c.member)
+    lines.push(
+      '',
+      `Set is to ${c.kind}${other ? ` unless you answered as ${other.kind}` : ''}. In news, say anything the sender wrote that the site should know besides what is in your answer (the venue is closed, moved or being rebuilt, eat somewhere else today); a note about the photo, a date or a heading isn't news.`,
+      '',
+      `Then decide whether it goes on the venue's page as it is, with no one checking it (verdict). publish when it is ${what}${other ? ` (or ${other.when.split(' (')[0]})` : ''} and you could read it: transcribe it as printed. A misprint whose meaning is plain ("0.50p" for 50p, a price missing its £) is written as the price it plainly means; a line whose price is plainly wrong but not plainly what ("£388" among £4 sandwiches) is left out. Say each such thing in unsure, for whoever looks later; none of them is a reason to retry. retry only when it is something else (not ${what}, or another venue's), or when it can't be read (blurred, cut off, too far away or too dark, so most items or prices would be guesses); then say in retry, in one short sentence to the sender, what to do.`,
+    )
+  else if (structured)
     lines.push(
       '',
       `Then decide whether it goes on the venue's page as it is, with no one checking it (verdict). publish only when what was sent clearly is ${what} and everything in your answer is read, not guessed: every date, meal, item and price. A small doubt about a description or an allergen note is fine; say it in unsure. retry when it is something else, or blurred, cut off, too far away or too dark to read, or when a price, a date or a name would be a guess; then say in retry, in one short sentence to the sender, what to do.`,
