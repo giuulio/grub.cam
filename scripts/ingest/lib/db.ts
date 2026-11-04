@@ -29,6 +29,7 @@ export type Submission = {
   contact: string | null
   user_email: string | null
   contributor_id: string | null
+  upload_invite_id: string | null
   transcription: string | null
   transcribed_by: string | null
   model: string | null

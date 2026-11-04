@@ -12,12 +12,12 @@ export function Terms() {
       <title>{`Terms and privacy · ${SITE_NAME}`}</title>
       <div className="max-w-2xl leading-relaxed">
         <h1 className="title text-4xl">Terms and privacy</h1>
-        <p className="mt-3 text-muted">Last updated 13 October 2026.</p>
+        <p className="mt-3 text-muted">Last updated 4 November 2026.</p>
 
         <Part title="Using grub.cam">
           <p>
             {SITE_NAME} is a free, independent guide to where you can eat and drink across Cambridge colleges and the University. Reading it needs no account.
-            Sending something in or reviewing a venue needs you to sign in with your University of Cambridge (@cam.ac.uk) Google account.
+            Sign in with your University of Cambridge (@cam.ac.uk) Google account to contribute under your name or review a venue. Invited groups can also send menu photos through a private invitation link without an account.
           </p>
           <p>
             Menus, hours and prices come from what each venue publishes, transcriptions of its notices, and people who send corrections. They can be
@@ -32,6 +32,9 @@ export function Terms() {
             yourself, and a photo of a venue or a college should have no one's face in it. A menu, price list or opening times you've checked goes up within minutes, and anything else once a person
             has looked. Whatever goes up, goes up under your name, on the venue's page and on Contribute, so that what's here has someone behind it. By
             sending a photo of a venue or a college you license it under CC BY 4.0.
+          </p>
+          <p>
+            Menu photos sent through an invitation are checked by a person before publication. No individual name is published; we keep which invitation was used with the private evidence. Invitations expire, can be revoked and have upload limits. Keep your group's link within the group.
           </p>
           <p>
             A review should be your own experience of the venue: its food, drink, prices, service or space, as bluntly as you like, but naming or

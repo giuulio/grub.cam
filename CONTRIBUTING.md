@@ -34,6 +34,18 @@ Your rows are trusted: the ingest Action publishes them within a few hours (`npm
 
 If your college publishes its menu on the open web (a page, a PDF, a JSON feed), the site can fetch it itself every two hours. Add it to `scripts/ingest/sources.ts`, write an adapter in `scripts/ingest/sources/<college>.ts` that returns `MenuDay[]` (dates must come from the source, never from the week asked for), save a copy of the page in `sources/fixtures/` and test the adapter against it. `npm run ingest -- --only <college> --dry` shows what it would save. See `AGENTS.md` for the conventions.
 
+## Public menu data
+
+No account is needed to read the public menu tables. `npm run export:menus` produces the research CSV bundle in Downloads; use `-- --out /path/to/exports` to choose another folder. It reads **all stored dates**, including future publications, with pagination and count checks. Only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are needed: these are the public browser configuration, also present in the live site's JavaScript. Never share a service-role/secret key.
+
+Dated weekly ZIPs are published in [GitHub releases](https://github.com/giuulio/grub.cam/releases) by **Weekly menu dataset**, on Mondays at 08:17 UTC or when manually started. Each day's snapshot is kept unchanged. The README, field dictionary, coverage and manifest travel with every ZIP. `venues.source_diet_codes` describes a verified source convention, not whether an unlabelled dish is non-vegan. Unknown conventions remain unknown.
+
+For direct access, the public REST API is `<VITE_SUPABASE_URL>/rest/v1/<table>` with an `apikey: <VITE_SUPABASE_PUBLISHABLE_KEY>` header. Relevant tables are `sites`, `venues`, `menu_days`, `menu_items`, `venue_prices` and `service_slots`. Request explicit columns, a stable unique `order`, and every page with `limit`/`offset` (the server caps each response). `Prefer: count=exact` returns the total in `Content-Range`. Join `menu_items.menu_day_id` to `menu_days.id`, and `menu_days.venue_id` to `venues.id`. The homepage's seven-day load is not the full dataset. Treat diet labels as recorded labels and keep any later classifications and evidence in separate columns.
+
+## Invited menu photos
+
+A group invitation opens `/send` without Google sign-in and accepts menu photos or PDFs, up to four files and 10 MB total (5 MB per photo). Every submission waits for a person, even when a model transcribes it confidently. No individual name is published. These invitations are separate from the trusted script tokens above and cannot submit reviews or publish venue photos. Ask Giulio for a link and keep it within the group.
+
 ## Code
 
 `npm test`, `npm run typecheck` and `npm run lint` must pass. The database is the system of record; schema changes are migrations in `supabase/migrations/`. Terms: a **site** is a college or a University site, a **venue** is somewhere you eat or drink in one; never "place".

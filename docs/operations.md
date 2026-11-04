@@ -1,5 +1,21 @@
 # Operations
 
+## Research exports and source labelling
+
+`npm run export:menus [-- --out /path/to/exports]` reads all stored menu dates through the public API and saves a dated folder and ZIP in Downloads by default. No database credentials beyond the public browser configuration are needed. The six CSVs retain dish appearances, zero-item menu notes, standing lists, all venues and per-venue coverage, with a README, dictionary, manifest and hashes. Exact counts, unique item keys, joins and menu versions are checked; extraction is a read interval rather than a transaction snapshot. The **Weekly menu dataset** Action publishes an immutable dated release every Monday at 08:17 UTC; it needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as repository secrets. Manual runs keep an existing snapshot for that date.
+
+`venues.menu_labelling` (0050) records verified source conventions separately: `diet_codes` and `allergens` are present/absent/mixed/unknown, with `source_url`, `checked_on` and `note`. Unknown is the default. Do not infer a convention from the proportion of tagged dishes or use it to label an untagged dish non-vegan. An assessment applies to its source, not every later member photo. The export flattens these fields in venues.csv.
+
+Whole-dish wording such as “Vegan chilli” or “Plant-Based Burrito” is recognised by the shared ingest schema. Mixed choices, mentions of vegan ingredients, and conflicting declared allergens are left for source research. `npm run ingest:tags -- --dry` reviews corrections to existing dated items; without `--dry` it changes tags only, preserves source/saved timestamps and clears affected script hashes for the next check. It does not guess recipes or overwrite existing source tags.
+
+Emmanuel's public display (`https://catering.emma.cam.ac.uk/`) exposes the current meal shortly before service. Its adapter trusts the displayed date/meal, reads the first responsive layout only, and preserves prices, allergens and dated service times. A display with no menu is empty, not a cancellation. The normal half-hourly ingest catches the short publication window.
+
+## Invitation uploads
+
+`npm run invites -- create --label "Group name" --out /path/outside/repo.txt [--sites site,site] [--days 90]` creates a private, revocable upload link; `list` shows metadata only, and `revoke <id>` disables it. The raw token is written once to the output file (mode 0600), never stored in the database or printed. The link uses `/send#invite=…`: the token is read into memory and removed from the URL before further navigation; reopening the original link is needed after reloading. Do not commit or publish it.
+
+Invitations (0051) are separate from trusted contributor-script tokens. They accept **menu evidence only**, up to four files, 10 MB total and 5 MB per photo. A locked database claim enforces expiry, active status, allowed sites and the daily allowance (50 by default); failed attempts after a claim consume allowance too. The function stores private evidence, optionally transcribes it, and always leaves it `needs_review`. There is no auto-publication, account identity, individual credit or leaderboard entry. The existing queue and `submissions show/transcribe/approve/reject` commands handle it. `approve --trusted` cannot select invitation rows. Sign-in remains required for reviews and named member contributions.
+
 [AGENTS.md](../AGENTS.md) lists commands and data rules. [README](../README.md#switching-on-sending-in) is the canonical setup guide for Google sign-in, model secrets and publishing. Google sign-in has been on since 12 Oct 2026.
 
 ## Ingest and reference data

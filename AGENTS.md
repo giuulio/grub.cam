@@ -57,6 +57,9 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 
 ## Data rules
 
+- `npm run export:menus [-- --out /path]` makes the public research dataset (all stored dates) in Downloads by default; the weekly dataset Action publishes dated ZIPs. `npm run ingest:tags -- --dry` previews whole-dish name-label corrections. Source labelling is `venues.menu_labelling` (0050), not inferred dish suitability. See [operations](docs/operations.md#research-exports-and-source-labelling).
+- `npm run invites -- create --label "Group" --out /private/path.txt [--sites site,site] [--days 90]`, `list`, `revoke <id>` manages group menu-upload links (0051). Invitation evidence always waits for review; these are separate from trusted contributor-script tokens. See [operations](docs/operations.md#invitation-uploads).
+
 - A **site** is a college or University site (`sites.kind`: `college` or `university`); a **venue** belongs to it, with id `<site>/<venue>`. Reference data is edited in Supabase; schema changes go in migrations. Free-text research fields (`notice`, `hours_text`, …) are editor notes, not public copy.
 - A venue is somewhere people go to eat or drink, not a common room, gathering, vending machine or overflow seating. Dining (`type: hall`) serves dishes that change by date; a café has a mostly fixed list; a bar serves drinks. A café that becomes a bar in the same room is one venue: `venueTypes()` uses its café (`snacks`) and bar slots to list it under both types. A University café whose main offer changes daily is Dining and keeps its café hours.
 - Formal hall is the `formal` meal, on the venue whose room holds it. Create a separate venue only when it has its own room. A `formals` row also lists a venue under Formal when its days are unknown. Formal only counts towards open now when that meal is selected or it is all the venue holds.

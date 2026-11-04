@@ -25,12 +25,14 @@ import { botanicGardenPrices, cavendishPrices, courtyardKitchenPrices, kettlesYa
 import { stCatharines } from './sources/st-catharines.ts'
 import { stEdmunds } from './sources/st-edmunds.ts'
 import { trinity } from './sources/trinity.ts'
+import { emmanuel, EMMANUEL_MENU } from './sources/emmanuel.ts'
 
 // University Catering pages that post this week's lunch, all in the same format
 const ucs = (venue: string, url: string, notes?: string): MenuSource => ({ venue, channel: 'html', url, cadence: 'weekly, current week only (Mon–Fri lunch)', notes, adapter: ucsWeekly(url), fallback: true })
 
 export const SOURCES: MenuSource[] = [
   // Scripted
+  { venue: 'emmanuel/hall', channel: 'html', url: EMMANUEL_MENU, cadence: 'current meal, published shortly before service', notes: 'Public display discovered by Cambridge Plant-Based Society, checked 4 Nov 2026. Source date, prices and allergens; no diet codes, explicit wording in dish names only.', adapter: emmanuel },
   {
     venue: 'corpus-christi/cafeteria',
     channel: 'html',
@@ -186,7 +188,6 @@ export const SOURCES: MenuSource[] = [
   // Members only: need a collaborator in the college
   { venue: 'christs/upper-hall', channel: 'intranet', notes: 'https://intranet.christs.cam.ac.uk/upper-hall-menus' },
   { venue: 'clare/buttery', channel: 'intranet', notes: 'https://www.clare.cam.ac.uk/current-students/catering (Clare accounts only)' },
-  { venue: 'emmanuel/hall', channel: 'intranet', cadence: 'current and next meal', notes: 'https://apps.emma.cam.ac.uk/college/menus/ (Emmanuel accounts only)' },
   { venue: 'girton/hall-cafeteria', channel: 'email', cadence: 'weekly, Friday internal newsletter' },
   { venue: 'gonville-and-caius/hall', channel: 'intranet', notes: 'Meal-booking system on the intranet' },
   { venue: 'hughes-hall/fenners-dining-hall', channel: 'app', cadence: 'daily', notes: 'UPay app (Hughes accounts only)' },

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { explicitDietTags } from './ingest/lib/tags.ts'
 
 // Scraped and transcribed menus are validated against these before they're saved. The app imports the types.
 
@@ -20,7 +21,7 @@ export const Dish = z.object({
   sold_out: z.boolean().optional(),
   /** As the source lists them (lib/tags.ts `allergenFromLabel()`): "milk", "gluten (wheat)", "may contain nuts". None listed isn't none present. */
   allergens: z.array(z.string().min(1)).optional(),
-})
+}).transform((dish) => ({ ...dish, tags: explicitDietTags(dish.name, dish.tags, dish.allergens) }))
 export type Dish = z.infer<typeof Dish>
 
 export const MenuDay = z.object({

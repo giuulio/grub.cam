@@ -11,6 +11,7 @@ import { MAX_PHOTOS, send, shrink, type SubmitKind, type SubmitResult, type Topi
 import { formatISODate } from '../lib/time/clock.ts'
 import type { Meal, Venue } from '../lib/types.ts'
 import { useNow } from '../lib/useNow.ts'
+import { inviteToken, INVITE_MAX_FILES } from '../../supabase/functions/_shared/invites.ts'
 
 const KINDS: [SubmitKind, string, typeof MenuBoard][] = [
   ['menu', 'Menu', MenuBoard],
@@ -48,10 +49,13 @@ export function Send() {
   const session = useSession()
   const canSignIn = useSignInEnabled()
   const [params, setParams] = useSearchParams()
+  const [invitation] = useState(() => typeof window === 'undefined' ? null : inviteToken(window.location.hash))
+  // Keep the bearer link out of referrers, page history and subsequent navigation URLs.
+  useEffect(() => { if (invitation) window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search) }, [invitation])
   const venue = venues.find((v) => v.id === params.get('venue'))
   // A photo of the site itself, for its page's banner: the one thing a site takes
-  const site = venue ? undefined : sites.find((s) => s.slug === params.get('site'))
-  const kind = (site ? 'photo' : (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu')) as SubmitKind
+  const site = venue || invitation ? undefined : sites.find((s) => s.slug === params.get('site'))
+  const kind = (invitation ? 'menu' : site ? 'photo' : (KINDS.find(([k]) => k === params.get('kind'))?.[0] ?? 'menu')) as SubmitKind
   const topic = kind === 'other' ? TOPICS.find(([t]) => t === params.get('topic'))?.[0] : undefined
   const set = (k: string, v?: string) => setParams((p) => { const n = new URLSearchParams(p); if (v) n.set(k, v); else n.delete(k); return n }, { replace: true })
 
@@ -77,9 +81,10 @@ export function Send() {
     setError(undefined)
     const usable = picked.filter((f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name) || (kind !== 'photo' && isPdf(f)))
     if (!usable.length) return setError(kind === 'photo' ? 'Choose a photo.' : 'Photos or PDFs only.')
-    const room = kind === 'photo' ? 1 : MAX_PHOTOS - files.length
-    if (room <= 0) return setError(`${MAX_PHOTOS} at most.`)
-    if (usable.length > room && kind !== 'photo') setError(`${MAX_PHOTOS} at most: the first ${room} added.`)
+    const limit = invitation ? INVITE_MAX_FILES : MAX_PHOTOS
+    const room = kind === 'photo' ? 1 : limit - files.length
+    if (room <= 0) return setError(`${limit} at most.`)
+    if (usable.length > room && kind !== 'photo') setError(`${limit} at most: the first ${room} added.`)
     const next = await Promise.all(usable.slice(0, room).map(async (f) => {
       const file = await shrink(f, kind === 'photo' ? 2400 : undefined)
       return { file, url: URL.createObjectURL(file) }
@@ -94,7 +99,7 @@ export function Send() {
     return p.filter((x) => x !== s)
   })
   // Pasted images join in while the form is showing
-  const editing = !!session && !done && !busy
+  const editing = (!!session || !!invitation) && !done && !busy
   useEffect(() => {
     if (!editing) return
     const paste = (e: ClipboardEvent) => {
@@ -107,7 +112,8 @@ export function Send() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!(venue || site) || !session) return
+    if (!(venue || site) || (!session && !invitation)) return
+    if (invitation && (!venue || !shown.length)) return setError('Choose a venue and add a photo or PDF of its menu.')
     if (kind === 'photo' && !shown.length) return setError('Add the photo.')
     if (kind === 'other' && !note.trim()) return setError('Say what’s changed.')
     if (!shown.length && !note.trim()) return setError('Add a photo, or type it out.')
@@ -118,7 +124,7 @@ export function Send() {
       // A menu's days and meals come from the board; where it says neither, it's for now's meal
       const fallback = kind === 'menu' && venue ? { date: params.get('date') ?? now.date, service: (params.get('meal') as Meal | null) ?? mealNow(venue, now), asBoard: true } : {}
       const r = await send(
-        session.access_token,
+        invitation ? { invitation } : session!.access_token,
         { ...(venue ? { venue: venue.id } : { site: site!.slug }), kind, ...fallback, topic, note: note.trim(), website: (document.getElementById('website') as HTMLInputElement | null)?.value },
         shown.map((s) => s.file),
         setLive,
@@ -150,7 +156,7 @@ export function Send() {
       <title>{`Send what you see · ${SITE_NAME}`}</title>
       {/* As wide as the header's search above it, edge to edge */}
       <div className="mx-auto max-w-[46rem]">
-        {session === undefined ? null : !session || !isCamEmail(email) ? (
+        {!invitation && session === undefined ? null : !invitation && (!session || !isCamEmail(email)) ? (
           <section aria-labelledby="sign-in" className="space-y-4">
             <h1 id="sign-in" className="title text-4xl">Send what you see</h1>
             <p className="text-muted">Sign in with your Cambridge account (@cam.ac.uk) to send a menu, prices or hours. What you send goes up under your name; your address is never shown.</p>
@@ -175,7 +181,7 @@ export function Send() {
               <h1 className="title text-4xl">Send what you see</h1>
               <p className="mt-2 flex items-center gap-2 text-muted">
                 <Icon of={Sparkles} className="size-4 shrink-0" />
-                {site ? `A photo of ${site.short_name ?? site.name} for the top of its page.` : kind === 'photo' ? 'A photo of the room for its page.' : kind === 'other' ? 'Tell us what’s changed.' : 'AI reads it and puts it up in minutes.'}
+                {invitation ? 'Send a menu photo without signing in. A person checks it before it goes up.' : site ? `A photo of ${site.short_name ?? site.name} for the top of its page.` : kind === 'photo' ? 'A photo of the room for its page.' : kind === 'other' ? 'Tell us what’s changed.' : 'AI reads it and puts it up in minutes.'}
               </p>
             </div>
 
@@ -200,7 +206,7 @@ export function Send() {
             )}
 
             {/* A site takes only its photo */}
-            {!site && (
+            {!site && !invitation && (
               <div role="radiogroup" aria-label="What it is" className="flex flex-wrap gap-2">
                 {KINDS.map(([k, label, icon]) => (
                   <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => set('kind', k)} className="chip" data-on={kind === k || undefined}>
@@ -271,16 +277,17 @@ export function Send() {
                     <Icon of={Gallery} />
                     {kind === 'photo' ? 'Choose a photo' : shown.length ? 'Add more' : 'Upload'}
                   </button>
-                  <span className="text-xs text-muted">{kind === 'photo' ? 'No faces · CC BY 4.0, credited to you' : `Photos or PDF · up to ${MAX_PHOTOS}`}</span>
+                  <span className="text-xs text-muted">{kind === 'photo' ? 'No faces · CC BY 4.0, credited to you' : `Photos or PDF · up to ${invitation ? INVITE_MAX_FILES : MAX_PHOTOS}`}</span>
                 </div>
               )}
             </div>
 
             <textarea
+              maxLength={invitation ? 2000 : 20000}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={kind === 'other' || (reads(kind) && !shown.length) ? 5 : 2}
-              placeholder={kind === 'other' ? 'What’s changed, and how you know' : kind === 'photo' ? 'A note (optional)' : shown.length ? 'Context for the reader (optional): “next week’s menu”, “student prices”' : 'Or type it out, one item a line'}
+              placeholder={kind === 'other' ? 'What’s changed, and how you know' : kind === 'photo' ? 'A note (optional)' : shown.length || invitation ? 'Context for the reader (optional): “next week’s menu”, “student prices”' : 'Or type it out, one item a line'}
               aria-label={kind === 'other' ? 'What’s changed' : 'Note'}
               className="w-full rounded-lg border border-ink/15 bg-canvas p-3 text-base leading-6 text-ink placeholder:text-muted focus:border-ink/50 focus:outline-none sm:text-sm"
             />
@@ -300,7 +307,7 @@ export function Send() {
                 {busy ? 'Sending…' : 'Send'}
               </button>
               <p className="text-xs text-muted">
-                Goes up as <span className="font-medium text-ink">{name}</span> ({email}) · <button type="button" onClick={() => signOut()} className="link cursor-pointer">Not you?</button> · <Link to="/terms" className="link">Terms</Link>
+                {invitation ? `Invitation upload · no individual name is published · up to ${INVITE_MAX_FILES} files (10 MB total) · ` : <>Goes up as <span className="font-medium text-ink">{name}</span> ({email}) · <button type="button" onClick={() => signOut()} className="link cursor-pointer">Not you?</button> · </>}<Link to="/terms" className="link">Terms</Link>
               </p>
             </div>
           </form>

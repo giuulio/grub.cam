@@ -4,6 +4,7 @@ import type { DietTag, Dish } from '../../schema.ts'
 export function tagFromLabel(label: string): DietTag | undefined {
   const s = label.trim().toLowerCase()
   if (!s) return undefined
+  if (/\b(?:not|non)[ -]?(?:vegan|vegetarian|plant[ -]?based)\b/.test(s)) return undefined
   if (s === 'pb' || /plant.?based/.test(s)) return 'plant_based'
   if (s === 'vv' || s === 've' || s === 'vg' || s === 'vgn' || s === 'vn' || /vegan/.test(s)) return 'vegan'
   if (s === 'v' || /vegetarian/.test(s)) return 'vegetarian'
@@ -24,6 +25,18 @@ export function tagsFromLabels(labels: Iterable<string>): DietTag[] {
   if (out.has('plant_based')) out.add('vegan')
   if (out.has('vegan')) out.add('vegetarian')
   return [...out]
+}
+
+/** A label describing the dish itself, rather than a vegan ingredient or one choice in a mixed list. */
+export function explicitDietTags(name: string, tags: DietTag[] = [], allergens: string[] = []): DietTag[] {
+  const whole = /^(vegan|plant[\s‐‑–-]*based|vegetarian)\b/i.exec(name.trim())
+    ?? /\b(vegan|plant[\s‐‑–-]*based)(?: version)?\s*$/i.exec(name.trim())
+  if (!whole || /^veggie vegan$/i.test(name.trim()) || /\b(?:options?|available|choose|choice)\b|\b(?:not|non)[ -]?(?:vegan|plant[ -]?based)\b|\bor\b/i.test(name)) return tags
+  // A mixed buffet or a named vegan component does not label the whole plate. Conflicting source allergens wait.
+  if (/(?:[,;&]|\band\b)\s*(?:fried eggs?|scrambled eggs?|poached eggs?|bacon|smoked cheddar|emmental)\b/i.test(name)) return tags
+  const label = tagFromLabel(whole[1])!
+  if ((label === 'vegan' || label === 'plant_based') && allergens.some((a) => /^(?:milk|eggs?|fish|crustaceans?|molluscs?)(?:\s|\(|$)/i.test(a))) return tags
+  return tagsFromLabels([...tags, label])
 }
 
 /**

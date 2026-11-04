@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import { allergenFromLabel, allergensFromLabels, allergensFromName, cleanName, tagsFromName } from './tags.ts'
+import { allergenFromLabel, allergensFromLabels, allergensFromName, cleanName, explicitDietTags, tagsFromName } from './tags.ts'
+import { MenuDay } from '../../schema.ts'
+
+describe('explicit dish labels', () => {
+  it('reads whole-dish wording through the shared ingest schema', () => {
+    const day = MenuDay.parse({ date: '2026-11-04', service: 'lunch', items: [
+      { name: 'Vegan chilli', tags: ['halal'] }, { name: 'Plant-Based Burrito' },
+      { name: 'Apple, pear and anise crumble, vegan version' },
+    ] })
+    expect(day.items.map((i) => i.tags)).toEqual([
+      ['halal', 'vegan', 'vegetarian'], ['plant_based', 'vegan', 'vegetarian'], ['vegan', 'vegetarian'],
+    ])
+  })
+  it('leaves mixed choices, ingredient claims and conflicting allergens for review', () => {
+    for (const name of ['Brunch: bacon, eggs, vegan sausages', 'Pie night: vegan & vegetarian options available',
+      'Chicken with vegan mayonnaise', 'Green lentil ragù with vegan cheese', 'Vegan sausage, fried eggs', 'Vegan sausage and bacon', 'Not vegan', 'Veggie Vegan']) {
+      expect(explicitDietTags(name)).toEqual([])
+    }
+    expect(explicitDietTags('Vegan pudding', [], ['milk'])).toEqual([])
+    expect(tagsFromName('Pudding (not vegan)').tags).toEqual([])
+    expect(explicitDietTags('Vegan pudding', [], ['may contain milk'])).toEqual(['vegan', 'vegetarian'])
+  })
+})
 
 describe('tagsFromName', () => {
   it('reads the codes colleges print after a dish', () => {
