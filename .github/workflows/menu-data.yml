@@ -1,5 +1,11 @@
 name: Weekly menu dataset
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/menu-data.yml'
+      - 'scripts/export-menus.ts'
+      - 'scripts/lib/menu-export.ts'
   schedule:
     - cron: '17 8 * * 1'
   workflow_dispatch:
