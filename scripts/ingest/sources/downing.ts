@@ -8,13 +8,20 @@ import type { Adapter } from '../lib/source.ts'
 const OUTLET = 17260
 
 // Groups carry no dates, only names like "MICHAELMAS 2026 WEEK 1". Downing's weeks run Mon–Sun and week 1 is the
-// week Full Term starts in (Tue 6 Oct 2026 ⇒ WEEK 1 = Mon 5 Oct), so WEEK n starts n−1 weeks after that Monday.
-function groupMonday(name: string): string | undefined {
+// week Full Term starts in (Tue 6 Oct 2026 ⇒ WEEK 1 = Mon 5 Oct). The weeks are a cycle of three: after WEEK 3
+// (19 Oct) the feed showed WEEK 1 again (26 Oct), then WEEK 2 (2 Nov), each with a few dishes changed. So WEEK n is
+// the week n, n+3, n+6… weeks into term, and the feed, which shows only the current week, says which of those it is.
+const CYCLE = 3
+
+/** The Mondays a group's "WEEK n" falls on in its term: every CYCLE weeks from week n, to the end of Full Term. */
+export function groupMondays(name: string): string[] {
   const m = name.match(/^(.+?)\s+WEEK\s*(\d+)\b/i)
   const term = m && FULL_TERMS.find((t) => t.name.toLowerCase() === m[1].trim().toLowerCase())
-  if (!term) return undefined
+  if (!term) return []
   const termMonday = addDays(term.start, -((fromISODate(term.start).getUTCDay() + 6) % 7))
-  return addDays(termMonday, 7 * (Number(m[2]) - 1))
+  const out: string[] = []
+  for (let week = Number(m[2]) - 1; addDays(termMonday, 7 * week) <= term.end; week += CYCLE) out.push(addDays(termMonday, 7 * week))
+  return out
 }
 
 type Outlet = { menu_groups: { id: number; name: string; is_active: boolean }[] }
@@ -25,9 +32,9 @@ export const downing: Adapter = {
   async fetch(ctx) {
     const outlet = await fetchJson<Outlet>(`https://kitchen.kafoodle.com/api/wba/v1/data/${OUTLET}`)
     const weekly = outlet.menu_groups.filter((g) => g.is_active && /WEEK\s*\d+/i.test(g.name))
-    const group = weekly.find((g) => { const mon = groupMonday(g.name); return mon && isoWeek(mon) === ctx.week })
+    const monday = (g: { name: string }) => groupMondays(g.name).find((mon) => isoWeek(mon) === ctx.week)
+    const group = weekly.find((g) => monday(g))
     if (!group) return { days: [], note: `No Kafoodle menu group for ${ctx.week} (published: ${weekly.map((g) => `"${g.name}"`).join(', ') || 'none'}).` }
-    const monday = groupMonday(group.name)!
     // Kafoodle hides each day's menu once that weekday has passed (menu.weekdays), so later runs return fewer days.
     const data = await fetchJson<Group>(`https://kitchen.kafoodle.com/api/wba/v1/data/${OUTLET}/search/${group.id}`, {
       method: 'POST',
@@ -38,7 +45,7 @@ export const downing: Adapter = {
     for (const menu of data.menus) {
       const dayIdx = WEEKDAYS.findIndex((w) => menu.name.toLowerCase().includes(w))
       if (dayIdx < 0) continue
-      const date = addDays(monday, dayIdx)
+      const date = addDays(monday(group)!, dayIdx)
       const isBrunch = /brunch/i.test(menu.name)
       const recipes = new Map(menu.recipes.map((r) => [r.id, r]))
       const order = menu.config?.widgets.filter((w) => w.class === 'dish').map((w) => w.config.id) ?? [...recipes.keys()]
