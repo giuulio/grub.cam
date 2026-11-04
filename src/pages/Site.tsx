@@ -54,7 +54,11 @@ export function SitePage() {
           <h1 className="title text-4xl leading-[1.1] sm:text-5xl">{siteName(site)}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted">
             <span className="text-ink">{`${mine.length} ${mine.length === 1 ? 'venue' : 'venues'}`}</span>
-            {site.official_dining_url && <ExternalLink href={site.official_dining_url} className="" />}
+            {site.official_dining_url && (
+              <span>
+                More at <ExternalLink href={site.official_dining_url} className="" />
+              </span>
+            )}
           </div>
           <section aria-label={`${siteName(site)} venues`} className="mt-8">
             <ul className="space-y-3">

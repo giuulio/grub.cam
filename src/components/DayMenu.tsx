@@ -25,7 +25,7 @@ const COURSE_LABEL: Record<Course, string> = { soup: 'Soup', main: 'Mains', side
  * A meal whose menu is posted elsewhere ("European Night, see posters for details") shows that note, and where
  * `send` gives a link, asks for a photo of it.
  */
-export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, send }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow; pricesBy?: string; send?: (meal: Meal) => string }) {
+export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, pricesAt, send }: { days: MenuDay[]; slots: Slot[]; date: string; prices?: VenuePrice[]; terms?: PriceTerms | null; now?: LocalNow; pricesBy?: string; pricesAt?: string; send?: (meal: Meal) => string }) {
   const posted = days.filter(mealPosted)
   const served = withDayTimes(slots, days)
   // A meal served that day with no dishes posted, but its own posted list (St Catharine's breakfast, a fixed brunch):
@@ -57,6 +57,8 @@ export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, send 
           const usual = span(slots)
           // The day's own times, when its note gives some other than the usual
           const changed = !!noteTimes(day.note) && hours !== usual
+          // A note that's only the meal's usual times ("Dinner 17:45–19:00", Emmanuel's every day) says what the heading does
+          const repeat = !changed && /^\s*[a-z]+\s+\d{1,2}:\d{2}\s*[–—-]\s*\d{1,2}:\d{2}\s*$/i.test(day.note ?? '')
           const alert = !!day.alert && !!day.note
           const tone = alert ? 'text-alert' : 'text-notice'
           return (
@@ -86,7 +88,7 @@ export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, send 
                   </span>
                 </p>
               ) : (
-                day.note && <p className={elsewhere ? 'mt-3' : `mt-2 text-sm ${cancelled ? 'text-notice' : 'text-muted'}`}>{day.note}</p>
+                day.note && !repeat && <p className={elsewhere ? 'mt-3' : `mt-2 text-sm ${cancelled ? 'text-notice' : 'text-muted'}`}>{day.note}</p>
               )}
               {day.items.length ? (
                 <Dishes items={day.items} prices={mp} terms={terms} />
@@ -114,7 +116,7 @@ export function DayMenu({ days, slots, date, prices, terms, now, pricesBy, send 
           )
         })}
       </div>
-      <ListNote tags={used} prices={listed} note={terms?.note} by={listed.length ? pricesBy : undefined} />
+      <ListNote tags={used} prices={listed} note={terms?.note} by={listed.length ? pricesBy : undefined} link={listed.length ? pricesAt : undefined} />
     </div>
   )
 }

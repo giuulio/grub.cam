@@ -41,11 +41,13 @@ export function PriceList({ lines, terms, narrow = false }: { lines: VenuePrice[
   )
 }
 
-/** Under a list: how the venue's prices work (`note`), what its diet codes mean, when and where its prices were posted, and who sent them in (`by`). */
-export function ListNote({ tags, prices, note, by }: { tags: DietTag[]; prices?: VenuePrice[]; note?: string; by?: string }) {
+/**
+ * Under a list: how the venue's prices work (`note`), what its diet codes mean, when and where its prices were posted
+ * (`link`, when the page doesn't already link it: venueLinks()), and who sent them in (`by`).
+ */
+export function ListNote({ tags, prices, note, by, link }: { tags: DietTag[]; prices?: VenuePrice[]; note?: string; by?: string; link?: string }) {
   const used = (Object.keys(DIET_SHORT) as DietTag[]).filter((t) => tags.includes(t))
   const posted = prices?.length ? postedOn(prices) : undefined
-  const link = prices?.map((p) => p.source.match(/https?:\/\/[^\s)]+/)?.[0]).find(Boolean)
   if (!used.length && !posted && !note && !by) return null
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
@@ -58,6 +60,11 @@ export function ListNote({ tags, prices, note, by }: { tags: DietTag[]; prices?:
       {(posted || by) && (
         <span>
           {posted ? `Prices as posted ${formatISODate(posted, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Prices'}
+          {link && (
+            <>
+              {' '}at <ExternalLink href={link} />
+            </>
+          )}
           {by && (
             <>
               , sent in by <SentBy by={by} />
@@ -65,7 +72,6 @@ export function ListNote({ tags, prices, note, by }: { tags: DietTag[]; prices?:
           )}
         </span>
       )}
-      {link && <ExternalLink href={link} />}
     </div>
   )
 }

@@ -12,7 +12,8 @@ import { ListNote, PriceList, SentBy } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
-import { gapPath, menuGap, venueGaps, type Gap } from '../lib/coverage.ts'
+import { gapPath, hasPrices, menuGap, pricedDay, venueGaps, type Gap } from '../lib/coverage.ts'
+import { venueLinks } from '../lib/links.ts'
 import { useMenuCredits, useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { sentBy } from '../lib/contributors.ts'
 import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
@@ -326,7 +327,7 @@ function FixedMenu({ venue, type, lines, terms }: { venue: Venue; type: VenueTyp
   return (
     <div className="space-y-2">
       <PriceList lines={lines} terms={terms} />
-      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} note={terms?.note} by={creditOf(venue, 'prices')} />
+      <ListNote tags={lines.flatMap((p) => dishTags(p.tags))} prices={lines} note={terms?.note} by={creditOf(venue, 'prices')} link={venueLinks(venue).prices} />
     </div>
   )
 }
@@ -348,7 +349,7 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
           <div className="space-y-6">
             <MissingMenu venue={venue} published={false} />
             <PriceList lines={prices} terms={venue.price_terms} />
-            <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} by={creditOf(venue, 'prices')} />
+            <ListNote tags={prices.flatMap((p) => dishTags(p.tags))} prices={prices} note={venue.price_terms?.note} by={creditOf(venue, 'prices')} link={venueLinks(venue).prices} />
           </div>
         </Section>
       )
@@ -394,8 +395,8 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
           <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
         </div>
       )}
-      {/* A Dining menu with no price list: said once, over the dishes the prices would be beside */}
-      {venue.type === 'hall' && !venue.prices?.length && (
+      {/* A Dining menu with no prices, neither a list nor beside its dishes: said once, over the dishes they'd be beside */}
+      {venue.type === 'hall' && !hasPrices(venue) && !days?.some(pricedDay) && (
         <div className="mb-8">
           <GapLine to={sendPath(venue, 'prices')} action="Send the price list">
             <span className="font-semibold">No prices here yet.</span> <span className="text-muted">Seen what they charge?</span>
@@ -413,6 +414,7 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
               terms={venue.price_terms}
               now={!snapshot && date === now.date ? now : undefined}
               pricesBy={creditOf(venue, 'prices')}
+              pricesAt={venueLinks(venue).prices}
               // A member's menu goes up from yesterday on
               send={!snapshot && !venue.menu_scripted && date >= addDaysISO(now.date, -1) ? (meal) => sendPath(venue, 'menu', { date, meal }) : undefined}
             />
@@ -421,10 +423,10 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
                 This menu was sent in by <SentBy by={menuBy} />
               </p>
             ) : (
-              // Where the venue posts it, to check or read further ahead
-              venue.menu_url && (
+              // Where the venue posts it, to check or read further ahead, unless the top of the page links it already
+              venueLinks(venue).menu && (
                 <p className="mt-2 text-sm text-muted">
-                  Menu from <ExternalLink href={venue.menu_url} />
+                  Menu from <ExternalLink href={venueLinks(venue).menu!} />
                 </p>
               )
             )}
@@ -460,10 +462,10 @@ function MissingMenu({ venue, published = true }: { venue: Venue; published?: bo
     : ['No menu here yet', 'Seen today’s menu?']
   return (
     <GapCard title={title} body={`${lead} ${SEND_EITHER}`} to={sendPath(venue, 'menu')} action="Send today’s menu">
-      {status === 'online' && venue.menu_url && (
-        <div className="mt-2">
-          <ExternalLink href={venue.menu_url} />
-        </div>
+      {status === 'online' && venueLinks(venue).menu && (
+        <p className="mt-2 text-sm text-muted">
+          Menu at <ExternalLink href={venueLinks(venue).menu!} />
+        </p>
       )}
     </GapCard>
   )
@@ -495,7 +497,11 @@ function FormalHall({ venue, formal: f }: { venue: Venue; formal: Formal }) {
           </div>
         ))}
       </dl>
-      {f.url && <ExternalLink href={f.url} />}
+      {venueLinks(venue).formal && (
+        <p className="text-sm text-muted">
+          More on formal hall at <ExternalLink href={venueLinks(venue).formal!} />
+        </p>
+      )}
     </div>
   )
 }
@@ -510,7 +516,8 @@ const sentence = (parts: (string | false | null | undefined)[]) => {
  * diets, are the rail's).
  */
 function Details({ venue }: { venue: Venue }) {
-  const website = venue.url ?? venue.site.official_dining_url
+  // Its own page, else its menu's; the college's general page is on the college's page, not repeated here
+  const { top } = venueLinks(venue)
   const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
     <ul className="order-4 flex flex-col gap-x-8 gap-y-3 text-[1.0625rem] sm:flex-row sm:flex-wrap sm:items-baseline md:mt-8 md:border-t md:border-ink/10 md:pt-6">
@@ -520,9 +527,11 @@ function Details({ venue }: { venue: Venue }) {
             {diets} options
           </Fact>
         )}
-        {website && (
+        {top && (
           <Fact icon={Global} known>
-            <ExternalLink href={website} className="" />
+            <span className="text-muted">
+              {top.menu ? 'Menu from' : 'More at'} <ExternalLink href={top.href} className="" />
+            </span>
           </Fact>
         )}
         <li className="border-t border-ink/10 pt-3 sm:border-0 sm:pt-0">

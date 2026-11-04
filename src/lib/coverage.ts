@@ -34,8 +34,10 @@ export type Category = {
 }
 
 const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
+/** A day whose dishes are priced on the menu itself (Emmanuel, Darwin: no separate list) */
+export const pricedDay = (d: { items: { price_gbp?: number | null; price_text?: string | null }[] }) => d.items.some((i) => i.price_gbp != null || !!i.price_text)
 /** A posted price list, or prices on the loaded menus */
-const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some((d) => d.items.some((i) => i.price_gbp != null || i.price_text))
+export const hasPrices = (v: Venue) => !!v.prices?.length || v.menu.some(pricedDay)
 const ofType = (t: VenueType) => (v: Venue) => venueTypes(v).includes(t)
 /** Where a daily menu is expected: Dining, but not a Hall used only for formal hall */
 const servesMeals = (v: Venue) => v.type === 'hall' && !isFormalOnly(v)
@@ -135,7 +137,7 @@ export function venueNeeds(v: Venue): Need[] {
   const needs: Need[] = []
   const need = (kind: Gap['kind'], label: string, send: Gap['send'], have: boolean) => needs.push({ kind, label, send, weight: gapWeight(kind, v.type), have })
   if (servesMeals(v) && (hasMenu(v) || !v.menu_scripted)) need('menu', 'The menu board', 'menu', hasMenu(v))
-  need('prices', v.type === 'bar' ? 'The drinks list' : 'The price list', 'prices', !!v.prices?.length)
+  need('prices', v.type === 'bar' ? 'The drinks list' : 'The price list', 'prices', hasPrices(v))
   need('hours', 'The opening times', 'hours', v.slots.length > 0)
   if (holdsFormal(v)) need('formal', 'Formal hall: the price or the time', 'other', v.formal?.price_gbp != null && v.slots.some((s) => s.meal === 'formal'))
   need('photo', 'A photo of the venue', 'photo', !!venuePhoto(v))

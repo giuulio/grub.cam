@@ -171,3 +171,12 @@ describe('tabCoverage', () => {
     expect(tabCoverage([{ ...hall, formal: { price_gbp: 12 } }, hall], 'formal')).toMatchObject({ have: 1, of: 1 })
   })
 })
+
+describe('prices on the menu', () => {
+  it('count as the price list a Dining venue would otherwise be asked for (Emmanuel prices each dish)', () => {
+    const asked = (v: Venue) => venueGaps(v).some((g) => g.kind === 'prices')
+    expect(asked(hall)).toBe(true)
+    expect(asked({ ...hall, menu: [{ date: '2026-11-04', service: 'dinner', items: [{ ...dish, price_gbp: 4.45 }] }] })).toBe(false)
+    expect(asked({ ...hall, menu: [{ date: '2026-11-04', service: 'dinner', items: [dish] }] })).toBe(true)
+  })
+})
