@@ -34,8 +34,14 @@ export function emmanuelMenu(html: string): MenuDay[] {
   }
   if (!items.length) return []
   const serving = main.querySelector('h1')?.parentNode?.text.match(/Serving\s+(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})\s*(am|pm)/i)
-  const time = (s: string) => { const [h, m] = s.split(':'); return `${String(Number(h) % 12 + (serving?.[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2, '0')}:${m}` }
-  const note = serving ? `${service === 'dinner' ? 'Dinner' : service[0].toUpperCase() + service.slice(1)} ${time(serving[1])}–${time(serving[2])}` : undefined
+  // One am/pm for the range ("11:45 – 1:30 pm"): it's the end's, and the start is the same half of the day only when
+  // that doesn't put it after the end
+  const minutes = (s: string, pm: boolean) => { const [h, m] = s.split(':').map(Number); return (h % 12 + (pm ? 12 : 0)) * 60 + m }
+  const hhmm = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`
+  const pm = serving?.[3].toLowerCase() === 'pm'
+  const end = serving ? minutes(serving[2], pm) : 0
+  const start = serving ? (minutes(serving[1], pm) <= end ? minutes(serving[1], pm) : minutes(serving[1], false)) : 0
+  const note = serving ? `${service === 'dinner' ? 'Dinner' : service[0].toUpperCase() + service.slice(1)} ${hhmm(start)}–${hhmm(end)}` : undefined
   return [MenuDay.parse({ date, service, items, ...(note ? { note } : {}) })]
 }
 
