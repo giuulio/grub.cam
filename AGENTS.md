@@ -51,7 +51,7 @@ Keep these references current when behaviour changes. Keep AGENTS focused on com
 | Photos | `src/components/VenuePhoto.tsx`, `src/lib/photos.ts`, `scripts/ingest/photo.ts` |
 | Accounts and sending in | `src/lib/auth.ts`, `src/lib/submit.ts`, `src/pages/Send.tsx`, `src/lib/reading.ts`, `supabase/functions/submit/` |
 | Model calls and prompts | `supabase/functions/_shared/openai.ts`, `supabase/functions/_shared/formats.ts` |
-| Reviews | `src/components/Reviews.tsx`, `scripts/ingest/reviews.ts` |
+| Reviews (off on the site: `REVIEWS` in `src/lib/site.ts`) | `src/components/Reviews.tsx`, `scripts/ingest/reviews.ts` |
 | Contribute: college table, leaderboard, names | `src/pages/Contribute.tsx`, `src/lib/contributors.ts`, `src/lib/coverage.ts` (`venueNeeds()`, `gapWeight()`, `siteProgress()`), views in migration `0039` |
 | SEO and prerendering | `src/lib/seo.ts`, `src/lib/summary.ts` (venues in words for titles and descriptions), `src/entry-server.tsx`, `scripts/prerender.ts` |
 

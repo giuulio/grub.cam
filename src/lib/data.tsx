@@ -1,3 +1,4 @@
+import { REVIEWS } from './site.ts'
 import { createClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { addDaysISO, toLocalNow } from './time/clock.ts'
@@ -49,7 +50,8 @@ export async function load(): Promise<Data> {
   ])
   if (c.error) throw new Error(c.error.message)
   if (m.error) throw new Error(m.error.message)
-  const ratings = new Map((r.error ? [] : r.data).map((x) => [x.venue_id, { reviews: x.reviews, average: x.average }]))
+  // Shown nowhere while reviews are off (REVIEWS): no venue has a rating
+  const ratings = new Map((r.error || !REVIEWS ? [] : r.data).map((x) => [x.venue_id, { reviews: x.reviews, average: x.average }]))
   const credits = new Map<string, Credit[]>()
   for (const { venue_id, ...credit } of k.error ? [] : k.data) credits.set(venue_id, [...(credits.get(venue_id) ?? []), credit])
 

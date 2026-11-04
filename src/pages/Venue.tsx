@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { Calendar, Flag, Global, Leaf, Map as MapIcon, NoteAdd } from 'reicon-react'
+import { Calendar, Flag, Global, Map as MapIcon, NoteAdd } from 'reicon-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { DayMenu } from '../components/DayMenu.tsx'
 import { Directions } from '../components/Directions.tsx'
 import { ExternalLink } from '../components/ExternalLink.tsx'
-import { GapCard, GapLine, SEND_EITHER } from '../components/GapCard.tsx'
+import { GapCard, SEND_EITHER } from '../components/GapCard.tsx'
 import { RatingSummary, Reviews } from '../components/Reviews.tsx'
 import { Icon } from '../components/Icon.tsx'
 import { DayStepper, MenuCalendar } from '../components/MenuCalendar.tsx'
@@ -12,17 +12,17 @@ import { ListNote, PriceList, SentBy } from '../components/MenuRows.tsx'
 import { Status } from '../components/Status.tsx'
 import { VenueMap } from '../components/VenueMap.tsx'
 import { TypeLabel, VenueBanner } from '../components/VenuePhoto.tsx'
-import { gapPath, hasPrices, menuGap, pricedDay, venueGaps, type Gap } from '../lib/coverage.ts'
+import { gapPath, menuGap, venueGaps, type Gap } from '../lib/coverage.ts'
 import { venueLinks } from '../lib/links.ts'
 import { useMenuCredits, useMenuDates, useMenuOn, useReady } from '../lib/data.tsx'
 import { sentBy } from '../lib/contributors.ts'
-import { applyFilters, DEFAULT_FILTERS, DIET_LABEL, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
+import { applyFilters, DEFAULT_FILTERS, dishTags, MEAL_LABEL, mealHours, periodSlots, slotOrder, TYPE_LABEL, weekHours, type Ranked } from '../lib/filters.ts'
 import { hasLocation } from '../lib/finder.ts'
 import { BowTie } from '../lib/icons.ts'
 import { priceGroups } from '../lib/prices.ts'
 import { mealCancelled, mealPosted } from '../lib/menuNotes.ts'
 import { formalBooking, formalDress, formalGuests, formalPrice, formalWhen } from '../lib/formal.ts'
-import { sendPath, siteName, venuePath } from '../lib/site.ts'
+import { REVIEWS, sendPath, siteName, venuePath } from '../lib/site.ts'
 import { venueTitle } from '../lib/seo.ts'
 import { useHere } from '../lib/useHere.ts'
 import { useMedia } from '../lib/useMedia.ts'
@@ -31,7 +31,7 @@ import { useNow } from '../lib/useNow.ts'
 import { addDaysISO, formatDays, formatISODate, isISODate, relativeDay, type LocalNow } from '../lib/time/clock.ts'
 import { openStatus, withDayTimes } from '../lib/time/openNow.ts'
 import { isFullTerm } from '../lib/time/termDates.ts'
-import { isFormalOnly, venueTypes, type Channel, type Day, type DietTag, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
+import { isFormalOnly, venueTypes, type Channel, type Day, type Formal, type PriceTerms, type Venue, type VenuePrice, type VenueType } from '../lib/types.ts'
 import { NotFound } from './NotFound.tsx'
 
 /**
@@ -56,10 +56,11 @@ export function VenuePage() {
   if (!venue) return <NotFound />
   // The site's venues, for the map: this one in the middle, the others as context
   const neighbours = applyFilters(venues.filter((v) => v.site.slug === venue.site.slug), { ...DEFAULT_FILTERS, date: now.date, exactDate: true }, now)
+  // What's missing, under the hours on a wide screen; on a phone, after the sections, before the map
   const tail = (
     <>
-      <MapCard venue={venue} rows={neighbours} />
       <HelpCard venue={venue} />
+      <MapCard venue={venue} rows={neighbours} />
     </>
   )
 
@@ -75,9 +76,11 @@ export function VenuePage() {
           <Details venue={venue} />
           <div className="order-3 min-w-0 space-y-16 md:mt-14">
             <Sections key={venue.id} venue={venue} now={now} />
-            <Section id="reviews" title="Reviews" aside={<RatingSummary venue={venue} className="text-lg" />}>
-              <Reviews key={venue.id} venue={venue} />
-            </Section>
+            {REVIEWS && (
+              <Section id="reviews" title="Reviews" aside={<RatingSummary venue={venue} className="text-lg" />}>
+                <Reviews key={venue.id} venue={venue} />
+              </Section>
+            )}
           </div>
           {!wide && <div className="order-5 space-y-5">{tail}</div>}
         </div>
@@ -169,15 +172,15 @@ function MapCard({ venue, rows }: { venue: Venue; rows: Ranked[] }) {
 }
 
 /**
- * What this page is still missing that it doesn't already ask for where it would be, each a link to send it (a photo or
- * the text): the menu, a café's or bar's list and the hours each have their own, so they aren't asked for twice; formal
- * hall's details, a photo and unknown diets are here. Nothing when there's nothing else to ask.
+ * Everything the page is missing, in one place, each a link to send it: a Dining venue's prices, formal hall's details,
+ * a photo, unknown diets. In red, as a missing menu is on the front page. What's missing is said in the page only
+ * where the gap is all there'd be to show: a day with no menu, a café's or bar's empty list, and the hours, said in
+ * their card. Nothing when there's nothing to ask.
  */
 function HelpCard({ venue }: { venue: Venue }) {
   const types = venueTypes(venue)
   // From the list /contribute shows for it, so the two never disagree
-  const elsewhere = (g: Gap) =>
-    g.kind === 'menu' || g.kind === 'hours' || (g.kind === 'prices' && (types.some((t) => t !== 'hall') || venue.menu.some((d) => d.items.length)))
+  const elsewhere = (g: Gap) => g.kind === 'menu' || g.kind === 'hours' || (g.kind === 'prices' && types.some((t) => t !== 'hall'))
   const missing = venueGaps(venue)
     .filter((g) => !elsewhere(g))
     .map((g): [label: string, to: string] => [g.label, gapPath(venue, g)])
@@ -185,16 +188,17 @@ function HelpCard({ venue }: { venue: Venue }) {
   if (!venue.dietary.tags.length && types.some((t) => t !== 'bar')) missing.push(['The diet options', sendPath(venue, 'other', { topic: 'diet' })])
   if (!missing.length) return null
   return (
-    <RailCard>
-      <h2 className="text-lg font-semibold">Help fill this in</h2>
+    <RailCard className="border-alert/25 bg-alert-bg text-alert">
+      <h2 className="text-lg font-semibold">Missing here</h2>
       <ul className="mt-3 space-y-2">
         {missing.map(([label, to]) => (
           <li key={label} className="flex items-start gap-3">
-            <Icon of={NoteAdd} className="mt-1 size-4 shrink-0 text-muted" />
-            <Link to={to} className="link">{label}</Link>
+            <Icon of={NoteAdd} className="mt-1 size-4 shrink-0" />
+            <Link to={to} className="font-medium underline decoration-alert/40 underline-offset-4 hover:decoration-alert">{label}</Link>
           </li>
         ))}
       </ul>
+      <p className="mt-4 text-[0.9375rem]">Seen it? Send a photo, or type out what it says.</p>
     </RailCard>
   )
 }
@@ -395,14 +399,6 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
           <MenuCalendar value={date} today={now.date} dates={new Set(dates)} onChange={(d) => (setDate(d), setCalendarOpen(false))} />
         </div>
       )}
-      {/* A Dining menu with no prices, neither a list nor beside its dishes: said once, over the dishes they'd be beside */}
-      {venue.type === 'hall' && !hasPrices(venue) && !days?.some(pricedDay) && (
-        <div className="mb-8">
-          <GapLine to={sendPath(venue, 'prices')} action="Send the price list">
-            <span className="font-semibold">No prices here yet.</span> <span className="text-muted">Seen what they charge?</span>
-          </GapLine>
-        </div>
-      )}
       <div>
         {days?.some(mealPosted) ? (
           <>
@@ -419,14 +415,14 @@ function DatedMenu({ title, type, venue, now, prices }: { title: string; type: V
               send={!snapshot && !venue.menu_scripted && date >= addDaysISO(now.date, -1) ? (meal) => sendPath(venue, 'menu', { date, meal }) : undefined}
             />
             {menuBy ? (
-              <p className="mt-2 text-sm text-muted">
+              <p className="mt-3 text-base text-muted">
                 This menu was sent in by <SentBy by={menuBy} />
               </p>
             ) : (
               // Where the venue posts it, to check or read further ahead, unless the top of the page links it already
               venueLinks(venue).menu && (
-                <p className="mt-2 text-sm text-muted">
-                  Menu from <ExternalLink href={venueLinks(venue).menu!} />
+                <p className="mt-3 text-base text-muted">
+                  Menu from <ExternalLink href={venueLinks(venue).menu!} className="" />
                 </p>
               )
             )}
@@ -463,8 +459,8 @@ function MissingMenu({ venue, published = true }: { venue: Venue; published?: bo
   return (
     <GapCard title={title} body={`${lead} ${SEND_EITHER}`} to={sendPath(venue, 'menu')} action="Send today’s menu">
       {status === 'online' && venueLinks(venue).menu && (
-        <p className="mt-2 text-sm text-muted">
-          Menu at <ExternalLink href={venueLinks(venue).menu!} />
+        <p className="mt-2 text-base text-muted">
+          Menu at <ExternalLink href={venueLinks(venue).menu!} className="" />
         </p>
       )}
     </GapCard>
@@ -498,17 +494,12 @@ function FormalHall({ venue, formal: f }: { venue: Venue; formal: Formal }) {
         ))}
       </dl>
       {venueLinks(venue).formal && (
-        <p className="text-sm text-muted">
-          More on formal hall at <ExternalLink href={venueLinks(venue).formal!} />
+        <p className="text-base text-muted">
+          More on formal hall at <ExternalLink href={venueLinks(venue).formal!} className="" />
         </p>
       )}
     </div>
   )
-}
-
-const sentence = (parts: (string | false | null | undefined)[]) => {
-  const s = parts.filter(Boolean).join(', ')
-  return s ? s[0].toUpperCase() + s.slice(1) : undefined
 }
 
 /**
@@ -518,15 +509,9 @@ const sentence = (parts: (string | false | null | undefined)[]) => {
 function Details({ venue }: { venue: Venue }) {
   // Its own page, else its menu's; the college's general page is on the college's page, not repeated here
   const { top } = venueLinks(venue)
-  const diets = sentence(venue.dietary.tags.map((t: DietTag) => DIET_LABEL[t].toLowerCase()))
   return (
     <ul className="order-4 flex flex-col gap-x-8 gap-y-3 text-[1.0625rem] sm:flex-row sm:flex-wrap sm:items-baseline md:mt-8 md:border-t md:border-ink/10 md:pt-6">
         {venue.access_note && <li className="w-full">{venue.access_note}</li>}
-        {diets && (
-          <Fact icon={Leaf} known>
-            {diets} options
-          </Fact>
-        )}
         {top && (
           <Fact icon={Global} known>
             <span className="text-muted">

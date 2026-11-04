@@ -50,7 +50,7 @@ export function ListNote({ tags, prices, note, by, link }: { tags: DietTag[]; pr
   const posted = prices?.length ? postedOn(prices) : undefined
   if (!used.length && !posted && !note && !by) return null
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-base text-muted">
       {note && <p className="w-full text-ink">{note}</p>}
       {used.map((t) => (
         <span key={t}>
@@ -62,7 +62,7 @@ export function ListNote({ tags, prices, note, by, link }: { tags: DietTag[]; pr
           {posted ? `Prices as posted ${formatISODate(posted, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Prices'}
           {link && (
             <>
-              {' '}at <ExternalLink href={link} />
+              {' '}at <ExternalLink href={link} className="" />
             </>
           )}
           {by && (
@@ -91,9 +91,9 @@ export function GroupHead({ label, heads, price, columns = 0 }: { label?: string
       {h}
     </span>
   ))
-  // Smaller than the dishes under it, so it reads as their heading, not one of them; in the venue's type colour (from
-  // the menu's `data-type`), so a long menu's courses stand apart
-  const title = <h4 className="type-ink flex-1 text-base font-semibold">{label}</h4>
+  // A subheading over the dishes, larger than them and in the venue's type colour (from the menu's `data-type`), so a
+  // long menu's courses stand apart
+  const title = <h4 className="type-ink mt-2 flex-1 text-xl font-semibold">{label}</h4>
   if (!price)
     return (
       <div className="mb-1 flex items-baseline gap-4">

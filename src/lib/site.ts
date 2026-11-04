@@ -3,6 +3,8 @@ import type { Site, Venue } from './types.ts'
 export const SITE_NAME = 'grub.cam'
 /** Canonical origin, for links that leave the page: canonical URLs, sitemap, structured data, llms.txt. */
 export const SITE_URL = 'https://grub.cam'
+/** Members' reviews and ratings on the site. Off since 4 Nov 2026: what's written is kept, and the function still takes them */
+export const REVIEWS = false
 export const SITE_DESCRIPTION = "Cambridge college grub, mapped: today's dining hall menus, University cafés and canteens, college bars and formal halls, with opening times and prices."
 /** What else people call the site, for search engines' site names: "grub", "Cambridge grub" */
 export const SITE_ALTERNATE_NAMES = ['grub', 'Cambridge grub']
