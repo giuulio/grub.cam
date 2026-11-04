@@ -60,7 +60,7 @@ jobs:
       - if: ${{ !cancelled() }}
         run: |
           [ -f "$RUNNER_TEMP/health.md" ] || exit 0
-          number=$(gh issue list --state open --search 'in:title "Source health"' --json number --jq '.[0].number')
+          number=$(gh issue list --state open --limit 100 --json number,title --jq '[.[] | select(.title == "Source health")] | min_by(.number) | .number // empty')
           if [ -z "$number" ]; then
             url=$(gh issue create --title 'Source health' --body-file "$RUNNER_TEMP/health.md")
             number=${url##*/}
