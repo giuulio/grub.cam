@@ -1,7 +1,7 @@
 // A venue or site in words: what it is and which meals it serves. The words in its title and description, so a page says
 // what people search for ("Jesus College lunch menu", "Wolfson formal hall", "Kettle's Yard café opening times"). Built
 // from the data only, never the clock, so it prerenders.
-import { MEAL_LABEL, TYPE_LABEL } from './filters.ts'
+import { TYPE_LABEL } from './filters.ts'
 import { siteSearchName } from './site.ts'
 import { venueTypes, type Meal, type Site, type Venue } from './types.ts'
 
@@ -10,7 +10,6 @@ const DAILY: Meal[] = ['breakfast', 'brunch', 'lunch', 'dinner']
 
 /** "a, b and c"; an item may have commas of its own ("Mon, Wed 18:00–19:30") */
 export const list = (parts: string[]) => (parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : (parts[0] ?? ''))
-const lower = (meals: Meal[]) => meals.map((m) => MEAL_LABEL[m].toLowerCase())
 
 export const holdsFormal = (v: Venue) => !!v.formal || v.slots.some((s) => s.meal === 'formal')
 export const hasMenu = (v: Venue) => v.menu.some((d) => d.items.length)
@@ -36,5 +35,3 @@ const theSite = (s: Site) => `${the(s)}${siteSearchName(s)}`
 /** "St Edmund's College (Eddies), Cambridge", "the Sidgwick Site, University of Cambridge" */
 export const placed = (s: Site) => `${theSite(s)}, ${s.kind === 'college' ? 'Cambridge' : 'University of Cambridge'}`
 
-/** "brunch, lunch and dinner" for a title, or "" */
-export const mealWords = (v: Venue) => list(lower(dailyMeals(v)))

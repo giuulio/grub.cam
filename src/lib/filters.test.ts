@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, dishTags, mainDishes, matchesDiet, mealHours, nextService, sectionOf, weekHours, type Filters } from './filters.ts'
+import { applyFilters, awaitedMeal, DEFAULT_FILTERS, dishTags, mainDishes, matchesDiet, mealHours, nextService, sectionOf, weekHours, type Filters } from './filters.ts'
 import type { Slot, Venue, VenueType } from './types.ts'
 
 const base: Venue = {
@@ -124,6 +124,24 @@ describe('sectionOf', () => {
     expect(at(9 * 60)).toBe('later')
     expect(at(15 * 60)).toBe('other')
     expect(at(12 * 60, { ...base, slots: [] })).toBe('unknown')
+  })
+})
+
+describe('awaitedMeal', () => {
+  const breakfast: Slot = { ...base.slots[0], meal: 'breakfast', start: '07:30', end: '09:30' }
+  const dinner: Slot = { ...base.slots[0], meal: 'dinner', start: '17:45', end: '19:10' }
+  const v: Venue = { ...base, slots: [breakfast, ...base.slots, dinner] }
+  const at = (slot: Slot) => ({ slot, date: '2026-10-07' })
+  it('names the next meal the venue posts menus for, not a breakfast it never posts', () => {
+    expect(awaitedMeal(v, at(breakfast))).toBe('lunch')
+    expect(awaitedMeal(v, at(base.slots[0]))).toBe('lunch')
+    // Only dinner posted this week: at breakfast, dinner's is the one to wait for
+    expect(awaitedMeal({ ...v, menu: [{ date: '2026-10-08', service: 'dinner', items: [{ name: 'Curry', tags: [] }] }] }, at(breakfast))).toBe('dinner')
+  })
+  it("keeps the status's meal when none it posts is left that day, or it has no menus to go by: it may not be up yet", () => {
+    // Only today's lunch loaded, posted day by day: tonight's dinner just isn't up yet
+    expect(awaitedMeal(v, at(dinner))).toBe('dinner')
+    expect(awaitedMeal({ ...v, menu: [] }, at(breakfast))).toBe('breakfast')
   })
 })
 

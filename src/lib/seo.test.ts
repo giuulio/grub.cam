@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Data } from './data.tsx'
-import { headTags, hoursText, llmsFullTxt, llmsTxt, pages, sitemap, siteTitle, splitHoisted, TAB_TITLES, venueTitle } from './seo.ts'
+import { headTags, hoursText, llmsFullTxt, llmsTxt, pages, sitemap, siteTitle, splitHoisted, TAB_TITLES, TITLE_MAX, venueTitle } from './seo.ts'
 import type { Venue } from './types.ts'
 import { alternateNames } from './site.ts'
 
@@ -52,19 +52,28 @@ describe('seo', () => {
     expect(TAB_TITLES['/']).toBe('Cambridge college and University menus, cafés and bars · grub.cam')
     expect(TAB_TITLES['/formal']).toMatch(/^Cambridge formal hall/)
     const bar: Venue = { ...caff, id: 'jesus/roost', slug: 'roost', name: 'The Roost', type: 'bar', menu: [], slots: [{ meal: 'bar', days: ['fri'], start: '20:00', end: '23:00', period: 'all' }] }
-    expect(siteTitle(jesus, [caff, bar])).toBe('Jesus College, Cambridge: dining hall menus and bar opening times · grub.cam')
-    // The meals it serves, so "Jesus College lunch menu" finds it
-    expect(venueTitle(caff)).toBe('Caff, Jesus College, Cambridge: lunch and dinner menus, prices and opening times · grub.cam')
-    expect(venueTitle(bar)).toBe('The Roost, Jesus College, Cambridge: bar opening times · grub.cam')
+    expect(siteTitle(jesus, [caff, bar])).toBe('Jesus College: dining hall menu today and bar opening times · grub.cam')
+    // The college then its room, so "Jesus College menu" finds it; a name of its own goes first
+    expect(venueTitle(caff)).toBe('Jesus College Caff: menu today, opening times and prices · grub.cam')
+    expect(venueTitle(bar)).toBe('The Roost, Jesus College: bar opening times · grub.cam')
+    expect(venueTitle({ ...bar, name: 'College Bar' })).toBe("Jesus College Bar: bar opening times · grub.cam")
+    expect(venueTitle({ ...bar, name: "Fiona's" })).toBe("Fiona's, Jesus College: bar opening times · grub.cam")
     const formal: Venue = { ...caff, menu: [], slots: [{ meal: 'formal', days: ['fri'], start: '19:30', end: '21:30', period: 'term' }] }
-    expect(venueTitle(formal)).toBe('Caff, Jesus College, Cambridge: formal hall nights, price and dress code · grub.cam')
-    expect(venueTitle({ ...formal, menu: [{ date, service: 'formal', items: [{ name: 'Beef Wellington', tags: [] }] }] })).toBe('Caff, Jesus College, Cambridge: formal hall menu, nights, price and dress code · grub.cam')
+    expect(venueTitle(formal)).toBe('Jesus College Caff: formal hall nights, price and dress code · grub.cam')
+    expect(venueTitle({ ...formal, menu: [{ date, service: 'formal', items: [{ name: 'Beef Wellington', tags: [] }] }] })).toBe('Jesus College Caff: formal hall menu, nights and price · grub.cam')
     // A dining hall that also holds formal says so; one without a menu yet, its opening times
-    expect(venueTitle({ ...caff, menu: [], slots: [...caff.slots, ...formal.slots] })).toBe('Caff, Jesus College, Cambridge: dining hall opening times and formal hall · grub.cam')
-    expect(siteTitle(jesus, [caff, formal, bar])).toBe('Jesus College, Cambridge: dining hall menus, formal hall and bar opening times · grub.cam')
+    expect(venueTitle({ ...caff, menu: [], slots: [...caff.slots, ...formal.slots] })).toBe('Jesus College Caff: dining hall opening times and formal hall · grub.cam')
+    expect(siteTitle(jesus, [caff, formal, bar])).toBe('Jesus College, Cambridge: dining hall menu today · grub.cam')
     const uni = { ...jesus, slug: 'west-cambridge', name: 'West Cambridge', kind: 'university' as const }
     expect(siteTitle(uni, [])).toBe('West Cambridge, University of Cambridge: opening times · grub.cam')
-    expect(siteTitle(uni, [{ ...caff, site: uni }])).toBe('West Cambridge, University of Cambridge: canteen menus and opening times · grub.cam')
+    expect(siteTitle(uni, [{ ...caff, site: uni }])).toBe('West Cambridge: canteen menu today and opening times · grub.cam')
+    expect(venueTitle({ ...caff, name: 'West Hub Canteen', site: uni })).toBe('West Hub Canteen, West Cambridge: menu today and opening times · grub.cam')
+  })
+
+  it('keeps titles to what a search result shows, dropping their last words first', () => {
+    const long: Venue = { ...caff, name: 'Cripps Dining Hall Cafeteria', slots: [...caff.slots, { meal: 'formal', days: ['fri'], start: '19:30', end: '21:30', period: 'term' }] }
+    expect(venueTitle(long)).toBe('Jesus College Cripps Dining Hall Cafeteria: menu today · grub.cam')
+    for (const t of [venueTitle(caff), venueTitle(long), siteTitle(jesus, [caff, long])]) expect(t.replace(' · grub.cam', '').length).toBeLessThanOrEqual(TITLE_MAX)
   })
 
   it('describes a site by its venues and lists each tab’s venues for search engines', () => {
@@ -135,7 +144,7 @@ describe('seo', () => {
     const venue = { ...caff, id: 'st-edmunds/dining-hall', slug: 'dining-hall', name: 'Dining Hall', site, aliases: ['Refectory'] }
     const example = { ...data, sites: [site], venues: [venue] }
     const all = pages(example, date)
-    expect(venueTitle(venue)).toContain("St Edmund's College (Eddies), Cambridge")
+    expect(venueTitle(venue)).toContain("St Edmund's College (Eddies) Dining Hall")
     expect(siteTitle(site, [venue])).toContain("St Edmund's College (Eddies)")
     const page = all.at(-1)!
     expect(page.description).toContain("Dining Hall (Refectory), St Edmund's College (Eddies)")

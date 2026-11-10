@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { NoteAdd } from 'reicon-react'
 import { useReady } from '../lib/data.tsx'
-import { mainDishes, MEAL_LABEL, mealSlot, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
+import { awaitedMeal, mainDishes, MEAL_LABEL, mealSlot, plantTag, slotOrder, type Ranked } from '../lib/filters.ts'
 import { hasLocation, type RowDish } from '../lib/finder.ts'
 import { formalBooking, formalDress, formalPrice, formalWhen } from '../lib/formal.ts'
 import { formatPrice, fromList, headlinePrices, priceGroups } from '../lib/prices.ts'
@@ -248,9 +248,11 @@ function RowPreview({ r, now, types, dishes, formal, named, headed, compact }: {
     // scripted menu isn't ours to ask for
     const today = !at || snapshot || at.date === now.date
     const tomorrow = !today && at.date === addDaysISO(now.date, 1)
-    const meal = !today ? '' : at && ['breakfast', 'brunch', 'lunch', 'dinner'].includes(at.slot.meal) ? `${MEAL_LABEL[at.slot.meal].toLowerCase()} ` : ''
+    const named = (m: Meal | undefined) => (today && m && ['breakfast', 'brunch', 'lunch', 'dinner'].includes(m) ? `${MEAL_LABEL[m].toLowerCase()} ` : '')
+    const meal = named(at?.slot.meal)
     const on = tomorrow ? ' for tomorrow' : ''
-    if (v.menu_scripted) return <p className="text-muted">No {meal}menu posted{on} yet.</p>
+    // A scripted menu names the meal it's waiting for: lunch at breakfast, where the source posts no breakfast
+    if (v.menu_scripted) return <p className="text-muted">No {named(at && awaitedMeal(v, at))}menu posted{on} yet.</p>
     return <Gap to={sendPath(v, 'menu', at && !snapshot && (today || tomorrow) ? { date: at.date, ...(meal && { meal: at.slot.meal }) } : {})} send="Send it in" compact={compact}>No {meal}menu{on} yet.</Gap>
   }
   return <Gap to={sendPath(v, 'prices')} send={types[0] === 'bar' ? 'Send the drinks list' : 'Send the price list'} compact={compact}>No prices yet.</Gap>

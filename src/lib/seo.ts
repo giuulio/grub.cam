@@ -7,7 +7,7 @@ import { photoSrc, sitePhoto, venuePhoto } from './photos.ts'
 import { dishPrice, formatGbp, mealPrices } from './prices.ts'
 import { formalBooking, formalDress, formalPrice } from './formal.ts'
 import { alternateNames, SITE_ALTERNATE_NAMES, SITE_DESCRIPTION, SITE_NAME, SITE_URL, siteName, sitePath, siteSearchName, venuePath } from './site.ts'
-import { dailyMeals, hasFormalMenu, hasMenu, hasPrices, holdsFormal, kindWords, list, mealWords, placed as placedIn } from './summary.ts'
+import { dailyMeals, hasFormalMenu, hasMenu, hasPrices, holdsFormal, kindWords, list, placed as placedIn } from './summary.ts'
 import { formatDays, formatISODate } from './time/clock.ts'
 import { isFormalOnly, venueTypes, type Day, type DietTag, type MenuDay, type Photo, type Site, type Slot, type Venue, type VenueType } from './types.ts'
 
@@ -35,9 +35,22 @@ const day = (iso: string) => formatISODate(iso, { weekday: 'short', day: 'numeri
 /** "Jesus College, Cambridge"; a University site is already in Cambridge by name, so it's placed by the University */
 const placed = (s: Site) => (s.kind === 'college' ? `${siteSearchName(s)}, Cambridge` : `${siteSearchName(s)}, University of Cambridge`)
 
-// Page titles: what people search for first (the venue or site, its meals' menus, "formal hall", "opening times" as
-// people in Britain search it, "prices", "Cambridge"), the site's name last. The pages set them; the prerenderer lifts
-// them into <head>.
+// Page titles: what people search for first (the venue or site, "menu today", "formal hall", "opening times" as
+// people in Britain search it, "prices", "Cambridge"), the site's name last. A venue or site's title keeps to
+// `TITLE_MAX` characters before the site's name, dropping its last words first, since Google cuts or rewrites longer
+// ones. The pages set them; the prerenderer lifts them into <head>.
+
+/** Characters a venue's or site's title has before " · grub.cam": about what a search result shows. */
+export const TITLE_MAX = 65
+
+/** The first title that fits, else the shortest; with the site's name. */
+const fitted = (titles: string[]) => `${titles.find((t) => t.length <= TITLE_MAX) ?? titles.at(-1)} · ${SITE_NAME}`
+
+/** "a, b and c", then "a and b", then "a": every leading run of the parts, longest first. */
+const shortening = (parts: (string | false)[]) => {
+  const kept = parts.filter((x): x is string => !!x)
+  return kept.map((_, n) => list(kept.slice(0, kept.length - n)))
+}
 
 /** The front page and its tabs. */
 export const TAB_TITLES: Record<string, string> = {
@@ -48,34 +61,46 @@ export const TAB_TITLES: Record<string, string> = {
   '/formal': `Cambridge formal hall: every college's nights, prices, dress code and booking · ${SITE_NAME}`,
 }
 
-/** "Jesus College, Cambridge: dining hall menus, formal hall, café and bar opening times · grub.cam", from what the site has. */
+/**
+ * "Jesus College, Cambridge: dining hall menu today, formal hall and bar opening times · grub.cam", from what the site
+ * has; shorter, without "Cambridge" and then its last words, where that's too long.
+ */
 export function siteTitle(s: Site, venues: Venue[]): string {
   const daily = venues.filter((v) => !(v.type === 'hall' && isFormalOnly(v)))
   const kinds = new Set(daily.flatMap(venueTypes))
   const hall = s.kind === 'college' ? 'dining hall' : 'canteen'
   const menus = kinds.has('hall') && daily.some(hasMenu)
   // Things in their own right, then the kinds whose opening times it gives
-  const things = [menus && `${hall} menus`, venues.some(holdsFormal) && 'formal hall'].filter((x): x is string => !!x)
+  const things = [menus && `${hall} menu today`, venues.some(holdsFormal) && 'formal hall'].filter((x): x is string => !!x)
   const timed = [kinds.has('hall') && !menus && hall, kinds.has('cafe') && 'café', kinds.has('bar') && 'bar'].filter((x): x is string => !!x)
-  const what = timed.length ? `${list([...things, ...timed])} opening times` : list([...things, 'opening times'])
-  return `${placed(s)}: ${what} · ${SITE_NAME}`
+  const whats = [
+    timed.length ? `${list([...things, ...timed])} opening times` : list([...things, 'opening times']),
+    ...(things.length ? [list([...things, 'opening times']), things[0]] : ['opening times']),
+  ]
+  return fitted(whats.flatMap((what) => [`${placed(s)}: ${what}`, `${siteSearchName(s)}: ${what}`]))
 }
 
 /**
- * "Caff, Jesus College, Cambridge: lunch and dinner menus, prices and opening times · grub.cam", from what the venue
- * is and has: the meals it serves, its formal hall, its prices.
+ * "Jesus College Caff: menu today, opening times and prices · grub.cam" (a University site's venue first: "West Hub
+ * Canteen, West Cambridge"), from what the venue is and has: today's menu, its formal hall, its prices.
  */
 export function venueTitle(v: Venue): string {
-  if (v.type === 'hall' && isFormalOnly(v)) return `${v.name}, ${placed(v.site)}: formal hall ${hasFormalMenu(v) ? 'menu, ' : ''}nights, price and dress code · ${SITE_NAME}`
-  const meals = mealWords(v)
+  const site = siteName(v.site)
+  // A college's own room after its name ("King's College Bar", not "College Bar"); a name of its own ("The Den",
+  // "Fiona's") before it, as a University site's venues are
+  const room = v.name.replace(new RegExp(`^${site.split(' ').at(-1)} (?=\\S)`), '')
+  // With the college's first alias, as people search it ("Fitz buttery")
+  const who = v.site.kind !== 'college' ? `${v.name}, ${site}` : /^The |['’]s\b/.test(v.name) ? `${v.name}, ${siteSearchName(v.site)}` : `${siteSearchName(v.site)} ${room}`
+  if (v.type === 'hall' && isFormalOnly(v))
+    return fitted(shortening([hasFormalMenu(v) ? 'formal hall menu' : 'formal hall nights', hasFormalMenu(v) && 'nights', 'price', 'dress code']).map((what) => `${who}: ${what}`))
   const menu = hasMenu(v)
-  const parts = [
-    menu ? (v.type === 'hall' ? `${meals ? `${meals} ` : ''}menus` : `${kindWords(v)} menu`) : `${kindWords(v)} opening times`,
-    hasPrices(v) && (v.type === 'bar' && !menu ? 'drink prices' : 'prices'),
-    holdsFormal(v) && 'formal hall',
-    menu && 'opening times',
-  ].filter((x): x is string => !!x)
-  return `${v.name}, ${placed(v.site)}: ${list(parts)} · ${SITE_NAME}`
+  const prices = hasPrices(v) && (v.type === 'bar' && !menu ? 'drink prices' : 'prices')
+  // A dining hall's menu changes by the day; a café's or bar's is its list
+  const parts =
+    v.type === 'hall' && menu
+      ? ['menu today', 'opening times', holdsFormal(v) && 'formal hall', prices]
+      : [menu ? `${kindWords(v)} menu` : `${kindWords(v)} opening times`, prices, holdsFormal(v) && 'formal hall', menu && 'opening times']
+  return fitted(shortening(parts).map((what) => `${who}: ${what}`))
 }
 
 /** Home › Jesus College › Caff, for a rich result's breadcrumb. */

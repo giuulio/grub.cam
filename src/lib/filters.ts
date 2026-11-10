@@ -157,6 +157,20 @@ export function nextService(s: OpenStatus, days: MenuDay[], slots: Slot[]): Menu
   return days.find((d) => d.items.length && !over(d))
 }
 
+/**
+ * The meal a row waiting for a scripted menu names ("No lunch menu posted yet"): the one the status points at, unless
+ * the venue's loaded menus never have it (Churchill posts no breakfast) and have a later meal that day; then that one.
+ * Loaded menus run from today, so a meal missing from them may just not be up yet: with no later one, the status's.
+ */
+export function awaitedMeal(v: Venue, at: { slot: Slot; date: string }): Meal {
+  const posted = new Set(v.menu.filter((d) => d.items.length).map((d) => d.service))
+  if (posted.has(at.slot.meal)) return at.slot.meal
+  const later = withDayTimes(v.slots, v.menu)
+    .filter((x) => posted.has(x.meal) && slotApplies(x, at.date) && hhmmToMinutes(x.start) >= hhmmToMinutes(at.slot.start))
+    .sort(slotOrder)[0]
+  return later?.meal ?? at.slot.meal
+}
+
 /** When a venue serves a meal on a date: its first time that day, a menu's note's times applied. */
 export function mealSlot(v: Venue, meal: Meal, date: string): Slot | undefined {
   return withDayTimes(v.slots, v.menu).filter((x) => x.meal === meal && slotApplies(x, date)).sort(slotOrder)[0]

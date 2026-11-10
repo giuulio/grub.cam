@@ -29,7 +29,7 @@ describe('searchable HTML without JavaScript', () => {
   it('identifies Eddies and its dining hall beside the menu and hours', () => {
     const page = render('/st-edmunds/dining-hall', data)
     const main = parse(page.html).querySelector('main')!
-    expect(page.title).toContain("St Edmund's College (Eddies), Cambridge")
+    expect(page.title).toContain("St Edmund's College (Eddies) Dining Hall: menu today")
     expect(main.text).toContain('Vegetable pie')
     expect(main.text).toContain('12:30–13:30')
     expect(main.querySelector('a[href="/st-edmunds"]')).not.toBeNull()
